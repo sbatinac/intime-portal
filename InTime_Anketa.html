@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="hr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>In Time d.o.o. — Anketa o kvaliteti usluge</title>
+<style>
+
+  /* ============================================================
+     NAPOMENA ZA SAŠU: ova stranica koristi ISTI Apps Script Web App
+     backend kao InTime_PismoNamjere.html/InTime_Admin.html (vidi
+     InTime_Code.gs) — GAS_WEB_APP_URL dolje mora biti isti .../exec
+     URL kao u ostale dvije datoteke. Anketa je namijenjena
+     POSTOJEĆIM klijentima (poveznica na nju nalazi se na glavnoj
+     stranici, iznad izbora "DA/NE zainteresirani smo").
+     ============================================================ */
+
+  :root{
+    --purple:#229891;
+    --purple-dark:#135450;
+    --graphite:#131313;
+    --navy:#0a1e30;
+    --grey:#6b6b6b;
+    --line:#e2e6ea;
+    --bg:#f7fafb;
+  }
+
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0;
+    font-family:'Segoe UI', Arial, sans-serif;
+    color:var(--graphite);
+    background:#fff;
+    line-height:1.6;
+  }
+  img{max-width:100%;display:block;}
+
+  .wrap{max-width:860px;margin:0 auto;padding:0 24px;}
+  .wrap-wide{max-width:1040px;margin:0 auto;padding:0 24px;}
+
+  .anketa-header{border-bottom:1px solid var(--line);background:#fff;}
+  .anketa-header-inner{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:18px 24px;flex-wrap:wrap;gap:8px;
+  }
+  .anketa-header-brand{font-weight:700;color:var(--purple-dark);font-size:18px;}
+  .anketa-header-back{color:var(--purple);font-size:13.5px;text-decoration:none;}
+  .anketa-header-back:hover{text-decoration:underline;}
+
+  section{padding:36px 0;}
+
+  h2{
+    font-size:23px;
+    color:var(--graphite);
+    border-left:4px solid var(--purple);
+    padding-left:12px;
+    margin:0 0 14px;
+  }
+  p{margin:0 0 14px;color:#333;}
+
+  .anketa-card{
+    background:#fff;
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:26px 24px;
+    margin-top:8px;
+  }
+
+  label{
+    display:block;
+    font-size:13.5px;
+    font-weight:700;
+    color:var(--graphite);
+    margin:14px 0 5px;
+  }
+  input[type=text],input[type=email],input[type=tel],textarea{
+    width:100%;
+    padding:10px 12px;
+    border:1px solid var(--line);
+    border-radius:6px;
+    font-size:14px;
+    font-family:inherit;
+    color:var(--graphite);
+  }
+  textarea{resize:vertical;min-height:70px;}
+  .pair{display:grid;grid-template-columns:1fr 1fr;gap:0 16px;}
+
+  .form-section{margin-top:32px;padding-top:24px;border-top:4px solid var(--purple);}
+  .form-section:first-of-type{margin-top:0;padding-top:0;border-top:none;}
+  .form-section h3{margin:0 0 2px;font-size:14.5px;color:var(--purple-dark);text-transform:none;letter-spacing:0;}
+  .sec-hint{font-size:12px;color:var(--grey);margin:0 0 4px;}
+
+  .anketa-pitanje{margin-top:22px;padding-top:18px;border-top:1px solid var(--line);}
+  .anketa-pitanje:first-of-type{margin-top:14px;padding-top:0;border-top:none;}
+
+  .impact-slider-wrap{margin-top:10px;}
+  input[type=range].impact-slider-input{
+    -webkit-appearance:none;
+    appearance:none;
+    width:100%;
+    height:6px;
+    border-radius:3px;
+    background:linear-gradient(to right, var(--purple) 0%, var(--purple) var(--val,0%), var(--line) var(--val,0%), var(--line) 100%);
+    outline:none;
+    cursor:pointer;
+    margin:0;
+  }
+  input[type=range].impact-slider-input::-webkit-slider-thumb{
+    -webkit-appearance:none;
+    width:18px;
+    height:18px;
+    border-radius:50%;
+    background:var(--purple-dark);
+    border:2px solid #fff;
+    box-shadow:0 0 0 1px var(--purple-dark);
+    cursor:pointer;
+  }
+  input[type=range].impact-slider-input::-moz-range-thumb{
+    width:18px;
+    height:18px;
+    border-radius:50%;
+    background:var(--purple-dark);
+    border:2px solid #fff;
+    box-shadow:0 0 0 1px var(--purple-dark);
+    cursor:pointer;
+  }
+  input[type=range].impact-slider-input::-moz-range-track{
+    height:6px;
+    border-radius:3px;
+    background:var(--line);
+  }
+  .anketa-slider-untouched{opacity:.5;}
+  input[type=range].anketa-slider.anketa-slider-na{opacity:.3;cursor:not-allowed;}
+  .impact-slider-labels{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-top:8px;
+    gap:8px;
+  }
+  .impact-slider-labels .scale-end{font-size:12px;color:var(--grey);max-width:130px;}
+  .impact-slider-value{font-size:12px;color:var(--grey);font-weight:400;white-space:nowrap;}
+
+  .anketa-na-label{
+    display:flex;align-items:center;gap:7px;
+    font-size:13px;font-weight:400;color:var(--graphite);
+    margin:10px 0 0;cursor:pointer;
+  }
+  .anketa-na-label input[type=checkbox]{width:auto;margin:0;}
+
+  .form-submit{
+    margin-top:22px;
+    background:var(--purple);
+    color:#fff;
+    border:none;
+    border-radius:6px;
+    padding:12px 28px;
+    font-size:14.5px;
+    font-weight:600;
+    cursor:pointer;
+  }
+  .form-submit:hover{background:var(--purple-dark);}
+  .form-submit:disabled{opacity:.6;cursor:default;}
+  .form-note{font-size:12px;color:var(--grey);margin-top:10px;}
+
+  .confirm-msg{
+    display:none;
+    text-align:center;
+    padding:34px 20px;
+    background:#fff;
+    border:1px solid var(--line);
+    border-radius:10px;
+    margin-top:8px;
+  }
+  .confirm-msg.active{display:block;}
+  .confirm-msg .check{
+    width:52px;height:52px;border-radius:50%;
+    background:var(--purple);color:#fff;
+    display:flex;align-items:center;justify-content:center;
+    font-size:26px;margin:0 auto 14px;
+  }
+
+  @media(max-width:640px){
+    .pair{grid-template-columns:1fr;}
+    .impact-slider-labels{flex-wrap:wrap;}
+  }
+
+  footer{
+    background:#fff;
+    color:var(--grey);
+    padding:0 0 30px;
+    font-size:14.5px;
+  }
+  footer > .wrap-wide{border-top:1px solid var(--line);padding-top:30px;margin-top:20px;}
+  footer b{color:var(--graphite);}
+  footer a{color:var(--purple);text-decoration:none;}
+  .footer-badge{
+    display:inline-block;
+    margin-top:10px;
+    font-size:12px;
+    color:var(--grey);
+  }
+
+</style>
+</head>
+<body>
+
+  <div class="anketa-header">
+    <div class="wrap-wide anketa-header-inner">
+      <span class="anketa-header-brand">In Time d.o.o.</span>
+      <a class="anketa-header-back" href="InTime_PismoNamjere.html">← Povratak na glavnu stranicu</a>
+    </div>
+  </div>
+
+  <section>
+    <div class="wrap">
+
+      <h2>Anketa o kvaliteti usluge IN TIME</h2>
+      <p>Poštovani, Vaše nam je mišljenje izuzetno važno. Molimo Vas da odvojite nekoliko minuta i ocijenite kvalitetu usluga tvrtke IN TIME. Vaši odgovori pomoći će nam prepoznati područja u kojima smo dobri, ali i ona koja trebamo dodatno poboljšati.</p>
+
+      <div id="anketa-zahvala" class="confirm-msg">
+        <div class="check">✓</div>
+        <p>Hvala Vam na izdvojenom vremenu i iskrenim odgovorima. Vaše mišljenje pomoći će nam unaprijediti kvalitetu naših usluga i daljnju suradnju.</p>
+      </div>
+
+      <form id="anketa-form" onsubmit="return submitAnketa(event)">
+        <div id="anketa-form-wrap" class="anketa-card">
+
+          <input type="hidden" id="anketa-vrijeme-dolaska-hidden" name="vrijeme_dolaska">
+          <input type="hidden" id="anketa-vrijeme-slanja-hidden" name="vrijeme_slanja">
+          <input type="hidden" id="anketa-vrijeme-popunjavanja-hidden" name="vrijeme_popunjavanja">
+
+          <div class="form-section">
+            <h3>Podaci o poslovnom subjektu</h3>
+
+            <label>Naziv poslovnog subjekta *</label>
+            <input type="text" name="anketa_naziv" required>
+
+            <label>OIB poslovnog subjekta *</label>
+            <input type="text" name="anketa_oib" required>
+
+            <label>Ime i prezime osobe koja ispunjava anketu *</label>
+            <input type="text" name="anketa_ime_prezime" required>
+
+            <div class="pair">
+              <div>
+                <label>Broj telefona osobe koja ispunjava anketu *</label>
+                <input type="tel" name="anketa_telefon" required>
+              </div>
+              <div>
+                <label>E-mail adresa osobe koja ispunjava anketu *</label>
+                <input type="email" name="anketa_email" required>
+              </div>
+            </div>
+          </div>
+
+          <p class="sec-hint" style="margin-top:22px;">Uputa za ocjenjivanje: pomicanjem klizača odaberite ocjenu od 0 do 10 za svaki navedeni dio naše usluge (0 – u potpunosti nezadovoljavajuće, 10 – u potpunosti zadovoljavajuće). Ako nemate iskustva s pojedinim dijelom usluge, označite "Ne mogu procijeniti". Sva pitanja su obavezna — potrebno je ili ocijeniti ili označiti da ne možete procijeniti.</p>
+
+          <div id="anketa-pitanja-container"></div>
+
+          <div class="form-section">
+            <h3>Dodatni komentar</h3>
+
+            <label>Što smatrate najvećom prednošću suradnje s IN TIME-om?</label>
+            <textarea name="anketa_prednost"></textarea>
+
+            <label>Što bismo, prema vašem mišljenju, trebali prvo poboljšati?</label>
+            <textarea name="anketa_poboljsati"></textarea>
+
+            <label>Dodatni komentar, prijedlog ili pohvala:</label>
+            <textarea name="anketa_komentar"></textarea>
+          </div>
+
+          <button type="submit" class="form-submit">Pošalji anketu</button>
+          <p class="form-note">Hvala vam na izdvojenom vremenu i iskrenim odgovorima. Vaše mišljenje pomoći će nam unaprijediti kvalitetu naših usluga i daljnju suradnju.</p>
+        </div>
+      </form>
+
+    </div>
+  </section>
+
+  <footer>
+    <div class="wrap-wide">
+      <div><b>Saša Batinac</b> — Sales and Marketing Manager, Voditelj ključnih kupaca</div>
+      <div>In Time d.o.o. — Licensee of FedEx</div>
+      <div>Velika cesta 78, 10020 Zagreb, Hrvatska</div>
+      <div>M: +385 91 6262 171 · <a href="mailto:sasa.batinac@in-time.hr">sasa.batinac@in-time.hr</a></div>
+      <div><a href="https://in-time.hr" target="_blank">in-time.hr</a> · <a href="https://fedex.com" target="_blank">fedex.com</a></div>
+      <div class="footer-badge">In Time d.o.o. · TNT / FedEx zastupništvo · Hrvatska, BiH, Srbija, Slovenija, Crna Gora, Sjeverna Makedonija</div>
+    </div>
+  </footer>
+
+<script>
+  // Placeholder Apps Script Web App URL — MORA biti isti .../exec URL kao u
+  // InTime_PismoNamjere.html i InTime_Admin.html (isti backend, InTime_Code.gs).
+  var GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzADLzx6HPt1f1AzjhsL9-E1MLTNqRjzb-wht7G5_YytyskwhTc7eCoQ0ypOMsHEudX/exec";
+
+  // ---- Isto automatsko bilježenje vremena dolaska/slanja/trajanja kao u
+  // InTime_PismoNamjere.html (vidi taj file za punu napomenu) ----
+  function dvaZnamenke(n) { return (n < 10 ? '0' : '') + n; }
+  function formatDatumVrijemePuni(d) {
+    return dvaZnamenke(d.getDate()) + '.' + dvaZnamenke(d.getMonth() + 1) + '.' + d.getFullYear() + '. ' +
+      dvaZnamenke(d.getHours()) + ':' + dvaZnamenke(d.getMinutes()) + ':' + dvaZnamenke(d.getSeconds());
+  }
+  function formatTrajanje(sekundeUkupno) {
+    if (sekundeUkupno < 0) { sekundeUkupno = 0; }
+    var h = Math.floor(sekundeUkupno / 3600);
+    var m = Math.floor((sekundeUkupno % 3600) / 60);
+    var s = sekundeUkupno % 60;
+    var dijelovi = [];
+    if (h > 0) { dijelovi.push(h + ' h'); }
+    if (h > 0 || m > 0) { dijelovi.push(m + ' min'); }
+    dijelovi.push(s + ' sek');
+    return dijelovi.join(' ');
+  }
+  var VRIJEME_DOLASKA_DATE = new Date();
+  (function(){
+    var el = document.getElementById('anketa-vrijeme-dolaska-hidden');
+    if (el) { el.value = formatDatumVrijemePuni(VRIJEME_DOLASKA_DATE); }
+  })();
+
+  // ---- Definicija pitanja (izvor istine — generira sve klizače, koristi se
+  // i za redoslijed/numeraciju i za validaciju pri slanju). Isti obrazac kao
+  // USLUGA_BLOCI u glavnom upitniku — jedna definicija, generičke funkcije,
+  // umjesto 25 ručno pisanih blokova. ----
+  var ANKETA_SEKCIJE = [
+    { naslov: 'Opća kvaliteta usluge', pitanja: [
+      { key:'q1', tekst:'Kako biste ocijenili ukupnu kvalitetu usluge tvrtke IN TIME?' },
+      { key:'q2', tekst:'Kako biste ocijenili pouzdanost IN TIME-a kao poslovnog partnera?' },
+      { key:'q3', tekst:'Kako biste ocijenili omjer cijene i kvalitete naše usluge?' }
+    ]},
+    { naslov: 'Preuzimanje i isporuka pošiljaka', pitanja: [
+      { key:'q4', tekst:'Kako biste ocijenili pravovremenost preuzimanja pošiljaka?' },
+      { key:'q5', tekst:'Kako biste ocijenili pridržavanje dogovorenih termina preuzimanja?' },
+      { key:'q6', tekst:'Kako biste ocijenili brzinu isporuke pošiljaka?' },
+      { key:'q7', tekst:'Kako biste ocijenili poštivanje očekivanih rokova isporuke?' },
+      { key:'q8', tekst:'Kako biste ocijenili uspješnost isporuke pošiljaka iz prvog pokušaja?' },
+      { key:'q9', tekst:'Kako biste ocijenili točnost i dostupnost informacija o statusu pošiljaka?' },
+      { key:'q10', tekst:'Kako biste ocijenili pravovremenost obavještavanja primatelja o isporuci?' }
+    ]},
+    { naslov: 'Dostavljači i postupanje s pošiljkama', pitanja: [
+      { key:'q11', tekst:'Kako biste ocijenili profesionalnost i ljubaznost naših dostavljača?' },
+      { key:'q12', tekst:'Kako biste ocijenili odnos naših dostavljača prema vašim kupcima i primateljima?' },
+      { key:'q13', tekst:'Kako biste ocijenili pažnju kojom se postupa s vašim pošiljkama?' },
+      { key:'q14', tekst:'Kako biste ocijenili stanje u kojem pošiljke stižu do primatelja, posebno u pogledu oštećenja?' },
+      { key:'q15', tekst:'Kako biste ocijenili sigurnost prijevoza lomljive, osjetljive ili vrijedne robe?' }
+    ]},
+    { naslov: 'Online Booking i praćenje pošiljaka', pitanja: [
+      { key:'q16', tekst:'Kako biste ocijenili jednostavnost kreiranja naloga u sustavu Online Booking?' },
+      { key:'q17', tekst:'Kako biste ocijenili mogućnost praćenja pošiljaka i dostupnost potrebnih informacija?' }
+    ]},
+    { naslov: 'Voditelj ključnih kupaca', napomena: 'Vaš trenutni voditelj ključnih kupaca je Saša Batinac, univ. spec. oec. — pitanja u nastavku odnose se na ocjenu njegovog rada. Molimo Vas da odgovorite objektivno i nepristrano.', pitanja: [
+      { key:'q18', tekst:'Kako biste ocijenili dostupnost svojeg voditelja ključnih kupaca?' },
+      { key:'q19', tekst:'Kako biste ocijenili brzinu odgovora voditelja ključnih kupaca?' },
+      { key:'q20', tekst:'Kako biste ocijenili razumijevanje vašeg poslovanja, potreba i problema od strane voditelja ključnih kupaca?' },
+      { key:'q21', tekst:'Kako biste ocijenili angažiranost i učinkovitost voditelja ključnih kupaca pri rješavanju vaših zahtjeva i problema?' }
+    ]},
+    { naslov: 'Reklamacije, računi i administracija', pitanja: [
+      { key:'q22', tekst:'Kako biste ocijenili brzinu i kvalitetu rješavanja reklamacija, oštećenja i drugih poteškoća?' },
+      { key:'q23', tekst:'Kako biste ocijenili točnost računa te jasnoću obračunatih cijena i dodatnih naknada?' }
+    ]}
+  ];
+  // Završna ocjena (NPS-stil) — BEZ "Ne mogu procijeniti" opcije, drukčiji
+  // tekst na krajevima klizača.
+  var ANKETA_ZAVRSNA_PITANJA = [
+    { key:'q24', tekst:'Koliko je vjerojatno da biste IN TIME preporučili drugoj tvrtki ili poslovnom partneru?',
+      labelLijevo:'0 – uopće nije vjerojatno', labelDesno:'10 – izuzetno je vjerojatno' },
+    { key:'q25', tekst:'Koliko je vjerojatno da ćete i dalje koristiti usluge tvrtke IN TIME?',
+      labelLijevo:'0 – uopće nije vjerojatno', labelDesno:'10 – izuzetno je vjerojatno' }
+  ];
+
+  var _anketaBrojac = 0;
+  function anketaSljedeciBroj(){ _anketaBrojac++; return _anketaBrojac; }
+
+  function updateAnketaSlider(key){
+    var input = document.getElementById('anketa-' + key + '-range');
+    if (!input) { return; }
+    input.setAttribute('data-dotaknuto', 'true');
+    input.classList.remove('anketa-slider-untouched');
+    var v = parseInt(input.value, 10);
+    input.style.setProperty('--val', (v * 10) + '%');
+    var valSpan = document.getElementById('anketa-' + key + '-value');
+    if (valSpan) {
+      valSpan.textContent = 'Ocjena: ' + v + ' / 10';
+      valSpan.style.fontWeight = '700';
+      valSpan.style.color = 'var(--purple-dark)';
+    }
+    var hidden = document.getElementById('anketa-' + key + '-hidden');
+    if (hidden) { hidden.value = String(v); }
+  }
+
+  function toggleAnketaNA(key){
+    var cb = document.getElementById('anketa-' + key + '-na');
+    var input = document.getElementById('anketa-' + key + '-range');
+    var hidden = document.getElementById('anketa-' + key + '-hidden');
+    var valSpan = document.getElementById('anketa-' + key + '-value');
+    if (!cb || !input || !hidden) { return; }
+    if (cb.checked) {
+      input.disabled = true;
+      input.classList.add('anketa-slider-na');
+      hidden.value = 'Ne mogu procijeniti';
+      if (valSpan) {
+        valSpan.textContent = 'Ne mogu procijeniti';
+        valSpan.style.fontWeight = '400';
+        valSpan.style.color = 'var(--grey)';
+      }
+    } else {
+      input.disabled = false;
+      input.classList.remove('anketa-slider-na');
+      if (input.getAttribute('data-dotaknuto') === 'true') {
+        updateAnketaSlider(key);
+      } else {
+        hidden.value = '';
+        if (valSpan) {
+          valSpan.textContent = 'Još niste ocijenili';
+          valSpan.style.fontWeight = '400';
+          valSpan.style.color = 'var(--grey)';
+        }
+      }
+    }
+  }
+
+  function buildAnketaPitanjeEl(p, imaNA){
+    var broj = anketaSljedeciBroj();
+    var wrap = document.createElement('div');
+    wrap.className = 'anketa-pitanje';
+    wrap.id = 'anketa-' + p.key + '-wrap';
+
+    var label = document.createElement('label');
+    label.textContent = broj + '. ' + p.tekst + ' *';
+    wrap.appendChild(label);
+
+    var sliderWrap = document.createElement('div');
+    sliderWrap.className = 'impact-slider-wrap';
+
+    var input = document.createElement('input');
+    input.type = 'range';
+    input.className = 'impact-slider-input anketa-slider anketa-slider-untouched';
+    input.id = 'anketa-' + p.key + '-range';
+    input.min = '0';
+    input.max = '10';
+    input.step = '1';
+    input.value = '5';
+    input.setAttribute('data-dotaknuto', 'false');
+    input.oninput = (function(k){ return function(){ updateAnketaSlider(k); }; })(p.key);
+    sliderWrap.appendChild(input);
+
+    var labelsDiv = document.createElement('div');
+    labelsDiv.className = 'impact-slider-labels';
+    var lijevo = document.createElement('span');
+    lijevo.className = 'scale-end';
+    lijevo.textContent = p.labelLijevo || '0 – u potpunosti nezadovoljavajuće';
+    var vrijednost = document.createElement('span');
+    vrijednost.className = 'impact-slider-value';
+    vrijednost.id = 'anketa-' + p.key + '-value';
+    vrijednost.textContent = 'Još niste ocijenili';
+    var desno = document.createElement('span');
+    desno.className = 'scale-end';
+    desno.style.textAlign = 'right';
+    desno.textContent = p.labelDesno || '10 – u potpunosti zadovoljavajuće';
+    labelsDiv.appendChild(lijevo);
+    labelsDiv.appendChild(vrijednost);
+    labelsDiv.appendChild(desno);
+    sliderWrap.appendChild(labelsDiv);
+    wrap.appendChild(sliderWrap);
+
+    if (imaNA) {
+      var naLabel = document.createElement('label');
+      naLabel.className = 'anketa-na-label';
+      var naCb = document.createElement('input');
+      naCb.type = 'checkbox';
+      naCb.id = 'anketa-' + p.key + '-na';
+      naCb.onchange = (function(k){ return function(){ toggleAnketaNA(k); }; })(p.key);
+      naLabel.appendChild(naCb);
+      naLabel.appendChild(document.createTextNode(' Ne mogu procijeniti'));
+      wrap.appendChild(naLabel);
+    }
+
+    var hidden = document.createElement('input');
+    hidden.type = 'hidden';
+    hidden.name = p.key;
+    hidden.id = 'anketa-' + p.key + '-hidden';
+    wrap.appendChild(hidden);
+
+    return wrap;
+  }
+
+  function renderAnketaPitanja(){
+    var container = document.getElementById('anketa-pitanja-container');
+    if (!container) { return; }
+    ANKETA_SEKCIJE.forEach(function(sek){
+      var sekDiv = document.createElement('div');
+      sekDiv.className = 'form-section';
+      var h3 = document.createElement('h3');
+      h3.textContent = sek.naslov;
+      sekDiv.appendChild(h3);
+      if (sek.napomena) {
+        var napomenaP = document.createElement('p');
+        napomenaP.className = 'sec-hint';
+        napomenaP.textContent = sek.napomena;
+        sekDiv.appendChild(napomenaP);
+      }
+      sek.pitanja.forEach(function(p){
+        sekDiv.appendChild(buildAnketaPitanjeEl(p, true));
+      });
+      container.appendChild(sekDiv);
+    });
+    var zavrsnaDiv = document.createElement('div');
+    zavrsnaDiv.className = 'form-section';
+    var h3z = document.createElement('h3');
+    h3z.textContent = 'Završna ocjena';
+    zavrsnaDiv.appendChild(h3z);
+    ANKETA_ZAVRSNA_PITANJA.forEach(function(p){
+      zavrsnaDiv.appendChild(buildAnketaPitanjeEl(p, false));
+    });
+    container.appendChild(zavrsnaDiv);
+  }
+  renderAnketaPitanja();
+
+  function anketaSvaPitanja(){
+    var sva = [];
+    ANKETA_SEKCIJE.forEach(function(sek){ sek.pitanja.forEach(function(p){ sva.push(p); }); });
+    ANKETA_ZAVRSNA_PITANJA.forEach(function(p){ sva.push(p); });
+    return sva;
+  }
+
+  function submitAnketa(e){
+    e.preventDefault();
+    var form = document.getElementById('anketa-form');
+
+    // Sva pitanja (25 + 2 NPS) moraju imati eksplicitan odgovor — ili
+    // pomaknut klizač (data-dotaknuto="true") ili označeno "Ne mogu
+    // procijeniti" (gdje ta opcija postoji, tj. Q1-23, ne Q24/Q25).
+    var svaPitanja = anketaSvaPitanja();
+    for (var i = 0; i < svaPitanja.length; i++) {
+      var p = svaPitanja[i];
+      var input = document.getElementById('anketa-' + p.key + '-range');
+      var naCb = document.getElementById('anketa-' + p.key + '-na');
+      var touched = input && input.getAttribute('data-dotaknuto') === 'true';
+      var naChecked = naCb && naCb.checked;
+      if (!touched && !naChecked) {
+        alert('Molimo ocijenite pitanje "' + p.tekst + '"' + (naCb ? ' ili označite "Ne mogu procijeniti".' : '.'));
+        var wrapEl = document.getElementById('anketa-' + p.key + '-wrap');
+        if (wrapEl) { wrapEl.scrollIntoView({behavior:'smooth', block:'center'}); }
+        return false;
+      }
+    }
+
+    // Vrijeme slanja + trajanje popunjavanja (isti obrazac kao glavni upitnik).
+    var sada = new Date();
+    var trajanjeSek = Math.round((sada - VRIJEME_DOLASKA_DATE) / 1000);
+    var slanjaEl = document.getElementById('anketa-vrijeme-slanja-hidden');
+    var trajanjeEl = document.getElementById('anketa-vrijeme-popunjavanja-hidden');
+    if (slanjaEl) { slanjaEl.value = formatDatumVrijemePuni(sada); }
+    if (trajanjeEl) { trajanjeEl.value = formatTrajanje(trajanjeSek); }
+
+    var submitBtn = form.querySelector('button[type=submit]');
+    if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'Šaljem...'; }
+
+    var formData = new FormData(form);
+    var payload = { tip: 'anketa' };
+    var seen = {};
+    formData.forEach(function(value, key){
+      if (value === '') { return; }
+      if (seen[key]) {
+        if (Array.isArray(payload[key])) { payload[key].push(value); }
+        else { payload[key] = [payload[key], value]; }
+      } else {
+        payload[key] = value;
+        seen[key] = true;
+      }
+    });
+
+    fetch(GAS_WEB_APP_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(payload)
+    }).catch(function(){ /* ignoriramo — no-cors ionako ne vraća čitljiv odgovor */ });
+
+    document.getElementById('anketa-form-wrap').style.display = 'none';
+    document.getElementById('anketa-zahvala').classList.add('active');
+    window.scrollTo({top:0, behavior:'smooth'});
+    return false;
+  }
+</script>
+
+</body>
+</html>

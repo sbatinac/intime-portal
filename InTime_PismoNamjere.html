@@ -1,0 +1,3500 @@
+<!DOCTYPE html>
+<html lang="hr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>In Time d.o.o. — Predstavljanje usluga i pismo namjere</title>
+<style>
+
+  /* ============================================================
+     NAPOMENA ZA SAŠU — što još treba prije slanja klijentima:
+     1) BANNER: ubačen (In Time Express banner, i.imgur.com/Y2l5C4y).
+     2) BOJE: službena zaštićena In Time paleta — teal #229891 + crna,
+        uzeto direktno iz poslanog loga.
+     3) BACKEND: forma šalje podatke na Apps Script Web App (vidi
+        priloženi InTime_Code.gs — Sheet + email obavijest tebi +
+        HTML potvrda klijentu, bez Formspree). Trenutno je u JS-u
+        (na dnu ove stranice) placeholder GAS_WEB_APP_URL. Nakon
+        što u Apps Scriptu deployaš InTime_Code.gs kao Web App,
+        pošalji mi taj .../exec URL — zamijenim placeholder i
+        forma će stvarno raditi. Do tada se ništa ne šalje.
+     ============================================================ */
+
+  :root{
+    --purple:#229891;      /* službena In Time teal */
+    --purple-dark:#135450; /* tamnija teal nijansa — gradijenti/hover */
+    --orange:#229891;      /* isti teal — nema druge zaštićene boje, izbjegava se strana boja */
+    --graphite:#131313;    /* službena crna iz loga */
+    --navy:#0a1e30;        /* tamno plavo-crna iz banner/footer fotografija — uskladuje pozadine sa slikama */
+    --grey:#6b6b6b;
+    --line:#e2e6ea;
+    --bg:#f7fafb;
+  }
+
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0;
+    font-family:'Segoe UI', Arial, sans-serif;
+    color:var(--graphite);
+    background:#fff;
+    line-height:1.6;
+  }
+  img{max-width:100%;display:block;}
+
+  .wrap{max-width:860px;margin:0 auto;padding:0 24px;}
+  .wrap-wide{max-width:1040px;margin:0 auto;padding:0 24px;}
+
+  /* HERO / BANNER */
+  .hero-banner{
+    width:100%;
+    padding:26px 0;
+    background:#fff;
+  }
+  .hero-banner img{width:100%;display:block;border-radius:10px;}
+
+  /* SECTIONS */
+  section{padding:44px 0;}
+  section.alt{padding:0;}
+  section.alt > .wrap{padding-top:44px;padding-bottom:44px;border-top:1px solid var(--line);border-bottom:1px solid var(--line);}
+
+  h2{
+    font-size:25px;
+    color:var(--graphite);
+    border-left:4px solid var(--purple);
+    padding-left:12px;
+    margin:0 0 18px;
+  }
+  p{margin:0 0 14px;color:#333;}
+
+  /* FACTS ROW */
+  .facts{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:14px;
+    margin:26px 0 6px;
+  }
+  .fact{
+    background:var(--purple);
+    border:1px solid var(--purple);
+    border-radius:8px;
+    padding:16px 10px;
+    text-align:center;
+  }
+  .fact b{display:block;font-size:28px;color:#fff;font-family:Consolas,monospace;}
+  .fact span{font-size:14px;color:#fff;opacity:.9;}
+
+  /* ADVANTAGES */
+  .adv-list{display:flex;flex-direction:column;gap:10px;margin-top:10px;}
+  .adv{
+    display:flex;
+    gap:14px;
+    background:#fff;
+    border:1px solid var(--line);
+    border-radius:8px;
+    padding:14px 16px;
+  }
+  .adv-num{
+    flex:0 0 30px;
+    height:30px;
+    border-radius:50%;
+    background:var(--purple);
+    color:#fff;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-weight:700;
+    font-size:13px;
+  }
+  .adv-text{font-size:14.5px;color:#333;}
+  .adv-text b{color:var(--graphite);}
+
+  /* SERVICES */
+  .services{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-top:10px;}
+  .service{
+    background:var(--bg);
+    border:1px solid var(--line);
+    border-left:3px solid var(--purple);
+    border-radius:6px;
+    padding:14px 16px;
+    font-size:14px;
+  }
+
+  /* VRSTE USLUGA (detaljna razrada) */
+  .service-groups{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-top:14px;}
+  .service-group{
+    background:var(--bg);
+    border:1px solid var(--line);
+    border-left:3px solid var(--purple);
+    border-radius:8px;
+    padding:18px 20px;
+  }
+  .service-group h3{margin:0 0 4px;font-size:19px;color:var(--graphite);}
+  .service-group .sg-desc{margin:0 0 10px;font-size:12.5px;color:var(--grey);}
+  .service-group ul{margin:0;padding-left:18px;}
+  .service-group li{font-size:13.5px;color:#333;margin-bottom:6px;}
+
+  /* In Time — puna teal pozadina */
+  .service-group.intime{background:var(--purple);border-left-color:var(--purple);}
+  .service-group.intime h3{color:#fff;}
+  .service-group.intime .sg-desc{color:#dff5f3;}
+  .service-group.intime li{color:#f2fdfc;}
+
+  /* FedEx — puna FedEx ljubičasta pozadina, narančasti akcent */
+  .service-group.fedex{background:#4D148C;border-left-color:#FF6600;}
+  .service-group.fedex h3{color:#fff;}
+  .service-group.fedex .sg-desc{color:#e6d9f4;}
+  .service-group.fedex li{color:#f3ecfa;}
+  .service-group.fedex li b{color:#FFB066;}
+
+  /* ECOMMERCE / LAST-MILE ISTAKNUTO */
+  .ecom-list{display:flex;flex-direction:column;gap:12px;margin-top:14px;}
+  .ecom-item{
+    background:#fff;
+    border:1px solid var(--line);
+    border-left:3px solid var(--purple);
+    border-radius:8px;
+    padding:16px 18px;
+  }
+  .ecom-item h3{margin:0 0 6px;font-size:17px;color:var(--graphite);}
+  .ecom-item p{margin:0;font-size:14px;color:#333;}
+
+  /* CTA / PISMO NAMJERE */
+  .cta-box{
+    background:linear-gradient(120deg,var(--navy),var(--purple-dark));
+    border-radius:12px;
+    padding:32px 28px;
+    color:#fff;
+    text-align:center;
+  }
+  .cta-box h2{color:#fff;border-left:4px solid var(--purple);font-size:27px;}
+  .cta-box p{color:#d8dedd;font-size:15.5px;}
+  .cta-buttons{display:flex;gap:14px;justify-content:center;margin-top:20px;flex-wrap:wrap;}
+  .btn{
+    border:none;
+    border-radius:6px;
+    padding:13px 26px;
+    font-size:15px;
+    font-weight:600;
+    cursor:pointer;
+    transition:transform .15s ease, opacity .15s ease;
+  }
+  .btn:hover{transform:translateY(-2px);}
+  .btn-primary{
+    background:#22c55e;
+    color:#fff;
+    animation:btn-glow-green 1.8s ease-in-out infinite alternate;
+  }
+  .btn-secondary{
+    background:#e11d2e;
+    color:#fff;
+    border:1.5px solid rgba(255,255,255,.35);
+    animation:btn-glow-red 1.8s ease-in-out infinite alternate;
+  }
+  @keyframes btn-glow-green{
+    from{box-shadow:0 0 8px rgba(34,197,94,.55), 0 0 16px rgba(34,197,94,.3);}
+    to{box-shadow:0 0 20px rgba(34,197,94,1), 0 0 38px rgba(34,197,94,.7);}
+  }
+  @keyframes btn-glow-red{
+    from{box-shadow:0 0 8px rgba(225,29,46,.55), 0 0 16px rgba(225,29,46,.3);}
+    to{box-shadow:0 0 20px rgba(225,29,46,1), 0 0 38px rgba(225,29,46,.7);}
+  }
+
+  /* FORMS */
+  .form-panel{
+    display:none;
+    background:#fff;
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:26px 24px;
+    margin-top:18px;
+  }
+  .form-panel.active{display:block;}
+  label{
+    display:block;
+    font-size:13.5px;
+    font-weight:700;
+    color:var(--graphite);
+    margin:14px 0 5px;
+  }
+  input[type=text],input[type=email],input[type=tel],input[type=date],textarea{
+    width:100%;
+    padding:10px 12px;
+    border:1px solid var(--line);
+    border-radius:6px;
+    font-size:14px;
+    font-family:inherit;
+    color:var(--graphite);
+  }
+  textarea{resize:vertical;min-height:80px;}
+  input[readonly]{background:#f4f4f4;color:var(--grey);cursor:default;}
+  .form-submit{
+    margin-top:20px;
+    background:var(--purple);
+    color:#fff;
+    border:none;
+    border-radius:6px;
+    padding:12px 28px;
+    font-size:14.5px;
+    font-weight:600;
+    cursor:pointer;
+  }
+  .form-submit:hover{background:var(--purple-dark);}
+  .form-note{font-size:12px;color:var(--grey);margin-top:10px;}
+  /* Upozorenje da upitnik nije moguće dovršiti/poslati (npr. kad u 12. poglavlju
+     nijedna od tri glavne usluge nije odabrana u 9. poglavlju) — istaknuta kutija,
+     jasno drukčija od standardnog sivog .sec-hint teksta. */
+  .upit-blokirano{
+    background:#fdecea;
+    border:1px solid #f2b8b5;
+    border-left:4px solid #c0392b;
+    border-radius:8px;
+    padding:14px 16px;
+    cursor:pointer;
+    transition:background 0.15s ease, border-color 0.15s ease;
+  }
+  .upit-blokirano:hover, .upit-blokirano:focus{
+    background:#fbdedb;
+    border-color:#e6a19d;
+    outline:none;
+  }
+  .upit-blokirano p{margin:0;font-size:13px;line-height:1.55;color:#7a241a;}
+  .upit-blokirano p strong{color:#c0392b;}
+  .upit-blokirano p u{text-decoration-color:#c0392b;}
+
+  /* Privremeno isticanje pitanja "Osnovne usluge" u 9. poglavlju kad korisnik
+     stigne ovamo jer nije odabrao nijednu glavnu uslugu (klik na crvenu kutiju
+     upozorenja u 12. poglavlju ili blokirano slanje) — nestaje čim označi barem
+     jednu od tri glavne usluge. */
+  #osnovne-usluge-pitanje.pitanje-istaknuto > label:first-child{
+    color:#c0392b;
+  }
+  #osnovne-usluge-pitanje.pitanje-istaknuto #osnovne-usluge-group{
+    border:2px solid #c0392b;
+    border-radius:8px;
+    background:#fdecea;
+    padding:10px 12px;
+    transition:background 0.2s ease, border-color 0.2s ease;
+  }
+
+  /* Upozorenje: "Carinsko posredovanje" i/ili "Skladištenje i fulfillment usluge"
+     odabrani BEZ ijedne od tri osnovne transportne usluge — te dvije prateće
+     usluge ne pružamo samostalno. Isti vizualni jezik kao .upit-blokirano, ali
+     BEZ cursor:pointer/hover-a jer ova kutija nije klikabilna (nije navigacija,
+     nego trenutno objašnjenje uz pitanje na kojem se već nalazimo). */
+  .carina-skladiste-upozorenje{
+    background:#fdecea;
+    border:1px solid #f2b8b5;
+    border-left:4px solid #c0392b;
+    border-radius:8px;
+    padding:14px 16px;
+    margin-top:10px;
+  }
+  .carina-skladiste-upozorenje p{margin:0;font-size:13px;line-height:1.55;color:#7a241a;}
+  .carina-skladiste-upozorenje p strong{color:#c0392b;}
+
+  /* VELIKI UPITNIK — sekcije, izbori, skala */
+  .form-section{margin-top:32px;padding-top:24px;border-top:4px solid var(--purple);}
+  .form-section:first-of-type{margin-top:0;padding-top:0;border-top:none;}
+  .form-section h3{margin:0 0 2px;font-size:14.5px;color:var(--purple-dark);text-transform:none;letter-spacing:0;}
+  .form-section h3 .sec-subtitle{font-size:12px;font-weight:400;color:var(--grey);}
+  .form-section .sec-hint{font-size:12px;color:var(--grey);margin:0 0 4px;}
+  .pair{display:grid;grid-template-columns:1fr 1fr;gap:0 16px;}
+  select{
+    width:100%;
+    padding:10px 12px;
+    border:1px solid var(--line);
+    border-radius:6px;
+    font-size:14px;
+    font-family:inherit;
+    color:var(--graphite);
+    background:#fff;
+  }
+  select[multiple]{min-height:120px;}
+  .choice-group{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:6px 14px;
+    margin-top:6px;
+  }
+  .choice-group.choice-group-1col{grid-template-columns:1fr;}
+  .choice-group label{
+    display:flex;
+    align-items:flex-start;
+    gap:7px;
+    font-size:13px;
+    font-weight:400;
+    text-transform:none;
+    letter-spacing:0;
+    color:var(--graphite);
+    margin:0;
+    cursor:pointer;
+  }
+  .choice-group input[type=checkbox],.choice-group input[type=radio]{
+    margin-top:3px;
+    width:auto;
+    flex-shrink:0;
+  }
+  .ostalo-line{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    margin-top:8px;
+  }
+  .choice-group .ostalo-line{grid-column:1/-1;margin-top:0;}
+  .ostalo-line input[type=text]{
+    flex:1;
+    padding:8px 10px;
+    font-size:13px;
+    border:1px solid var(--line);
+    border-radius:5px;
+    font-family:inherit;
+    color:var(--graphite);
+  }
+  .ostalo-hidden{display:none !important;}
+
+  /* PADAJUĆI IZBORNIK S CHECKBOXOVIMA (višestruki odabir) */
+  .msdrop{position:relative;margin-top:6px;}
+  .msdrop-toggle{
+    width:100%;
+    text-align:left;
+    padding:10px 12px;
+    border:1px solid var(--line);
+    border-radius:6px;
+    background:#fff;
+    font-size:14px;
+    font-family:inherit;
+    color:var(--graphite);
+    cursor:pointer;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:10px;
+  }
+  .msdrop-toggle:after{content:'▾';color:var(--grey);flex-shrink:0;}
+  .msdrop.open .msdrop-toggle:after{content:'▴';}
+  .msdrop-toggle .msdrop-count{color:var(--purple-dark);font-weight:600;white-space:nowrap;}
+  .msdrop-panel{
+    display:none;
+    position:absolute;
+    z-index:20;
+    top:calc(100% + 4px);
+    left:0;
+    right:0;
+    background:#fff;
+    border:1px solid var(--line);
+    border-radius:8px;
+    padding:8px 10px;
+    max-height:280px;
+    overflow-y:auto;
+    box-shadow:0 10px 28px rgba(0,0,0,.14);
+  }
+  .msdrop.open .msdrop-panel{display:block;}
+  .msdrop-panel label{
+    display:flex;
+    align-items:flex-start;
+    gap:7px;
+    font-size:13px;
+    font-weight:400;
+    text-transform:none;
+    letter-spacing:0;
+    color:var(--graphite);
+    margin:0;
+    padding:6px 2px;
+    cursor:pointer;
+  }
+  .msdrop-panel input[type=checkbox]{margin-top:3px;width:auto;flex-shrink:0;}
+  .msdrop-panel label.msdrop-disabled{opacity:.4;cursor:not-allowed;}
+  .msdrop .ostalo-line{margin:6px 2px 2px;}
+
+  /* Dinamički redovi "vremenski period + broj pošiljaka" po odabranoj kategoriji težine */
+  .kat-tezine-rows{display:flex;flex-direction:column;gap:12px;margin-top:12px;}
+  .kat-tezine-row{
+    background:var(--bg);
+    border:1px solid var(--line);
+    border-radius:8px;
+    padding:12px 14px;
+  }
+  .kat-tezine-row-label{
+    display:block;
+    font-size:13px;
+    font-weight:700;
+    color:var(--graphite);
+    margin-bottom:8px;
+  }
+  .kat-tezine-row .pair select,.kat-tezine-row .pair input{margin-top:0;}
+  .kat-tezine-row .pair{margin-top:10px;}
+  .kat-tezine-field{margin-top:10px;}
+  .kat-tezine-row .pair .kat-tezine-field{margin-top:0;}
+  .kat-tezine-field label{
+    display:block;
+    font-size:12px;
+    font-weight:400;
+    color:var(--grey);
+    margin-bottom:4px;
+  }
+  .kat-tezine-field input{width:100%;}
+  /* Boja reda "Ostali težinski razredi" postavlja se DINAMIČKI (inline style,
+     JS funkcija kategorijeTezineBojaZaPostotak()) prema postotku raspoređenih
+     pošiljaka — crveno(0%)→žuto(50%)→svijetlo zeleno(90%)→tamno zeleno(99%+).
+     Ovdje su samo layout/fallback vrijednosti prije prvog izračuna. */
+  .kat-tezine-ostalo-row{border-style:dashed;transition:background-color .2s,border-color .2s;}
+  .kat-tezine-ostalo-row .kat-tezine-row-label{font-weight:700;transition:color .2s;}
+  .kat-tezine-ostalo-row .kat-tezine-field label{color:var(--grey);}
+  .kat-tezine-badge{display:none;} /* skriveno po traženju korisnika — nagomilavalo se preko labela */
+  .kat-tezine-ostalo-row input[readonly]{
+    font-weight:700;
+    cursor:default;
+    transition:background-color .2s,color .2s,border-color .2s;
+  }
+
+  /* Zaseban "okvir" oko svakog per-usluga bloka u 12. poglavlju (Domaća distribucija /
+     Međunarodna distribucija / FedEx) — vizualno razdvaja tri bloka koji se pojavljuju
+     ovisno o odabiru u 9. poglavlju, kako se ne bi doimali kao jedna neprekinuta cjelina. */
+  .usluga-blok{
+    background:#fff;
+    border:1px solid var(--line);
+    border-left:4px solid var(--purple);
+    border-radius:10px;
+    padding:18px 20px 20px;
+    margin-top:22px;
+  }
+  .usluga-blok-heading{
+    display:block;
+    font-size:16px;
+    font-weight:700;
+    color:var(--purple-dark);
+    margin:0 0 14px;
+    padding-bottom:10px;
+    border-bottom:2px solid var(--line);
+  }
+  /* Samo FedEx blok (Međunarodna distribucija – FedEx Economy/Express) — okvir i naslov u
+     službenim FedEx bojama (ljubičasta/narančasta). Domaća InTime distribucija i Međunarodna
+     InTime distribucija zadržavaju standardnu teal (InTime) boju. */
+  .usluga-blok-fedex{border-left-color:#4d148c;}
+  .usluga-blok-fedex .usluga-blok-heading{color:#4d148c;border-bottom-color:#ff6600;}
+  .kutija-dim-rows{display:flex;flex-direction:column;gap:12px;margin-top:12px;}
+  .kutija-dim-row{
+    background:var(--bg);
+    border:1px solid var(--line);
+    border-radius:8px;
+    padding:12px 14px;
+  }
+  .kutija-dim-row-title{
+    display:block;
+    font-size:13px;
+    font-weight:700;
+    color:var(--graphite);
+    margin-bottom:8px;
+  }
+  .kutija-dim-fields{display:grid;grid-template-columns:1fr 1fr 1fr;gap:0 12px;}
+  .kutija-dim-fields input{width:100%;}
+  .dodatni-ob-fields{display:grid;grid-template-columns:1fr 1fr;gap:0 12px;}
+  .dodatni-ob-fields input{width:100%;}
+  .btn-add-kutija{
+    margin-top:12px;
+    padding:9px 14px;
+    background:transparent;
+    border:1.5px solid var(--purple);
+    border-radius:6px;
+    color:var(--purple-dark);
+    font-size:13px;
+    font-weight:700;
+    cursor:pointer;
+  }
+  .btn-add-kutija:hover{background:var(--purple);color:#fff;}
+  .scale-row{
+    display:flex;
+    align-items:center;
+    gap:16px;
+    margin-top:10px;
+    flex-wrap:wrap;
+  }
+  .scale-row .scale-opt{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:5px;
+    font-size:12px;
+    color:var(--grey);
+  }
+  .scale-row .scale-end{font-size:12px;color:var(--grey);max-width:110px;}
+  .impact-slider-wrap{margin-top:22px;}
+  input[type=range].impact-slider-input{
+    -webkit-appearance:none;
+    appearance:none;
+    width:100%;
+    height:6px;
+    border-radius:3px;
+    background:linear-gradient(to right, var(--purple) 0%, var(--purple) var(--val,0%), var(--line) var(--val,0%), var(--line) 100%);
+    outline:none;
+    cursor:pointer;
+    margin:0;
+  }
+  input[type=range].impact-slider-input::-webkit-slider-thumb{
+    -webkit-appearance:none;
+    width:18px;
+    height:18px;
+    border-radius:50%;
+    background:var(--purple-dark);
+    border:2px solid #fff;
+    box-shadow:0 0 0 1px var(--purple-dark);
+    cursor:pointer;
+  }
+  input[type=range].impact-slider-input::-moz-range-thumb{
+    width:18px;
+    height:18px;
+    border-radius:50%;
+    background:var(--purple-dark);
+    border:2px solid #fff;
+    box-shadow:0 0 0 1px var(--purple-dark);
+    cursor:pointer;
+  }
+  input[type=range].impact-slider-input::-moz-range-track{
+    height:6px;
+    border-radius:3px;
+    background:var(--line);
+  }
+  .impact-slider-labels{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-top:8px;
+  }
+  .impact-slider-labels .scale-end{font-size:12px;color:var(--grey);max-width:110px;}
+  .impact-slider-value{font-size:12px;color:var(--grey);font-weight:400;}
+  /* Klizač "Izvoz / Uvoz" (12. poglavlje) — traka je dvobojna umjesto jednobojne
+     (za razliku od crni_petak klizača): lijevi dio (Izvoz, 0% do trenutne vrijednosti)
+     zelen, desni dio (Uvoz, od trenutne vrijednosti do 100%) crven. Vrijednost inputa
+     = postotak IZVOZA, pa zeleni dio raste udesno kako izvoz raste. */
+  input[type=range].izvoz-uvoz-slider{
+    background:linear-gradient(to right, #1e8449 0%, #1e8449 var(--val,50%), #c0392b var(--val,50%), #c0392b 100%);
+  }
+  /* FedEx blok — klizač Izvoz/Uvoz u FedEx bojama (ljubičasto/narančasto) umjesto
+     standardne zeleno-crvene kombinacije. Ova klasa se dodaje UZ .izvoz-uvoz-slider
+     (veća specifičnost, ista kasnije u stylesheetu — pobjeđuje) samo na FedEx bloku;
+     Međunarodna InTime distribucija zadržava zeleno/crveno. */
+  input[type=range].izvoz-uvoz-slider.izvoz-uvoz-slider-fedex{
+    background:linear-gradient(to right, #4d148c 0%, #4d148c var(--val,50%), #ff6600 var(--val,50%), #ff6600 100%);
+  }
+
+  /* Klizač "Vrijeme prikupa pošiljaka" (6. poglavlje, zadnje pitanje) — umjesto
+     okruglog impact-slider klizača, ovo je vlastita ravnalica od 8:00 do 16:00
+     s oznakama za svaki puni sat (veće crtice, brojevi ispod) i pola sata
+     (manje crtice, bez broja). Iznad ravnalice je nevidljiv native <input
+     type=range> (korak 30 min, cijela širina, opacity 0) koji nosi stvarnu
+     interakciju (drag/klik/tipkovnica/touch), a preko njega vidljiva
+     ".time-pickup-handle" traka širine točno 30 min (jedan korak ravnalice) —
+     JS (updateVrijemePrikupa()) svaki put postavlja njenu širinu/poziciju tako
+     da joj DESNI rub bude na odabranom vremenu prikupa, a LIJEVI rub 30 min
+     ranije (= zadnje vrijeme za unos pošiljke u OB sustav, budući da se
+     pošiljke u OB mogu unijeti najkasnije pola sata prije dolaska vozila).
+     Stvarna vrijednost polja (naziv "vrijeme_prikupa") sprema se u skriveni
+     input formatiran kao "HH:MM" — native range input namjerno NEMA name
+     atribut (šalje se samo minute unutar 480-960, nečitljivo bez konverzije). */
+  .time-pickup-wrap{margin-top:14px;}
+  .time-pickup-handle-row{position:relative;height:28px;margin:0 4px 2px;}
+  .time-pickup-handle{
+    position:absolute;
+    top:0;
+    height:24px;
+    background:linear-gradient(180deg, var(--purple), var(--purple-dark));
+    border-radius:5px;
+    box-shadow:0 2px 6px rgba(0,0,0,.25);
+    pointer-events:none;
+  }
+  input[type=range].time-pickup-input{
+    position:absolute;
+    left:0;
+    top:0;
+    width:100%;
+    height:28px;
+    margin:0;
+    opacity:0;
+    cursor:grab;
+    -webkit-appearance:none;
+    appearance:none;
+    background:transparent;
+  }
+  input[type=range].time-pickup-input::-webkit-slider-thumb{
+    -webkit-appearance:none;
+    width:1px;
+    height:28px;
+    background:transparent;
+    border:none;
+  }
+  input[type=range].time-pickup-input::-moz-range-thumb{
+    width:1px;
+    height:28px;
+    background:transparent;
+    border:none;
+  }
+  input[type=range].time-pickup-input::-moz-range-track{
+    background:transparent;
+  }
+  .time-pickup-ruler{position:relative;height:34px;margin:0 4px;}
+  .time-pickup-rail{position:absolute;left:0;right:0;top:6px;height:2px;background:var(--line);}
+  .tp-tick{position:absolute;top:0;width:1px;background:var(--grey);transform:translateX(-50%);}
+  .tp-tick-hour{height:12px;background:var(--graphite);}
+  .tp-tick-half{height:6px;}
+  .tp-tick-label{position:absolute;top:14px;left:50%;transform:translateX(-50%);font-size:11px;color:var(--grey);white-space:nowrap;}
+  .time-pickup-readout{
+    display:flex;
+    flex-direction:column;
+    gap:4px;
+    margin-top:6px;
+    font-size:13px;
+    color:var(--graphite);
+  }
+  .time-pickup-readout strong{color:var(--purple-dark);font-size:16px;}
+
+  @media(max-width:640px){
+    .choice-group{grid-template-columns:1fr;}
+    .pair{grid-template-columns:1fr;}
+  }
+
+  .confirm-msg{
+    display:none;
+    text-align:center;
+    padding:30px 20px;
+    background:#fff;
+    border:1px solid var(--line);
+    border-radius:10px;
+    margin-top:18px;
+  }
+  .confirm-msg.active{display:block;}
+  .confirm-msg .check{
+    width:52px;height:52px;border-radius:50%;
+    background:var(--purple);color:#fff;
+    display:flex;align-items:center;justify-content:center;
+    font-size:26px;margin:0 auto 14px;
+  }
+
+  /* FOOTER / POTPIS */
+  footer{
+    background:#fff;
+    color:var(--grey);
+    padding:0 0 30px;
+    font-size:14.5px;
+  }
+  footer > .wrap-wide{border-top:1px solid var(--line);padding-top:30px;}
+  footer b{color:var(--graphite);}
+  footer a{color:var(--purple);text-decoration:none;}
+  .footer-badge{
+    display:inline-block;
+    margin-top:10px;
+    font-size:11px;
+    letter-spacing:1px;
+    text-transform:uppercase;
+    color:#999;
+  }
+
+  @media(max-width:640px){
+    .facts{grid-template-columns:repeat(2,1fr);}
+    .services{grid-template-columns:1fr;}
+    .service-groups{grid-template-columns:1fr;}
+  }
+</style>
+</head>
+<body>
+
+  <!-- HERO / BANNER -->
+  <div class="hero-banner">
+    <div class="wrap-wide">
+      <img src="https://i.imgur.com/QWOPK7p.png" alt="In Time Express — Uvijek na vrijeme. Povezujemo cijelu Hrvatsku.">
+    </div>
+  </div>
+
+  <!-- PREDSTAVLJANJE FIRME -->
+  <section>
+    <div class="wrap">
+      <h2>Tko smo mi</h2>
+      <p>Ovim putem želimo Vam ukratko predstaviti usluge i mogućnosti distribucije Vaših pošiljaka putem sustava tvrtke In Time d.o.o. Rado bismo dogovorili kratki susret s našim trgovačkim predstavnikom koji će Vam uživo prezentirati sve prednosti koje sigurno doprinose maksimalnim uštedama i optimizaciji logističkih procesa unutar Vašeg poslovnog subjekta (kontakt predstavnika nalazi se u potpisu na dnu stranice).</p>
+      <p>In Time d.o.o. nudi niz usluga — od međunarodnog prijevoza u uvozu i izvozu, uvoznog i izvoznog carinjenja, domaće distribucije, do distribucije pošiljaka širom svijeta (avionom, kamionom ili kombinirano). Dugi niz godina zastupnici smo jedne od vodećih globalnih kurirskih kompanija TNT Express, a od nedavno i Federal Express Corporation (FedEx).</p>
+      <p>Kroz Vaše logističke procese omogućujemo korištenje jedne službe od početka do kraja transporta robe do konačnog odredišta — usluga "ključ u ruke" koja donosi veću brzinu dostave, niže troškove po pojedinom segmentu posla i veću sigurnost za Vašu pošiljku.</p>
+
+      <div class="facts">
+        <div class="fact"><b>1991.</b><span>godina osnivanja</span></div>
+        <div class="fact"><b>450+</b><span>zaposlenih</span></div>
+        <div class="fact"><b>310+</b><span>vlastitih vozila</span></div>
+        <div class="fact"><b>TOP 5</b><span>kurirskih tvrtki u RH</span></div>
+      </div>
+      <p style="font-size:13px;color:var(--grey);margin-top:10px;">Poslujemo na području Hrvatske, BiH, Srbije, Slovenije, Crne Gore i Sjeverne Makedonije — u potpunosti u domaćem, hrvatskom vlasništvu.</p>
+    </div>
+  </section>
+
+  <!-- POKRIVENOST / MREŽA -->
+  <section style="padding-top:0;">
+    <div class="wrap-wide">
+      <img src="https://i.imgur.com/i7e7PKK.png" alt="In Time Express — pokrivenost Hrvatske, 10+ skladišnih lokacija, 500+ zaposlenih, moderna flota" style="width:100%;border-radius:10px;">
+    </div>
+  </section>
+
+  <!-- VRSTE USLUGA -->
+  <section class="alt">
+    <div class="wrap">
+      <h2>Vrste usluga</h2>
+      <div class="service-groups">
+        <div class="service-group intime">
+          <h3>IN TIME Express</h3>
+          <p class="sg-desc">Domaća i međunarodna dostava dokumenata i paketa</p>
+          <ul>
+            <li>Hitna međugradska dostava</li>
+            <li>Međunarodna distribucija — Hrvatska, BiH, Srbija, Slovenija, Crna Gora, Makedonija</li>
+            <li>Carinsko posredovanje — vlastito carinsko skladište u logističkom centru In Time-a</li>
+          </ul>
+        </div>
+        <div class="service-group fedex">
+          <h3>FedEx</h3>
+          <p class="sg-desc">Međunarodna ekspresna dostava dokumenata i pošiljaka u više od 220 zemalja svijeta</p>
+          <ul>
+            <li><b>Express</b> — dostava idući radni dan širom svijeta</li>
+            <li><b>Economy</b> — dostava pošiljaka velikih težina po najpovoljnijim cijenama širom svijeta</li>
+            <li><b>Import Express</b> — usluga uvoza Express i Economy Express</li>
+          </ul>
+        </div>
+      </div>
+      <p style="margin-top:16px;">Uz to nudimo i domaću distribuciju, dropshipping uslugu te ONLINE BOOKING aplikaciju s praćenjem pošiljke u realnom vremenu.</p>
+    </div>
+  </section>
+
+  <!-- ECOMMERCE / LAST-MILE -->
+  <section>
+    <div class="wrap">
+      <h2>In Time i e-trgovina</h2>
+      <p>Logistika je danas dio cjelokupnog kupovnog iskustva. Zato posebnu pažnju posvećujemo web trgovcima i zahtjevima koje pred njih stavlja rastuća e-trgovina:</p>
+      <div class="ecom-list">
+        <div class="ecom-item">
+          <h3>Last-mile izazovi</h3>
+          <p>Brzina, transparentno praćenje, jednostavni povrati i fleksibilno plaćanje danas odlučuju hoće li se kupac vratiti istom web trgovcu. Nudimo fiksne termine preuzimanja na više lokacija, profesionalno rukovanje pošiljkama i jednostavnu integraciju s webshopovima (naljepnice, status, povrat podataka) — uključujući preuzimanje i dostavu gabaritnih i cargo pošiljaka, ne samo standardnih paketa.</p>
+        </div>
+        <div class="ecom-item">
+          <h3>Ulaganja u tehnologiju</h3>
+          <p>Kontinuirano ulažemo u automatizaciju povrata pošiljaka, praćenje u realnom vremenu i optimizaciju dostavnih ruta. Digitaliziramo pouzeće (uklj. beskontaktno plaćanje) i razvijamo kapacitete za gabaritne i cargo pošiljke, uz zadržan fokus na face-to-face dostavu i osobno iskustvo preuzimanja.</p>
+        </div>
+        <div class="ecom-item">
+          <h3>Prekogranična prodaja</h3>
+          <p>Novu naknadu za pošiljke iz trećih zemalja gledamo kao priliku za europske i hrvatske web trgovce da konkuriraju kvalitetom, a ne samo cijenom. Kao tvrtka u hrvatskom vlasništvu, želimo biti partner domaćim trgovcima u rastu na hrvatskom, europskom i globalnom tržištu.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PREDNOSTI -->
+  <section class="alt">
+    <div class="wrap">
+      <h2>In Time prednosti</h2>
+      <div class="adv-list">
+        <div class="adv"><div class="adv-num">1</div><div class="adv-text"><b>Ekspresna dostava "od vrata do vrata"</b> — manje pošiljke (Z1) isporučujemo unutar 24 sata od trenutka prikupa.</div></div>
+        <div class="adv"><div class="adv-num">2</div><div class="adv-text">Vrlo brzo rješavanje prigovora i nadoknada štete u slučaju oštećenja ili gubitka pošiljke u transportu.</div></div>
+        <div class="adv"><div class="adv-num">3</div><div class="adv-text">Prodajni agent zadužen za Vas kao klijenta brzo i efikasno rješava svu problematiku — ne morate sami kontaktirati interne službe.</div></div>
+        <div class="adv"><div class="adv-num">4</div><div class="adv-text">Više paketa na istu adresu tretiramo kao dijelove iste pošiljke — zbrajaju se samo težine.</div></div>
+        <div class="adv"><div class="adv-num">5</div><div class="adv-text"><b>Kompletna dropshipping usluga</b> — prikup s dodatnih adresa, obrada i slanje u Vaše ime, uz automatsku obavijest na online računu.</div></div>
+        <div class="adv"><div class="adv-num">6</div><div class="adv-text">Interno tjedno i mjesečno vanjsko ocjenjivanje kvalitete usluge, uz brzu korekciju uočenih nedostataka.</div></div>
+        <div class="adv"><div class="adv-num">7</div><div class="adv-text"><b>ONLINE BOOKING aplikacija</b> — otvaranje i storniranje naloga, praćenje pošiljke u realnom vremenu te ispis dostavnih naljepnica direktno na A4 printeru.</div></div>
+        <div class="adv"><div class="adv-num">8</div><div class="adv-text">Prevozimo sve — od paketa od 2 kg do tereta mase 2,5 tone, uključujući volumene za kombi ili kamion s hidrauličnom rampom.</div></div>
+        <div class="adv"><div class="adv-num">9</div><div class="adv-text">Radimo isključivo na principu ponuda — bez pritiska na ostvarivanje planova ili volumena pošiljaka.</div></div>
+        <div class="adv"><div class="adv-num">10</div><div class="adv-text"><b>In Time d.o.o.</b> — poslovni subjekt isključivo u domaćem, hrvatskom vlasništvu.</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PISMO NAMJERE / CTA -->
+  <section class="alt">
+    <div class="wrap">
+
+      <div class="cta-box">
+        <h2>Zainteresirani ste za suradnju?</h2>
+        <p>Pozivamo Vas da isprobate kvalitetu i pouzdanost naših usluga prijevoza domaćih i međunarodnih hitnih pošiljaka, kao i carinskog posredovanja.</p>
+        <p>Klikom na „DA, zainteresirani smo“ otvorit će se kratki obrazac u kojem možete ostaviti svoje kontakt podatke i osnovne informacije o Vašim potrebama. Na temelju njih pripremit ćemo ponudu prilagođenu Vašem poslovanju i kontaktirati Vas.</p>
+        <div class="cta-buttons">
+          <button class="btn btn-primary" onclick="showPanel('interes')">DA, zainteresirani smo</button>
+          <button class="btn btn-secondary" onclick="showPanel('odbijenica')">NE, trenutno nas ne zanima</button>
+        </div>
+        <p style="margin-top:18px;margin-bottom:0;font-size:13.5px;">
+          <a href="InTime_Anketa.html" target="_blank" style="color:#fff;text-decoration:underline;">Već ste naš postojeći klijent? Ocijenite kvalitetu naše usluge →</a>
+        </p>
+      </div>
+
+      <!-- UPITNIK (zainteresirani) -->
+      <form id="panel-interes" class="form-panel" novalidate onsubmit="return submitForm(event,'interes')">
+        <h2 style="margin-top:0;">Prodajni upitnik</h2>
+        <p style="font-size:13.5px;">Molimo Vas da ispunite upitnik u nastavku — na temelju ovih podataka pripremit ćemo ponudu i ugovor prilagođene Vašem poslovanju. Polja označena zvjezdicom (*) su obavezna.</p>
+
+        <div class="form-section">
+          <h3>1. Podaci o unosu</h3>
+          <p class="sec-hint">Datum i vrijeme dolaska na stranicu, vrijeme slanja upitnika i trajanje popunjavanja bilježe se automatski.</p>
+          <input type="hidden" name="vrijeme_dolaska" id="vrijeme-dolaska-hidden-interes">
+          <input type="hidden" name="vrijeme_slanja" id="vrijeme-slanja-hidden-interes">
+          <input type="hidden" name="vrijeme_popunjavanja" id="vrijeme-popunjavanja-hidden-interes">
+
+          <label>Ime i prezime osobe koja unosi podatke *</label>
+          <input type="text" name="unosnik_ime" required>
+
+          <div class="pair">
+            <div>
+              <label>Broj telefona osobe koja unosi podatke *</label>
+              <input type="tel" name="unosnik_telefon" required>
+            </div>
+            <div>
+              <label>Mail adresa osobe koja unosi podatke *</label>
+              <input type="email" name="unosnik_email" required list="email-suggestions">
+            </div>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <h3>2. Osnovni podaci o tvrtki</h3>
+
+          <label>Oblik poslovnog subjekta *</label>
+          <select name="oblik_subjekta" required onchange="toggleOstalo(this)">
+            <option value="">— odaberite —</option>
+            <option value="d.d. – dioničko društvo">d.d. – dioničko društvo</option>
+            <option value="d.o.o. – društvo s ograničenom odgovornošću">d.o.o. – društvo s ograničenom odgovornošću</option>
+            <option value="j.d.o.o. – jednostavno društvo s ograničenom odgovornošću">j.d.o.o. – jednostavno društvo s ograničenom odgovornošću</option>
+            <option value="OBRT">OBRT</option>
+            <option value="ZADRUGA">ZADRUGA</option>
+            <option value="OPG – Obiteljsko poljoprivredno gospodarstvo">OPG – Obiteljsko poljoprivredno gospodarstvo</option>
+            <option value="Ostalo">Ostalo</option>
+          </select>
+          <div class="ostalo-line ostalo-hidden"><input type="text" name="oblik_subjekta_ostalo" placeholder="Upišite ako ste odabrali Ostalo"></div>
+
+          <label>Ime poslovnog subjekta *</label>
+          <input type="text" name="naziv" required>
+
+          <label>Poslovni subjekt prema broju zaposlenika je *</label>
+          <select name="broj_zaposlenika" required>
+            <option value="">— odaberite —</option>
+            <option value="Mikro poduzeća (manje od 10 zaposlenih)">Mikro poduzeća (manje od 10 zaposlenih)</option>
+            <option value="Mala poduzeća (od 10 do 49 zaposlenih)">Mala poduzeća (od 10 do 49 zaposlenih)</option>
+            <option value="Srednja poduzeća (od 50 do 249 zaposlenih)">Srednja poduzeća (od 50 do 249 zaposlenih)</option>
+            <option value="Velika poduzeća (250 i više zaposlenih)">Velika poduzeća (250 i više zaposlenih)</option>
+          </select>
+
+          <label>Adresa sjedišta *</label>
+          <input type="text" name="adresa" required>
+
+          <div class="pair">
+            <div>
+              <label>Grad ili mjesto *</label>
+              <input type="text" name="grad" required>
+            </div>
+            <div>
+              <label>Poštanski broj *</label>
+              <input type="text" name="postanski_broj" required>
+            </div>
+          </div>
+
+          <div class="pair">
+            <div>
+              <label>Telefon centrale *</label>
+              <input type="tel" name="telefon_centrale" required>
+            </div>
+            <div>
+              <label>Glavna e-mail adresa tvrtke *</label>
+              <input type="email" name="email_tvrtke" required list="email-suggestions">
+            </div>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <h3>3. Poslovni i bankovni podaci</h3>
+
+          <label>OIB *</label>
+          <input type="text" name="oib" required>
+
+          <label>MBS (matični broj subjekta)</label>
+          <input type="text" name="mbs">
+
+          <label>E-mail za primanje e-računa *</label>
+          <input type="email" name="email_racun" required list="email-suggestions">
+
+          <label>IBAN računa za uplatu otkupnina *</label>
+          <input type="text" name="iban" required>
+
+          <label>Poslovna banka gore navedenog IBAN računa *</label>
+          <select name="banka" required onchange="toggleOstalo(this, 'Naša poslovna banka nije ponuđena')">
+            <option value="">— odaberite —</option>
+            <option value="Zagrebačka banka d.d.">Zagrebačka banka d.d.</option>
+            <option value="Privredna banka Zagreb d.d. (PBZ)">Privredna banka Zagreb d.d. (PBZ)</option>
+            <option value="Erste&Steiermärkische Bank d.d.">Erste&amp;Steiermärkische Bank d.d.</option>
+            <option value="OTP banka d.d.">OTP banka d.d.</option>
+            <option value="Hrvatska poštanska banka d.d. (HPB)">Hrvatska poštanska banka d.d. (HPB)</option>
+            <option value="Raiffeisenbank Austria d.d.">Raiffeisenbank Austria d.d.</option>
+            <option value="Addiko Bank d.d.">Addiko Bank d.d.</option>
+            <option value="Istarska kreditna banka Umag d.d.">Istarska kreditna banka Umag d.d.</option>
+            <option value="Karlovačka banka d.d.">Karlovačka banka d.d.</option>
+            <option value="Banka Kovanica d.d.">Banka Kovanica d.d.</option>
+            <option value="Partner banka d.d.">Partner banka d.d.</option>
+            <option value="Podravska banka d.d.">Podravska banka d.d.</option>
+            <option value="Slatinska banka d.d.">Slatinska banka d.d.</option>
+            <option value="Agram banka d.d.">Agram banka d.d.</option>
+            <option value="Imex banka d.d.">Imex banka d.d.</option>
+            <option value="KentBank d.d.">KentBank d.d.</option>
+            <option value="J&T banka d.d.">J&amp;T banka d.d.</option>
+            <option value="Samoborska banka d.d.">Samoborska banka d.d.</option>
+            <option value="BKS Bank AG, Glavna podružnica Hrvatska">BKS Bank AG, Glavna podružnica Hrvatska</option>
+            <option value="Naša poslovna banka nije ponuđena">Naša poslovna banka nije ponuđena</option>
+          </select>
+          <div class="ostalo-line ostalo-hidden"><input type="text" name="banka_ostalo" placeholder="Upišite naziv Vaše poslovne banke"></div>
+
+          <label>E-mail za primanje specifikacija uplata otkupnina *</label>
+          <input type="email" name="email_specifikacija" required list="email-suggestions">
+
+          <p class="sec-hint" style="margin-top:14px;">Kontakt osoba u računovodstvu</p>
+
+          <label>Ime i prezime *</label>
+          <input type="text" name="racunovodstvo_kontakt_ime" required>
+
+          <label>Broj telefona</label>
+          <input type="tel" name="racunovodstvo_kontakt_telefon">
+
+          <label>Mail adresa</label>
+          <input type="email" name="racunovodstvo_kontakt_email" list="email-suggestions">
+        </div>
+
+        <div class="form-section">
+          <h3>4. Odgovorna osoba (na koga naslovljavamo ponudu)</h3>
+
+          <label>Ime i prezime odgovorne osobe *</label>
+          <input type="text" name="odgovorna_osoba" required>
+
+          <label>Naslov ili titula odgovorne osobe *</label>
+          <select name="odgovorna_titula" required onchange="toggleOstalo(this)">
+            <option value="">— odaberite —</option>
+            <option value="g. – gospodin">g. – gospodin</option>
+            <option value="gđa – gospođa">gđa – gospođa</option>
+            <option value="gđica – gospođica">gđica – gospođica</option>
+            <option value="Ostalo">Ostalo</option>
+          </select>
+          <div class="ostalo-line ostalo-hidden"><input type="text" name="odgovorna_titula_ostalo" placeholder="Upišite ako ste odabrali Ostalo"></div>
+
+          <label>Funkcija odgovorne osobe</label>
+          <select name="odgovorna_funkcija" onchange="toggleOstalo(this)">
+            <option value="">— odaberite —</option>
+            <option value="Članovi uprave (direktori)">Članovi uprave (direktori)</option>
+            <option value="Prokuristi">Prokuristi</option>
+            <option value="Trgovački punomoćnici">Trgovački punomoćnici</option>
+            <option value="Ostalo">Ostalo</option>
+          </select>
+          <div class="ostalo-line ostalo-hidden"><input type="text" name="odgovorna_funkcija_ostalo" placeholder="Upišite ako ste odabrali Ostalo"></div>
+
+          <label>Mail adresa odgovorne osobe</label>
+          <input type="email" name="odgovorna_email" list="email-suggestions">
+
+          <label>Broj telefona odgovorne osobe</label>
+          <input type="tel" name="odgovorna_telefon">
+        </div>
+
+        <div class="form-section">
+          <h3>5. Kontakt osoba i preferirana komunikacija</h3>
+
+          <div class="pair">
+            <div>
+              <label>Ime i prezime kontakt osobe *</label>
+              <input type="text" name="kontakt" required>
+            </div>
+            <div>
+              <label>Funkcija kontakt osobe *</label>
+              <input type="text" name="kontakt_funkcija" required>
+            </div>
+          </div>
+
+          <div class="pair">
+            <div>
+              <label>Broj mobitela kontakt osobe *</label>
+              <input type="tel" name="telefon" id="telefon" required onchange="suggestPhone(this.value)">
+            </div>
+            <div>
+              <label>E-mail adresa kontakt osobe *</label>
+              <input type="email" name="kontakt_email" required list="email-suggestions">
+            </div>
+          </div>
+
+          <label>Viber kontakt</label>
+          <input type="text" name="viber" id="viber" list="phone-suggestions">
+
+          <label>WhatsApp kontakt</label>
+          <input type="text" name="whatsapp" id="whatsapp" list="phone-suggestions">
+          <datalist id="phone-suggestions"></datalist>
+
+          <label>Zoom kontakt adresa</label>
+          <input type="text" name="zoom_kontakt" id="zoom_kontakt">
+
+          <label>Microsoft Teams kontakt adresa</label>
+          <input type="text" name="teams_kontakt" id="teams_kontakt">
+
+          <label>Preporučate li Vi neki drugi oblik međusobne komunikacije?</label>
+          <div class="choice-group">
+            <label><input type="radio" name="drugi_komunikacija_predlog" value="Da" onchange="toggleDrugiKomunikacija(this)"> Da</label>
+            <label><input type="radio" name="drugi_komunikacija_predlog" value="Ne" onchange="toggleDrugiKomunikacija(this)"> Ne</label>
+          </div>
+
+          <div id="drugi-komunikacija-podpitanje" class="ostalo-hidden">
+            <label>Naziv aplikacije ili programa</label>
+            <input type="text" name="drugi_komunikacija_naziv" id="drugi-komunikacija-naziv" oninput="toggleDrugiKomunikacijaKontakt(this)">
+
+            <div id="drugi-komunikacija-kontakt-wrap" class="ostalo-hidden">
+              <label>Vaš kontakt u aplikaciji</label>
+              <input type="text" name="drugi_komunikacija_kontakt" id="drugi-komunikacija-kontakt">
+            </div>
+          </div>
+
+          <label>Preferirani oblik poslovne komunikacije *</label>
+          <div class="choice-group" data-required-group="Preferirani oblik poslovne komunikacije">
+            <label><input type="checkbox" name="komunikacija" value="Fizički sastanak ili osobni sastanak"> Fizički sastanak ili osobni sastanak</label>
+            <label><input type="checkbox" name="komunikacija" value="Mail korespodencija"> Mail korespodencija</label>
+            <label><input type="checkbox" name="komunikacija" value="Telefonski poziv i razgovor"> Telefonski poziv i razgovor</label>
+            <label><input type="checkbox" name="komunikacija" value="Viber, WhatsApp, Signal, Telegram"> Viber, WhatsApp, Signal, Telegram</label>
+            <label><input type="checkbox" name="komunikacija" value="Zoom ili Teams video sastanak"> Zoom ili Teams video sastanak</label>
+            <label><input type="checkbox" name="komunikacija" value="Ostalo" onchange="toggleChoiceOstalo(this)"> Ostalo</label>
+            <div class="ostalo-line ostalo-hidden"><input type="text" name="komunikacija_ostalo" placeholder="Upišite ako ste odabrali Ostalo"></div>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <h3>6. Mjesto prikupa pošiljaka i osoba zadužena za logistiku</h3>
+          <p class="sec-hint">Kako bismo organizaciju preuzimanja i dostave Vaših pošiljaka na najbolji način uskladili s Vašim internim procesima, molimo Vas za sljedeće podatke.</p>
+
+          <label>Osoba zadužena za organizaciju slanja i primanja pošiljaka *</label>
+          <div class="pair">
+            <div>
+              <label>Ime i prezime *</label>
+              <input type="text" name="logistika_osoba_ime" required>
+            </div>
+            <div>
+              <label>E-mail adresa *</label>
+              <input type="email" name="logistika_osoba_email" required list="email-suggestions">
+            </div>
+          </div>
+          <label>Telefonski broj *</label>
+          <input type="tel" name="logistika_osoba_telefon" required>
+
+          <label>Je li mjesto prikupa pošiljaka na adresi sjedišta koju ste naveli u 2. poglavlju? *</label>
+          <div class="choice-group">
+            <label><input type="radio" name="mjesto_prikupa_isto_kao_sjediste" value="Da" required onchange="toggleMjestoPrikupa(this)"> Da</label>
+            <label><input type="radio" name="mjesto_prikupa_isto_kao_sjediste" value="Ne" onchange="toggleMjestoPrikupa(this)"> Ne, želim unijeti drugu adresu</label>
+          </div>
+
+          <div id="mjesto-prikupa-podpitanje" class="ostalo-hidden">
+            <label>Adresa mjesta prikupa pošiljaka *</label>
+            <input type="text" name="mjesto_prikupa_adresa" id="mjesto-prikupa-adresa">
+            <div class="pair">
+              <div>
+                <label>Grad ili mjesto *</label>
+                <input type="text" name="mjesto_prikupa_grad" id="mjesto-prikupa-grad">
+              </div>
+              <div>
+                <label>Poštanski broj *</label>
+                <input type="text" name="mjesto_prikupa_postanski_broj" id="mjesto-prikupa-postanski-broj">
+              </div>
+            </div>
+
+            <div id="mjesto-prikupa-potvrda-wrap" class="ostalo-hidden" style="margin-top:14px;">
+              <div class="choice-group" style="grid-template-columns:1fr;">
+                <label><input type="checkbox" name="mjesto_prikupa_potvrda" id="mjesto-prikupa-potvrda" value="Da"> Potvrđujem da je mjesto prikupa pošiljaka adresa sjedišta prikazana iznad.</label>
+              </div>
+            </div>
+          </div>
+
+          <label>Preferirana e-mail adresa za prijavu u In Time web aplikaciju Online Booking (OB) *</label>
+          <p class="sec-hint">Ova adresa koristit će se za Vaš korisnički pristup In Time web aplikaciji za online naručivanje prijevoza (Online Booking – OB).</p>
+          <input type="email" name="online_booking_email" required list="email-suggestions">
+          <p class="sec-hint" style="margin-top:8px;">Napomena: preporučujemo da ovo bude opća (generička) e-mail adresa tvrtke (npr. narudzbe@, ured@, info@...), a ne osobna adresa vezana uz jednu zaposlenu osobu — tako pristup ostaje dostupan neovisno o eventualnoj promjeni ili odsutnosti zaposlenika.</p>
+
+          <label>U slučaju da je Vaša tvrtka smještena na više lokacija, podijeljena na više lokacija, imate više poslovnica ili prodajnih objekata, ili jednostavno više odgovornih osoba zaduženih za logistiku – imate li potrebu za dodatnim Online Booking (OB) korisničkim računima? *</label>
+          <div class="choice-group">
+            <label><input type="radio" name="potreba_dodatni_ob_racuni" value="Da" required onchange="toggleDodatniObRacuni(this)"> Da</label>
+            <label><input type="radio" name="potreba_dodatni_ob_racuni" value="Ne" onchange="toggleDodatniObRacuni(this)"> Ne</label>
+          </div>
+
+          <div id="dodatni-ob-racuni-podpitanje" class="ostalo-hidden">
+            <label>Na koji način želite unijeti podatke za dodatne Online Booking račune? *</label>
+            <div class="choice-group">
+              <label><input type="radio" name="dodatni_ob_nacin_unosa" value="Ovdje" onchange="toggleDodatniObNacinUnosa(this)"> Unijet ću podatke odmah, ovdje u obrascu</label>
+              <label><input type="radio" name="dodatni_ob_nacin_unosa" value="Mail" onchange="toggleDodatniObNacinUnosa(this)"> Pošaljite mi Excel tablicu na e-mail — popunit ću je naknadno</label>
+            </div>
+
+            <div id="dodatni-ob-rucno-blok" class="ostalo-hidden">
+              <p class="sec-hint" style="margin-top:14px;">Za svaki dodatni Online Booking račun unesite podatke tražene osobe/lokacije niže.</p>
+              <div id="dodatni-ob-racuni-rows" class="kutija-dim-rows"></div>
+              <button type="button" id="dodatni-ob-racun-add-btn" class="btn-add-kutija" onclick="addDodatniObRacunRow()">+ Dodaj još jedan Online Booking račun</button>
+            </div>
+
+            <div id="dodatni-ob-mail-blok" class="ostalo-hidden">
+              <p class="sec-hint" style="margin-top:14px;">Poslat ćemo Vam Excel predložak tablice za unos podataka za dodatne Online Booking račune. Kada ga popunite, jednostavno odgovorite na taj e-mail s ispunjenom tablicom u prilogu (molimo ne mijenjajte naziv datoteke) — podatke ćemo automatski preuzeti i povezati s ovim upitnikom.</p>
+              <label>E-mail adresa na koju da pošaljemo predložak tablice *</label>
+              <input type="email" name="dodatni_ob_tablica_mail" id="dodatni-ob-tablica-mail" list="email-suggestions">
+              <input type="hidden" name="dodatni_ob_tablica_id" id="dodatni-ob-tablica-id">
+            </div>
+          </div>
+
+          <label>Vrijeme prikupa pošiljaka / cca okvirno vrijeme dolaska In Time vozila po Vaše pošiljke:</label>
+          <p class="sec-hint">Pomaknite traku na željeno vrijeme prikupa (koraci od pola sata, između 8:00 i 16:00). Pošiljke je potrebno unijeti u Online Booking (OB) sustav najkasnije pola sata prije dolaska vozila In Time na prikup pošiljki.</p>
+          <div class="time-pickup-wrap">
+            <div class="time-pickup-handle-row">
+              <div class="time-pickup-handle" id="vrijeme-prikupa-handle"></div>
+              <input type="range" id="vrijeme-prikupa-range" class="time-pickup-input" min="480" max="960" step="30" value="720" oninput="updateVrijemePrikupa()">
+            </div>
+            <div class="time-pickup-ruler">
+              <div class="time-pickup-rail"></div>
+              <span class="tp-tick tp-tick-hour" style="left:0%"><span class="tp-tick-label">8</span></span>
+              <span class="tp-tick tp-tick-half" style="left:6.25%"></span>
+              <span class="tp-tick tp-tick-hour" style="left:12.5%"><span class="tp-tick-label">9</span></span>
+              <span class="tp-tick tp-tick-half" style="left:18.75%"></span>
+              <span class="tp-tick tp-tick-hour" style="left:25%"><span class="tp-tick-label">10</span></span>
+              <span class="tp-tick tp-tick-half" style="left:31.25%"></span>
+              <span class="tp-tick tp-tick-hour" style="left:37.5%"><span class="tp-tick-label">11</span></span>
+              <span class="tp-tick tp-tick-half" style="left:43.75%"></span>
+              <span class="tp-tick tp-tick-hour" style="left:50%"><span class="tp-tick-label">12</span></span>
+              <span class="tp-tick tp-tick-half" style="left:56.25%"></span>
+              <span class="tp-tick tp-tick-hour" style="left:62.5%"><span class="tp-tick-label">13</span></span>
+              <span class="tp-tick tp-tick-half" style="left:68.75%"></span>
+              <span class="tp-tick tp-tick-hour" style="left:75%"><span class="tp-tick-label">14</span></span>
+              <span class="tp-tick tp-tick-half" style="left:81.25%"></span>
+              <span class="tp-tick tp-tick-hour" style="left:87.5%"><span class="tp-tick-label">15</span></span>
+              <span class="tp-tick tp-tick-half" style="left:93.75%"></span>
+              <span class="tp-tick tp-tick-hour" style="left:100%"><span class="tp-tick-label">16</span></span>
+            </div>
+            <div class="time-pickup-readout">
+              <span>Zadnje vrijeme za unos pošiljke u OB sustav (najkasnije pola sata prije dolaska vozila In Time na prikup pošiljki): <strong id="vrijeme-prikupa-zadnji-unos">11:30</strong></span>
+              <span>Vrijeme prikupa pošiljaka/ cca okvirno vrijeme dolaska In Time vozila po Vaše pošiljke: <strong id="vrijeme-prikupa-vrijeme">12:00</strong></span>
+            </div>
+            <input type="hidden" name="vrijeme_prikupa" id="vrijeme-prikupa-hidden" value="12:00">
+          </div>
+        </div>
+
+        <div class="form-section">
+          <h3>7. Trenutni logistički partneri</h3>
+
+          <label>S kojima logističkim službama trenutno surađujete?</label>
+          <div class="msdrop">
+            <button type="button" class="msdrop-toggle" onclick="toggleMsDrop(this)">
+              <span class="msdrop-placeholder">Odaberite jednu ili više opcija</span>
+              <span class="msdrop-count"></span>
+            </button>
+            <div class="msdrop-panel">
+              <label><input type="checkbox" name="logisticke_sluzbe" value="GLS" onchange="updateMsDrop(this)"> GLS</label>
+              <label><input type="checkbox" name="logisticke_sluzbe" value="DPD" onchange="updateMsDrop(this)"> DPD</label>
+              <label><input type="checkbox" name="logisticke_sluzbe" value="Overseas Express" onchange="updateMsDrop(this)"> Overseas Express</label>
+              <label><input type="checkbox" name="logisticke_sluzbe" value="HP Express (Hrvatska pošta)" onchange="updateMsDrop(this)"> HP Express (Hrvatska pošta)</label>
+              <label><input type="checkbox" name="logisticke_sluzbe" value="Gebrüder Weiss" onchange="updateMsDrop(this)"> Gebrüder Weiss</label>
+              <label><input type="checkbox" name="logisticke_sluzbe" value="DB Schenker" onchange="updateMsDrop(this)"> DB Schenker</label>
+              <label><input type="checkbox" name="logisticke_sluzbe" value="Intereuropa" onchange="updateMsDrop(this)"> Intereuropa</label>
+              <label><input type="checkbox" name="logisticke_sluzbe" value="DHL" onchange="updateMsDrop(this)"> DHL</label>
+              <label><input type="checkbox" name="logisticke_sluzbe" value="UPS" onchange="updateMsDrop(this)"> UPS</label>
+              <label><input type="checkbox" name="logisticke_sluzbe" value="Cargo Partner" onchange="updateMsDrop(this)"> Cargo Partner</label>
+              <label><input type="checkbox" name="logisticke_sluzbe" value="Rhenus Logistics" onchange="updateMsDrop(this)"> Rhenus Logistics</label>
+              <label><input type="checkbox" name="logisticke_sluzbe" value="TISAK Paket" onchange="updateMsDrop(this)"> TISAK Paket</label>
+              <label><input type="checkbox" name="logisticke_sluzbe" value="Lokalne ili manje poznate dostavne službe" onchange="updateMsDrop(this)"> Lokalne ili manje poznate dostavne službe</label>
+              <label><input type="checkbox" name="logisticke_sluzbe" value="Nismo do sada imali potrebe za uslugom dostave" onchange="updateMsDrop(this)"> Nismo do sada imali potrebe za uslugom dostave</label>
+              <label><input type="checkbox" name="logisticke_sluzbe" value="Ostalo" onchange="updateMsDrop(this)"> Ostalo – nije navedeno</label>
+              <div class="ostalo-line ostalo-hidden"><input type="text" name="logisticke_sluzbe_ostalo" placeholder="Upišite ako ste odabrali Ostalo"></div>
+            </div>
+          </div>
+
+          <p class="sec-hint" style="margin-top:14px;">Ovo potvrdite ako do sada niste surađivali s niti jednom od navedenih logističkih službi.</p>
+          <div class="choice-group" style="grid-template-columns:1fr;">
+            <label><input type="checkbox" name="nova_tvrtka_bez_logistike" value="Da"> Potvrđujem da smo novoosnovani poslovni subjekt te da do sada nismo koristili usluge logističkih službi, ali smo zainteresirani informirati se o mogućnostima suradnje i uslugama koje nudite.</label>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <h3>8. Za koje svrhe želite koristiti naše usluge dostave?</h3>
+
+          <label>Za koje svrhe želite koristiti naše usluge dostave? *</label>
+          <p class="sec-hint">Možete odabrati više odgovora.</p>
+          <div class="msdrop" data-required-group="Svrha korištenja usluga dostave">
+            <button type="button" class="msdrop-toggle" onclick="toggleMsDrop(this)">
+              <span class="msdrop-placeholder">Odaberite jednu ili više opcija</span>
+              <span class="msdrop-count"></span>
+            </button>
+            <div class="msdrop-panel">
+              <label><input type="checkbox" name="svrha_dostave" value="Maloprodaja – dostava krajnjim kupcima" onchange="updateMsDrop(this)"> Maloprodaja – dostava krajnjim kupcima</label>
+              <label><input type="checkbox" name="svrha_dostave" value="Veleprodaja – dostava poslovnim kupcima i partnerima" onchange="updateMsDrop(this)"> Veleprodaja – dostava poslovnim kupcima i partnerima</label>
+              <label><input type="checkbox" name="svrha_dostave" value="Web prodaja / e-commerce – dostava narudžbi iz web trgovine" onchange="updateMsDrop(this)"> Web prodaja / e-commerce – dostava narudžbi iz web trgovine</label>
+              <label><input type="checkbox" name="svrha_dostave" value="Distribucija robe – redovita opskrba trgovina, partnera ili prodajnih mjesta" onchange="updateMsDrop(this)"> Distribucija robe – redovita opskrba trgovina, partnera ili prodajnih mjesta</label>
+              <label><input type="checkbox" name="svrha_dostave" value="Interna logistika – dostava između poslovnica, skladišta ili drugih lokacija tvrtke" onchange="updateMsDrop(this)"> Interna logistika – dostava između poslovnica, skladišta ili drugih lokacija tvrtke</label>
+              <label><input type="checkbox" name="svrha_dostave" value="Servis i rezervni dijelovi – dostava opreme, dijelova i servisnog materijala" onchange="updateMsDrop(this)"> Servis i rezervni dijelovi – dostava opreme, dijelova i servisnog materijala</label>
+              <label><input type="checkbox" name="svrha_dostave" value="Povrati i zamjene robe" onchange="updateMsDrop(this)"> Povrati i zamjene robe</label>
+              <label><input type="checkbox" name="svrha_dostave" value="Slanje uzoraka, promotivnih materijala ili dokumentacije" onchange="updateMsDrop(this)"> Slanje uzoraka, promotivnih materijala ili dokumentacije</label>
+              <label><input type="checkbox" name="svrha_dostave" value="Uvoz / izvoz i međunarodna dostava" onchange="updateMsDrop(this)"> Uvoz / izvoz i međunarodna dostava</label>
+              <label><input type="checkbox" name="svrha_dostave" value="Ostalo" onchange="updateMsDrop(this)"> Ostalo</label>
+              <div class="ostalo-line ostalo-hidden"><input type="text" name="svrha_dostave_ostalo" placeholder="Upišite ako ste odabrali Ostalo"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-section" id="poglavlje-9-usluge">
+          <h3>9. Usluge koje Vam možemo ponuditi</h3>
+
+          <div id="osnovne-usluge-pitanje">
+          <label>Kako Vam možemo biti na usluzi? — osnovne usluge *</label>
+          <p class="sec-hint">Molimo označite usluge za koje ste zainteresirani i koje Vam In Time d.o.o. trenutno može ponuditi.</p>
+          <div id="osnovne-usluge-group" class="choice-group choice-group-1col" data-required-group="Osnovne usluge">
+            <label><input type="checkbox" name="osnovne_usluge" value="In Time d.o.o. – DOMAĆA INTIME DISTRIBUCIJA" onchange="updateUslugaBlokoviVisibility(); updateCarinaSkladisteUpozorenje();"> Domaća InTime distribucija</label>
+            <label><input type="checkbox" name="osnovne_usluge" value="Međunarodna InTime distribucija (Slo, BiH, Srb, CG, Sj. Mak.) – UVOZ/IZVOZ" onchange="updateUslugaBlokoviVisibility(); updateCarinaSkladisteUpozorenje();"> Međunarodna InTime distribucija (Slo, BiH, Srb, CG, Sj. Mak.) – UVOZ/IZVOZ</label>
+            <label><input type="checkbox" name="osnovne_usluge" value="Međunarodna distribucija – FedEx EXPRESS – UVOZ/IZVOZ" onchange="updateUslugaBlokoviVisibility(); updateCarinaSkladisteUpozorenje();"> Međunarodna distribucija – FedEx EXPRESS – UVOZ/IZVOZ (manje pošiljke, veća brzina isporuke)</label>
+            <label><input type="checkbox" name="osnovne_usluge" value="Međunarodna distribucija – FedEx ECONOMY – UVOZ/IZVOZ" onchange="updateUslugaBlokoviVisibility(); updateCarinaSkladisteUpozorenje();"> Međunarodna distribucija – FedEx ECONOMY – UVOZ/IZVOZ (pošiljke većih dimenzija i težina, sporija isporuka)</label>
+            <label><input type="checkbox" name="osnovne_usluge" value="Carinsko posredovanje – UVOZ/IZVOZ" onchange="updateCarinaSkladisteUpozorenje()"> Carinsko posredovanje – UVOZ/IZVOZ</label>
+            <label><input type="checkbox" name="osnovne_usluge" value="Skladištenje i fulfillment usluge" onchange="updateCarinaSkladisteUpozorenje()"> Skladištenje i fulfillment usluge</label>
+          </div>
+          <div id="carina-skladiste-upozorenje" class="carina-skladiste-upozorenje ostalo-hidden">
+            <p>Napominjemo da usluge <strong>carinskog posredovanja</strong> i <strong>skladištenja i fulfillmenta</strong> pružamo isključivo u sklopu vlastite usluge transporta. Nismo u mogućnosti obavljati carinjenje niti špediciju za robu i pošiljke koje In Time d.o.o. nije samostalno dovezao, niti skladištiti robu bez popratne transportne usluge. Molimo Vas da uz odabranu uslugu odaberete i barem jednu od osnovnih usluga transporta — Domaća InTime distribucija, Međunarodna InTime distribucija, FedEx EXPRESS ili FedEx ECONOMY.</p>
+          </div>
+          </div>
+
+          <label>Dodatne usluge koje bi Vam mogli ponuditi u okviru buduće suradnje? *</label>
+          <div class="choice-group choice-group-1col" data-required-group="Dodatne usluge">
+            <label><input type="checkbox" name="dodatne_usluge" value="Slanje SMS poruka primateljima s informacijom o preuzimanju pošiljke i planiranom terminu isporuke"> SMS obavijesti primateljima o terminu isporuke</label>
+            <label><input type="checkbox" name="dodatne_usluge" value="Osiguranje pošiljke (zaštita od oštećenja ili gubitka)"> Osiguranje pošiljke</label>
+            <label><input type="checkbox" name="dodatne_usluge" value="Prikupljanje otkupnine (pouzećem) – gotovina, uz brzu isplatu sredstava"> Prikupljanje otkupnine (pouzeće) – gotovina</label>
+            <label><input type="checkbox" name="dodatne_usluge" value="Prikupljanje otkupnine (pouzećem) – kartično plaćanje, uz brzu isplatu sredstava"> Prikupljanje otkupnine (pouzeće) – kartično plaćanje</label>
+            <label><input type="checkbox" name="dodatne_usluge" value="Povrat potpisane otpremnice (kao dokaz o isporuci)"> Povrat potpisane otpremnice</label>
+            <label><input type="checkbox" name="dodatne_usluge" value="Osobno uručenje (dostava isključivo u ruke naznačenog primatelja, uz identifikaciju i potvrdu)"> Osobno uručenje uz identifikaciju primatelja</label>
+            <label><input type="checkbox" name="dodatne_usluge" value="Ostalo" onchange="toggleChoiceOstalo(this)"> Ostalo</label>
+            <div class="ostalo-line ostalo-hidden"><input type="text" name="dodatne_usluge_ostalo" placeholder="Upišite ako ste odabrali Ostalo"></div>
+          </div>
+
+          <label>Ukoliko postoji potreba za uslugom (osnovnom ili dodatnom) koja nije navedena s naše strane, molimo Vas da je opišete</label>
+          <textarea name="dodatna_specifikacija" placeholder="Opišite traženu uslugu kako bismo provjerili mogućnost realizacije..."></textarea>
+        </div>
+
+        <div class="form-section">
+          <h3>10. Proizvodi i pošiljke <span class="sec-subtitle">(kvaliteta pošiljaka)</span></h3>
+
+          <label>Sadržaj Vaših pošiljki – kojoj kategoriji proizvoda pretežno pripadaju? *</label>
+          <div class="msdrop" data-required-group="Sadržaj pošiljki">
+            <button type="button" class="msdrop-toggle" onclick="toggleMsDrop(this)">
+              <span class="msdrop-placeholder">Odaberite jednu ili više opcija</span>
+              <span class="msdrop-count"></span>
+            </button>
+            <div class="msdrop-panel">
+              <label><input type="checkbox" name="sadrzaj_posiljki" value="Odjeća i obuća" onchange="updateMsDrop(this)"> Odjeća i obuća</label>
+              <label><input type="checkbox" name="sadrzaj_posiljki" value="Elektronika i mobilni uređaji" onchange="updateMsDrop(this)"> Elektronika i mobilni uređaji</label>
+              <label><input type="checkbox" name="sadrzaj_posiljki" value="Računala i oprema" onchange="updateMsDrop(this)"> Računala i oprema</label>
+              <label><input type="checkbox" name="sadrzaj_posiljki" value="Nakit i satovi" onchange="updateMsDrop(this)"> Nakit i satovi</label>
+              <label><input type="checkbox" name="sadrzaj_posiljki" value="Kozmetika i zdravlje" onchange="updateMsDrop(this)"> Kozmetika i zdravlje</label>
+              <label><input type="checkbox" name="sadrzaj_posiljki" value="Igračke" onchange="updateMsDrop(this)"> Igračke</label>
+              <label><input type="checkbox" name="sadrzaj_posiljki" value="Sportska oprema" onchange="updateMsDrop(this)"> Sportska oprema</label>
+              <label><input type="checkbox" name="sadrzaj_posiljki" value="Kućanski aparati" onchange="updateMsDrop(this)"> Kućanski aparati</label>
+              <label><input type="checkbox" name="sadrzaj_posiljki" value="Namještaj i dekoracija za dom" onchange="updateMsDrop(this)"> Namještaj i dekoracija za dom</label>
+              <label><input type="checkbox" name="sadrzaj_posiljki" value="Knjige i tiskovine" onchange="updateMsDrop(this)"> Knjige i tiskovine</label>
+              <label><input type="checkbox" name="sadrzaj_posiljki" value="Hrana i dodaci prehrani" onchange="updateMsDrop(this)"> Hrana i dodaci prehrani</label>
+              <label><input type="checkbox" name="sadrzaj_posiljki" value="Dokumenti" onchange="updateMsDrop(this)"> Dokumenti</label>
+              <label><input type="checkbox" name="sadrzaj_posiljki" value="Automobilski dijelovi" onchange="updateMsDrop(this)"> Automobilski dijelovi</label>
+              <label><input type="checkbox" name="sadrzaj_posiljki" value="Autogume i auto oprema" onchange="updateMsDrop(this)"> Autogume i auto oprema</label>
+              <label><input type="checkbox" name="sadrzaj_posiljki" value="Lijekovi i medicinski proizvodi" onchange="updateMsDrop(this)"> Lijekovi i medicinski proizvodi</label>
+              <label><input type="checkbox" name="sadrzaj_posiljki" value="Polovni proizvodi (rabljena roba)" onchange="updateMsDrop(this)"> Polovni proizvodi (rabljena roba)</label>
+              <label><input type="checkbox" name="sadrzaj_posiljki" value="Uredski materijal i pribor" onchange="updateMsDrop(this)"> Uredski materijal i pribor</label>
+              <label><input type="checkbox" name="sadrzaj_posiljki" value="Vrtni alati i oprema" onchange="updateMsDrop(this)"> Vrtni alati i oprema</label>
+              <label><input type="checkbox" name="sadrzaj_posiljki" value="Kućni ljubimci – oprema i hrana" onchange="updateMsDrop(this)"> Kućni ljubimci – oprema i hrana</label>
+              <label><input type="checkbox" name="sadrzaj_posiljki" value="Muzički instrumenti i oprema" onchange="updateMsDrop(this)"> Muzički instrumenti i oprema</label>
+              <label><input type="checkbox" name="sadrzaj_posiljki" value="Tekstil i posteljina" onchange="updateMsDrop(this)"> Tekstil i posteljina</label>
+              <label><input type="checkbox" name="sadrzaj_posiljki" value="Ostalo" onchange="updateMsDrop(this)"> Ostalo – nije nabrojano</label>
+              <div class="ostalo-line ostalo-hidden"><input type="text" name="sadrzaj_posiljki_ostalo" placeholder="Upišite ako ste odabrali Ostalo"></div>
+            </div>
+          </div>
+
+          <label>Ukratko definirajte i opišite proizvode i/ili pošiljke koje želite slati/distribuirati putem In Time d.o.o. logističke mreže *</label>
+          <textarea name="opis_proizvoda" required placeholder="Npr. odjeća, obuća, elektronika, knjige, kozmetika, parfemi, igračke, prehrambeni proizvodi, alati, autodijelovi, uredski materijal..."></textarea>
+
+          <label>Koje od navedenih karakteristika opisuju većinu Vaše pošiljke? *</label>
+          <p class="sec-hint">Možete odabrati više odgovora.</p>
+          <div class="choice-group" data-required-group="Karakteristike pošiljaka">
+            <label><input type="checkbox" name="karakteristika" value="Dokumentacija i vrlo male pošiljke – ugovori, osobni dokumenti i sl." onchange="toggleChoiceOstalo(this)"> Dokumentacija i vrlo male pošiljke – ugovori, osobni dokumenti i sl.</label>
+            <label><input type="checkbox" name="karakteristika" value="Male i lagane pošiljke – kozmetika, nakit, manja elektronika i sl." onchange="toggleChoiceOstalo(this)"> Male i lagane pošiljke – kozmetika, nakit, manja elektronika i sl.</label>
+            <label><input type="checkbox" name="karakteristika" value="Male, ali teške pošiljke – alati, metalni dijelovi i sl." onchange="toggleChoiceOstalo(this)"> Male, ali teške pošiljke – alati, metalni dijelovi i sl.</label>
+            <label><input type="checkbox" name="karakteristika" value="Standardne pošiljke – uobičajene dimenzije i težina" onchange="toggleChoiceOstalo(this)"> Standardne pošiljke – uobičajene dimenzije i težina</label>
+            <label><input type="checkbox" name="karakteristika" value="Velike, ali lagane / voluminozne pošiljke – madraci, izolacijski materijali, velike kutije s puno praznog prostora ili zaštitnog materijala" onchange="toggleChoiceOstalo(this)"> Velike, ali lagane / voluminozne pošiljke – madraci, izolacijski materijali, velike kutije s puno praznog prostora ili zaštitnog materijala</label>
+            <label><input type="checkbox" name="karakteristika" value="Velike i teške pošiljke – strojevi, oprema, teži proizvodi i sl." onchange="toggleChoiceOstalo(this)"> Velike i teške pošiljke – strojevi, oprema, teži proizvodi i sl.</label>
+            <label><input type="checkbox" name="karakteristika" value="Paletizirana roba – veleprodajna roba, industrijski materijali i sl." onchange="toggleChoiceOstalo(this)"> Paletizirana roba – veleprodajna roba, industrijski materijali i sl.</label>
+            <label><input type="checkbox" name="karakteristika" value="Osjetljive ili vrijedne pošiljke – lomljiva roba, elektronika, vrijedni proizvodi i sl." onchange="toggleChoiceOstalo(this)"> Osjetljive ili vrijedne pošiljke – lomljiva roba, elektronika, vrijedni proizvodi i sl.</label>
+            <label><input type="checkbox" name="karakteristika" value="Nestandardne pošiljke – nepravilni oblici ili neuobičajene dimenzije" onchange="toggleChoiceOstalo(this)"> Nestandardne pošiljke – nepravilni oblici ili neuobičajene dimenzije</label>
+            <label><input type="checkbox" name="karakteristika" value="Različite vrste pošiljaka – nema jedne prevladavajuće vrste" onchange="toggleChoiceOstalo(this)"> Različite vrste pošiljaka – nema jedne prevladavajuće vrste</label>
+            <label><input type="checkbox" name="karakteristika" value="Proizvodi male tržišne vrijednosti" onchange="toggleChoiceOstalo(this)"> Proizvodi male tržišne vrijednosti</label>
+            <label><input type="checkbox" name="karakteristika" value="Proizvodi velike sentimentalne/osobne vrijednosti" onchange="toggleChoiceOstalo(this)"> Proizvodi velike sentimentalne/osobne vrijednosti</label>
+            <label><input type="checkbox" name="karakteristika" value="Ostalo" onchange="toggleChoiceOstalo(this)"> Ostalo</label>
+            <div class="ostalo-line ostalo-hidden"><input type="text" name="karakteristika_ostalo" placeholder="Upišite ako ste odabrali Ostalo"></div>
+          </div>
+
+          <label>Definirajte prosječnu težinu Vaših pošiljaka *</label>
+          <div class="choice-group" data-required-group="Definicija težine pošiljaka">
+            <label><input type="checkbox" name="tezina_posiljaka" value="Volumenom male i lagane pošiljke do max 2.00 kg težine"> Volumenom male i lagane pošiljke do 2 kg</label>
+            <label><input type="checkbox" name="tezina_posiljaka" value="Pošiljke do 40 kg"> Pošiljke do 40 kg</label>
+            <label><input type="checkbox" name="tezina_posiljaka" value="Pošiljke od 40 do 100 kg"> Pošiljke od 40 do 100 kg</label>
+            <label><input type="checkbox" name="tezina_posiljaka" value="Pošiljke od 100 kg do 500 kg (paletna dostava)"> Pošiljke od 100 do 500 kg (paletna dostava)</label>
+            <label><input type="checkbox" name="tezina_posiljaka" value="Pošiljke od 500 kg do 3.000 kg (paletna dostava i specijalni tereti tj. pošiljke)"> Pošiljke od 500 do 3.000 kg (specijalni tereti)</label>
+            <label><input type="checkbox" name="tezina_posiljaka" value="Ostalo" onchange="toggleChoiceOstalo(this)"> Ostalo</label>
+            <div class="ostalo-line ostalo-hidden"><input type="text" name="tezina_ostalo" placeholder="Upišite ako ste odabrali Ostalo"></div>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <h3>11. Pakiranje i sezonalnost</h3>
+
+          <label>Kako su Vaše pošiljke zapakirane i/ili zaštićene? *</label>
+          <div class="choice-group" data-required-group="Način pakiranja pošiljaka">
+            <label><input type="checkbox" name="pakiranje" value="STRECH FOLIJA"> Strech folija</label>
+            <label><input type="checkbox" name="pakiranje" value="PAKIRANJE PROIZVODA U FOLIJU S ZRAČNIM JASTUČIĆIMA"> Folija sa zračnim jastučićima</label>
+            <label><input type="checkbox" name="pakiranje" value="OBLAGANJE PROIZVODA STIROPOROM, SPUŽVOM ILI SLIČNIM MATERIJALIMA"> Stiropor, spužva ili slični materijali</label>
+            <label><input type="checkbox" name="pakiranje" value="ZAŠTITNA TRANSPORTNA KUTIJA"> Zaštitna transportna kutija</label>
+            <label><input type="checkbox" name="pakiranje" value="SAMO ORIGINALNA KUTIJA PROIZVODA"> Samo originalna kutija proizvoda</label>
+            <label><input type="checkbox" name="pakiranje" value="DODATNA POJAČANJA AMBALAŽE – DRVENI, METALNI OKVIRI I KUTIJE"> Dodatna pojačanja ambalaže (drvo, metal)</label>
+            <label><input type="checkbox" name="pakiranje" value="NEUTRALNA / GENERIČKA AMBALAŽA (diskrecija, zaštita identiteta brenda ili sprečavanje krađe tijekom transporta)"> Neutralna / generička ambalaža</label>
+            <label><input type="checkbox" name="pakiranje" value="Ostalo" onchange="toggleChoiceOstalo(this)"> Ostalo</label>
+            <div class="ostalo-line ostalo-hidden"><input type="text" name="pakiranje_ostalo" placeholder="Upišite ako ste odabrali Ostalo"></div>
+          </div>
+
+          <label>Imaju li Vaši proizvodi izražen prodajni ciklus ili sezonalnost tijekom godine? *</label>
+          <p class="sec-hint">Bilježite li tijekom godine razdoblja s većim ili manjim obujmom slanja paketa koji bi mogli utjecati na organizaciju transporta?</p>
+          <div class="choice-group">
+            <label><input type="radio" name="sezonalnost" value="DA" required onchange="toggleChoiceOstalo(this)"> Da</label>
+            <label><input type="radio" name="sezonalnost" value="NE" onchange="toggleChoiceOstalo(this)"> Ne</label>
+            <label><input type="radio" name="sezonalnost" value="Neki proizvodi imaju izražen sezonski karakter u prodaji, no prosječan broj mjesečnih pošiljaka ostaje stabilan" onchange="toggleChoiceOstalo(this)"> Neki proizvodi sezonski, ali ukupan broj pošiljaka ostaje stabilan</label>
+            <label><input type="radio" name="sezonalnost" value="Ostalo" onchange="toggleChoiceOstalo(this)"> Ostalo</label>
+            <div class="ostalo-line ostalo-hidden"><input type="text" name="sezonalnost_ostalo" placeholder="Upišite ako ste odabrali Ostalo"></div>
+          </div>
+
+          <label>Koristite li standardizirane kutije i standardiziranu transportnu ambalažu za pakiranje? *</label>
+          <div class="choice-group">
+            <label><input type="radio" name="standardizirane_kutije" value="Da" required onchange="toggleStandardKutije(this)"> Da</label>
+            <label><input type="radio" name="standardizirane_kutije" value="Ne" onchange="toggleStandardKutije(this)"> Ne</label>
+          </div>
+
+          <div id="standard-kutije-podpitanje" class="ostalo-hidden">
+            <label>Koristite li u pakiranju Vaših proizvoda i robe standardizirane kutije i standardiziranu transportnu ambalažu? *</label>
+            <p class="sec-hint">Ako je odgovor potvrdan, molimo pokušajte navesti točne dimenzije: dužina (cm) × širina (cm) × visina (cm), i najčešće korištene oblike standardnih kutija. Ako je odgovor negativan, samo napišite da koristite kutije i ambalažu po potrebi različitih dimenzija i oblika.</p>
+            <div id="kutija-dimenzije-rows" class="kutija-dim-rows"></div>
+            <button type="button" id="kutija-dim-add-btn" class="btn-add-kutija" onclick="addKutijaDimRow()">+ Dodaj sljedeću kutiju</button>
+          </div>
+
+          <label>Koliki je utjecaj CRNOG PETKA (zadnji petak u studenom) na izlaz Vaše robe, tj. broj pošiljaka koje šaljete tijekom i nakon tog razdoblja? *</label>
+          <div class="impact-slider-wrap">
+            <input type="range" id="crni-petak-range" class="impact-slider-input" name="crni_petak" min="0" max="100" step="1" value="0" required oninput="updateCrniPetakSlider(this)">
+            <div class="impact-slider-labels">
+              <span class="scale-end">Nema utjecaja (0%)</span>
+              <span class="impact-slider-value" id="crni-petak-value">0%</span>
+              <span class="scale-end">Izrazito velik utjecaj (100%)</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <h3>12. Opseg pošiljaka <span class="sec-subtitle">(kvantiteta pošiljaka)</span></h3>
+          <p class="sec-hint">U ovom odjeljku želimo zajednički definirati (kvantitativno) Vaše potrebe za našim uslugama kako bismo Vam mogli pripremiti ponudu koja je što preciznija i prilagođenija Vašem poslovanju.</p>
+
+          <div class="choice-group" style="grid-template-columns:1fr;">
+            <label><input type="checkbox" name="novi_klijent_bez_opsega" value="Da" onchange="updateNoviKlijentBezOpsega()"> Riječ je o novom poslovnom subjektu / tek smo započeli s poslovanjem, pa još ne znamo procijeniti broj pošiljaka po kategorijama — želimo samo označiti okvirne težinske kategorije koje očekujemo.</label>
+          </div>
+          <p class="sec-hint" style="margin-top:6px;">Ako ovo potvrdite, za odabrane usluge niže nije potrebno upisati prosječan broj pošiljaka niti ih raspoređivati po postotku po kategorijama — dovoljno je samo odabrati kategorije težine koje očekujete.</p>
+
+          <div id="usluga-blokovi-none-hint" class="ostalo-hidden upit-blokirano" onclick="skociNaOsnovneUsluge()" role="button" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();skociNaOsnovneUsluge();}">
+            <p><strong>Niste odabrali nijednu od glavnih usluga koje In Time d.o.o. nudi</strong> (Domaća InTime distribucija, Međunarodna InTime distribucija, FedEx EXPRESS, FedEx ECONOMY) u prethodnom poglavlju "Usluge koje Vam možemo ponuditi". Bez odabrane barem jedne od navedenih usluga nismo u mogućnosti izraditi odgovarajuću ponudu za Vaše poslovanje, stoga upitnik nažalost nije moguće dovršiti i poslati. Molimo Vas da <u>kliknete ovdje ili se vratite na prethodno poglavlje</u> i označite barem jednu od glavnih usluga.</p>
+          </div>
+
+          <div id="usluga-blok-domaca" class="ostalo-hidden usluga-blok">
+            <label class="usluga-blok-heading">Domaća InTime distribucija</label>
+
+            <div id="usluga-domaca-broj-blok">
+              <label>Prosječan broj pošiljaka – Domaća InTime distribucija *</label>
+              <div class="pair">
+                <input type="text" id="broj-usluga-domaca-input" name="broj_usluga_domaca" inputmode="numeric" placeholder="Unesite količinu" oninput="recalcUslugaKategorije('domaca')">
+                <select name="razdoblje_usluga_domaca">
+                  <option value="">Odaberite razdoblje</option>
+                  <option value="Dnevno">Dnevno</option>
+                  <option value="Tjedno">Tjedno</option>
+                  <option value="Mjesečno" selected>Mjesečno</option>
+                  <option value="Kvartalno">Kvartalno</option>
+                  <option value="Godišnje">Godišnje</option>
+                </select>
+              </div>
+            </div>
+
+            <label>Koje kategorije težine pošiljaka najčešće koristite za uslugu "Domaća InTime distribucija"? *</label>
+            <p class="sec-hint">Odgovor je obavezan — odaberite maksimalno 7 najčešćih težinskih kategorija.</p>
+            <div class="msdrop" id="msdrop-usluga-domaca" data-required-group="Kategorije težine – Domaća InTime distribucija">
+              <button type="button" class="msdrop-toggle" onclick="toggleMsDrop(this)">
+                <span class="msdrop-placeholder">Odaberite jednu ili više opcija</span>
+                <span class="msdrop-count"></span>
+              </button>
+              <div class="msdrop-panel" id="msdrop-panel-usluga-domaca"></div>
+            </div>
+            <p class="sec-hint" id="usluga-domaca-kategorije-hint">Za svaku odabranu kategoriju unesite broj pošiljaka za isto razdoblje odabrano gore. Postotak udjela svake kategorije izračunat će se automatski.<br>Potrebno je rasporediti najmanje 90% ukupnog broja pošiljaka za ovu uslugu, odnosno neraspoređeno može ostati najviše 10%.</p>
+            <div id="usluga-domaca-kategorije-rows" class="kat-tezine-rows"></div>
+          </div>
+
+          <div id="usluga-blok-medjunarodna" class="ostalo-hidden usluga-blok">
+            <label class="usluga-blok-heading">Međunarodna InTime distribucija (Slo, BiH, Srb, CG, Sj. Mak.) – UVOZ/IZVOZ</label>
+
+            <div id="usluga-medjunarodna-broj-blok">
+              <label>Prosječan broj pošiljaka – Međunarodna InTime distribucija (Slo, BiH, Srb, CG, Sj. Mak.) – UVOZ/IZVOZ *</label>
+              <div class="pair">
+                <input type="text" id="broj-usluga-medjunarodna-input" name="broj_usluga_medjunarodna" inputmode="numeric" placeholder="Unesite količinu" oninput="recalcUslugaKategorije('medjunarodna')">
+                <select name="razdoblje_usluga_medjunarodna">
+                  <option value="">Odaberite razdoblje</option>
+                  <option value="Dnevno">Dnevno</option>
+                  <option value="Tjedno">Tjedno</option>
+                  <option value="Mjesečno" selected>Mjesečno</option>
+                  <option value="Kvartalno">Kvartalno</option>
+                  <option value="Godišnje">Godišnje</option>
+                </select>
+              </div>
+            </div>
+
+            <label>Koje kategorije težine pošiljaka najčešće koristite za uslugu "Međunarodna InTime distribucija (Slo, BiH, Srb, CG, Sj. Mak.) – UVOZ/IZVOZ"? *</label>
+            <p class="sec-hint">Odgovor je obavezan — odaberite maksimalno 7 najčešćih težinskih kategorija.</p>
+            <div class="msdrop" id="msdrop-usluga-medjunarodna" data-required-group="Kategorije težine – Međunarodna InTime distribucija (Slo, BiH, Srb, CG, Sj. Mak.) – UVOZ/IZVOZ">
+              <button type="button" class="msdrop-toggle" onclick="toggleMsDrop(this)">
+                <span class="msdrop-placeholder">Odaberite jednu ili više opcija</span>
+                <span class="msdrop-count"></span>
+              </button>
+              <div class="msdrop-panel" id="msdrop-panel-usluga-medjunarodna"></div>
+            </div>
+            <p class="sec-hint" id="usluga-medjunarodna-kategorije-hint">Za svaku odabranu kategoriju unesite broj pošiljaka za isto razdoblje odabrano gore. Postotak udjela svake kategorije izračunat će se automatski.<br>Potrebno je rasporediti najmanje 90% ukupnog broja pošiljaka za ovu uslugu, odnosno neraspoređeno može ostati najviše 10%.</p>
+            <div id="usluga-medjunarodna-kategorije-rows" class="kat-tezine-rows"></div>
+
+
+            <label>U koje zemlje šaljete / iz kojih zemalja primate pošiljke za uslugu "Međunarodna InTime distribucija (Slo, BiH, Srb, CG, Sj. Mak.) – UVOZ/IZVOZ"?</label>
+            <p class="sec-hint">Odaberite jednu ili više zemalja iz naše ponude za ovu uslugu.</p>
+            <div class="msdrop" id="msdrop-zemlje-medjunarodna">
+              <button type="button" class="msdrop-toggle" onclick="toggleMsDrop(this)">
+                <span class="msdrop-placeholder">Odaberite jednu ili više zemalja</span>
+                <span class="msdrop-count"></span>
+              </button>
+              <div class="msdrop-panel" id="msdrop-panel-zemlje-medjunarodna"></div>
+            </div>
+            <label>Kakav je omjer IZVOZA i UVOZA za uslugu "Međunarodna InTime distribucija (Slo, BiH, Srb, CG, Sj. Mak.) – UVOZ/IZVOZ"?</label>
+            <div class="impact-slider-wrap">
+              <input type="range" id="izvoz-uvoz-medjunarodna-range" class="impact-slider-input izvoz-uvoz-slider" name="udio_izvoza_medjunarodna" min="0" max="100" step="1" value="50" oninput="updateIzvozUvozSlider('medjunarodna')">
+              <div class="impact-slider-labels">
+                <span class="scale-end">Izvoz</span>
+                <span class="impact-slider-value" id="izvoz-uvoz-medjunarodna-value">Izvoz 50% / Uvoz 50%</span>
+                <span class="scale-end">Uvoz</span>
+              </div>
+            </div>
+          </div>
+
+          <div id="usluga-blok-fedex_express" class="ostalo-hidden usluga-blok usluga-blok-fedex">
+            <label class="usluga-blok-heading">Međunarodna distribucija – FedEx EXPRESS – UVOZ/IZVOZ</label>
+
+            <div id="usluga-fedex_express-broj-blok">
+              <label>Prosječan broj pošiljaka – Međunarodna distribucija – FedEx EXPRESS – UVOZ/IZVOZ *</label>
+              <div class="pair">
+                <input type="text" id="broj-usluga-fedex_express-input" name="broj_usluga_fedex_express" inputmode="numeric" placeholder="Unesite količinu" oninput="recalcUslugaKategorije('fedex_express')">
+                <select name="razdoblje_usluga_fedex_express">
+                  <option value="">Odaberite razdoblje</option>
+                  <option value="Dnevno">Dnevno</option>
+                  <option value="Tjedno">Tjedno</option>
+                  <option value="Mjesečno" selected>Mjesečno</option>
+                  <option value="Kvartalno">Kvartalno</option>
+                  <option value="Godišnje">Godišnje</option>
+                </select>
+              </div>
+            </div>
+
+            <label>Koje kategorije težine pošiljaka najčešće koristite za uslugu "Međunarodna distribucija – FedEx EXPRESS – UVOZ/IZVOZ"? *</label>
+            <p class="sec-hint">Odgovor je obavezan — odaberite maksimalno 7 najčešćih težinskih kategorija.</p>
+            <div class="msdrop" id="msdrop-usluga-fedex_express" data-required-group="Kategorije težine – Međunarodna distribucija – FedEx EXPRESS – UVOZ/IZVOZ">
+              <button type="button" class="msdrop-toggle" onclick="toggleMsDrop(this)">
+                <span class="msdrop-placeholder">Odaberite jednu ili više opcija</span>
+                <span class="msdrop-count"></span>
+              </button>
+              <div class="msdrop-panel" id="msdrop-panel-usluga-fedex_express"></div>
+            </div>
+            <p class="sec-hint" id="usluga-fedex_express-kategorije-hint">Za svaku odabranu kategoriju unesite broj pošiljaka za isto razdoblje odabrano gore. Postotak udjela svake kategorije izračunat će se automatski.<br>Potrebno je rasporediti najmanje 90% ukupnog broja pošiljaka za ovu uslugu, odnosno neraspoređeno može ostati najviše 10%.</p>
+            <div id="usluga-fedex_express-kategorije-rows" class="kat-tezine-rows"></div>
+
+
+            <label>U koje zemlje šaljete / iz kojih zemalja primate pošiljke za uslugu "Međunarodna distribucija – FedEx EXPRESS – UVOZ/IZVOZ"?</label>
+            <p class="sec-hint">Odaberite jednu ili više zemalja iz naše ponude za ovu uslugu.</p>
+            <div class="msdrop" id="msdrop-zemlje-fedex_express">
+              <button type="button" class="msdrop-toggle" onclick="toggleMsDrop(this)">
+                <span class="msdrop-placeholder">Odaberite jednu ili više zemalja</span>
+                <span class="msdrop-count"></span>
+              </button>
+              <div class="msdrop-panel" id="msdrop-panel-zemlje-fedex_express"></div>
+            </div>
+            <label>Kakav je omjer IZVOZA i UVOZA za uslugu "Međunarodna distribucija – FedEx EXPRESS – UVOZ/IZVOZ"?</label>
+            <div class="impact-slider-wrap">
+              <input type="range" id="izvoz-uvoz-fedex_express-range" class="impact-slider-input izvoz-uvoz-slider izvoz-uvoz-slider-fedex" name="udio_izvoza_fedex_express" min="0" max="100" step="1" value="50" oninput="updateIzvozUvozSlider('fedex_express')">
+              <div class="impact-slider-labels">
+                <span class="scale-end">Izvoz</span>
+                <span class="impact-slider-value" id="izvoz-uvoz-fedex_express-value">Izvoz 50% / Uvoz 50%</span>
+                <span class="scale-end">Uvoz</span>
+              </div>
+            </div>
+          </div>
+
+          <div id="usluga-blok-fedex_economy" class="ostalo-hidden usluga-blok usluga-blok-fedex">
+            <label class="usluga-blok-heading">Međunarodna distribucija – FedEx ECONOMY – UVOZ/IZVOZ</label>
+
+            <div id="usluga-fedex_economy-broj-blok">
+              <label>Prosječan broj pošiljaka – Međunarodna distribucija – FedEx ECONOMY – UVOZ/IZVOZ *</label>
+              <div class="pair">
+                <input type="text" id="broj-usluga-fedex_economy-input" name="broj_usluga_fedex_economy" inputmode="numeric" placeholder="Unesite količinu" oninput="recalcUslugaKategorije('fedex_economy')">
+                <select name="razdoblje_usluga_fedex_economy">
+                  <option value="">Odaberite razdoblje</option>
+                  <option value="Dnevno">Dnevno</option>
+                  <option value="Tjedno">Tjedno</option>
+                  <option value="Mjesečno" selected>Mjesečno</option>
+                  <option value="Kvartalno">Kvartalno</option>
+                  <option value="Godišnje">Godišnje</option>
+                </select>
+              </div>
+            </div>
+
+            <label>Koje kategorije težine pošiljaka najčešće koristite za uslugu "Međunarodna distribucija – FedEx ECONOMY – UVOZ/IZVOZ"? *</label>
+            <p class="sec-hint">Odgovor je obavezan — odaberite maksimalno 7 najčešćih težinskih kategorija.</p>
+            <div class="msdrop" id="msdrop-usluga-fedex_economy" data-required-group="Kategorije težine – Međunarodna distribucija – FedEx ECONOMY – UVOZ/IZVOZ">
+              <button type="button" class="msdrop-toggle" onclick="toggleMsDrop(this)">
+                <span class="msdrop-placeholder">Odaberite jednu ili više opcija</span>
+                <span class="msdrop-count"></span>
+              </button>
+              <div class="msdrop-panel" id="msdrop-panel-usluga-fedex_economy"></div>
+            </div>
+            <p class="sec-hint" id="usluga-fedex_economy-kategorije-hint">Za svaku odabranu kategoriju unesite broj pošiljaka za isto razdoblje odabrano gore. Postotak udjela svake kategorije izračunat će se automatski.<br>Potrebno je rasporediti najmanje 90% ukupnog broja pošiljaka za ovu uslugu, odnosno neraspoređeno može ostati najviše 10%.</p>
+            <div id="usluga-fedex_economy-kategorije-rows" class="kat-tezine-rows"></div>
+
+
+            <label>U koje zemlje šaljete / iz kojih zemalja primate pošiljke za uslugu "Međunarodna distribucija – FedEx ECONOMY – UVOZ/IZVOZ"?</label>
+            <p class="sec-hint">Odaberite jednu ili više zemalja iz naše ponude za ovu uslugu.</p>
+            <div class="msdrop" id="msdrop-zemlje-fedex_economy">
+              <button type="button" class="msdrop-toggle" onclick="toggleMsDrop(this)">
+                <span class="msdrop-placeholder">Odaberite jednu ili više zemalja</span>
+                <span class="msdrop-count"></span>
+              </button>
+              <div class="msdrop-panel" id="msdrop-panel-zemlje-fedex_economy"></div>
+            </div>
+            <label>Kakav je omjer IZVOZA i UVOZA za uslugu "Međunarodna distribucija – FedEx ECONOMY – UVOZ/IZVOZ"?</label>
+            <div class="impact-slider-wrap">
+              <input type="range" id="izvoz-uvoz-fedex_economy-range" class="impact-slider-input izvoz-uvoz-slider izvoz-uvoz-slider-fedex" name="udio_izvoza_fedex_economy" min="0" max="100" step="1" value="50" oninput="updateIzvozUvozSlider('fedex_economy')">
+              <div class="impact-slider-labels">
+                <span class="scale-end">Izvoz</span>
+                <span class="impact-slider-value" id="izvoz-uvoz-fedex_economy-value">Izvoz 50% / Uvoz 50%</span>
+                <span class="scale-end">Uvoz</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <datalist id="email-suggestions"></datalist>
+
+        <button type="submit" class="form-submit">Pošalji upitnik</button>
+        <div class="form-note">Podaci se koriste isključivo za pripremu ponude i ugovora o suradnji te se ne dijele s trećim stranama.</div>
+      </form>
+
+
+      <!-- ODBIJENICA -->
+      <form id="panel-odbijenica" class="form-panel" onsubmit="return submitForm(event,'odbijenica')">
+        <h2 style="margin-top:0;">Hvala na povratnoj informaciji</h2>
+        <p style="font-size:13.5px;">Ako želite, odgovorite na nekoliko kratkih pitanja — pomaže nam da unaprijedimo ponudu.</p>
+        <input type="hidden" name="vrijeme_dolaska" id="vrijeme-dolaska-hidden-odbijenica">
+        <input type="hidden" name="vrijeme_slanja" id="vrijeme-slanja-hidden-odbijenica">
+        <input type="hidden" name="vrijeme_popunjavanja" id="vrijeme-popunjavanja-hidden-odbijenica">
+
+        <label>Naziv poslovnog subjekta *</label>
+        <input type="text" name="naziv" required>
+
+        <label>Kontakt ime *</label>
+        <input type="text" name="odbijenica_kontakt_ime" required>
+
+        <label>Kontakt prezime *</label>
+        <input type="text" name="odbijenica_kontakt_prezime" required>
+
+        <label>Kontakt telefonski broj *</label>
+        <input type="tel" name="odbijenica_telefon" required>
+
+        <label>Kontakt e-mail adresa *</label>
+        <input type="email" name="odbijenica_email" required list="email-suggestions">
+
+        <label>S kojima logističkim službama trenutno surađujete?</label>
+        <div class="msdrop">
+          <button type="button" class="msdrop-toggle" onclick="toggleMsDrop(this)">
+            <span class="msdrop-placeholder">Odaberite jednu ili više opcija</span>
+            <span class="msdrop-count"></span>
+          </button>
+          <div class="msdrop-panel">
+            <label><input type="checkbox" name="logisticke_sluzbe" value="GLS" onchange="updateMsDrop(this)"> GLS</label>
+            <label><input type="checkbox" name="logisticke_sluzbe" value="DPD" onchange="updateMsDrop(this)"> DPD</label>
+            <label><input type="checkbox" name="logisticke_sluzbe" value="Overseas Express" onchange="updateMsDrop(this)"> Overseas Express</label>
+            <label><input type="checkbox" name="logisticke_sluzbe" value="HP Express (Hrvatska pošta)" onchange="updateMsDrop(this)"> HP Express (Hrvatska pošta)</label>
+            <label><input type="checkbox" name="logisticke_sluzbe" value="Gebrüder Weiss" onchange="updateMsDrop(this)"> Gebrüder Weiss</label>
+            <label><input type="checkbox" name="logisticke_sluzbe" value="DB Schenker" onchange="updateMsDrop(this)"> DB Schenker</label>
+            <label><input type="checkbox" name="logisticke_sluzbe" value="Intereuropa" onchange="updateMsDrop(this)"> Intereuropa</label>
+            <label><input type="checkbox" name="logisticke_sluzbe" value="DHL" onchange="updateMsDrop(this)"> DHL</label>
+            <label><input type="checkbox" name="logisticke_sluzbe" value="UPS" onchange="updateMsDrop(this)"> UPS</label>
+            <label><input type="checkbox" name="logisticke_sluzbe" value="Cargo Partner" onchange="updateMsDrop(this)"> Cargo Partner</label>
+            <label><input type="checkbox" name="logisticke_sluzbe" value="Rhenus Logistics" onchange="updateMsDrop(this)"> Rhenus Logistics</label>
+            <label><input type="checkbox" name="logisticke_sluzbe" value="TISAK Paket" onchange="updateMsDrop(this)"> TISAK Paket</label>
+            <label><input type="checkbox" name="logisticke_sluzbe" value="Lokalne ili manje poznate dostavne službe" onchange="updateMsDrop(this)"> Lokalne ili manje poznate dostavne službe</label>
+            <label><input type="checkbox" name="logisticke_sluzbe" value="Nismo do sada imali potrebe za uslugom dostave" onchange="updateMsDrop(this)"> Nismo do sada imali potrebe za uslugom dostave</label>
+            <label><input type="checkbox" name="logisticke_sluzbe" value="Ostalo" onchange="updateMsDrop(this)"> Ostalo – nije navedeno</label>
+            <div class="ostalo-line ostalo-hidden"><input type="text" name="logisticke_sluzbe_ostalo" placeholder="Upišite ako ste odabrali Ostalo"></div>
+          </div>
+        </div>
+
+        <label>Zašto trenutno niste zainteresirani za suradnju s In Time-om? *</label>
+        <p class="sec-hint">Možete odabrati više odgovora.</p>
+        <div class="choice-group choice-group-1col" data-required-group="Razlog nezainteresiranosti">
+          <label><input type="checkbox" name="razlog" value="Zadovoljni smo trenutnim dostavnim partnerom"> Zadovoljni smo trenutnim dostavnim partnerom</label>
+          <label><input type="checkbox" name="razlog" value="Cijena usluge nam trenutno nije prihvatljiva"> Cijena usluge nam trenutno nije prihvatljiva</label>
+          <label><input type="checkbox" name="razlog" value="Nemamo dovoljan broj pošiljaka"> Nemamo dovoljan broj pošiljaka</label>
+          <label><input type="checkbox" name="razlog" value="Trenutno nemamo potrebu za dodatnim dostavnim partnerom"> Trenutno nemamo potrebu za dodatnim dostavnim partnerom</label>
+          <label><input type="checkbox" name="razlog" value="Uvjeti plaćanja nam ne odgovaraju"> Uvjeti plaćanja nam ne odgovaraju</label>
+          <label><input type="checkbox" name="razlog" value="Rokovi dostave ne odgovaraju našim potrebama"> Rokovi dostave ne odgovaraju našim potrebama</label>
+          <label><input type="checkbox" name="razlog" value="Naša roba ili način poslovanja zahtijevaju drugačiju vrstu logistike"> Naša roba ili način poslovanja zahtijevaju drugačiju vrstu logistike</label>
+          <label><input type="checkbox" name="razlog" value="Imali smo ranije loše iskustvo s In Time-om"> Imali smo ranije loše iskustvo s In Time-om</label>
+          <label><input type="checkbox" name="razlog" value="Dobili smo negativne preporuke od poslovnih partnera čije mišljenje cijenimo"> Dobili smo negativne preporuke od poslovnih partnera čije mišljenje cijenimo</label>
+          <label><input type="checkbox" name="razlog" value="Trenutno nije pravi trenutak, ali smo otvoreni za razgovor u budućnosti"> Trenutno nije pravi trenutak, ali smo otvoreni za razgovor u budućnosti</label>
+          <label><input type="checkbox" name="razlog" value="Ostalo" onchange="toggleChoiceOstalo(this)"> Ostalo – molimo navedite:</label>
+          <div class="ostalo-line ostalo-hidden"><input type="text" name="razlog_ostalo" placeholder="Upišite ako ste odabrali Ostalo"></div>
+        </div>
+
+        <label>Želite li povremeno primati informacije o našoj ponudi, novostima i posebnim pogodnostima?</label>
+        <div class="choice-group">
+          <label><input type="radio" name="odbijenica_newsletter" value="Da"> Da</label>
+          <label><input type="radio" name="odbijenica_newsletter" value="Ne"> Ne</label>
+        </div>
+
+        <button type="submit" class="form-submit">Pošalji odgovor</button>
+      </form>
+
+      <!-- POTVRDA -->
+      <div id="confirm-box" class="confirm-msg">
+        <div class="check">✓</div>
+        <div id="confirm-text" style="font-size:15px;"></div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- FOOTER / POTPIS -->
+  <footer>
+    <div class="wrap-wide" style="margin-bottom:20px;">
+      <img src="https://i.imgur.com/YQa27lw.png" alt="In Time Express i FedEx — Brže do vaših ciljeva. Danas. Sutra. Dalje." style="width:100%;border-radius:8px;">
+    </div>
+    <div class="wrap">
+      <div><b>Saša Batinac</b> — Sales and Marketing Manager, Voditelj ključnih kupaca</div>
+      <div>In Time d.o.o. — Licensee of FedEx</div>
+      <div>Velika cesta 78, 10020 Zagreb, Hrvatska</div>
+      <div>M: +385 91 6262 171 · <a href="mailto:sasa.batinac@in-time.hr">sasa.batinac@in-time.hr</a></div>
+      <div><a href="https://in-time.hr" target="_blank">in-time.hr</a> · <a href="https://fedex.com" target="_blank">fedex.com</a></div>
+      <div class="footer-badge">In Time d.o.o. · TNT / FedEx zastupništvo · Hrvatska, BiH, Srbija, Slovenija, Crna Gora, Sjeverna Makedonija</div>
+    </div>
+  </footer>
+
+<script>
+  // Placeholder Apps Script Web App URL — zamijeniti pravim linkom nakon deploya (InTime_Code.gs).
+  // Format: https://script.google.com/macros/s/SCRIPT_ID/exec
+  var GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzADLzx6HPt1f1AzjhsL9-E1MLTNqRjzb-wht7G5_YytyskwhTc7eCoQ0ypOMsHEudX/exec";
+
+  // ---- Automatsko bilježenje vremena dolaska/slanja (admin analitika —
+  // koliko je vremena trebalo od dolaska na stranicu do slanja upitnika) ----
+  // Vrijeme dolaska bilježi se JEDNOM, odmah pri učitavanju stranice, u
+  // skrivena polja "vrijeme_dolaska" (jedno po panelu — korisnik ne može
+  // popuniti/promijeniti niti jedno od njih, nisu vidljiva). Vrijeme slanja
+  // i trajanje popunjavanja bilježe se u submitForm() niže, tik prije
+  // stvarnog slanja (nakon što sva validacija prođe).
+  function dvaZnamenke(n) { return (n < 10 ? '0' : '') + n; }
+  function formatDatumVrijemePuni(d) {
+    return dvaZnamenke(d.getDate()) + '.' + dvaZnamenke(d.getMonth() + 1) + '.' + d.getFullYear() + '. ' +
+      dvaZnamenke(d.getHours()) + ':' + dvaZnamenke(d.getMinutes()) + ':' + dvaZnamenke(d.getSeconds());
+  }
+  function formatTrajanje(sekundeUkupno) {
+    if (sekundeUkupno < 0) { sekundeUkupno = 0; }
+    var h = Math.floor(sekundeUkupno / 3600);
+    var m = Math.floor((sekundeUkupno % 3600) / 60);
+    var s = sekundeUkupno % 60;
+    var dijelovi = [];
+    if (h > 0) { dijelovi.push(h + ' h'); }
+    if (h > 0 || m > 0) { dijelovi.push(m + ' min'); }
+    dijelovi.push(s + ' sek');
+    return dijelovi.join(' ');
+  }
+  var VRIJEME_DOLASKA_DATE = new Date();
+  (function(){
+    var formatirano = formatDatumVrijemePuni(VRIJEME_DOLASKA_DATE);
+    ['interes', 'odbijenica'].forEach(function(w){
+      var el = document.getElementById('vrijeme-dolaska-hidden-' + w);
+      if (el) { el.value = formatirano; }
+    });
+  })();
+
+  // Broji SVAKO učitavanje ove stranice (ne jedinstvene posjetitelje) — tihi
+  // "fire-and-forget" POST (isti no-cors obrazac kao submitForm() niže, ne
+  // čekamo/čitamo odgovor) prema InTime_Code.gs (action: 'trackVisit'), koji
+  // uvećava brojač u PropertiesService. Prikazuje se na admin stranici
+  // (InTime_Admin.html). Ne blokira ništa na stranici, ne traži dopuštenja.
+  fetch(GAS_WEB_APP_URL, {
+    method: 'POST',
+    mode: 'no-cors',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify({ action: 'trackVisit' })
+  }).catch(function(){ /* ignoriramo eventualnu grešku — ne utječe na obrazac */ });
+
+  // Prikazuje/skriva pripadajuće tekstualno polje ovisno o tome je li u
+  // <select> izborniku odabrana "okidačka" opcija (default "Ostalo", ali
+  // se može zadati i druga vrijednost, npr. za banku koja nije ponuđena).
+  // Otvara/zatvara padajući panel s checkboxovima (.msdrop) — samo jedan
+  // panel može biti otvoren odjednom.
+  // Odmah popuni navedena polja (po id-u) vrijednošću ako su još prazna —
+  // koristi se za Viber/WhatsApp koji obično dijele broj mobitela kontakt
+  // osobe. Ne prepisuje ako je korisnik već nešto upisao.
+  // Broj mobitela kontakt osobe nudi se kao prijedlog (ne upisuje se
+  // automatski) u Viber i WhatsApp poljima — korisnik ga bira klikom iz
+  // padajućeg popisa ako je isti broj, ili upiše drugi ako nije.
+  function suggestPhone(value){
+    var datalist = document.getElementById('phone-suggestions');
+    if (!datalist || !value) { return; }
+    var exists = false;
+    for (var i = 0; i < datalist.options.length; i++) {
+      if (datalist.options[i].value === value) { exists = true; break; }
+    }
+    if (!exists) {
+      var opt = document.createElement('option');
+      opt.value = value;
+      datalist.appendChild(opt);
+    }
+  }
+
+  function toggleMsDrop(btn){
+    var wrap = btn.closest('.msdrop');
+    var isOpen = wrap.classList.contains('open');
+    document.querySelectorAll('.msdrop.open').forEach(function(el){ el.classList.remove('open'); });
+    if (!isOpen) { wrap.classList.add('open'); }
+  }
+  // Klik izvan otvorenog panela ga zatvara.
+  document.addEventListener('click', function(e){
+    document.querySelectorAll('.msdrop.open').forEach(function(el){
+      if (!el.contains(e.target)) { el.classList.remove('open'); }
+    });
+  });
+
+  // Osvježava brojač odabranih opcija u gumbu i, ako je checkbox "Ostalo",
+  // pokazuje/skriva pripadajuće tekstualno polje.
+  function updateMsDrop(checkbox){
+    var wrap = checkbox.closest('.msdrop');
+    if (!wrap) { return; }
+    var checked = wrap.querySelectorAll('input[type=checkbox]:checked');
+    var countEl = wrap.querySelector('.msdrop-count');
+    if (countEl) { countEl.textContent = checked.length > 0 ? (checked.length + ' odabrano') : ''; }
+
+    if (checkbox.value === 'Ostalo') {
+      var line = wrap.querySelector('.ostalo-line');
+      if (line) {
+        if (checkbox.checked) {
+          line.classList.remove('ostalo-hidden');
+        } else {
+          line.classList.add('ostalo-hidden');
+          var input = line.querySelector('input');
+          if (input) { input.value = ''; }
+        }
+      }
+    }
+  }
+
+  // Poveznica 8. poglavlja (osnovne_usluge: Domaća/Međunarodna/FedEx) i 11.
+  // poglavlja — umjesto JEDNOG općeg pitanja "Koje kategorije težine
+  // koristite", svaka od usluga koju korisnik označi u 9. poglavlju
+  // dobiva VLASTITI potpuni blok: broj pošiljaka za tu uslugu + vlastiti
+  // padajući popis kg-kategorija (max 7) + dinamički redovi s automatskim
+  // postotkom + red "Ostalo" s automatskom bojnom skalom — identična logika
+  // kao stari generalizirani blok, samo parametrizirana po ključu usluge
+  // ('domaca' / 'medjunarodna' / 'fedex_express' / 'fedex_economy') da se
+  // izbjegne duplicirani kod.
+  var KG_RANGES = [
+    'Od 0.00 kg do 2.00 kg', 'Od 2.00 kg do 5.00 kg', 'Od 5.00 kg do 10.00 kg',
+    'Od 10.00 kg do 15.00 kg', 'Od 15.00 kg do 20.00 kg', 'Od 20.00 kg do 25.00 kg',
+    'Od 25.00 kg do 30.00 kg', 'Od 30.00 kg do 35.00 kg', 'Od 35.00 kg do 40.00 kg',
+    'Od 40.00 kg do 45.00 kg', 'Od 45.00 kg do 50.00 kg', 'Od 50.00 kg do 60.00 kg',
+    'Od 60.00 kg do 70.00 kg', 'Od 70.00 kg do 80.00 kg', 'Od 80.00 kg do 90.00 kg',
+    'Od 90.00 kg do 100.00 kg', 'Od 100.00 kg do 150.00 kg', 'Od 150.00 kg do 200.00 kg',
+    'Od 200.00 kg do 250.00 kg', 'Od 250.00 kg do 300.00 kg', 'Od 300.00 kg do 350.00 kg',
+    'Od 350.00 kg do 400.00 kg', 'Od 400.00 kg do 450.00 kg', 'Od 450.00 kg do 500.00 kg',
+    'Od 500.00 kg do 600.00 kg', 'Od 600.00 kg do 700.00 kg', 'Od 700.00 kg do 800.00 kg',
+    'Od 800.00 kg do 900.00 kg', 'Od 900.00 kg do 1000.00 kg', 'Od 1000.00 kg do 1500.00 kg',
+    'Od 1500.00 kg do 2000.00 kg', 'Od 2000.00 kg do 2500.00 kg', 'Od 2500.00 kg do 3000.00 kg'
+  ];
+
+  // Težinski razredi specifični za FedEx EXPRESS i FedEx ECONOMY (12 razreda po
+  // usluzi, umjesto generičkih 33 iz KG_RANGES) — izvedeni iz FedEx cjenika
+  // (InTime_Code.gs/dokumentacija dostavljena od korisnika): EXPRESS prati
+  // stvarne prijelome cjenika za lagane/brze pošiljke (FedEx Envelope do 0,5 kg,
+  // FedEx PAK do 2,5 kg, "Ostala pakiranja" do 70,5 kg, pa cijena po kg za
+  // 71-99/100-299/300-499 itd.); ECONOMY prati cjenik za veće/sporije pošiljke
+  // koji počinje tek od "do 5 kg" razreda i ide u koracima od 1 kg (do 45 kg),
+  // pa 5 kg (do 100 kg), pa dodatnih 20 kg iznad 100 kg. Razredi NISU doslovni
+  // prijepis svakog retka cjenika (to bi bilo prefino/nepraktično za odabir u
+  // upitniku), nego zaokruženi u 12 praktičnih raspona po uzoru na te prijelome.
+  var KG_RANGES_FEDEX_EXPRESS = [
+    'Do 0.50 kg (dokumenti / FedEx Envelope)', 'Od 0.50 kg do 1.00 kg', 'Od 1.00 kg do 2.50 kg (FedEx PAK)',
+    'Od 2.50 kg do 5.00 kg', 'Od 5.00 kg do 10.00 kg', 'Od 10.00 kg do 15.00 kg',
+    'Od 15.00 kg do 20.00 kg', 'Od 20.00 kg do 30.00 kg', 'Od 30.00 kg do 50.00 kg',
+    'Od 50.00 kg do 70.00 kg', 'Od 70.00 kg do 100.00 kg', 'Preko 100.00 kg'
+  ];
+  var KG_RANGES_FEDEX_ECONOMY = [
+    'Do 5.00 kg', 'Od 5.00 kg do 10.00 kg', 'Od 10.00 kg do 15.00 kg',
+    'Od 15.00 kg do 20.00 kg', 'Od 20.00 kg do 25.00 kg', 'Od 25.00 kg do 30.00 kg',
+    'Od 30.00 kg do 40.00 kg', 'Od 40.00 kg do 50.00 kg', 'Od 50.00 kg do 70.00 kg',
+    'Od 70.00 kg do 85.00 kg', 'Od 85.00 kg do 100.00 kg', 'Preko 100.00 kg'
+  ];
+
+  // Popisi zemalja s pripadajućim zonama za padajuće izbornike "U koje
+  // zemlje/iz kojih zemalja..." (12. poglavlje, Opseg pošiljaka), umetnuti
+  // neposredno PRIJE pitanja o omjeru izvoza/uvoza za svaku od tri usluge
+  // koje imaju izvoz/uvoz dimenziju (Međunarodna InTime, FedEx EXPRESS,
+  // FedEx ECONOMY) — Domaća distribucija nema ovu dimenziju pa nema ni
+  // popis zemalja. Međunarodna InTime distribucija ide u fiksnih 5 zemalja
+  // iz vlastite (ne-FedEx) regionalne mreže, bez oznake zone. FedEx EXPRESS
+  // i FedEx ECONOMY zone su izvučene iz FedEx cjenika (zasebne tablice zona
+  // "Zone EXPRESS" str. 3-4 i "Zone ECONOMY" str. 13-15) — skup zemalja je
+  // isti (197 zemalja) u obje tablice, ali dodijeljena ZONA za istu zemlju
+  // se razlikuje (EXPRESS koristi slovne zone A-K, ECONOMY brojčane 1-9),
+  // stoga su namjerno dvije odvojene, potpune liste (a ne jedna dijeljena
+  // lista zemalja s dvije zone) kako bi svaka usluga imala vlastiti,
+  // samostalan izvor podataka po istom principu kao KG_RANGES_FEDEX_*.
+  var ZEMLJE_MEDJUNARODNA = ['Slovenija', 'Srbija', 'Crna Gora', 'Bosna i Hercegovina', 'Sjeverna Makedonija'];
+
+  var ZEMLJE_FEDEX_EXPRESS = [
+    { naziv: 'Afganistan', zona: 'E' },
+    { naziv: 'Albanija', zona: 'K' },
+    { naziv: 'Alžir', zona: 'E' },
+    { naziv: 'Američka Samoa', zona: 'E' },
+    { naziv: 'Andora', zona: 'I' },
+    { naziv: 'Angola', zona: 'E' },
+    { naziv: 'Angvila', zona: 'D' },
+    { naziv: 'Antigva i Barbuda', zona: 'D' },
+    { naziv: 'Argentina', zona: 'D' },
+    { naziv: 'Armenija', zona: 'E' },
+    { naziv: 'Aruba', zona: 'D' },
+    { naziv: 'Australija', zona: 'B' },
+    { naziv: 'Austrija', zona: 'I' },
+    { naziv: 'Azerbajdžan', zona: 'E' },
+    { naziv: 'Bahami', zona: 'D' },
+    { naziv: 'Bahrein', zona: 'C' },
+    { naziv: 'Bangladeš', zona: 'C' },
+    { naziv: 'Barbados', zona: 'D' },
+    { naziv: 'Belgija', zona: 'I' },
+    { naziv: 'Belize', zona: 'D' },
+    { naziv: 'Benin', zona: 'E' },
+    { naziv: 'Bermudi', zona: 'D' },
+    { naziv: 'Bjelorusija', zona: 'K' },
+    { naziv: 'Bocvana', zona: 'E' },
+    { naziv: 'Bolivija', zona: 'D' },
+    { naziv: 'Bonaire', zona: 'D' },
+    { naziv: 'Bosna i Hercegovina', zona: 'K' },
+    { naziv: 'Brazil', zona: 'D' },
+    { naziv: 'Britanski Djevičanski otoci', zona: 'D' },
+    { naziv: 'Brunej', zona: 'C' },
+    { naziv: 'Bugarska', zona: 'K' },
+    { naziv: 'Burkina Faso', zona: 'E' },
+    { naziv: 'Burundi', zona: 'E' },
+    { naziv: 'Butan', zona: 'C' },
+    { naziv: 'Čad', zona: 'E' },
+    { naziv: 'Češka', zona: 'I' },
+    { naziv: 'Čile', zona: 'D' },
+    { naziv: 'Cipar', zona: 'C' },
+    { naziv: 'Cookovi otoci', zona: 'E' },
+    { naziv: 'Crna Gora', zona: 'K' },
+    { naziv: 'Curaçao', zona: 'D' },
+    { naziv: 'Danska', zona: 'I' },
+    { naziv: 'Djevičanski otoci (SAD)', zona: 'D' },
+    { naziv: 'Dominika', zona: 'D' },
+    { naziv: 'Dominikanska Republika', zona: 'D' },
+    { naziv: 'Džibuti', zona: 'E' },
+    { naziv: 'Egipat', zona: 'C' },
+    { naziv: 'Ekvador', zona: 'D' },
+    { naziv: 'El Salvador', zona: 'D' },
+    { naziv: 'Estonija', zona: 'K' },
+    { naziv: 'Esvatini (Svazi)', zona: 'E' },
+    { naziv: 'Etiopija', zona: 'E' },
+    { naziv: 'Farski otoci', zona: 'I' },
+    { naziv: 'Fiji', zona: 'E' },
+    { naziv: 'Filipini', zona: 'B' },
+    { naziv: 'Finska', zona: 'I' },
+    { naziv: 'Francuska', zona: 'I' },
+    { naziv: 'Francuska Gvajana', zona: 'D' },
+    { naziv: 'Francuska Polinezija', zona: 'E' },
+    { naziv: 'Gabon', zona: 'E' },
+    { naziv: 'Gambija', zona: 'E' },
+    { naziv: 'Gana', zona: 'E' },
+    { naziv: 'Gibraltar', zona: 'J' },
+    { naziv: 'Grčka', zona: 'I' },
+    { naziv: 'Grenada', zona: 'D' },
+    { naziv: 'Grenland', zona: 'I' },
+    { naziv: 'Gruzija', zona: 'E' },
+    { naziv: 'Guadeloupe', zona: 'D' },
+    { naziv: 'Guam', zona: 'E' },
+    { naziv: 'Gvajana', zona: 'D' },
+    { naziv: 'Gvatemala', zona: 'D' },
+    { naziv: 'Gvineja', zona: 'E' },
+    { naziv: 'Haiti', zona: 'D' },
+    { naziv: 'Honduras', zona: 'D' },
+    { naziv: 'Hong Kong', zona: 'B' },
+    { naziv: 'Indija', zona: 'C' },
+    { naziv: 'Indonezija', zona: 'B' },
+    { naziv: 'Irak', zona: 'C' },
+    { naziv: 'Irska', zona: 'I' },
+    { naziv: 'Island', zona: 'J' },
+    { naziv: 'Istočni Timor', zona: 'B' },
+    { naziv: 'Italija', zona: 'I' },
+    { naziv: 'Izrael', zona: 'C' },
+    { naziv: 'Jamajka', zona: 'D' },
+    { naziv: 'Japan', zona: 'B' },
+    { naziv: 'Jordan', zona: 'C' },
+    { naziv: 'Južna Koreja', zona: 'B' },
+    { naziv: 'Južnoafrička Republika', zona: 'D' },
+    { naziv: 'Kajmanski otoci', zona: 'D' },
+    { naziv: 'Kambodža', zona: 'C' },
+    { naziv: 'Kamerun', zona: 'E' },
+    { naziv: 'Kanada', zona: 'A' },
+    { naziv: 'Katar', zona: 'C' },
+    { naziv: 'Kazahstan', zona: 'E' },
+    { naziv: 'Kenija', zona: 'E' },
+    { naziv: 'Kina', zona: 'B' },
+    { naziv: 'Kirgistan', zona: 'E' },
+    { naziv: 'Kolumbija', zona: 'D' },
+    { naziv: 'Kostarika', zona: 'D' },
+    { naziv: 'Kuvajt', zona: 'C' },
+    { naziv: 'Laos', zona: 'C' },
+    { naziv: 'Latvija', zona: 'K' },
+    { naziv: 'Lesoto', zona: 'E' },
+    { naziv: 'Libanon', zona: 'C' },
+    { naziv: 'Liberija', zona: 'E' },
+    { naziv: 'Libija', zona: 'C' },
+    { naziv: 'Lihtenštajn', zona: 'J' },
+    { naziv: 'Litva', zona: 'K' },
+    { naziv: 'Luksemburg', zona: 'I' },
+    { naziv: 'Madagaskar', zona: 'E' },
+    { naziv: 'Mađarska', zona: 'I' },
+    { naziv: 'Makao', zona: 'B' },
+    { naziv: 'Malavi', zona: 'E' },
+    { naziv: 'Maldivi', zona: 'E' },
+    { naziv: 'Malezija', zona: 'B' },
+    { naziv: 'Mali', zona: 'E' },
+    { naziv: 'Malta', zona: 'C' },
+    { naziv: 'Martinique', zona: 'D' },
+    { naziv: 'Mauricijus', zona: 'E' },
+    { naziv: 'Mauritanija', zona: 'E' },
+    { naziv: 'Meksiko', zona: 'A' },
+    { naziv: 'Mikronezija', zona: 'E' },
+    { naziv: 'Moldova', zona: 'K' },
+    { naziv: 'Monako', zona: 'I' },
+    { naziv: 'Mongolija', zona: 'E' },
+    { naziv: 'Montserrat', zona: 'D' },
+    { naziv: 'Mozambik', zona: 'E' },
+    { naziv: 'Namibija', zona: 'E' },
+    { naziv: 'Nepal', zona: 'C' },
+    { naziv: 'Niger', zona: 'E' },
+    { naziv: 'Nigerija', zona: 'E' },
+    { naziv: 'Nikaragva', zona: 'D' },
+    { naziv: 'Nizozemska', zona: 'I' },
+    { naziv: 'Nizozemski Antili', zona: 'D' },
+    { naziv: 'Njemačka', zona: 'I' },
+    { naziv: 'Norveška', zona: 'J' },
+    { naziv: 'Nova Kaledonija', zona: 'E' },
+    { naziv: 'Novi Zeland', zona: 'B' },
+    { naziv: 'Obala Bjelokosti', zona: 'E' },
+    { naziv: 'Oman', zona: 'C' },
+    { naziv: 'Otoci Turks i Caicos', zona: 'D' },
+    { naziv: 'Pakistan', zona: 'C' },
+    { naziv: 'Palau', zona: 'E' },
+    { naziv: 'Palestina', zona: 'C' },
+    { naziv: 'Panama', zona: 'D' },
+    { naziv: 'Papua Nova Gvineja', zona: 'E' },
+    { naziv: 'Paragvaj', zona: 'D' },
+    { naziv: 'Peru', zona: 'D' },
+    { naziv: 'Poljska', zona: 'I' },
+    { naziv: 'Portugal', zona: 'I' },
+    { naziv: 'Republika Kongo', zona: 'E' },
+    { naziv: 'Reunion', zona: 'E' },
+    { naziv: 'Ruanda', zona: 'E' },
+    { naziv: 'Rumunjska', zona: 'K' },
+    { naziv: 'Rusija', zona: 'K' },
+    { naziv: 'Saipan', zona: 'E' },
+    { naziv: 'Samoa', zona: 'B' },
+    { naziv: 'Saudijska Arabija', zona: 'C' },
+    { naziv: 'Sejšeli', zona: 'E' },
+    { naziv: 'Senegal', zona: 'E' },
+    { naziv: 'Singapur', zona: 'B' },
+    { naziv: 'Sjedinjene Američke Države', zona: 'A' },
+    { naziv: 'Sjeverna Makedonija', zona: 'K' },
+    { naziv: 'Slovačka', zona: 'K' },
+    { naziv: 'Slovenija', zona: 'K' },
+    { naziv: 'Španjolska', zona: 'I' },
+    { naziv: 'Srbija', zona: 'K' },
+    { naziv: 'Šri Lanka', zona: 'C' },
+    { naziv: 'Surinam', zona: 'D' },
+    { naziv: 'Švedska', zona: 'I' },
+    { naziv: 'Sveta Lucija', zona: 'D' },
+    { naziv: 'Sveti Kristofor i Nevis', zona: 'D' },
+    { naziv: 'Sveti Martin (francuski dio)', zona: 'D' },
+    { naziv: 'Sveti Martin (nizozemski dio)', zona: 'D' },
+    { naziv: 'Sveti Vincent i Grenadini', zona: 'D' },
+    { naziv: 'Švicarska', zona: 'J' },
+    { naziv: 'Tajland', zona: 'B' },
+    { naziv: 'Tajvan', zona: 'B' },
+    { naziv: 'Tanzanija', zona: 'E' },
+    { naziv: 'Togo', zona: 'E' },
+    { naziv: 'Tonga', zona: 'E' },
+    { naziv: 'Tunis', zona: 'E' },
+    { naziv: 'Turska', zona: 'K' },
+    { naziv: 'Uganda', zona: 'E' },
+    { naziv: 'Ujedinjeni Arapski Emirati', zona: 'C' },
+    { naziv: 'Ujedinjeno Kraljevstvo', zona: 'I' },
+    { naziv: 'Ukrajina', zona: 'K' },
+    { naziv: 'Urugvaj', zona: 'D' },
+    { naziv: 'Vanuatu', zona: 'E' },
+    { naziv: 'Vatikan', zona: 'I' },
+    { naziv: 'Venezuela', zona: 'D' },
+    { naziv: 'Vijetnam', zona: 'B' },
+    { naziv: 'Wallis i Futuna', zona: 'E' },
+    { naziv: 'Zair', zona: 'E' },
+    { naziv: 'Zambija', zona: 'E' },
+    { naziv: 'Zelenortska Republika', zona: 'E' },
+    { naziv: 'Zimbabve', zona: 'E' }
+  ];
+
+  var ZEMLJE_FEDEX_ECONOMY = [
+    { naziv: 'Afganistan', zona: '8' },
+    { naziv: 'Albanija', zona: '4' },
+    { naziv: 'Alžir', zona: '8' },
+    { naziv: 'Američka Samoa', zona: '9' },
+    { naziv: 'Andora', zona: '4' },
+    { naziv: 'Angola', zona: '9' },
+    { naziv: 'Angvila', zona: '9' },
+    { naziv: 'Antigva i Barbuda', zona: '9' },
+    { naziv: 'Argentina', zona: '8' },
+    { naziv: 'Armenija', zona: '8' },
+    { naziv: 'Aruba', zona: '9' },
+    { naziv: 'Australija', zona: '8' },
+    { naziv: 'Austrija', zona: '1' },
+    { naziv: 'Azerbajdžan', zona: '8' },
+    { naziv: 'Bahami', zona: '9' },
+    { naziv: 'Bahrein', zona: '7' },
+    { naziv: 'Bangladeš', zona: '8' },
+    { naziv: 'Barbados', zona: '9' },
+    { naziv: 'Belgija', zona: '2' },
+    { naziv: 'Belize', zona: '9' },
+    { naziv: 'Benin', zona: '9' },
+    { naziv: 'Bermudi', zona: '9' },
+    { naziv: 'Bjelorusija', zona: '7' },
+    { naziv: 'Bocvana', zona: '8' },
+    { naziv: 'Bolivija', zona: '8' },
+    { naziv: 'Bonaire', zona: '9' },
+    { naziv: 'Bosna i Hercegovina', zona: '9' },
+    { naziv: 'Brazil', zona: '8' },
+    { naziv: 'Britanski Djevičanski otoci', zona: '9' },
+    { naziv: 'Brunej', zona: '8' },
+    { naziv: 'Bugarska', zona: '1' },
+    { naziv: 'Burkina Faso', zona: '9' },
+    { naziv: 'Burundi', zona: '9' },
+    { naziv: 'Butan', zona: '8' },
+    { naziv: 'Čad', zona: '9' },
+    { naziv: 'Češka', zona: '1' },
+    { naziv: 'Čile', zona: '8' },
+    { naziv: 'Cipar', zona: '7' },
+    { naziv: 'Cookovi otoci', zona: '9' },
+    { naziv: 'Crna Gora', zona: '9' },
+    { naziv: 'Curaçao', zona: '9' },
+    { naziv: 'Danska', zona: '3' },
+    { naziv: 'Djevičanski otoci (SAD)', zona: '9' },
+    { naziv: 'Dominika', zona: '9' },
+    { naziv: 'Dominikanska Republika', zona: '9' },
+    { naziv: 'Džibuti', zona: '8' },
+    { naziv: 'Egipat', zona: '7' },
+    { naziv: 'Ekvador', zona: '8' },
+    { naziv: 'El Salvador', zona: '8' },
+    { naziv: 'Estonija', zona: '4' },
+    { naziv: 'Esvatini (Svazi)', zona: '8' },
+    { naziv: 'Etiopija', zona: '8' },
+    { naziv: 'Farski otoci', zona: '7' },
+    { naziv: 'Fiji', zona: '8' },
+    { naziv: 'Filipini', zona: '6' },
+    { naziv: 'Finska', zona: '4' },
+    { naziv: 'Francuska', zona: '2' },
+    { naziv: 'Francuska Gvajana', zona: '8' },
+    { naziv: 'Francuska Polinezija', zona: '9' },
+    { naziv: 'Gabon', zona: '9' },
+    { naziv: 'Gambija', zona: '9' },
+    { naziv: 'Gana', zona: '8' },
+    { naziv: 'Gibraltar', zona: '7' },
+    { naziv: 'Grčka', zona: '3' },
+    { naziv: 'Grenada', zona: '8' },
+    { naziv: 'Grenland', zona: '7' },
+    { naziv: 'Gruzija', zona: '7' },
+    { naziv: 'Guadeloupe', zona: '9' },
+    { naziv: 'Guam', zona: '9' },
+    { naziv: 'Gvajana', zona: '9' },
+    { naziv: 'Gvatemala', zona: '9' },
+    { naziv: 'Gvineja', zona: '9' },
+    { naziv: 'Haiti', zona: '9' },
+    { naziv: 'Honduras', zona: '9' },
+    { naziv: 'Hong Kong', zona: '5' },
+    { naziv: 'Indija', zona: '5' },
+    { naziv: 'Indonezija', zona: '6' },
+    { naziv: 'Irak', zona: '9' },
+    { naziv: 'Irska', zona: '4' },
+    { naziv: 'Island', zona: '4' },
+    { naziv: 'Istočni Timor', zona: '9' },
+    { naziv: 'Italija', zona: '1' },
+    { naziv: 'Izrael', zona: '7' },
+    { naziv: 'Jamajka', zona: '9' },
+    { naziv: 'Japan', zona: '7' },
+    { naziv: 'Jordan', zona: '7' },
+    { naziv: 'Južna Koreja', zona: '9' },
+    { naziv: 'Južnoafrička Republika', zona: '8' },
+    { naziv: 'Kajmanski otoci', zona: '9' },
+    { naziv: 'Kambodža', zona: '8' },
+    { naziv: 'Kamerun', zona: '9' },
+    { naziv: 'Kanada', zona: '6' },
+    { naziv: 'Katar', zona: '7' },
+    { naziv: 'Kazahstan', zona: '8' },
+    { naziv: 'Kenija', zona: '8' },
+    { naziv: 'Kina', zona: '5' },
+    { naziv: 'Kirgistan', zona: '7' },
+    { naziv: 'Kolumbija', zona: '8' },
+    { naziv: 'Kostarika', zona: '9' },
+    { naziv: 'Kuvajt', zona: '7' },
+    { naziv: 'Laos', zona: '8' },
+    { naziv: 'Latvija', zona: '4' },
+    { naziv: 'Lesoto', zona: '8' },
+    { naziv: 'Libanon', zona: '7' },
+    { naziv: 'Liberija', zona: '9' },
+    { naziv: 'Libija', zona: '7' },
+    { naziv: 'Lihtenštajn', zona: '4' },
+    { naziv: 'Litva', zona: '4' },
+    { naziv: 'Luksemburg', zona: '2' },
+    { naziv: 'Madagaskar', zona: '8' },
+    { naziv: 'Mađarska', zona: '1' },
+    { naziv: 'Makao', zona: '7' },
+    { naziv: 'Malavi', zona: '9' },
+    { naziv: 'Maldivi', zona: '9' },
+    { naziv: 'Malezija', zona: '6' },
+    { naziv: 'Mali', zona: '9' },
+    { naziv: 'Malta', zona: '7' },
+    { naziv: 'Martinique', zona: '9' },
+    { naziv: 'Mauricijus', zona: '8' },
+    { naziv: 'Mauritanija', zona: '9' },
+    { naziv: 'Meksiko', zona: '8' },
+    { naziv: 'Mikronezija', zona: '9' },
+    { naziv: 'Moldova', zona: '7' },
+    { naziv: 'Monako', zona: '4' },
+    { naziv: 'Mongolija', zona: '8' },
+    { naziv: 'Montserrat', zona: '9' },
+    { naziv: 'Mozambik', zona: '9' },
+    { naziv: 'Namibija', zona: '8' },
+    { naziv: 'Nepal', zona: '8' },
+    { naziv: 'Niger', zona: '9' },
+    { naziv: 'Nigerija', zona: '8' },
+    { naziv: 'Nikaragva', zona: '9' },
+    { naziv: 'Nizozemska', zona: '2' },
+    { naziv: 'Nizozemski Antili', zona: '9' },
+    { naziv: 'Njemačka', zona: '1' },
+    { naziv: 'Norveška', zona: '4' },
+    { naziv: 'Nova Kaledonija', zona: '9' },
+    { naziv: 'Novi Zeland', zona: '8' },
+    { naziv: 'Obala Bjelokosti', zona: '9' },
+    { naziv: 'Oman', zona: '7' },
+    { naziv: 'Otoci Turks i Caicos', zona: '9' },
+    { naziv: 'Pakistan', zona: '8' },
+    { naziv: 'Palau', zona: '9' },
+    { naziv: 'Palestina', zona: '9' },
+    { naziv: 'Panama', zona: '9' },
+    { naziv: 'Papua Nova Gvineja', zona: '9' },
+    { naziv: 'Paragvaj', zona: '8' },
+    { naziv: 'Peru', zona: '8' },
+    { naziv: 'Poljska', zona: '1' },
+    { naziv: 'Portugal', zona: '4' },
+    { naziv: 'Republika Kongo', zona: '9' },
+    { naziv: 'Reunion', zona: '8' },
+    { naziv: 'Ruanda', zona: '8' },
+    { naziv: 'Rumunjska', zona: '1' },
+    { naziv: 'Rusija', zona: '4' },
+    { naziv: 'Saipan', zona: '9' },
+    { naziv: 'Samoa', zona: '9' },
+    { naziv: 'Saudijska Arabija', zona: '7' },
+    { naziv: 'Sejšeli', zona: '8' },
+    { naziv: 'Senegal', zona: '8' },
+    { naziv: 'Singapur', zona: '6' },
+    { naziv: 'Sjedinjene Američke Države', zona: '5' },
+    { naziv: 'Sjeverna Makedonija', zona: '4' },
+    { naziv: 'Slovačka', zona: '3' },
+    { naziv: 'Slovenija', zona: '9' },
+    { naziv: 'Španjolska', zona: '3' },
+    { naziv: 'Srbija', zona: '9' },
+    { naziv: 'Šri Lanka', zona: '8' },
+    { naziv: 'Surinam', zona: '8' },
+    { naziv: 'Švedska', zona: '4' },
+    { naziv: 'Sveta Lucija', zona: '9' },
+    { naziv: 'Sveti Kristofor i Nevis', zona: '9' },
+    { naziv: 'Sveti Martin (francuski dio)', zona: '9' },
+    { naziv: 'Sveti Martin (nizozemski dio)', zona: '9' },
+    { naziv: 'Sveti Vincent i Grenadini', zona: '9' },
+    { naziv: 'Švicarska', zona: '4' },
+    { naziv: 'Tajland', zona: '6' },
+    { naziv: 'Tajvan', zona: '7' },
+    { naziv: 'Tanzanija', zona: '8' },
+    { naziv: 'Togo', zona: '9' },
+    { naziv: 'Tonga', zona: '9' },
+    { naziv: 'Tunis', zona: '8' },
+    { naziv: 'Turska', zona: '3' },
+    { naziv: 'Uganda', zona: '8' },
+    { naziv: 'Ujedinjeni Arapski Emirati', zona: '5' },
+    { naziv: 'Ujedinjeno Kraljevstvo', zona: '2' },
+    { naziv: 'Ukrajina', zona: '4' },
+    { naziv: 'Urugvaj', zona: '9' },
+    { naziv: 'Vanuatu', zona: '9' },
+    { naziv: 'Vatikan', zona: '4' },
+    { naziv: 'Venezuela', zona: '9' },
+    { naziv: 'Vijetnam', zona: '6' },
+    { naziv: 'Wallis i Futuna', zona: '9' },
+    { naziv: 'Zair', zona: '9' },
+    { naziv: 'Zambija', zona: '9' },
+    { naziv: 'Zelenortska Republika', zona: '9' },
+    { naziv: 'Zimbabve', zona: '9' }
+  ];
+
+  var USLUGA_BLOCI = [
+    { key: 'domaca', naziv: 'Domaća InTime distribucija', osnovnaVrijednost: 'In Time d.o.o. – DOMAĆA INTIME DISTRIBUCIJA', ranges: KG_RANGES },
+    { key: 'medjunarodna', naziv: 'Međunarodna InTime distribucija (Slo, BiH, Srb, CG, Sj. Mak.) – UVOZ/IZVOZ', osnovnaVrijednost: 'Međunarodna InTime distribucija (Slo, BiH, Srb, CG, Sj. Mak.) – UVOZ/IZVOZ', ranges: KG_RANGES, zemlje: ZEMLJE_MEDJUNARODNA },
+    { key: 'fedex_express', naziv: 'Međunarodna distribucija – FedEx EXPRESS – UVOZ/IZVOZ', osnovnaVrijednost: 'Međunarodna distribucija – FedEx EXPRESS – UVOZ/IZVOZ', ranges: KG_RANGES_FEDEX_EXPRESS, zemlje: ZEMLJE_FEDEX_EXPRESS },
+    { key: 'fedex_economy', naziv: 'Međunarodna distribucija – FedEx ECONOMY – UVOZ/IZVOZ', osnovnaVrijednost: 'Međunarodna distribucija – FedEx ECONOMY – UVOZ/IZVOZ', ranges: KG_RANGES_FEDEX_ECONOMY, zemlje: ZEMLJE_FEDEX_ECONOMY }
+  ];
+
+  var USLUGA_KAT_MAX = 7;
+
+  // "Novi klijent bez procjene opsega" (12. poglavlje, checkbox novi_klijent_bez_opsega)
+  // — kad je označeno, za sve VIDLJIVE usluga-blokove: (a) sakriva se "Prosječan
+  // broj pošiljaka" (label+pair, id usluga-{key}-broj-blok), (b) dinamički redovi
+  // po odabranoj kategoriji težine grade se u POJEDNOSTAVLJENOM obliku (samo naziv
+  // kategorije, bez unosa broja/postotka i bez automatskog "Ostalo" retka — vidi
+  // renderUslugaKategorijeRows()), (c) submitForm() preskače provjeru "upisan broj
+  // pošiljaka" i provjeru "raspoređeno barem 90%" za sve usluge (vidi dolje). Odabir
+  // kategorija težine (`kategorije_tezine_{key}`, data-required-group) ostaje
+  // obavezan kao i inače — novi klijent i dalje mora naznačiti OČEKIVANE kategorije,
+  // samo ne mora znati točan broj/raspodjelu.
+  function jeNoviKlijentBezOpsega(){
+    var cb = document.querySelector('input[name="novi_klijent_bez_opsega"]');
+    return !!(cb && cb.checked);
+  }
+
+  function updateNoviKlijentBezOpsega(){
+    var noviKlijent = jeNoviKlijentBezOpsega();
+    USLUGA_BLOCI.forEach(function(u){
+      var brojBlok = document.getElementById('usluga-' + u.key + '-broj-blok');
+      if (brojBlok) { brojBlok.classList.toggle('ostalo-hidden', noviKlijent); }
+
+      var hint = document.getElementById('usluga-' + u.key + '-kategorije-hint');
+      if (hint) {
+        hint.innerHTML = noviKlijent
+          ? 'Budući da ste naveli da ste novi klijent, dovoljno je odabrati kategorije težine koje očekujete — broj pošiljaka i raspoređivanje po postotku ovdje nisu potrebni.'
+          : 'Za svaku odabranu kategoriju unesite broj pošiljaka za isto razdoblje odabrano gore. Postotak udjela svake kategorije izračunat će se automatski.<br>Potrebno je rasporediti najmanje 90% ukupnog broja pošiljaka za ovu uslugu, odnosno neraspoređeno može ostati najviše 10%.';
+      }
+
+      // Ponovno iscrtaj trenutno odabrane kategorije u ispravnom (pojednostavljenom/punom) obliku.
+      var wrap = document.getElementById('msdrop-usluga-' + u.key);
+      if (wrap) {
+        var checked = wrap.querySelectorAll('input[type=checkbox]:checked');
+        var values = [];
+        checked.forEach(function(cb2){ values.push(cb2.value); });
+        renderUslugaKategorijeRows(u.key, values);
+      }
+    });
+  }
+
+  function buildUslugaMsdropPanels(){
+    USLUGA_BLOCI.forEach(function(u){
+      var panel = document.getElementById('msdrop-panel-usluga-' + u.key);
+      if (!panel) { return; }
+      (u.ranges || KG_RANGES).forEach(function(kg){
+        var label = document.createElement('label');
+        var input = document.createElement('input');
+        input.type = 'checkbox';
+        input.name = 'kategorije_tezine_' + u.key;
+        input.value = kg;
+        input.addEventListener('change', function(){
+          updateMsDrop(input);
+          handleUslugaKategorijeChange(input, u.key);
+        });
+        label.appendChild(input);
+        label.appendChild(document.createTextNode(' ' + kg));
+        panel.appendChild(label);
+      });
+    });
+  }
+
+  // Generička izgradnja padajućeg popisa zemalja (checkbox multi-select) za
+  // svaku uslugu koja u USLUGA_BLOCI ima definiran `zemlje` popis — isti
+  // parametrizirani obrazac kao buildUslugaMsdropPanels() gore. Za
+  // Međunarodnu InTime distribuciju `zemlje` je obični niz stringova (bez
+  // zone), a za FedEx EXPRESS/ECONOMY niz {naziv, zona} objekata — zona se
+  // ispisuje odmah pokraj naziva zemlje i ostaje dio prikaza/vrijednosti
+  // checkboxa (dakle vidljiva i nakon odabira, ne samo u samom popisu).
+  function buildUslugaZemljePanels(){
+    USLUGA_BLOCI.forEach(function(u){
+      if (!u.zemlje) { return; }
+      var panel = document.getElementById('msdrop-panel-zemlje-' + u.key);
+      if (!panel) { return; }
+      u.zemlje.forEach(function(z){
+        var naziv = (typeof z === 'string') ? z : z.naziv;
+        var zona = (typeof z === 'string') ? '' : z.zona;
+        var value = zona ? (naziv + ' (Zona ' + zona + ')') : naziv;
+        var label = document.createElement('label');
+        var input = document.createElement('input');
+        input.type = 'checkbox';
+        input.name = 'zemlje_' + u.key;
+        input.value = value;
+        input.addEventListener('change', function(){ updateMsDrop(input); });
+        label.appendChild(input);
+        label.appendChild(document.createTextNode(' ' + value));
+        panel.appendChild(label);
+      });
+    });
+  }
+
+  function handleUslugaKategorijeChange(checkbox, key){
+    var wrap = checkbox.closest('.msdrop');
+    if (!wrap) { return; }
+    var boxes = wrap.querySelectorAll('input[type=checkbox]');
+    var checked = wrap.querySelectorAll('input[type=checkbox]:checked');
+
+    boxes.forEach(function(b){
+      b.disabled = (checked.length >= USLUGA_KAT_MAX && !b.checked);
+      var lbl = b.closest('label');
+      if (lbl) { lbl.classList.toggle('msdrop-disabled', b.disabled); }
+    });
+
+    var countEl = wrap.querySelector('.msdrop-count');
+    if (countEl) {
+      countEl.textContent = checked.length >= USLUGA_KAT_MAX
+        ? (USLUGA_KAT_MAX + ' odabrano (maksimalno)')
+        : (checked.length > 0 ? (checked.length + ' odabrano') : '');
+    }
+
+    var values = [];
+    checked.forEach(function(cb){ values.push(cb.value); });
+    renderUslugaKategorijeRows(key, values);
+  }
+
+  function renderUslugaKategorijeRows(key, selectedValues){
+    var container = document.getElementById('usluga-' + key + '-kategorije-rows');
+    if (!container) { return; }
+
+    var saved = {};
+    container.querySelectorAll('.kat-tezine-row[data-kategorija]').forEach(function(row){
+      var kat = row.getAttribute('data-kategorija');
+      var brojEl = row.querySelector('input[data-role=broj]');
+      saved[kat] = { broj: brojEl ? brojEl.value : '' };
+    });
+
+    container.innerHTML = '';
+
+    if (jeNoviKlijentBezOpsega()) {
+      selectedValues.forEach(function(value, idx){
+        var slot = idx + 1;
+
+        var row = document.createElement('div');
+        row.className = 'kat-tezine-row';
+        row.setAttribute('data-kategorija', value);
+
+        var label = document.createElement('label');
+        label.className = 'kat-tezine-row-label';
+        label.textContent = value;
+        row.appendChild(label);
+
+        var hiddenNaziv = document.createElement('input');
+        hiddenNaziv.type = 'hidden';
+        hiddenNaziv.name = 'kat_tezine_' + key + '_naziv_' + slot;
+        hiddenNaziv.value = value;
+        row.appendChild(hiddenNaziv);
+
+        container.appendChild(row);
+      });
+      return;
+    }
+
+    selectedValues.forEach(function(value, idx){
+      var slot = idx + 1;
+      var prev = saved[value] || { broj: '' };
+
+      var row = document.createElement('div');
+      row.className = 'kat-tezine-row';
+      row.setAttribute('data-kategorija', value);
+
+      var label = document.createElement('label');
+      label.className = 'kat-tezine-row-label';
+      label.textContent = value;
+      row.appendChild(label);
+
+      var pair = document.createElement('div');
+      pair.className = 'pair';
+
+      var brojWrap = document.createElement('div');
+      brojWrap.className = 'kat-tezine-field';
+      var brojLabel = document.createElement('label');
+      brojLabel.textContent = 'Broj pošiljaka u ovoj kategoriji (za razdoblje odabrano gore)';
+      brojWrap.appendChild(brojLabel);
+      var brojInput = document.createElement('input');
+      brojInput.type = 'text';
+      brojInput.name = 'kat_tezine_' + key + '_broj_' + slot;
+      brojInput.setAttribute('data-role', 'broj');
+      brojInput.inputMode = 'numeric';
+      brojInput.placeholder = 'npr. 25';
+      brojInput.value = prev.broj;
+      brojInput.addEventListener('input', function(){ recalcUslugaKategorije(key); });
+      brojWrap.appendChild(brojInput);
+      pair.appendChild(brojWrap);
+
+      var postotakWrap = document.createElement('div');
+      postotakWrap.className = 'kat-tezine-field';
+      var postotakLabel = document.createElement('label');
+      postotakLabel.textContent = 'Postotak u ukupnom udjelu pošiljaka (automatski izračun)';
+      postotakWrap.appendChild(postotakLabel);
+      var postotakInput = document.createElement('input');
+      postotakInput.type = 'text';
+      postotakInput.name = 'kat_tezine_' + key + '_postotak_' + slot;
+      postotakInput.setAttribute('data-role', 'postotak');
+      postotakInput.readOnly = true;
+      postotakWrap.appendChild(postotakInput);
+      pair.appendChild(postotakWrap);
+
+      row.appendChild(pair);
+
+      var hiddenNaziv = document.createElement('input');
+      hiddenNaziv.type = 'hidden';
+      hiddenNaziv.name = 'kat_tezine_' + key + '_naziv_' + slot;
+      hiddenNaziv.value = value;
+      row.appendChild(hiddenNaziv);
+
+      container.appendChild(row);
+    });
+
+    if (selectedValues.length > 0) {
+      var ostaloRow = document.createElement('div');
+      ostaloRow.className = 'kat-tezine-row kat-tezine-ostalo-row';
+      var ostaloLabel = document.createElement('label');
+      ostaloLabel.className = 'kat-tezine-row-label';
+      ostaloLabel.textContent = 'Ostali težinski razredi – neraspoređene pošiljke';
+      ostaloRow.appendChild(ostaloLabel);
+
+      var ostaloPair = document.createElement('div');
+      ostaloPair.className = 'pair';
+
+      var ostaloPostotakWrap = document.createElement('div');
+      ostaloPostotakWrap.className = 'kat-tezine-field';
+      var ostaloPostotakLabel = document.createElement('label');
+      ostaloPostotakLabel.textContent = 'Postotak neraspoređenih pošiljaka (razlika do 100%)';
+      var ostaloPostotakBadge = document.createElement('span');
+      ostaloPostotakBadge.className = 'kat-tezine-badge';
+      ostaloPostotakBadge.textContent = 'Automatski izračun aktivan';
+      ostaloPostotakLabel.appendChild(ostaloPostotakBadge);
+      ostaloPostotakWrap.appendChild(ostaloPostotakLabel);
+      var ostaloPostotakInput = document.createElement('input');
+      ostaloPostotakInput.type = 'text';
+      ostaloPostotakInput.id = 'kat-tezine-' + key + '-ostalo-postotak';
+      ostaloPostotakInput.name = 'kat_tezine_' + key + '_ostalo_postotak';
+      ostaloPostotakInput.readOnly = true;
+      ostaloPostotakWrap.appendChild(ostaloPostotakInput);
+      ostaloPair.appendChild(ostaloPostotakWrap);
+
+      var ostaloBrojWrap = document.createElement('div');
+      ostaloBrojWrap.className = 'kat-tezine-field';
+      var ostaloBrojLabel = document.createElement('label');
+      ostaloBrojLabel.textContent = 'Broj neraspoređenih pošiljaka';
+      var ostaloBrojBadge = document.createElement('span');
+      ostaloBrojBadge.className = 'kat-tezine-badge';
+      ostaloBrojBadge.textContent = 'Automatski izračun aktivan';
+      ostaloBrojLabel.appendChild(ostaloBrojBadge);
+      ostaloBrojWrap.appendChild(ostaloBrojLabel);
+      var ostaloBrojInput = document.createElement('input');
+      ostaloBrojInput.type = 'text';
+      ostaloBrojInput.id = 'kat-tezine-' + key + '-ostalo-broj';
+      ostaloBrojInput.name = 'kat_tezine_' + key + '_ostalo_broj';
+      ostaloBrojInput.readOnly = true;
+      ostaloBrojWrap.appendChild(ostaloBrojInput);
+      ostaloPair.appendChild(ostaloBrojWrap);
+
+      ostaloRow.appendChild(ostaloPair);
+      container.appendChild(ostaloRow);
+    }
+
+    recalcUslugaKategorije(key);
+  }
+
+  function recalcUslugaKategorije(key){
+    var container = document.getElementById('usluga-' + key + '-kategorije-rows');
+    var ostaloPostotakInput = document.getElementById('kat-tezine-' + key + '-ostalo-postotak');
+    var ostaloBrojInput = document.getElementById('kat-tezine-' + key + '-ostalo-broj');
+    if (!container || !ostaloPostotakInput || !ostaloBrojInput) { return; }
+
+    var ukupnoEl = document.getElementById('broj-usluga-' + key + '-input');
+    var ukupno = ukupnoEl ? parseFloat(String(ukupnoEl.value).replace(',', '.')) : NaN;
+
+    var sumPostotak = 0;
+    var sumBroj = 0;
+    container.querySelectorAll('.kat-tezine-row[data-kategorija]').forEach(function(row){
+      var brojInput = row.querySelector('input[data-role=broj]');
+      var postotakInput = row.querySelector('input[data-role=postotak]');
+      if (!brojInput || !postotakInput) { return; }
+      var broj = parseFloat(String(brojInput.value).replace(',', '.'));
+      if (!isNaN(broj)) { sumBroj += broj; }
+      if (!isNaN(broj) && !isNaN(ukupno) && ukupno > 0) {
+        var pct = Math.round((broj / ukupno) * 1000) / 10;
+        postotakInput.value = pct + '%';
+        sumPostotak += pct;
+      } else {
+        postotakInput.value = '';
+      }
+    });
+
+    var razlikaPostotak = Math.round((100 - sumPostotak) * 10) / 10;
+    ostaloPostotakInput.value = razlikaPostotak + '%';
+
+    if (!isNaN(ukupno) && ukupno > 0) {
+      var razlikaBroj = Math.round((ukupno - sumBroj) * 10) / 10;
+      ostaloBrojInput.value = String(razlikaBroj);
+    } else {
+      ostaloBrojInput.value = '';
+    }
+
+    var rasporedjenoPct = Math.max(0, Math.min(100, sumPostotak));
+    var rgb = (razlikaPostotak < 0)
+      ? [143, 31, 22]
+      : kategorijeTezineBojaZaPostotak(rasporedjenoPct);
+    var boja = 'rgb(' + rgb[0] + ',' + rgb[1] + ',' + rgb[2] + ')';
+    var pozadina = 'rgba(' + rgb[0] + ',' + rgb[1] + ',' + rgb[2] + ',0.13)';
+
+    var ostaloRowEl = container.querySelector('.kat-tezine-ostalo-row');
+    if (ostaloRowEl) {
+      ostaloRowEl.style.background = pozadina;
+      ostaloRowEl.style.borderColor = boja;
+      var ostaloRowLabelEl = ostaloRowEl.querySelector('.kat-tezine-row-label');
+      if (ostaloRowLabelEl) { ostaloRowLabelEl.style.color = boja; }
+    }
+    [ostaloPostotakInput, ostaloBrojInput].forEach(function(input){
+      input.style.background = pozadina;
+      input.style.color = boja;
+      input.style.borderColor = boja;
+    });
+  }
+
+  function clearUslugaBlok(key){
+    var brojInput = document.getElementById('broj-usluga-' + key + '-input');
+    if (brojInput) { brojInput.value = ''; }
+    var razdoblje = document.querySelector('select[name="razdoblje_usluga_' + key + '"]');
+    if (razdoblje) { razdoblje.value = 'Mjesečno'; }
+    var panel = document.getElementById('msdrop-panel-usluga-' + key);
+    if (panel) {
+      panel.querySelectorAll('input[type=checkbox]').forEach(function(cb){
+        cb.checked = false;
+        cb.disabled = false;
+        var lbl = cb.closest('label');
+        if (lbl) { lbl.classList.remove('msdrop-disabled'); }
+      });
+    }
+    var wrap = document.getElementById('msdrop-usluga-' + key);
+    if (wrap) {
+      var countEl = wrap.querySelector('.msdrop-count');
+      if (countEl) { countEl.textContent = ''; }
+    }
+    renderUslugaKategorijeRows(key, []);
+    var izvozUvozInput = document.getElementById('izvoz-uvoz-' + key + '-range');
+    if (izvozUvozInput) {
+      izvozUvozInput.value = 50;
+      updateIzvozUvozSlider(key);
+    }
+  }
+
+  // Klizač "Kakav je omjer izvoza i uvoza..." (samo za Međunarodna InTime distribucija i
+  // FedEx blokove — Domaća InTime distribucija nema uvoz/izvoz dimenziju). Lijevo = Izvoz,
+  // desno = Uvoz; vrijednost inputa je postotak IZVOZA (0 = 0% izvoz/100% uvoz, 100 = 100%
+  // izvoz/0% uvoz, 50 = 50/50) — traka je zeleno-crvena (izvoz zeleno, uvoz crveno), vidi
+  // .izvoz-uvoz-slider CSS. Isti vizualni obrazac kao crni_petak klizač (jednobojan, purple).
+  function updateIzvozUvozSlider(key){
+    var input = document.getElementById('izvoz-uvoz-' + key + '-range');
+    if (!input) { return; }
+    var val = parseInt(input.value, 10);
+    if (isNaN(val)) { val = 50; }
+    input.style.setProperty('--val', val + '%');
+    var valText = document.getElementById('izvoz-uvoz-' + key + '-value');
+    if (valText) { valText.textContent = 'Izvoz ' + val + '% / Uvoz ' + (100 - val) + '%'; }
+  }
+  (function initIzvozUvozSliders(){
+    ['medjunarodna', 'fedex_express', 'fedex_economy'].forEach(function(key){
+      var input = document.getElementById('izvoz-uvoz-' + key + '-range');
+      if (input) { updateIzvozUvozSlider(key); }
+    });
+  })();
+
+  function updateUslugaBlokoviVisibility(){
+    var brojVidljivih = 0;
+    USLUGA_BLOCI.forEach(function(u){
+      var cb = document.querySelector('input[name="osnovne_usluge"][value="' + u.osnovnaVrijednost.replace(/"/g, '\\"') + '"]');
+      var blok = document.getElementById('usluga-blok-' + u.key);
+      if (!blok) { return; }
+      if (cb && cb.checked) {
+        blok.classList.remove('ostalo-hidden');
+        brojVidljivih++;
+      } else {
+        blok.classList.add('ostalo-hidden');
+        clearUslugaBlok(u.key);
+      }
+    });
+    var noneHint = document.getElementById('usluga-blokovi-none-hint');
+    if (noneHint) {
+      if (brojVidljivih === 0) { noneHint.classList.remove('ostalo-hidden'); }
+      else { noneHint.classList.add('ostalo-hidden'); }
+    }
+    // Čim je označena barem jedna glavna usluga, uklanjamo privremeno crveno
+    // isticanje pitanja (postavljeno u skociNaOsnovneUsluge()) jer je "greška" ispravljena.
+    if (brojVidljivih > 0) {
+      var pitanje = document.getElementById('osnovne-usluge-pitanje');
+      if (pitanje) { pitanje.classList.remove('pitanje-istaknuto'); }
+    }
+  }
+
+  // "Carinsko posredovanje" i "Skladištenje i fulfillment usluge" (9. poglavlje,
+  // `osnovne_usluge`) NISU samostalne usluge — pružamo ih isključivo uz vlastitu
+  // uslugu transporta. Ako korisnik odabere jednu od njih (ili obje) BEZ da je
+  // odabrana barem jedna od osnovnih transportnih usluga (Domaća InTime
+  // distribucija / Međunarodna InTime distribucija / FedEx EXPRESS / FedEx
+  // ECONOMY), ODMAH (uživo, ne tek
+  // pri slanju) prikazuje se objašnjenje uz istovremeno crveno isticanje samog
+  // pitanja (ista `pitanje-istaknuto` klasa kao kod `skociNaOsnovneUsluge()`) —
+  // pozvano preko `onchange` na svih 5 `osnovne_usluge` checkboxova. Ovo je uz,
+  // ne umjesto, postojeće `imaGlavnuUslugu` provjere u `submitForm()` (koja i
+  // dalje blokira slanje u istom scenariju, bez obzira je li korisnik ovo
+  // upozorenje uopće vidio/pomaknuo se dalje bez ispravke).
+  function updateCarinaSkladisteUpozorenje(){
+    var upozorenje = document.getElementById('carina-skladiste-upozorenje');
+    var pitanje = document.getElementById('osnovne-usluge-pitanje');
+    if (!upozorenje || !pitanje) { return; }
+
+    var carinsko = document.querySelector('input[name="osnovne_usluge"][value="Carinsko posredovanje – UVOZ/IZVOZ"]');
+    var skladiste = document.querySelector('input[name="osnovne_usluge"][value="Skladištenje i fulfillment usluge"]');
+    var imaPratecu = (carinsko && carinsko.checked) || (skladiste && skladiste.checked);
+    var imaGlavnu = USLUGA_BLOCI.some(function(u){
+      var cb = document.querySelector('input[name="osnovne_usluge"][value="' + u.osnovnaVrijednost.replace(/"/g, '\\"') + '"]');
+      return cb && cb.checked;
+    });
+
+    if (imaPratecu && !imaGlavnu) {
+      upozorenje.classList.remove('ostalo-hidden');
+      pitanje.classList.add('pitanje-istaknuto');
+    } else {
+      upozorenje.classList.add('ostalo-hidden');
+      // Isticanje pitanja uklanjamo ovdje samo ako razlog za njega više uopće ne
+      // postoji (ni prateća usluga nije odabrana) — ako JE odabrana glavna usluga,
+      // isticanje već uklanja updateUslugaBlokoviVisibility() u istom onchange pozivu.
+      if (!imaPratecu) { pitanje.classList.remove('pitanje-istaknuto'); }
+    }
+  }
+
+  // Vraća [r,g,b] boju interpolacijom između fiksnih točaka prema postotku
+  // RASPOREĐENIH pošiljaka (0-100): 0=crveno, 50=žuto, 90=svijetlo zeleno,
+  // 99=tamno zeleno (i sve iznad 99 ostaje tamno zeleno).
+  function kategorijeTezineBojaZaPostotak(pct){
+    var stops = [
+      [0, [192, 57, 43]],
+      [50, [241, 196, 15]],
+      [90, [130, 224, 170]],
+      [99, [30, 132, 73]]
+    ];
+    if (pct <= stops[0][0]) { return stops[0][1]; }
+    if (pct >= stops[stops.length - 1][0]) { return stops[stops.length - 1][1]; }
+    for (var i = 0; i < stops.length - 1; i++) {
+      var a = stops[i], b = stops[i + 1];
+      if (pct >= a[0] && pct <= b[0]) {
+        var t = (pct - a[0]) / (b[0] - a[0]);
+        return [
+          Math.round(a[1][0] + t * (b[1][0] - a[1][0])),
+          Math.round(a[1][1] + t * (b[1][1] - a[1][1])),
+          Math.round(a[1][2] + t * (b[1][2] - a[1][2]))
+        ];
+      }
+    }
+    return stops[stops.length - 1][1];
+  }
+
+  // Izgradi tri padajuća popisa kg-kategorija (jedan po usluzi) i postavi
+  // ispravno početno stanje vidljivosti blokova (sve skriveno dok korisnik
+  // nešto ne označi u 9. poglavlju).
+  buildUslugaMsdropPanels();
+  buildUslugaZemljePanels();
+  updateUslugaBlokoviVisibility();
+
+  // Isto kao toggleOstalo, ali za checkbox/radio "Ostalo" unutar .choice-group
+  // (nije <select>) — traži .ostalo-line unutar istog .choice-group roditelja.
+  // Drugi parametar (triggerValue) je opcionalan — zadana vrijednost je "Ostalo",
+  // ali se može proslijediti druga vrijednost (npr. "Ne") za polja koja otkrivaju
+  // dodatno pitanje na neku drugu opciju, ne nužno na "Ostalo".
+  function toggleChoiceOstalo(input, triggerValue){
+    var trigger = triggerValue || 'Ostalo';
+    var group = input.closest('.choice-group');
+    if (!group) { return; }
+    var line = group.querySelector('.ostalo-line');
+    if (!line) { return; }
+    var textInput = line.querySelector('input');
+    // Za checkbox: prikaži ako je BAŠ trigger vrijednost upravo označena. Za radio: radio
+    // grupa ima samo jedan odabran element odjednom, pa provjeravamo je li
+    // trenutno odabrani (checked) element u toj grupi te vrijednosti —
+    // to pokriva i slučaj kad je odabrana neka DRUGA opcija (polje se tad
+    // automatski skriva).
+    var showIt;
+    if (input.type === 'radio') {
+      var checkedRadio = group.querySelector('input[name="' + input.name + '"]:checked');
+      showIt = !!checkedRadio && checkedRadio.value === trigger;
+    } else {
+      showIt = input.checked && input.value === trigger;
+    }
+    if (showIt) {
+      line.classList.remove('ostalo-hidden');
+    } else {
+      line.classList.add('ostalo-hidden');
+      if (textInput) { textInput.value = ''; }
+    }
+  }
+
+  function toggleOstalo(select, triggerValue){
+    var trigger = triggerValue || 'Ostalo';
+    // Uzima ISKLJUČIVO sljedeći element odmah nakon <select> — ne pretragu
+    // po cijelom roditelju, jer bi to (kad ima više padajućih izbornika u
+    // istoj sekciji) uvijek pogodilo prvo "Ostalo" polje na stranici.
+    var line = select.nextElementSibling;
+    if (!line || !line.classList.contains('ostalo-line')) { return; }
+    var input = line.querySelector('input');
+    if (select.value === trigger) {
+      line.classList.remove('ostalo-hidden');
+    } else {
+      line.classList.add('ostalo-hidden');
+      if (input) { input.value = ''; }
+    }
+  }
+
+  // "Koristite li standardizirane kutije..." — ako korisnik odgovori "Da",
+  // otkriva se podpitanje s dinamičkim unosom dimenzija kutija (dužina/
+  // širina/visina u cm). Prvi red se automatski doda čim se podpitanje
+  // otkrije (ako još nema redova); klikom na "+ Dodaj sljedeću kutiju"
+  // korisnik može dodati do KUTIJA_DIM_MAX redova.
+  var KUTIJA_DIM_MAX = 10;
+  function toggleStandardKutije(radio){
+    var podpitanje = document.getElementById('standard-kutije-podpitanje');
+    if (!podpitanje) { return; }
+    if (radio.value === 'Da') {
+      podpitanje.classList.remove('ostalo-hidden');
+      var container = document.getElementById('kutija-dimenzije-rows');
+      if (container && container.children.length === 0) {
+        addKutijaDimRow();
+      }
+    } else {
+      podpitanje.classList.add('ostalo-hidden');
+      var rows = document.getElementById('kutija-dimenzije-rows');
+      if (rows) { rows.innerHTML = ''; }
+      updateKutijaAddButton();
+    }
+  }
+
+  function toggleDrugiKomunikacija(radio){
+    var podpitanje = document.getElementById('drugi-komunikacija-podpitanje');
+    if (!podpitanje) { return; }
+    if (radio.value === 'Da') {
+      podpitanje.classList.remove('ostalo-hidden');
+    } else {
+      podpitanje.classList.add('ostalo-hidden');
+      var naziv = document.getElementById('drugi-komunikacija-naziv');
+      if (naziv) { naziv.value = ''; }
+      var kontaktWrap = document.getElementById('drugi-komunikacija-kontakt-wrap');
+      if (kontaktWrap) { kontaktWrap.classList.add('ostalo-hidden'); }
+      var kontakt = document.getElementById('drugi-komunikacija-kontakt');
+      if (kontakt) { kontakt.value = ''; }
+    }
+  }
+
+  function toggleDrugiKomunikacijaKontakt(input){
+    var wrap = document.getElementById('drugi-komunikacija-kontakt-wrap');
+    if (!wrap) { return; }
+    if (input.value.trim().length > 0) {
+      wrap.classList.remove('ostalo-hidden');
+    } else {
+      wrap.classList.add('ostalo-hidden');
+      var kontakt = document.getElementById('drugi-komunikacija-kontakt');
+      if (kontakt) { kontakt.value = ''; }
+    }
+  }
+
+  // Prikaz polja za adresu mjesta prikupa pošiljaka (6. poglavlje) — pitanje
+  // glasi "Je li mjesto prikupa NA ADRESI SJEDIŠTA?". Kod "Da" polja se
+  // PRIKAŽU, ali kao PREGLED (readonly, sivo pozadina) automatski popunjen
+  // adresom/gradom/poštanskim brojem sjedišta iz 2. poglavlja (JS
+  // `preuzmiAdresuSjedistaZaPrikup()`) — korisnik ih ne upisuje ručno, samo ih
+  // vidi i mora potvrditi klikom na checkbox "Potvrđujem..." (otkriva se
+  // `#mjesto-prikupa-potvrda-wrap`, custom-validiran u submitForm() jer je
+  // NAMJERNO bez native `required` — može biti unutar `.ostalo-hidden` kad je
+  // odgovor "Ne", ista poznata zamka kao kod `broj_usluga_{key}`). Kod "Ne"
+  // (korisnik želi unijeti drugu adresu) polja postaju EDITABILNA i PRAZNE se
+  // (za slučaj da su prije toga bila auto-popunjena adresom sjedišta), a
+  // potvrda-checkbox se sakriva i poništava. Autoritativna kopija adrese
+  // sjedišta ponovno se radi i u submitForm() neposredno prije slanja (vidi
+  // tamošnji komentar) — tako da vrijedi i ako korisnik naknadno promijeni
+  // adresu u 2. poglavlju NAKON što je ovdje već odgovorio "Da".
+  function toggleMjestoPrikupa(radio){
+    var podpitanje = document.getElementById('mjesto-prikupa-podpitanje');
+    var potvrdaWrap = document.getElementById('mjesto-prikupa-potvrda-wrap');
+    var potvrda = document.getElementById('mjesto-prikupa-potvrda');
+    var adresa = document.getElementById('mjesto-prikupa-adresa');
+    var grad = document.getElementById('mjesto-prikupa-grad');
+    var postanski = document.getElementById('mjesto-prikupa-postanski-broj');
+    if (!podpitanje) { return; }
+    podpitanje.classList.remove('ostalo-hidden');
+    if (radio.value === 'Ne') {
+      if (adresa) { adresa.readOnly = false; adresa.value = ''; }
+      if (grad) { grad.readOnly = false; grad.value = ''; }
+      if (postanski) { postanski.readOnly = false; postanski.value = ''; }
+      if (potvrdaWrap) { potvrdaWrap.classList.add('ostalo-hidden'); }
+      if (potvrda) { potvrda.checked = false; }
+    } else {
+      preuzmiAdresuSjedistaZaPrikup();
+      if (adresa) { adresa.readOnly = true; }
+      if (grad) { grad.readOnly = true; }
+      if (postanski) { postanski.readOnly = true; }
+      if (potvrdaWrap) { potvrdaWrap.classList.remove('ostalo-hidden'); }
+    }
+  }
+
+  // Kopira adresu/grad/poštanski broj sjedišta (2. poglavlje: `adresa`, `grad`,
+  // `postanski_broj`) u skrivena polja mjesta prikupa (`mjesto_prikupa_*`) —
+  // koristi se kad korisnik odgovori "Da" (mjesto prikupa JE adresa sjedišta),
+  // kako se ti podaci ne bi morali ručno ponovno upisivati, a ipak budu
+  // prisutni u poslanom upitniku.
+  function preuzmiAdresuSjedistaZaPrikup(){
+    var adresaSjedista = document.querySelector('input[name="adresa"]');
+    var gradSjedista = document.querySelector('input[name="grad"]');
+    var postanskiSjedista = document.querySelector('input[name="postanski_broj"]');
+    var mpAdresa = document.getElementById('mjesto-prikupa-adresa');
+    var mpGrad = document.getElementById('mjesto-prikupa-grad');
+    var mpPostanski = document.getElementById('mjesto-prikupa-postanski-broj');
+    if (mpAdresa) { mpAdresa.value = adresaSjedista ? adresaSjedista.value : ''; }
+    if (mpGrad) { mpGrad.value = gradSjedista ? gradSjedista.value : ''; }
+    if (mpPostanski) { mpPostanski.value = postanskiSjedista ? postanskiSjedista.value : ''; }
+  }
+
+  function addKutijaDimRow(){
+    var container = document.getElementById('kutija-dimenzije-rows');
+    if (!container) { return; }
+    var existing = container.querySelectorAll('.kutija-dim-row').length;
+    if (existing >= KUTIJA_DIM_MAX) { return; }
+    var n = existing + 1;
+
+    var row = document.createElement('div');
+    row.className = 'kutija-dim-row';
+
+    var title = document.createElement('label');
+    title.className = 'kutija-dim-row-title';
+    title.textContent = 'Kutija ' + n;
+    row.appendChild(title);
+
+    var fields = document.createElement('div');
+    fields.className = 'kutija-dim-fields';
+    [['duzina','Dužina (cm)'],['sirina','Širina (cm)'],['visina','Visina (cm)']].forEach(function(pair){
+      var wrap = document.createElement('div');
+      wrap.className = 'kat-tezine-field';
+      var lab = document.createElement('label');
+      lab.textContent = pair[1];
+      var inp = document.createElement('input');
+      inp.type = 'text';
+      inp.inputMode = 'numeric';
+      inp.name = 'kutija_' + pair[0] + '_' + n;
+      inp.placeholder = 'cm';
+      wrap.appendChild(lab);
+      wrap.appendChild(inp);
+      fields.appendChild(wrap);
+    });
+    row.appendChild(fields);
+
+    container.appendChild(row);
+    updateKutijaAddButton();
+  }
+
+  function updateKutijaAddButton(){
+    var container = document.getElementById('kutija-dimenzije-rows');
+    var btn = document.getElementById('kutija-dim-add-btn');
+    if (!container || !btn) { return; }
+    var count = container.querySelectorAll('.kutija-dim-row').length;
+    btn.style.display = (count >= KUTIJA_DIM_MAX) ? 'none' : '';
+  }
+
+  // "Imate li potrebu za dodatnim Online Booking (OB) računima?" (6. poglavlje)
+  // — na "Da" otkriva se dinamički popis redova, jedan po dodatnom računu
+  // (osoba/lokacija), isti obrazac kao "kutija dimenzije" iznad: prvi red se
+  // automatski doda čim se podpitanje otkrije, gumb "+ Dodaj još jedan..."
+  // dodaje daljnje do DODATNI_OB_MAX redova. Na "Ne" svi redovi i unosi se brišu.
+  var DODATNI_OB_MAX = 10;
+  function toggleDodatniObRacuni(radio){
+    var podpitanje = document.getElementById('dodatni-ob-racuni-podpitanje');
+    if (!podpitanje) { return; }
+    if (radio.value === 'Da') {
+      podpitanje.classList.remove('ostalo-hidden');
+    } else {
+      podpitanje.classList.add('ostalo-hidden');
+      // Reset odabir načina unosa i oba podbloka na "Ne" — ako korisnik
+      // kasnije opet odabere "Da", kreće ispočetka bez zadržanog stanja.
+      var nacinRadios = podpitanje.querySelectorAll('input[name="dodatni_ob_nacin_unosa"]');
+      for (var nr = 0; nr < nacinRadios.length; nr++) { nacinRadios[nr].checked = false; }
+      var rucnoBlok = document.getElementById('dodatni-ob-rucno-blok');
+      var mailBlok = document.getElementById('dodatni-ob-mail-blok');
+      if (rucnoBlok) { rucnoBlok.classList.add('ostalo-hidden'); }
+      if (mailBlok) { mailBlok.classList.add('ostalo-hidden'); }
+      var rows = document.getElementById('dodatni-ob-racuni-rows');
+      if (rows) { rows.innerHTML = ''; }
+      updateDodatniObAddButton();
+      var mailInput = document.getElementById('dodatni-ob-tablica-mail');
+      if (mailInput) { mailInput.value = ''; }
+      var idInput = document.getElementById('dodatni-ob-tablica-id');
+      if (idInput) { idInput.value = ''; }
+    }
+  }
+
+  // Odabir načina unosa podataka za dodatne OB račune: "Ovdje" otkriva
+  // postojeći dinamički popis redova (isti kao prije), "Mail" otkriva polje
+  // za e-mail adresu kamo šaljemo Excel predložak i generira jedinstveni
+  // korelacijski ID (skriveno polje `dodatni_ob_tablica_id`) koji putuje i u
+  // predmetu maila i u samoj tablici, kako bi se odgovor mogao automatski
+  // prepoznati i spojiti natrag na ovaj red u tablici "InTime_Upiti".
+  function toggleDodatniObNacinUnosa(radio){
+    var rucnoBlok = document.getElementById('dodatni-ob-rucno-blok');
+    var mailBlok = document.getElementById('dodatni-ob-mail-blok');
+    if (!rucnoBlok || !mailBlok) { return; }
+    if (radio.value === 'Ovdje') {
+      rucnoBlok.classList.remove('ostalo-hidden');
+      mailBlok.classList.add('ostalo-hidden');
+      var container = document.getElementById('dodatni-ob-racuni-rows');
+      if (container && container.children.length === 0) {
+        addDodatniObRacunRow();
+      }
+    } else if (radio.value === 'Mail') {
+      mailBlok.classList.remove('ostalo-hidden');
+      rucnoBlok.classList.add('ostalo-hidden');
+      var idInput = document.getElementById('dodatni-ob-tablica-id');
+      if (idInput && !idInput.value) {
+        idInput.value = generateDodatniObTablicaId();
+      }
+    }
+  }
+
+  function generateDodatniObTablicaId(){
+    var t = Date.now().toString(36).toUpperCase();
+    var rnd = Math.random().toString(36).slice(2, 8).toUpperCase();
+    return 'OB-' + t + '-' + rnd;
+  }
+
+  // Polja po dodatnom OB računu: ime poslovnice ili organizacijske jedinice
+  // (NIJE obavezno — jedino polje s `dataset.optional='true'`, preskače se u
+  // submitForm() provjeri ispod), ime i prezime, adresa, grad ili mjesto,
+  // poštanski broj, mail adresa (kontakt osobe), broj mobitela, i preferirana
+  // mail adresa za prijavu u TAJ konkretni OB račun (odvojeno od kontakt maila
+  // — može biti druga adresa, isto kao i glavno pitanje o OB mailu iznad).
+  function addDodatniObRacunRow(){
+    var container = document.getElementById('dodatni-ob-racuni-rows');
+    if (!container) { return; }
+    var existing = container.querySelectorAll('.kutija-dim-row').length;
+    if (existing >= DODATNI_OB_MAX) { return; }
+    var n = existing + 1;
+
+    var row = document.createElement('div');
+    row.className = 'kutija-dim-row';
+
+    var title = document.createElement('label');
+    title.className = 'kutija-dim-row-title';
+    title.textContent = 'Dodatni Online Booking račun ' + n;
+    row.appendChild(title);
+
+    var fields = document.createElement('div');
+    fields.className = 'dodatni-ob-fields';
+    [
+      ['poslovnica', 'Ime poslovnice ili organizacijske jedinice (nije obavezno)', 'text', true],
+      ['ime', 'Ime i prezime', 'text', false],
+      ['adresa', 'Adresa', 'text', false],
+      ['grad', 'Grad ili mjesto', 'text', false],
+      ['postanski_broj', 'Poštanski broj', 'text', false],
+      ['mail', 'Mail adresa', 'email', false],
+      ['mobitel', 'Broj mobitela', 'tel', false],
+      ['login_email', 'Preferirana mail adresa OB računa', 'email', false]
+    ].forEach(function(pair){
+      var wrap = document.createElement('div');
+      wrap.className = 'kat-tezine-field';
+      var lab = document.createElement('label');
+      lab.textContent = pair[1];
+      var inp = document.createElement('input');
+      inp.type = pair[2];
+      inp.name = 'dodatni_ob_' + pair[0] + '_' + n;
+      if (pair[3]) { inp.dataset.optional = 'true'; }
+      wrap.appendChild(lab);
+      wrap.appendChild(inp);
+      fields.appendChild(wrap);
+    });
+    row.appendChild(fields);
+
+    container.appendChild(row);
+    updateDodatniObAddButton();
+  }
+
+  function updateDodatniObAddButton(){
+    var container = document.getElementById('dodatni-ob-racuni-rows');
+    var btn = document.getElementById('dodatni-ob-racun-add-btn');
+    if (!container || !btn) { return; }
+    var count = container.querySelectorAll('.kutija-dim-row').length;
+    btn.style.display = (count >= DODATNI_OB_MAX) ? 'none' : '';
+  }
+
+  // "U koje vrijeme okvirno dolazi naše vozilo..." (6. poglavlje, zadnje
+  // pitanje) — ravnalica 8:00-16:00 s native <input type=range> (korak 30
+  // min, minute-since-midnight 480-960) koji je vizualno nevidljiv
+  // (opacity:0, nosi samo interakciju), a preko njega vidljiva
+  // ".time-pickup-handle" traka širine točno 30 min čiji DESNI rub prikazuje
+  // odabrano vrijeme prikupa, a LIJEVI rub (30 min ranije) zadnje vrijeme za
+  // unos pošiljke u OB sustav. Stvarna spremljena vrijednost polja
+  // "vrijeme_prikupa" je skriveni input formatiran "HH:MM" (native range
+  // input namjerno nema `name` — slao bi sirove minute).
+  function formatVrijemePrikupa(min){
+    var h = Math.floor(min / 60), m = min % 60;
+    return (h < 10 ? '0' : '') + h + ':' + (m === 0 ? '00' : m);
+  }
+  function updateVrijemePrikupa(){
+    var range = document.getElementById('vrijeme-prikupa-range');
+    if (!range) { return; }
+    var val = parseInt(range.value, 10);
+    var min = parseInt(range.min, 10), max = parseInt(range.max, 10);
+    if (isNaN(val)) { val = min; }
+    var deadline = val - 30;
+    var pct = (val - min) / (max - min) * 100;
+    var widthPct = 30 / (max - min) * 100;
+    var handle = document.getElementById('vrijeme-prikupa-handle');
+    if (handle) {
+      handle.style.width = widthPct + '%';
+      handle.style.left = 'calc(' + pct + '% - ' + widthPct + '%)';
+    }
+    var vEl = document.getElementById('vrijeme-prikupa-vrijeme');
+    var dEl = document.getElementById('vrijeme-prikupa-zadnji-unos');
+    var hidden = document.getElementById('vrijeme-prikupa-hidden');
+    if (vEl) { vEl.textContent = formatVrijemePrikupa(val); }
+    if (dEl) { dEl.textContent = formatVrijemePrikupa(deadline); }
+    if (hidden) { hidden.value = formatVrijemePrikupa(val); }
+  }
+  (function initVrijemePrikupa(){
+    updateVrijemePrikupa();
+  })();
+
+  // "Koliki je utjecaj CRNOG PETKA..." — klizač 0–100% umjesto stare 1–5
+  // skale (0% = "Nema utjecaja", 100% = "Izrazito velik utjecaj"). Ispunjeni
+  // dio trake (CSS varijabla --val na samom inputu) i tekstualni postotak
+  // pored labela ažuriraju se uživo.
+  function updateCrniPetakSlider(input){
+    var val = parseInt(input.value, 10);
+    if (isNaN(val)) { val = 0; }
+    input.style.setProperty('--val', val + '%');
+    var valText = document.getElementById('crni-petak-value');
+    if (valText) { valText.textContent = val + '%'; }
+  }
+  (function initCrniPetakSlider(){
+    var input = document.getElementById('crni-petak-range');
+    if (input) { updateCrniPetakSlider(input); }
+  })();
+
+  // Svaka upisana e-mail adresa (bilo koje od 5 mail polja) odmah se nudi
+  // kao prijedlog u ostalim mail poljima — korisnik je klikom bira umjesto
+  // ponovnog tipkanja iste adrese.
+  (function initEmailSuggestions(){
+    var datalist = document.getElementById('email-suggestions');
+    if (!datalist) { return; }
+    var emailInputs = document.querySelectorAll('#panel-interes input[type=email]');
+    emailInputs.forEach(function(input){
+      // 'change' (ne 'input') — dodaje se tek kad korisnik završi unos i
+      // napusti polje, ne na svaki pritisnuti znak.
+      input.addEventListener('change', function(){
+        var v = input.value.trim();
+        if (!v) { return; }
+        var exists = false;
+        for (var i = 0; i < datalist.options.length; i++) {
+          if (datalist.options[i].value === v) { exists = true; break; }
+        }
+        if (!exists) {
+          var opt = document.createElement('option');
+          opt.value = v;
+          datalist.appendChild(opt);
+        }
+      });
+    });
+  })();
+
+  // NAPOMENA (ispravak): `scrollIntoView({block:'center'})` na `panel-interes`
+  // (ogroman, vrlo visok <form> — cijeli upitnik) centrirao je SREDINU tog
+  // visokog elementa u viewportu, što je u praksi značilo skok na sredinu
+  // upitnika (npr. negdje oko 5.-6. poglavlja), NE na njegov početak — otuda
+  // "kad kliknem da želim postati partner, otvori mi se sredina obrasca".
+  // Ispravljeno korištenjem iste pouzdane hash-anchor navigacije kao i drugdje
+  // u upitniku (`skociNaSidro()`, vidi njen komentar niže) umjesto scrollIntoView-a,
+  // koja skače na POČETAK ciljanog elementa, ne na njegovu sredinu.
+  function showPanel(which){
+    document.getElementById('panel-interes').classList.remove('active');
+    document.getElementById('panel-odbijenica').classList.remove('active');
+    document.getElementById('confirm-box').classList.remove('active');
+    document.getElementById('panel-' + which).classList.add('active');
+    skociNaSidro('panel-' + which);
+  }
+
+  // Pouzdan skok na sidro (anchor) po id-u elementa — koristi native
+  // window.location.hash navigaciju umjesto (samo) scrollIntoView(), jer je
+  // scrollIntoView u praksi znao biti nepouzdan (npr. kad se poziva odmah
+  // nakon zatvaranja alert() dijaloga, ili kod nekih kombinacija layout
+  // pomaka). Ako je hash VEĆ postavljen na isti id (npr. korisnik drugi put
+  // zaredom klikne "Pošalji" bez da je nešto drugo promijenio na stranici),
+  // hash se prvo očisti pa ponovno postavi — inače browser ne bi ništa
+  // učinio jer se hash "nije promijenio". `scroll-behavior:smooth` na
+  // <html> osigurava da je i ovaj skok animiran, ne nagao.
+  function skociNaSidro(id){
+    if (window.location.hash === '#' + id) {
+      history.replaceState(null, '', window.location.pathname + window.location.search);
+    }
+    window.location.hash = id;
+  }
+
+  // Skok na 9. poglavlje + privremeno crveno isticanje pitanja "Osnovne
+  // usluge" (klik na crvenu kutiju upozorenja u 12. poglavlju, ili blokirano
+  // slanje zbog neodabrane glavne usluge) — isticanje se uklanja čim korisnik
+  // označi barem jednu od tri glavne usluge (vidi updateUslugaBlokoviVisibility()).
+  function skociNaOsnovneUsluge(){
+    var pitanje = document.getElementById('osnovne-usluge-pitanje');
+    if (pitanje) { pitanje.classList.add('pitanje-istaknuto'); }
+    skociNaSidro('poglavlje-9-usluge');
+  }
+
+  // <form id="panel-interes"> sada namjerno ima "novalidate" — ranije, BEZ tog
+  // atributa, native browser validacija bi na klik "Pošalji" automatski
+  // zaustavila (fokusirala/skrolala) na PRVOM neispunjenom "required" polju U
+  // CIJELOM dokumentu, redom kojim se pojavljuje u HTML-u — što je ispravno
+  // native ponašanje, ALI je u praksi značilo da bi ranija prazna polja (npr.
+  // "Datum unosa" na samom početku 1. poglavlja) presrela klik PRIJE nego naš
+  // JS uopće stigne do specifičnih poslovnih provjera niže (npr. "je li
+  // odabrana barem jedna glavna usluga" u 9. poglavlju) — korisniku je to
+  // izgledalo kao neobjašnjiv "skok na početak", potpuno nepovezan s onim što
+  // je zapravo testirao. Ova funkcija preuzima tu ulogu u potpunosti: prolazi
+  // kroz sva "required" polja (input/select/textarea — NE checkbox, koji se
+  // provjerava zasebno preko data-required-group) redom kojim se pojavljuju u
+  // dokumentu, PRESKAČE ona unutar trenutno skrivenog (.ostalo-hidden) bloka i
+  // svaku "required" radio-grupu provjerava samo JEDNOM (po prvom pojavljivanju
+  // imena grupe). Koristi native element.checkValidity() — ta metoda i dalje
+  // ispravno radi (uključujući npr. provjeru formata e-mail adrese) jer
+  // "novalidate" na <form> gasi samo AUTOMATSKO pokretanje te provjere pri
+  // submitu, ne i samu checkValidity() metodu.
+  function prvoNeispravnoPoljeUFormi(form){
+    var candidates = form.querySelectorAll('input[required], select[required], textarea[required]');
+    var seenRadioGroups = {};
+    for (var i = 0; i < candidates.length; i++) {
+      var el = candidates[i];
+      if (el.closest('.ostalo-hidden')) { continue; }
+      if (el.type === 'radio') {
+        if (seenRadioGroups[el.name]) { continue; }
+        seenRadioGroups[el.name] = true;
+      }
+      if (!el.checkValidity()) { return el; }
+    }
+    return null;
+  }
+
+  async function submitForm(e, which){
+    e.preventDefault();
+    var form = e.target;
+
+    // Zamjena za isključenu native "required" validaciju (vidi opširan komentar
+    // uz prvoNeispravnoPoljeUFormi() gore) — mora biti PRVA provjera, prije bilo
+    // koje poslovne provjere niže.
+    if (which === 'interes') {
+      var neispravnoPolje = prvoNeispravnoPoljeUFormi(form);
+      if (neispravnoPolje) {
+        alert('Molimo popunite sva obavezna polja prije slanja upitnika. Označili smo i postavili kursor na prvo polje koje nedostaje ili nije ispravno popunjeno.');
+        neispravnoPolje.scrollIntoView({behavior:'smooth', block:'center'});
+        neispravnoPolje.focus();
+        return false;
+      }
+    }
+
+    // Pitanje u 6. poglavlju glasi "Je li mjesto prikupa NA ADRESI SJEDIŠTA?".
+    // Kod "Da" polja adrese prikupa su prikazana kao PREGLED (readonly),
+    // AUTOMATSKI popunjena adresom sjedišta (vidi toggleMjestoPrikupa()/
+    // preuzmiAdresuSjedistaZaPrikup()) — tu kopiju ovdje SVJESNO ponavljamo
+    // neposredno prije slanja (a ne samo pri promjeni radio gumba), kako bi
+    // vrijedila i ako je korisnik adresu sjedišta u 2. poglavlju promijenio
+    // NAKON što je ovdje već odgovorio "Da"; dodatno, korisnik MORA potvrditi
+    // prikazanu adresu checkboxom `mjesto_prikupa_potvrda` prije slanja. Kod
+    // "Ne" (korisnik želi unijeti drugu adresu) adresa/grad/poštanski broj
+    // prikupa MORAJU biti popunjeni. Ni potvrda-checkbox ni adresna polja NEMAJU
+    // native `required` (svaki od njih zna biti unutar `.ostalo-hidden` ovisno
+    // o odgovoru) — ista poznata zamka kao kod `broj_usluga_{key}` polja, vidi
+    // opširan komentar niže uz USLUGA_BLOCI petlju — pa se provjeravaju custom JS-om.
+    if (which === 'interes') {
+      var mjestoPrikupaRadio = form.querySelector('input[name="mjesto_prikupa_isto_kao_sjediste"]:checked');
+      if (mjestoPrikupaRadio && mjestoPrikupaRadio.value === 'Da') {
+        preuzmiAdresuSjedistaZaPrikup();
+        var mpPotvrda = document.getElementById('mjesto-prikupa-potvrda');
+        if (!mpPotvrda || !mpPotvrda.checked) {
+          alert('Molimo potvrdite da je mjesto prikupa pošiljaka adresa sjedišta prikazana u 6. poglavlju (checkbox "Potvrđujem...").');
+          if (mpPotvrda) {
+            mpPotvrda.scrollIntoView({behavior:'smooth', block:'center'});
+            mpPotvrda.focus();
+          }
+          return false;
+        }
+      } else if (mjestoPrikupaRadio && mjestoPrikupaRadio.value === 'Ne') {
+        var mpAdresa = document.getElementById('mjesto-prikupa-adresa');
+        var mpPostanski = document.getElementById('mjesto-prikupa-postanski-broj');
+        var mpGrad = document.getElementById('mjesto-prikupa-grad');
+        if (!mpAdresa.value.trim() || !mpPostanski.value.trim() || !mpGrad.value.trim()) {
+          alert('Naveli ste da mjesto prikupa pošiljaka nije na adresi sjedišta — molimo unesite adresu, grad ili mjesto i poštanski broj mjesta prikupa.');
+          mpAdresa.scrollIntoView({behavior:'smooth', block:'center'});
+          mpAdresa.focus();
+          return false;
+        }
+      }
+    }
+
+    // Ako je korisnik odgovorio "Da" na pitanje o potrebi za dodatnim Online
+    // Booking računima, prvo mora odabrati NAČIN unosa: "Ovdje" (ručno, ispod)
+    // ili "Mail" (šaljemo Excel predložak, korisnik ga popuni i pošalje natrag
+    // odgovorom na mail — podaci se tada automatski prepoznaju po `dodatni_ob_
+    // tablica_id` i upisuju u isti red u tablici "InTime_Upiti"). Kod "Ovdje"
+    // svaki dodani red mora imati sva (ne-opcionalna) polja popunjena; kod
+    // "Mail" mora biti unesena e-mail adresa kamo šaljemo predložak. NAMJERNO
+    // nema native `required` ni na jednom od ovih polja (cijeli blok može biti
+    // unutar `.ostalo-hidden` kad je odgovor "Ne", a podblokovi/redovi se
+    // dinamički otkrivaju/dodaju/uklanjaju) — ista poznata zamka kao kod
+    // `broj_usluga_{key}` i `kutija_*` polja, pa se sve provjerava custom JS-om.
+    if (which === 'interes') {
+      var dodatniObRadio = form.querySelector('input[name="potreba_dodatni_ob_racuni"]:checked');
+      if (dodatniObRadio && dodatniObRadio.value === 'Da') {
+        var nacinRadio = form.querySelector('input[name="dodatni_ob_nacin_unosa"]:checked');
+        if (!nacinRadio) {
+          alert('Molimo odaberite na koji način želite unijeti podatke za dodatne Online Booking račune (ovdje u obrascu ili putem Excel tablice na e-mail).');
+          document.getElementById('dodatni-ob-racuni-podpitanje').scrollIntoView({behavior:'smooth', block:'center'});
+          return false;
+        }
+        if (nacinRadio.value === 'Ovdje') {
+          var obRows = document.querySelectorAll('#dodatni-ob-racuni-rows .kutija-dim-row');
+          if (obRows.length === 0) {
+            alert('Naveli ste da imate potrebu za dodatnim Online Booking računima, ali niste unijeli podatke ni za jedan. Molimo dodajte barem jedan račun ili promijenite odgovor na prethodno pitanje.');
+            document.getElementById('dodatni-ob-racuni-podpitanje').scrollIntoView({behavior:'smooth', block:'center'});
+            return false;
+          }
+          for (var obR = 0; obR < obRows.length; obR++) {
+            var obInputs = obRows[obR].querySelectorAll('input');
+            for (var obI = 0; obI < obInputs.length; obI++) {
+              if (obInputs[obI].dataset.optional === 'true') { continue; }
+              if (!obInputs[obI].value.trim()) {
+                alert('Molimo popunite sva polja za dodatni Online Booking račun br. ' + (obR + 1) + '.');
+                obInputs[obI].scrollIntoView({behavior:'smooth', block:'center'});
+                obInputs[obI].focus();
+                return false;
+              }
+            }
+          }
+        } else if (nacinRadio.value === 'Mail') {
+          var tablicaMail = document.getElementById('dodatni-ob-tablica-mail');
+          if (!tablicaMail || !tablicaMail.value.trim()) {
+            alert('Molimo unesite e-mail adresu na koju da pošaljemo Excel predložak tablice za dodatne Online Booking račune.');
+            if (tablicaMail) {
+              tablicaMail.scrollIntoView({behavior:'smooth', block:'center'});
+              tablicaMail.focus();
+            }
+            return false;
+          }
+          var tablicaId = document.getElementById('dodatni-ob-tablica-id');
+          if (tablicaId && !tablicaId.value) {
+            tablicaId.value = generateDodatniObTablicaId();
+          }
+        }
+      }
+    }
+
+    // Barem jedna od glavnih transportnih usluga (Domaća InTime distribucija,
+    // Međunarodna InTime distribucija, FedEx EXPRESS, FedEx ECONOMY) MORA biti
+    // označena u 9. poglavlju —
+    // bez toga ne možemo pripremiti odgovarajuću ponudu, čak i ako je korisnik
+    // označio samo Carinsko posredovanje i/ili Skladištenje (koji sami po sebi
+    // zadovoljavaju opću "Osnovne usluge" required-group provjeru niže, ali nisu
+    // dovoljni). Ova provjera vrijedi samo za glavni upitnik ('interes').
+    if (which === 'interes') {
+      var imaGlavnuUslugu = USLUGA_BLOCI.some(function(u){
+        var cb = form.querySelector('input[name="osnovne_usluge"][value="' + u.osnovnaVrijednost.replace(/"/g, '\\"') + '"]');
+        return cb && cb.checked;
+      });
+      if (!imaGlavnuUslugu) {
+        alert('Niste odabrali nijednu od glavnih usluga koje In Time d.o.o. nudi (Domaća InTime distribucija, Međunarodna InTime distribucija, FedEx EXPRESS, FedEx ECONOMY). Bez odabrane barem jedne od navedenih usluga nismo u mogućnosti izraditi odgovarajuću ponudu, stoga upitnik nije moguće poslati. Molimo Vas da se vratite na poglavlje "Usluge koje Vam možemo ponuditi" i označite barem jednu od glavnih usluga.');
+        skociNaOsnovneUsluge();
+        return false;
+      }
+    }
+
+    // Provjera "odaberite barem jednu opciju" za checkbox-grupe (nativni HTML
+    // required ne radi na taj način za checkboxeve pa to provjeravamo ručno).
+    // Grupe koje su trenutno SKRIVENE (npr. blok usluge koju korisnik nije
+    // označio u 9. poglavlju) se PRESKAČU — required vrijedi samo dok je
+    // grupa vidljiva (closest('.ostalo-hidden') pogađa i samu grupu i bilo
+    // kojeg skrivenog roditelja).
+    var requiredGroups = form.querySelectorAll('.choice-group[data-required-group],.msdrop[data-required-group]');
+    for (var i = 0; i < requiredGroups.length; i++) {
+      var group = requiredGroups[i];
+      if (group.closest('.ostalo-hidden')) { continue; }
+      var checked = group.querySelectorAll('input[type=checkbox]:checked');
+      if (checked.length === 0) {
+        alert('Molimo označite barem jednu opciju za: ' + group.getAttribute('data-required-group'));
+        group.scrollIntoView({behavior:'smooth', block:'center'});
+        return false;
+      }
+    }
+
+    // Za svaku VIDLJIVU uslugu u 12. poglavlju (Domaća/Međunarodna/FedEx EXPRESS/
+    // FedEx ECONOMY — vidljiva je ona koju je korisnik označio u 9. poglavlju)
+    // provjerava se (a) da je upisan "Prosječan broj pošiljaka" za tu uslugu, i
+    // (b) da je raspoređeno barem 90% ukupnog broja pošiljaka po odabranim
+    // težinskim kategorijama za tu uslugu (barem jedna kategorija mora biti
+    // odabrana — to provjerava required-group petlja gore). NAPOMENA:
+    // `broj_usluga_{key}` inputi NAMJERNO NEMAJU native `required` atribut
+    // (uklonjen) — kad su svi usluga-blok blokovi skriveni (npr. nijedna
+    // glavna usluga nije odabrana
+    // u 9. poglavlju), Chrome nativnu validaciju na skrivenim required poljima
+    // ne uspijeva fokusirati ("is not focusable") i CIJELO slanje se tiho
+    // blokira BEZ ikakve poruke, umjesto da se prikaže naš alert iznad koji
+    // objašnjava problem — otuda je provjera ovog polja u potpunosti prebačena
+    // u ovu custom petlju (koja već ispravno preskače skrivene blokove).
+    if (which === 'interes') {
+      var noviKlijentSubmit = jeNoviKlijentBezOpsega();
+      for (var ubIdx = 0; ubIdx < USLUGA_BLOCI.length; ubIdx++) {
+        var u = USLUGA_BLOCI[ubIdx];
+        var blok = document.getElementById('usluga-blok-' + u.key);
+        if (!blok || blok.classList.contains('ostalo-hidden')) { continue; }
+        if (!noviKlijentSubmit) {
+          var brojUslugaEl = document.getElementById('broj-usluga-' + u.key + '-input');
+          if (brojUslugaEl && brojUslugaEl.value.trim() === '') {
+            alert('Molimo unesite prosječan broj pošiljaka za uslugu "' + u.naziv + '".');
+            brojUslugaEl.scrollIntoView({behavior:'smooth', block:'center'});
+            brojUslugaEl.focus();
+            return false;
+          }
+        }
+        var katChecked = form.querySelectorAll('input[name="kategorije_tezine_' + u.key + '"]:checked');
+        if (katChecked.length === 0) { continue; }
+        if (!noviKlijentSubmit) {
+          var ostaloPostotakEl = document.getElementById('kat-tezine-' + u.key + '-ostalo-postotak');
+          var razlika = ostaloPostotakEl ? parseFloat(String(ostaloPostotakEl.value).replace(',', '.').replace('%', '')) : 100;
+          var rasporedjeno = isNaN(razlika) ? 0 : Math.round((100 - razlika) * 10) / 10;
+          if (rasporedjeno < 90) {
+            alert('Molimo rasporedite barem 90% ukupnog broja pošiljaka po odabranim težinskim kategorijama za uslugu "' + u.naziv + '" (trenutno raspoređeno: ' + rasporedjeno + '%).');
+            document.getElementById('usluga-' + u.key + '-kategorije-rows').scrollIntoView({behavior:'smooth', block:'center'});
+            return false;
+          }
+        }
+      }
+    }
+
+    // Provjera duplikata (OIB, ili naziv+oblik poslovnog subjekta) — SAMO za
+    // glavni upitnik ('interes'), jer jedino on sadrži OIB/naziv tvrtke.
+    // Za razliku od finalnog POST-a niže (koji je namjerno "fire-and-forget"
+    // s mode:'no-cors', jer ne trebamo čitati odgovor), ovdje MORAMO pričekati
+    // i pročitati stvarni JSON odgovor s backend-a pa se NE koristi no-cors —
+    // isti obrazac (bez no-cors, s await) kao što InTime_Admin.html već
+    // koristi za sve svoje pozive prema istom Apps Script backend-u (gasCall()).
+    // "Fail-open": ako sam mrežni poziv za provjeru duplikata ne uspije (npr.
+    // korisnik nema internet u tom trenutku, ili je Apps Script privremeno
+    // nedostupan), NE blokiramo slanje — ne želimo da infrastrukturni problem
+    // spriječi legitimnog novog klijenta da pošalje upitnik. Blokira se
+    // ISKLJUČIVO kad backend eksplicitno vrati { duplicate: true }.
+    if (which === 'interes') {
+      var _submitBtn = form.querySelector('button[type="submit"]');
+      var _submitBtnPrijasnjiTekst = _submitBtn ? _submitBtn.textContent : '';
+      if (_submitBtn) { _submitBtn.disabled = true; _submitBtn.textContent = 'Provjera podataka...'; }
+      var _oibEl = form.querySelector('input[name="oib"]');
+      var _nazivEl = form.querySelector('input[name="naziv"]');
+      var _oblikEl = form.querySelector('select[name="oblik_subjekta"]');
+      var _dupProvjera = { duplicate: false };
+      try {
+        var _dupResp = await fetch(GAS_WEB_APP_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({
+            action: 'provjeriKlijenta',
+            oib: _oibEl ? _oibEl.value.trim() : '',
+            naziv: _nazivEl ? _nazivEl.value.trim() : '',
+            oblik: _oblikEl ? _oblikEl.value.trim() : ''
+          })
+        });
+        _dupProvjera = await _dupResp.json();
+      } catch (dupErr) {
+        _dupProvjera = { duplicate: false };
+      }
+      if (_submitBtn) { _submitBtn.disabled = false; _submitBtn.textContent = _submitBtnPrijasnjiTekst; }
+      if (_dupProvjera && _dupProvjera.duplicate) {
+        var _dupMsg = _dupProvjera.reason === 'oib'
+          ? 'Tvrtka s unesenim OIB-om već postoji u našem sustavu. Ako želite ispraviti postojeće podatke ili smatrate da je ovo greška, molimo kontaktirajte našeg administratora na sbatinac.intime@gmail.com.'
+          : 'Tvrtka s unesenim nazivom i oblikom poslovnog subjekta već postoji u našem sustavu. Ako želite ispraviti postojeće podatke ili smatrate da je ovo greška, molimo kontaktirajte našeg administratora na sbatinac.intime@gmail.com.';
+        alert(_dupMsg);
+        var _dupFokusEl = (_dupProvjera.reason === 'oib' && _oibEl) ? _oibEl : _nazivEl;
+        if (_dupFokusEl) {
+          _dupFokusEl.scrollIntoView({behavior:'smooth', block:'center'});
+          _dupFokusEl.focus();
+        }
+        return false;
+      }
+    }
+
+    // Bilježenje vremena slanja + trajanja popunjavanja (od automatski
+    // zabilježenog vremena dolaska do ovog trenutka) — automatski, tik prije
+    // stvarnog slanja, korisnik ne može utjecati (polja su skrivena). Vidi
+    // VRIJEME_DOLASKA_DATE/formatDatumVrijemePuni/formatTrajanje na vrhu datoteke.
+    var _vrijemeSlanjaDate = new Date();
+    var _trajanjeSek = Math.round((_vrijemeSlanjaDate - VRIJEME_DOLASKA_DATE) / 1000);
+    var _slanjaEl = document.getElementById('vrijeme-slanja-hidden-' + which);
+    var _trajanjeEl = document.getElementById('vrijeme-popunjavanja-hidden-' + which);
+    if (_slanjaEl) { _slanjaEl.value = formatDatumVrijemePuni(_vrijemeSlanjaDate); }
+    if (_trajanjeEl) { _trajanjeEl.value = formatTrajanje(_trajanjeSek); }
+
+    var formData = new FormData(form);
+    var payload = { tip: which };
+    var seen = {};
+    // Polja s više vrijednosti (checkboxevi istog imena, multi-select) skupljaju
+    // se u niz; sva ostala polja ostaju obični string.
+    formData.forEach(function(value, key){
+      if (value === '') { return; }
+      if (seen[key]) {
+        if (Array.isArray(payload[key])) { payload[key].push(value); }
+        else { payload[key] = [payload[key], value]; }
+      } else {
+        payload[key] = value;
+        seen[key] = true;
+      }
+    });
+
+    // Tihi POST na Apps Script backend (no-cors — ne čekamo odgovor).
+    // text/plain kao Content-Type izbjegava CORS preflight koji Apps Script web app ne podržava.
+    fetch(GAS_WEB_APP_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(payload)
+    }).catch(function(){ /* ignoriramo — no-cors ionako ne vraća čitljiv odgovor */ });
+
+    document.getElementById('panel-interes').classList.remove('active');
+    document.getElementById('panel-odbijenica').classList.remove('active');
+
+    var msg = which === 'interes'
+      ? 'Hvala na interesu! Naš prodajni predstavnik javit će Vam se u najkraćem mogućem roku radi dogovora oko prezentacije.'
+      : 'Hvala Vam na odvojenom vremenu i povratnoj informaciji.';
+    document.getElementById('confirm-text').textContent = msg;
+    document.getElementById('confirm-box').classList.add('active');
+    document.getElementById('confirm-box').scrollIntoView({behavior:'smooth', block:'center'});
+    return false;
+  }
+</script>
+
+</body>
+</html>

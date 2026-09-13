@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="hr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>In Time d.o.o. — Ispravak podataka</title>
+<style>
+
+  /* ============================================================
+     NAPOMENA ZA SAŠU — što treba prije nego što ovo stane u pogon:
+     1) BACKEND: ova stranica govori s ISTIM Apps Script Web Appom
+        kao InTime_PismoNamjere.html i InTime_Admin.html — GAS_WEB_APP_URL
+        niže MORA biti identičan .../exec URL.
+     2) HOSTING: ovu datoteku treba postaviti na neku javno dostupnu
+        adresu (npr. GitHub Pages, Google Sites i sl.) — tek TADA u
+        InTime_Code.gs treba zamijeniti ISPRAVAK_STRANICA_URL
+        placeholder stvarnim URL-om te stranice (mail koji klijent
+        dobije sadrži poveznicu sastavljenu od tog URL-a + ?token=...).
+     3) POJEDNOSTAVLJENJE: za razliku od InTime_PismoNamjere.html (koji
+        ima padajuće izbornike, klizače, dinamičke retke i sl.), ova
+        stranica SVA polja prikazuje kao obična tekstualna polja radi
+        jednostavnosti — vidi napomenu u dashboardu niže. Ovo je
+        svjestan kompromis, dogovoren sa Sašom.
+     4) MAPA POGLAVLJA (POGLAVLJA_ISPRAVAK niže) MORA ostati identična
+        istoimenoj mapi u InTime_Code.gs (koja odlučuje koja polja
+        server stvarno prihvaća pri spremanju) — ovo je samo prikaz,
+        server je autoritet. Ako se ikad promijeni popis polja u
+        InTime_PismoNamjere.html, obje mape treba ažurirati zajedno.
+     ============================================================ */
+
+  :root{
+    --purple:#229891;
+    --purple-dark:#135450;
+    --graphite:#131313;
+    --grey:#6b6b6b;
+    --line:#e2e6ea;
+    --bg:#f7fafb;
+    --red:#c0392b;
+    --red-dark:#922b21;
+    --green:#1e8449;
+    --amber:#8a6d00;
+  }
+
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:'Segoe UI', Arial, sans-serif;
+    color:var(--graphite);
+    background:var(--bg);
+    line-height:1.5;
+  }
+  [hidden]{display:none !important;}
+
+  .wrap{max-width:860px;margin:0 auto;padding:24px;}
+
+  h1{font-size:22px;margin:0 0 4px;color:var(--purple-dark);}
+  h3{font-size:17px;margin:0 0 4px;color:var(--graphite);}
+
+  button{font-family:inherit;cursor:pointer;}
+  input, textarea{font-family:inherit;}
+
+  .btn{
+    padding:11px 22px;
+    border-radius:6px;
+    border:1px solid var(--purple);
+    background:var(--purple);
+    color:#fff;
+    font-size:14px;
+    font-weight:600;
+  }
+  .btn:hover{background:var(--purple-dark);border-color:var(--purple-dark);}
+  .btn:disabled{background:#a9c9c7;border-color:#a9c9c7;cursor:not-allowed;}
+  .btn-outline{background:#fff;color:var(--purple);}
+  .btn-outline:hover{background:var(--bg);}
+
+  /* ---- STANJE BEZ TOKENA ---- */
+  #no-token-screen, #login-screen{
+    min-height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:24px;
+  }
+  .card{
+    max-width:420px;
+    width:100%;
+    background:#fff;
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:32px;
+    box-shadow:0 8px 24px rgba(0,0,0,.06);
+  }
+  .card h1{margin-bottom:6px;}
+  .card p.hint{font-size:13px;color:var(--grey);margin:6px 0 18px;}
+  .card input[type=password]{
+    width:100%;
+    padding:11px 12px;
+    border:1px solid var(--line);
+    border-radius:6px;
+    font-size:14px;
+    margin-bottom:12px;
+  }
+  .card .btn{width:100%;}
+  .form-error{color:var(--red);font-size:13px;margin:0 0 12px;}
+  .form-ok{color:var(--green);font-size:13px;margin:0 0 12px;}
+
+  /* ---- DASHBOARD ---- */
+  #dashboard header.topbar{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    flex-wrap:wrap;
+    gap:12px;
+    margin-bottom:18px;
+  }
+
+  .info-box{
+    background:#eef7f6;
+    border:1px solid #bfe3e0;
+    border-left:4px solid var(--purple);
+    border-radius:8px;
+    padding:14px 16px;
+    font-size:13px;
+    color:#0f4d49;
+    margin-bottom:18px;
+  }
+  .info-box p{margin:0 0 6px;}
+  .info-box p:last-child{margin-bottom:0;}
+
+  .warn-box{
+    background:#fff8e1;
+    border:1px solid #f0d98c;
+    border-left:4px solid var(--amber);
+    border-radius:8px;
+    padding:14px 16px;
+    font-size:13px;
+    color:var(--amber);
+    margin-bottom:18px;
+  }
+  .warn-box p{margin:0;}
+
+  .form-section{
+    background:#fff;
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:20px 22px;
+    margin-bottom:16px;
+  }
+  .chapter-head{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    flex-wrap:wrap;
+    gap:8px;
+    margin-bottom:10px;
+    border-bottom:1px solid var(--line);
+    padding-bottom:10px;
+  }
+  .badge{
+    font-size:11.5px;
+    font-weight:700;
+    padding:4px 10px;
+    border-radius:999px;
+    white-space:nowrap;
+  }
+  .badge-editable{background:#e3f6ec;color:var(--green);}
+  .badge-readonly{background:#f1f1f1;color:var(--grey);}
+
+  label{
+    display:block;
+    font-size:13px;
+    font-weight:700;
+    color:var(--graphite);
+    margin:12px 0 5px;
+  }
+  input[type=text], textarea{
+    width:100%;
+    padding:10px 12px;
+    border:1px solid var(--line);
+    border-radius:6px;
+    font-size:14px;
+    font-family:inherit;
+    color:var(--graphite);
+  }
+  textarea{resize:vertical;min-height:70px;}
+  input[readonly], textarea[readonly]{background:#f4f4f4;color:var(--grey);cursor:default;}
+
+  .field-locked-note{font-size:11.5px;color:var(--grey);margin-top:3px;}
+
+  .save-bar{
+    background:#fff;
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:16px 22px;
+    margin-bottom:24px;
+    display:flex;
+    justify-content:flex-end;
+    align-items:center;
+    gap:14px;
+    flex-wrap:wrap;
+  }
+  .save-status{font-size:13px;}
+  .save-status.ok{color:var(--green);}
+  .save-status.err{color:var(--red);}
+
+  @media(max-width:640px){
+    .wrap{padding:16px;}
+    .save-bar{margin:0 -16px;padding:14px 16px;}
+  }
+
+</style>
+</head>
+<body>
+
+<div id="no-token-screen" hidden>
+  <div class="card">
+    <h1>In Time — Ispravak podataka</h1>
+    <p class="hint">Ova poveznica nije ispravna ili je nepotpuna (nedostaje token). Provjerite jeste li poveznicu u cijelosti kopirali iz e-maila, ili nas kontaktirajte na <a href="mailto:sbatinac.intime@gmail.com">sbatinac.intime@gmail.com</a>.</p>
+  </div>
+</div>
+
+<div id="login-screen" hidden>
+  <div class="card">
+    <h1>In Time — Ispravak podataka</h1>
+    <p class="hint">Unesite lozinku koju ste primili e-mailom prilikom slanja upitnika kako biste pregledali (i, ako je odobreno, ispravili) svoje podatke.</p>
+    <p class="form-error" id="login-error" hidden></p>
+    <form id="login-form" onsubmit="return handleLogin(event)">
+      <input type="password" id="login-password" placeholder="Lozinka iz e-maila" autocomplete="off" required>
+      <button type="submit" class="btn" id="login-submit-btn">Prijava</button>
+    </form>
+  </div>
+</div>
+
+<div id="dashboard" hidden>
+  <div class="wrap">
+
+    <header class="topbar">
+      <h1 id="dashboard-title">In Time — Ispravak podataka</h1>
+      <button class="btn btn-outline" onclick="handleLogout()">Odjava</button>
+    </header>
+
+    <div class="info-box">
+      <p>Ovdje možete pregledati podatke koje ste nam poslali u upitniku. Napomena: sva polja su ovdje prikazana kao obična tekstualna polja (bez posebnih padajućih izbornika, klizača ili checkboxova iz izvornog upitnika) radi jednostavnosti — ako neko polje u izvorniku dopušta više odgovora, više vrijednosti odvojite zarezom, točno onako kako želite da budu spremljene.</p>
+      <p>Polja obojena sivo su samo za pregled. Ako želite nešto ispraviti, javite nam se na <a href="mailto:sbatinac.intime@gmail.com">sbatinac.intime@gmail.com</a> — nakon što odobrimo ispravak određenog poglavlja, njegova polja postat će uredljiva na ovoj istoj poveznici.</p>
+    </div>
+
+    <div class="warn-box" id="nista-odobreno-box" hidden>
+      <p>In Time d.o.o. još nije odobrio ispravak niti za jedno poglavlje ovog upitnika — trenutno možete samo pregledati podatke. Za odobrenje ispravka javite nam se na <a href="mailto:sbatinac.intime@gmail.com">sbatinac.intime@gmail.com</a>.</p>
+    </div>
+
+    <div id="chapters-container"></div>
+
+    <div class="save-bar" id="save-bar" hidden>
+      <span class="save-status" id="save-status"></span>
+      <button class="btn" id="save-btn" onclick="handleSave()">Spremi izmjene</button>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  // Isti Apps Script Web App URL kao u InTime_PismoNamjere.html i
+  // InTime_Admin.html — MORA biti identičan .../exec link.
+  var GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzADLzx6HPt1f1AzjhsL9-E1MLTNqRjzb-wht7G5_YytyskwhTc7eCoQ0ypOMsHEudX/exec";
+
+  // ---- MAPA POGLAVLJA — ISTOVJETNA POGLAVLJA_ISPRAVAK nizu u InTime_Code.gs.
+  // Ovdje se koristi SAMO za prikaz/grupiranje; server (ispravakSaveChanges)
+  // je stvarni autoritet za koja su polja dozvoljena — vidi napomenu na
+  // vrhu ove datoteke i u InTime_Code.gs. AKO SE JEDNA MIJENJA, MORA SE
+  // MIJENJATI I DRUGA.
+  var POGLAVLJA_ISPRAVAK = [
+    { broj: 1, naslov: 'Podaci o unosu', polja: ['unosnik_ime', 'unosnik_telefon', 'unosnik_email'] },
+    { broj: 2, naslov: 'Osnovni podaci o tvrtki', polja: ['oblik_subjekta', 'oblik_subjekta_ostalo', 'naziv', 'broj_zaposlenika', 'adresa', 'postanski_broj', 'grad', 'telefon_centrale', 'email_tvrtke'] },
+    { broj: 3, naslov: 'Poslovni i bankovni podaci', polja: ['oib', 'mbs', 'email_racun', 'iban', 'banka', 'banka_ostalo', 'email_specifikacija', 'racunovodstvo_kontakt_ime', 'racunovodstvo_kontakt_telefon', 'racunovodstvo_kontakt_email'] },
+    { broj: 4, naslov: 'Odgovorna osoba (za ponudu)', polja: ['odgovorna_osoba', 'odgovorna_titula', 'odgovorna_titula_ostalo', 'odgovorna_funkcija', 'odgovorna_funkcija_ostalo', 'odgovorna_email', 'odgovorna_telefon'] },
+    { broj: 5, naslov: 'Kontakt osoba i preferirana komunikacija', polja: ['kontakt', 'kontakt_funkcija', 'telefon', 'kontakt_email', 'viber', 'whatsapp', 'zoom_kontakt', 'teams_kontakt', 'komunikacija', 'komunikacija_ostalo', 'drugi_komunikacija_predlog', 'drugi_komunikacija_naziv', 'drugi_komunikacija_kontakt'] },
+    { broj: 6, naslov: 'Mjesto prikupa pošiljaka i osoba zadužena za logistiku', polja: ['logistika_osoba_ime', 'logistika_osoba_email', 'logistika_osoba_telefon', 'mjesto_prikupa_isto_kao_sjediste', 'mjesto_prikupa_potvrda', 'mjesto_prikupa_adresa', 'mjesto_prikupa_postanski_broj', 'mjesto_prikupa_grad', 'online_booking_email', 'potreba_dodatni_ob_racuni', 'dodatni_ob_nacin_unosa', 'dodatni_ob_tablica_mail', 'dodatni_ob_tablica_id', 'dodatni_ob_poslovnica_1', 'dodatni_ob_ime_1', 'dodatni_ob_adresa_1', 'dodatni_ob_grad_1', 'dodatni_ob_postanski_broj_1', 'dodatni_ob_mail_1', 'dodatni_ob_mobitel_1', 'dodatni_ob_login_email_1', 'dodatni_ob_poslovnica_2', 'dodatni_ob_ime_2', 'dodatni_ob_adresa_2', 'dodatni_ob_grad_2', 'dodatni_ob_postanski_broj_2', 'dodatni_ob_mail_2', 'dodatni_ob_mobitel_2', 'dodatni_ob_login_email_2', 'dodatni_ob_poslovnica_3', 'dodatni_ob_ime_3', 'dodatni_ob_adresa_3', 'dodatni_ob_grad_3', 'dodatni_ob_postanski_broj_3', 'dodatni_ob_mail_3', 'dodatni_ob_mobitel_3', 'dodatni_ob_login_email_3', 'dodatni_ob_poslovnica_4', 'dodatni_ob_ime_4', 'dodatni_ob_adresa_4', 'dodatni_ob_grad_4', 'dodatni_ob_postanski_broj_4', 'dodatni_ob_mail_4', 'dodatni_ob_mobitel_4', 'dodatni_ob_login_email_4', 'dodatni_ob_poslovnica_5', 'dodatni_ob_ime_5', 'dodatni_ob_adresa_5', 'dodatni_ob_grad_5', 'dodatni_ob_postanski_broj_5', 'dodatni_ob_mail_5', 'dodatni_ob_mobitel_5', 'dodatni_ob_login_email_5', 'dodatni_ob_poslovnica_6', 'dodatni_ob_ime_6', 'dodatni_ob_adresa_6', 'dodatni_ob_grad_6', 'dodatni_ob_postanski_broj_6', 'dodatni_ob_mail_6', 'dodatni_ob_mobitel_6', 'dodatni_ob_login_email_6', 'dodatni_ob_poslovnica_7', 'dodatni_ob_ime_7', 'dodatni_ob_adresa_7', 'dodatni_ob_grad_7', 'dodatni_ob_postanski_broj_7', 'dodatni_ob_mail_7', 'dodatni_ob_mobitel_7', 'dodatni_ob_login_email_7', 'dodatni_ob_poslovnica_8', 'dodatni_ob_ime_8', 'dodatni_ob_adresa_8', 'dodatni_ob_grad_8', 'dodatni_ob_postanski_broj_8', 'dodatni_ob_mail_8', 'dodatni_ob_mobitel_8', 'dodatni_ob_login_email_8', 'dodatni_ob_poslovnica_9', 'dodatni_ob_ime_9', 'dodatni_ob_adresa_9', 'dodatni_ob_grad_9', 'dodatni_ob_postanski_broj_9', 'dodatni_ob_mail_9', 'dodatni_ob_mobitel_9', 'dodatni_ob_login_email_9', 'dodatni_ob_poslovnica_10', 'dodatni_ob_ime_10', 'dodatni_ob_adresa_10', 'dodatni_ob_grad_10', 'dodatni_ob_postanski_broj_10', 'dodatni_ob_mail_10', 'dodatni_ob_mobitel_10', 'dodatni_ob_login_email_10', 'vrijeme_prikupa'] },
+    { broj: 7, naslov: 'Trenutni logistički partneri', polja: ['logisticke_sluzbe', 'logisticke_sluzbe_ostalo', 'nova_tvrtka_bez_logistike'] },
+    { broj: 8, naslov: 'Za koje svrhe želite koristiti naše usluge dostave?', polja: ['svrha_dostave', 'svrha_dostave_ostalo'] },
+    { broj: 9, naslov: 'Usluge koje Vam možemo ponuditi', polja: ['osnovne_usluge', 'dodatne_usluge', 'dodatne_usluge_ostalo', 'dodatna_specifikacija'] },
+    { broj: 10, naslov: 'Proizvodi i pošiljke', polja: ['sadrzaj_posiljki', 'sadrzaj_posiljki_ostalo', 'opis_proizvoda', 'karakteristika', 'karakteristika_ostalo', 'tezina_posiljaka', 'tezina_ostalo'] },
+    { broj: 11, naslov: 'Pakiranje i sezonalnost', polja: ['pakiranje', 'pakiranje_ostalo', 'sezonalnost', 'sezonalnost_ostalo', 'standardizirane_kutije', 'kutija_duzina_1', 'kutija_sirina_1', 'kutija_visina_1', 'kutija_duzina_2', 'kutija_sirina_2', 'kutija_visina_2', 'kutija_duzina_3', 'kutija_sirina_3', 'kutija_visina_3', 'kutija_duzina_4', 'kutija_sirina_4', 'kutija_visina_4', 'kutija_duzina_5', 'kutija_sirina_5', 'kutija_visina_5', 'kutija_duzina_6', 'kutija_sirina_6', 'kutija_visina_6', 'kutija_duzina_7', 'kutija_sirina_7', 'kutija_visina_7', 'kutija_duzina_8', 'kutija_sirina_8', 'kutija_visina_8', 'kutija_duzina_9', 'kutija_sirina_9', 'kutija_visina_9', 'kutija_duzina_10', 'kutija_sirina_10', 'kutija_visina_10', 'crni_petak'] },
+    { broj: 12, naslov: 'Opseg pošiljaka', polja: ['novi_klijent_bez_opsega', 'broj_usluga_domaca', 'razdoblje_usluga_domaca', 'kategorije_tezine_domaca', 'kat_tezine_domaca_naziv_1', 'kat_tezine_domaca_broj_1', 'kat_tezine_domaca_postotak_1', 'kat_tezine_domaca_naziv_2', 'kat_tezine_domaca_broj_2', 'kat_tezine_domaca_postotak_2', 'kat_tezine_domaca_naziv_3', 'kat_tezine_domaca_broj_3', 'kat_tezine_domaca_postotak_3', 'kat_tezine_domaca_naziv_4', 'kat_tezine_domaca_broj_4', 'kat_tezine_domaca_postotak_4', 'kat_tezine_domaca_naziv_5', 'kat_tezine_domaca_broj_5', 'kat_tezine_domaca_postotak_5', 'kat_tezine_domaca_naziv_6', 'kat_tezine_domaca_broj_6', 'kat_tezine_domaca_postotak_6', 'kat_tezine_domaca_naziv_7', 'kat_tezine_domaca_broj_7', 'kat_tezine_domaca_postotak_7', 'kat_tezine_domaca_ostalo_postotak', 'kat_tezine_domaca_ostalo_broj', 'broj_usluga_medjunarodna', 'razdoblje_usluga_medjunarodna', 'kategorije_tezine_medjunarodna', 'kat_tezine_medjunarodna_naziv_1', 'kat_tezine_medjunarodna_broj_1', 'kat_tezine_medjunarodna_postotak_1', 'kat_tezine_medjunarodna_naziv_2', 'kat_tezine_medjunarodna_broj_2', 'kat_tezine_medjunarodna_postotak_2', 'kat_tezine_medjunarodna_naziv_3', 'kat_tezine_medjunarodna_broj_3', 'kat_tezine_medjunarodna_postotak_3', 'kat_tezine_medjunarodna_naziv_4', 'kat_tezine_medjunarodna_broj_4', 'kat_tezine_medjunarodna_postotak_4', 'kat_tezine_medjunarodna_naziv_5', 'kat_tezine_medjunarodna_broj_5', 'kat_tezine_medjunarodna_postotak_5', 'kat_tezine_medjunarodna_naziv_6', 'kat_tezine_medjunarodna_broj_6', 'kat_tezine_medjunarodna_postotak_6', 'kat_tezine_medjunarodna_naziv_7', 'kat_tezine_medjunarodna_broj_7', 'kat_tezine_medjunarodna_postotak_7', 'kat_tezine_medjunarodna_ostalo_postotak', 'kat_tezine_medjunarodna_ostalo_broj', 'zemlje_medjunarodna', 'udio_izvoza_medjunarodna', 'broj_usluga_fedex_express', 'razdoblje_usluga_fedex_express', 'kategorije_tezine_fedex_express', 'kat_tezine_fedex_express_naziv_1', 'kat_tezine_fedex_express_broj_1', 'kat_tezine_fedex_express_postotak_1', 'kat_tezine_fedex_express_naziv_2', 'kat_tezine_fedex_express_broj_2', 'kat_tezine_fedex_express_postotak_2', 'kat_tezine_fedex_express_naziv_3', 'kat_tezine_fedex_express_broj_3', 'kat_tezine_fedex_express_postotak_3', 'kat_tezine_fedex_express_naziv_4', 'kat_tezine_fedex_express_broj_4', 'kat_tezine_fedex_express_postotak_4', 'kat_tezine_fedex_express_naziv_5', 'kat_tezine_fedex_express_broj_5', 'kat_tezine_fedex_express_postotak_5', 'kat_tezine_fedex_express_naziv_6', 'kat_tezine_fedex_express_broj_6', 'kat_tezine_fedex_express_postotak_6', 'kat_tezine_fedex_express_naziv_7', 'kat_tezine_fedex_express_broj_7', 'kat_tezine_fedex_express_postotak_7', 'kat_tezine_fedex_express_ostalo_postotak', 'kat_tezine_fedex_express_ostalo_broj', 'zemlje_fedex_express', 'udio_izvoza_fedex_express', 'broj_usluga_fedex_economy', 'razdoblje_usluga_fedex_economy', 'kategorije_tezine_fedex_economy', 'kat_tezine_fedex_economy_naziv_1', 'kat_tezine_fedex_economy_broj_1', 'kat_tezine_fedex_economy_postotak_1', 'kat_tezine_fedex_economy_naziv_2', 'kat_tezine_fedex_economy_broj_2', 'kat_tezine_fedex_economy_postotak_2', 'kat_tezine_fedex_economy_naziv_3', 'kat_tezine_fedex_economy_broj_3', 'kat_tezine_fedex_economy_postotak_3', 'kat_tezine_fedex_economy_naziv_4', 'kat_tezine_fedex_economy_broj_4', 'kat_tezine_fedex_economy_postotak_4', 'kat_tezine_fedex_economy_naziv_5', 'kat_tezine_fedex_economy_broj_5', 'kat_tezine_fedex_economy_postotak_5', 'kat_tezine_fedex_economy_naziv_6', 'kat_tezine_fedex_economy_broj_6', 'kat_tezine_fedex_economy_postotak_6', 'kat_tezine_fedex_economy_naziv_7', 'kat_tezine_fedex_economy_broj_7', 'kat_tezine_fedex_economy_postotak_7', 'kat_tezine_fedex_economy_ostalo_postotak', 'kat_tezine_fedex_economy_ostalo_broj', 'zemlje_fedex_economy', 'udio_izvoza_fedex_economy'] },
+  ];
+
+  // Polja koja NIKAD nisu uredljiva ovdje, bez obzira na odobrena poglavlja:
+  // - naziv/oib: jedinstveni identifikatori tvrtke, mijenja ih SAMO Saša u adminu
+  //   (vidi opsežan komentar uz ADMIN_EDITABLE_FIELDS i ispravakSaveChanges u
+  //   InTime_Code.gs — server ionako te ključeve uvijek odbacuje, ovo je samo
+  //   dosljedan prikaz na frontend strani)
+  // - dodatni_ob_tablica_id / *_postotak / *_ostalo_broj: automatski
+  //   izračunata/generirana polja — puštanje klijenta da ih ručno mijenja
+  //   moglo bi pokvariti internu logiku/izračune.
+  function jeUvijekSamoCitanje(key) {
+    if (key === 'naziv' || key === 'oib') { return true; }
+    if (key === 'dodatni_ob_tablica_id') { return true; }
+    if (key.indexOf('postotak') !== -1) { return true; }
+    if (key.indexOf('ostalo_broj') !== -1) { return true; }
+    return false;
+  }
+
+  var TEXTAREA_KEYS = { opis_proizvoda: 1, dodatna_specifikacija: 1 };
+
+  var ispravakToken = null;
+  var ispravakLozinka = null;
+  var trenutnaOdobrenaPoglavlja = [];
+  var trenutnaPolja = {};
+
+  function gasCall(payload) {
+    return fetch(GAS_WEB_APP_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(payload)
+    }).then(function(res) { return res.json(); });
+  }
+
+  function showLoginError(msg) {
+    var el = document.getElementById('login-error');
+    el.textContent = msg;
+    el.hidden = false;
+  }
+
+  function doLogin(token, lozinka, naPogresci) {
+    return gasCall({ action: 'ispravakLogin', token: token, lozinka: lozinka }).then(function(res) {
+      if (res.status !== 'ok') {
+        if (naPogresci) { naPogresci(res.message || 'Prijava nije uspjela.'); }
+        try { sessionStorage.removeItem('intime_ispravak_lozinka_' + token); } catch (e) {}
+        return false;
+      }
+      ispravakToken = token;
+      ispravakLozinka = lozinka;
+      trenutnaOdobrenaPoglavlja = res.odobrenaPoglavlja || [];
+      trenutnaPolja = res.fields || {};
+      try { sessionStorage.setItem('intime_ispravak_lozinka_' + token, lozinka); } catch (e) {}
+      showDashboard();
+      return true;
+    }).catch(function() {
+      if (naPogresci) { naPogresci('Greška u komunikaciji s poslužiteljem. Provjerite internetsku vezu.'); }
+      return false;
+    });
+  }
+
+  function handleLogin(e) {
+    e.preventDefault();
+    var pass = document.getElementById('login-password').value;
+    document.getElementById('login-error').hidden = true;
+    var btn = document.getElementById('login-submit-btn');
+    btn.disabled = true;
+    btn.textContent = 'Provjera...';
+    doLogin(ispravakToken, pass, showLoginError).then(function() {
+      btn.disabled = false;
+      btn.textContent = 'Prijava';
+    });
+    return false;
+  }
+
+  function handleLogout() {
+    if (ispravakToken) {
+      try { sessionStorage.removeItem('intime_ispravak_lozinka_' + ispravakToken); } catch (e) {}
+    }
+    ispravakLozinka = null;
+    document.getElementById('dashboard').hidden = true;
+    document.getElementById('login-password').value = '';
+    document.getElementById('login-screen').hidden = false;
+  }
+
+  function pobjegniHtml(s) {
+    var d = document.createElement('div');
+    d.textContent = (s === undefined || s === null) ? '' : String(s);
+    return d.innerHTML;
+  }
+
+  function showDashboard() {
+    document.getElementById('login-screen').hidden = true;
+    document.getElementById('dashboard').hidden = false;
+    var naziv = trenutnaPolja.naziv ? trenutnaPolja.naziv.value : '';
+    document.getElementById('dashboard-title').textContent = naziv
+      ? 'In Time — Ispravak podataka — ' + naziv
+      : 'In Time — Ispravak podataka';
+    document.getElementById('nista-odobreno-box').hidden = trenutnaOdobrenaPoglavlja.length > 0;
+    document.getElementById('save-bar').hidden = trenutnaOdobrenaPoglavlja.length === 0;
+    renderChapters();
+  }
+
+  function renderChapters() {
+    var container = document.getElementById('chapters-container');
+    container.innerHTML = '';
+    POGLAVLJA_ISPRAVAK.forEach(function(pog) {
+      var odobreno = trenutnaOdobrenaPoglavlja.indexOf(pog.broj) !== -1;
+
+      var sekcija = document.createElement('div');
+      sekcija.className = 'form-section';
+
+      var head = document.createElement('div');
+      head.className = 'chapter-head';
+      var h3 = document.createElement('h3');
+      h3.textContent = pog.broj + '. ' + pog.naslov;
+      var badge = document.createElement('span');
+      badge.className = 'badge ' + (odobreno ? 'badge-editable' : 'badge-readonly');
+      badge.textContent = odobreno ? 'Odobreno za uređivanje' : 'Samo za pregled';
+      head.appendChild(h3);
+      head.appendChild(badge);
+      sekcija.appendChild(head);
+
+      pog.polja.forEach(function(key) {
+        var info = trenutnaPolja[key];
+        if (!info) { return; }
+        var samoCitanje = !odobreno || jeUvijekSamoCitanje(key);
+
+        var label = document.createElement('label');
+        label.setAttribute('for', 'polje-' + key);
+        label.textContent = info.label;
+        sekcija.appendChild(label);
+
+        var input;
+        if (TEXTAREA_KEYS[key]) {
+          input = document.createElement('textarea');
+        } else {
+          input = document.createElement('input');
+          input.type = 'text';
+        }
+        input.id = 'polje-' + key;
+        input.name = key;
+        input.value = (info.value === undefined || info.value === null) ? '' : info.value;
+        if (samoCitanje) { input.readOnly = true; }
+        sekcija.appendChild(input);
+
+        if (odobreno && jeUvijekSamoCitanje(key)) {
+          var napomena = document.createElement('div');
+          napomena.className = 'field-locked-note';
+          napomena.textContent = (key === 'naziv' || key === 'oib')
+            ? 'Ovo polje može promijeniti samo In Time d.o.o. — javite nam se ako je potrebna izmjena.'
+            : 'Ovo polje se automatski izračunava/generira i ne može se ručno mijenjati ovdje.';
+          sekcija.appendChild(napomena);
+        }
+      });
+
+      container.appendChild(sekcija);
+    });
+  }
+
+  function handleSave() {
+    var izmjene = {};
+    trenutnaOdobrenaPoglavlja.forEach(function(broj) {
+      var pog = POGLAVLJA_ISPRAVAK.filter(function(p) { return p.broj === broj; })[0];
+      if (!pog) { return; }
+      pog.polja.forEach(function(key) {
+        if (jeUvijekSamoCitanje(key)) { return; }
+        var el = document.getElementById('polje-' + key);
+        if (!el) { return; }
+        izmjene[key] = el.value;
+      });
+    });
+
+    var statusEl = document.getElementById('save-status');
+    var btn = document.getElementById('save-btn');
+    statusEl.textContent = '';
+    statusEl.className = 'save-status';
+    btn.disabled = true;
+    btn.textContent = 'Spremanje...';
+
+    gasCall({ action: 'ispravakSaveChanges', token: ispravakToken, lozinka: ispravakLozinka, izmjene: izmjene }).then(function(res) {
+      btn.disabled = false;
+      btn.textContent = 'Spremi izmjene';
+      if (res.status !== 'ok') {
+        statusEl.textContent = res.message || 'Spremanje nije uspjelo.';
+        statusEl.className = 'save-status err';
+        return;
+      }
+      statusEl.textContent = 'Spremljeno (' + res.primijenjenoPolja + ' polja ažurirano).';
+      statusEl.className = 'save-status ok';
+      // Osvježi prikaz podataka nakon spremanja (npr. za slučaj da se u
+      // međuvremenu promijenila odobrena poglavlja).
+      doLogin(ispravakToken, ispravakLozinka, null);
+    }).catch(function() {
+      btn.disabled = false;
+      btn.textContent = 'Spremi izmjene';
+      statusEl.textContent = 'Greška u komunikaciji s poslužiteljem. Provjerite internetsku vezu.';
+      statusEl.className = 'save-status err';
+    });
+  }
+
+  // ---- INICIJALIZACIJA ----
+  (function init() {
+    var params = new URLSearchParams(window.location.search);
+    var token = params.get('token');
+    if (!token) {
+      document.getElementById('no-token-screen').hidden = false;
+      return;
+    }
+    ispravakToken = token;
+    document.getElementById('login-screen').hidden = false;
+
+    // Ako je lozinka za OVAJ token već spremljena iz ranije sesije
+    // (sessionStorage, briše se kad se tab/prozor zatvori), pokušaj se
+    // automatski prijaviti — ovo je zasebna, ručno hostana klijentska
+    // stranica, pa je browser storage ovdje sasvim prikladan (za razliku
+    // od HTML-a koji se prikazuje unutar razgovora).
+    var savedLozinka = null;
+    try { savedLozinka = sessionStorage.getItem('intime_ispravak_lozinka_' + token); } catch (e) {}
+    if (savedLozinka) {
+      doLogin(token, savedLozinka, null);
+    }
+  })();
+</script>
+
+</body>
+</html>

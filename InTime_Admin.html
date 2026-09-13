@@ -1,0 +1,1124 @@
+<!DOCTYPE html>
+<html lang="hr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>In Time d.o.o. — Admin</title>
+<style>
+
+  /* ============================================================
+     NAPOMENA ZA SAŠU:
+     1) Ova stranica govori s ISTIM Apps Script Web Appom kao
+        InTime_PismoNamjere.html (InTime_Code.gs) — GAS_WEB_APP_URL
+        niže MORA biti isti .../exec URL koji si zalijepio i u
+        glavnom upitniku.
+     2) LOZINKA: prvi put kad otvoriš ovu stranicu i upišeš bilo koju
+        lozinku, ONA postaje trajna lozinka za ubuduće (sprema se kao
+        hash, ne u čistom tekstu). Poslije je možeš promijeniti gumbom
+        "Promijeni lozinku" gore desno.
+     3) Ovu stranicu NE stavljaj na javno dostupno mjesto pod
+        predvidivim imenom/linkom — sama lozinka je jedina zaštita.
+        Drži datoteku kod sebe (na računalu / privatnom folderu), ne
+        šalji je klijentima niti je javno hostaj.
+     ============================================================ */
+
+  :root{
+    --purple:#229891;
+    --purple-dark:#135450;
+    --graphite:#131313;
+    --grey:#6b6b6b;
+    --line:#e2e6ea;
+    --bg:#f7fafb;
+    --red:#c0392b;
+    --red-dark:#922b21;
+    --green:#1e8449;
+  }
+
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:'Segoe UI', Arial, sans-serif;
+    color:var(--graphite);
+    background:var(--bg);
+    line-height:1.5;
+  }
+  [hidden]{display:none !important;}
+
+  .wrap{max-width:1040px;margin:0 auto;padding:24px;}
+
+  h1{font-size:22px;margin:0;}
+  h2{font-size:16px;margin:0 0 4px;}
+
+  button{font-family:inherit;cursor:pointer;}
+  input, select, textarea{font-family:inherit;}
+
+  .btn{
+    padding:9px 16px;
+    border-radius:6px;
+    border:1px solid var(--purple);
+    background:var(--purple);
+    color:#fff;
+    font-size:13px;
+    font-weight:600;
+  }
+  .btn:hover{background:var(--purple-dark);border-color:var(--purple-dark);}
+  .btn-outline{background:#fff;color:var(--purple);}
+  .btn-outline:hover{background:var(--bg);}
+  .btn-danger{background:var(--red);border-color:var(--red);}
+  .btn-danger:hover{background:var(--red-dark);border-color:var(--red-dark);}
+  .btn-danger[disabled]{background:#e3a79f;border-color:#e3a79f;cursor:not-allowed;}
+  .btn-small{padding:6px 11px;font-size:12px;}
+
+  /* ---- LOGIN ---- */
+  #login-screen{
+    min-height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:24px;
+  }
+  .login-card{
+    max-width:360px;
+    width:100%;
+    background:#fff;
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:32px;
+    box-shadow:0 8px 24px rgba(0,0,0,.06);
+  }
+  .login-card h1{color:var(--purple-dark);margin-bottom:6px;}
+  .login-card p.hint{font-size:12px;color:var(--grey);margin:6px 0 18px;}
+  .login-card input[type=password]{
+    width:100%;
+    padding:11px 12px;
+    border:1px solid var(--line);
+    border-radius:6px;
+    font-size:14px;
+    margin-bottom:12px;
+  }
+  .login-card .btn{width:100%;}
+  .form-error{color:var(--red);font-size:13px;margin:0 0 12px;}
+  .form-ok{color:var(--green);font-size:13px;margin:0 0 12px;}
+
+  /* ---- DASHBOARD ---- */
+  #dashboard header.topbar{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    flex-wrap:wrap;
+    gap:12px;
+    margin-bottom:22px;
+  }
+  .topbar-actions{display:flex;gap:8px;flex-wrap:wrap;}
+
+  .stat-row{
+    display:grid;
+    grid-template-columns:repeat(4, 1fr);
+    gap:14px;
+    margin-bottom:24px;
+  }
+  .stat-card{
+    background:#fff;
+    border:1px solid var(--line);
+    border-left:4px solid var(--purple);
+    border-radius:10px;
+    padding:16px 18px;
+  }
+  .stat-card .stat-value{font-size:28px;font-weight:700;color:var(--purple-dark);}
+  .stat-card .stat-label{font-size:12px;color:var(--grey);margin-top:2px;}
+  @media(max-width:640px){.stat-row{grid-template-columns:1fr;}}
+
+  .tabs{display:flex;gap:8px;margin-bottom:16px;border-bottom:2px solid var(--line);}
+  .tab-btn{
+    padding:10px 16px;
+    background:none;
+    border:none;
+    border-bottom:2px solid transparent;
+    margin-bottom:-2px;
+    font-size:14px;
+    font-weight:600;
+    color:var(--grey);
+  }
+  .tab-btn.active{color:var(--purple-dark);border-bottom-color:var(--purple);}
+
+  .empty-hint{color:var(--grey);font-size:13px;padding:24px;text-align:center;}
+
+  .entry-card{
+    background:#fff;
+    border:1px solid var(--line);
+    border-radius:10px;
+    margin-bottom:14px;
+    overflow:hidden;
+  }
+  .entry-card-head{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    gap:12px;
+    padding:14px 16px;
+    cursor:pointer;
+  }
+  .entry-card-head:hover{background:var(--bg);}
+  .entry-card-title{font-size:15px;font-weight:700;color:var(--graphite);}
+  .entry-card-sub{font-size:12px;color:var(--grey);margin-top:3px;}
+  .entry-card-sub span{margin-right:12px;}
+  .entry-card-head .chevron{color:var(--grey);font-size:13px;flex-shrink:0;margin-top:2px;}
+  .entry-card.expanded .chevron{transform:rotate(180deg);}
+
+  .entry-card-body{
+    display:none;
+    padding:0 16px 16px;
+    border-top:1px solid var(--line);
+  }
+  .entry-card.expanded .entry-card-body{display:block;}
+
+  .field-table{width:100%;border-collapse:collapse;margin-top:12px;font-size:13px;}
+  .field-table td{padding:4px 8px 4px 0;vertical-align:top;}
+  .field-table td.k{color:var(--grey);white-space:nowrap;width:1%;padding-top:8px;}
+  .field-table td.v{color:var(--graphite);padding-top:4px;}
+  .field-table td.v input,
+  .field-table td.v textarea{
+    width:100%;
+    padding:5px 7px;
+    border:1px solid var(--line);
+    border-radius:5px;
+    font-size:13px;
+    font-family:inherit;
+    color:var(--graphite);
+    box-sizing:border-box;
+  }
+  .field-table td.v textarea{min-height:44px;resize:vertical;}
+
+  .admin-fields{
+    background:var(--bg);
+    border:1px solid var(--line);
+    border-radius:8px;
+    padding:14px;
+    margin-top:14px;
+  }
+  .admin-fields h3{font-size:13px;margin:0 0 10px;color:var(--purple-dark);}
+  .admin-fields-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px 14px;}
+  @media(max-width:520px){.admin-fields-grid{grid-template-columns:1fr;}}
+  .admin-fields label{display:block;font-size:11px;color:var(--grey);margin-bottom:3px;}
+  .admin-fields input{
+    width:100%;
+    padding:8px 10px;
+    border:1px solid var(--line);
+    border-radius:6px;
+    font-size:13px;
+  }
+  .admin-fields-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:12px;align-items:center;}
+  .save-status{font-size:12px;color:var(--green);}
+  .save-status.error{color:var(--red);}
+
+  .ispravak-block{
+    background:#fff8e1;
+    border:1px solid #f0d98c;
+    border-radius:8px;
+    padding:14px;
+    margin-top:14px;
+  }
+  .ispravak-block h3{font-size:13px;margin:0 0 10px;color:var(--amber, #8a6d00);}
+  .ispravak-link-row{display:flex;gap:8px;align-items:center;margin-bottom:8px;flex-wrap:wrap;}
+  .ispravak-link-row label{font-size:11px;color:var(--grey);width:100%;margin-bottom:2px;}
+  .ispravak-link-row input{
+    flex:1;
+    min-width:180px;
+    padding:7px 9px;
+    border:1px solid var(--line);
+    border-radius:6px;
+    font-size:12.5px;
+    background:#fff;
+  }
+  .chapter-checks{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:4px 14px;
+    margin:12px 0;
+  }
+  @media(max-width:520px){.chapter-checks{grid-template-columns:1fr;}}
+  .chapter-check-item{display:flex;align-items:flex-start;gap:6px;font-size:12.5px;color:var(--graphite);}
+  .chapter-check-item input{margin-top:2px;}
+  .chapter-checks-all{font-size:12px;margin-bottom:6px;}
+  .naziv-oib-block{
+    background:var(--bg);
+    border:1px solid var(--line);
+    border-radius:8px;
+    padding:14px;
+    margin-top:14px;
+  }
+  .naziv-oib-block h3{font-size:13px;margin:0 0 10px;color:var(--purple-dark);}
+  .naziv-oib-block label, .ispravak-block label:not(.chapter-check-item):not(.chapter-checks-all){display:block;font-size:11px;color:var(--grey);margin-bottom:3px;}
+  .naziv-oib-block input{
+    width:100%;
+    padding:8px 10px;
+    border:1px solid var(--line);
+    border-radius:6px;
+    font-size:13px;
+  }
+
+  .entry-card-actions{
+    display:flex;
+    justify-content:flex-end;
+    margin-top:14px;
+  }
+
+  /* ---- Anketa kvalitete (treći tab) ---- */
+  .anketa-score-badge{
+    display:inline-block;
+    padding:2px 9px;
+    border-radius:999px;
+    font-weight:700;
+    font-size:12px;
+    background:var(--purple);
+    color:#fff;
+  }
+  .anketa-score-badge.low{background:var(--red);}
+  .anketa-score-badge.mid{background:#c9971f;}
+  .anketa-score-badge.high{background:var(--green);}
+
+  /* ---- MODAL (promjena lozinke, potvrda brisanja) ---- */
+  .modal-overlay{
+    position:fixed;inset:0;background:rgba(0,0,0,.45);
+    display:flex;align-items:center;justify-content:center;
+    padding:20px;z-index:100;
+  }
+  .modal-box{
+    background:#fff;border-radius:10px;padding:24px;
+    max-width:400px;width:100%;
+    box-shadow:0 10px 32px rgba(0,0,0,.25);
+  }
+  .modal-box h2{margin-bottom:14px;}
+  .modal-box input[type=password], .modal-box input[type=text]{
+    width:100%;padding:10px 12px;border:1px solid var(--line);
+    border-radius:6px;font-size:14px;margin-bottom:10px;
+  }
+  .modal-box .modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:8px;}
+  .modal-box p.warn{font-size:13px;color:var(--red);margin:0 0 12px;}
+  .modal-box p.desc{font-size:13px;color:var(--graphite);margin:0 0 14px;}
+
+</style>
+</head>
+<body>
+
+<div id="login-screen">
+  <div class="login-card">
+    <h1>In Time — Admin</h1>
+    <p class="hint">Ako ovo otvarate prvi put, upisana lozinka postaje trajna lozinka za buduće prijave.</p>
+    <p class="form-error" id="login-error" hidden></p>
+    <form id="login-form" onsubmit="return handleLogin(event)">
+      <input type="password" id="login-password" placeholder="Lozinka" autocomplete="current-password" required>
+      <button type="submit" class="btn">Prijava</button>
+    </form>
+  </div>
+</div>
+
+<div id="dashboard" hidden>
+  <div class="wrap">
+
+    <header class="topbar">
+      <h1>In Time — Admin pregled upita</h1>
+      <div class="topbar-actions">
+        <button class="btn btn-outline btn-small" onclick="loadAll()">↻ Osvježi</button>
+        <button class="btn btn-outline btn-small" onclick="openChangePasswordModal()">Promijeni lozinku</button>
+        <button class="btn btn-outline btn-small" onclick="handleLogout()">Odjava</button>
+      </div>
+    </header>
+
+    <div class="stat-row">
+      <div class="stat-card">
+        <div class="stat-value" id="stat-posjete">—</div>
+        <div class="stat-label">Posjeta stranici (upitniku)</div>
+      </div>
+      <div class="stat-card" style="border-left-color:var(--green);">
+        <div class="stat-value" id="stat-pozitivno" style="color:var(--green);">—</div>
+        <div class="stat-label">Pozitivno odlučili (zainteresirani)</div>
+      </div>
+      <div class="stat-card" style="border-left-color:var(--red);">
+        <div class="stat-value" id="stat-negativno" style="color:var(--red);">—</div>
+        <div class="stat-label">Negativno odlučili (nisu zainteresirani)</div>
+      </div>
+      <div class="stat-card" style="border-left-color:#c9971f;">
+        <div class="stat-value" id="stat-ankete" style="color:#8a6d00;">—</div>
+        <div class="stat-label">Popunjenih anketa kvalitete</div>
+      </div>
+    </div>
+
+    <div class="tabs">
+      <button type="button" class="tab-btn active" id="tab-btn-interes" onclick="switchTab('Interes')">Zainteresirani (<span id="tab-count-interes">0</span>)</button>
+      <button type="button" class="tab-btn" id="tab-btn-odbijenica" onclick="switchTab('Odbijenica')">Nisu zainteresirani (<span id="tab-count-odbijenica">0</span>)</button>
+      <button type="button" class="tab-btn" id="tab-btn-ankete" onclick="switchTab('Ankete')">Ankete kvalitete (<span id="tab-count-ankete">0</span>)</button>
+    </div>
+
+    <div id="entries-list"></div>
+
+  </div>
+</div>
+
+<!-- Modal: promjena lozinke -->
+<div class="modal-overlay" id="change-password-modal" hidden>
+  <div class="modal-box">
+    <h2>Promjena lozinke</h2>
+    <p class="form-error" id="change-password-error" hidden></p>
+    <p class="form-ok" id="change-password-ok" hidden></p>
+    <input type="password" id="change-password-old" placeholder="Trenutna lozinka">
+    <input type="password" id="change-password-new" placeholder="Nova lozinka (min. 4 znaka)">
+    <input type="password" id="change-password-new2" placeholder="Ponovite novu lozinku">
+    <div class="modal-actions">
+      <button class="btn btn-outline btn-small" onclick="closeChangePasswordModal()">Odustani</button>
+      <button class="btn btn-small" onclick="submitChangePassword()">Spremi novu lozinku</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: potvrda brisanja -->
+<div class="modal-overlay" id="delete-modal" hidden>
+  <div class="modal-box">
+    <h2>Trajno brisanje upita</h2>
+    <p class="desc" id="delete-modal-desc"></p>
+    <p class="warn">Ova radnja se ne može poništiti. Za potvrdu upišite riječ <strong>BRISATI</strong> (velikim slovima) u polje ispod.</p>
+    <input type="text" id="delete-confirm-input" placeholder="Upišite BRISATI" oninput="updateDeleteButtonState()" autocomplete="off">
+    <p class="form-error" id="delete-modal-error" hidden></p>
+    <div class="modal-actions">
+      <button class="btn btn-outline btn-small" onclick="closeDeleteModal()">Odustani</button>
+      <button class="btn btn-danger btn-small" id="delete-confirm-btn" disabled onclick="submitDelete()">Trajno obriši</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Isti Apps Script Web App URL kao u InTime_PismoNamjere.html — MORA biti
+  // identičan .../exec link (InTime_Code.gs doPost() rutira po `action`).
+  var GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzADLzx6HPt1f1AzjhsL9-E1MLTNqRjzb-wht7G5_YytyskwhTc7eCoQ0ypOMsHEudX/exec";
+
+  // Isti placeholder kao ISPRAVAK_STRANICA_URL u InTime_Code.gs — MORA se
+  // zamijeniti stvarnim URL-om nakon što InTime_Ispravak.html bude hostan.
+  // Koristi se OVDJE samo da Saša u admin kartici vidi/kopira potpunu
+  // poveznicu koju je klijent dobio u mailu (ista poveznica se sastavlja
+  // i u InTime_Code.gs prilikom slanja maila).
+  var ISPRAVAK_STRANICA_URL = 'https://PLACEHOLDER-ZAMIJENITI-URL-OM-GDJE-JE-HOSTANA-InTime_Ispravak.html';
+
+  // Popis poglavlja (broj + naslov) za prikaz checkboxova odobrenja ispravka
+  // — brojevi i naslovi MORAJU odgovarati POGLAVLJA_ISPRAVAK mapi u
+  // InTime_Code.gs i InTime_Ispravak.html (sam popis polja po poglavlju ovdje
+  // nije potreban jer admin ne uređuje polja, samo odobrava poglavlja).
+  var POGLAVLJA_NASLOVI = [
+    { broj: 1, naslov: 'Podaci o unosu' },
+    { broj: 2, naslov: 'Osnovni podaci o tvrtki' },
+    { broj: 3, naslov: 'Poslovni i bankovni podaci' },
+    { broj: 4, naslov: 'Odgovorna osoba (za ponudu)' },
+    { broj: 5, naslov: 'Kontakt osoba i preferirana komunikacija' },
+    { broj: 6, naslov: 'Mjesto prikupa pošiljaka i osoba zadužena za logistiku' },
+    { broj: 7, naslov: 'Trenutni logistički partneri' },
+    { broj: 8, naslov: 'Za koje svrhe želite koristiti naše usluge dostave?' },
+    { broj: 9, naslov: 'Usluge koje Vam možemo ponuditi' },
+    { broj: 10, naslov: 'Proizvodi i pošiljke' },
+    { broj: 11, naslov: 'Pakiranje i sezonalnost' },
+    { broj: 12, naslov: 'Opseg pošiljaka' }
+  ];
+
+  var adminToken = null;
+  var allEntries = [];
+  var allAnketaEntries = [];
+  var activeTab = 'Interes';
+  var pendingDeleteRowIndex = null;
+  // Koju GAS akciju treba pozvati za trenutno otvoreni modal brisanja —
+  // 'adminDeleteEntry' za upite (Interes/Odbijenica, InTime_Upiti list) ili
+  // 'adminDeleteAnketaEntry' za ankete kvalitete (zaseban InTime_Ankete list).
+  var pendingDeleteAction = 'adminDeleteEntry';
+  // label (naziv stupca) -> kratki ključ polja — stiže iz adminListEntries()
+  // (jedan izvor istine je u InTime_Code.gs, UPIT_FIELDS) i koristi se da
+  // generička tablica polja niže zna koja polja smije ponuditi za ručno
+  // uređivanje i koji ključ poslati natrag kroz adminUpdateFields().
+  var labelToKeyMap = {};
+
+  // Sesija se pamti u sessionStorage (briše se kad se tab/prozor zatvori) —
+  // ovo je zasebna, ručno hostana admin datoteka koju otvara samo Saša u
+  // svom pregledniku, pa je browser storage ovdje sasvim prikladan (za
+  // razliku od HTML-a koji se prikazuje unutar razgovora).
+  try {
+    var savedToken = sessionStorage.getItem('intime_admin_token');
+    if (savedToken) { adminToken = savedToken; }
+  } catch (e) { /* sessionStorage nedostupan (privatni način rada i sl.) — jednostavno se traži ponovna prijava */ }
+
+  function gasCall(payload) {
+    return fetch(GAS_WEB_APP_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(payload)
+    }).then(function(res) { return res.json(); });
+  }
+
+  function showLoginError(msg) {
+    var el = document.getElementById('login-error');
+    el.textContent = msg;
+    el.hidden = false;
+  }
+
+  function handleLogin(e) {
+    e.preventDefault();
+    var pass = document.getElementById('login-password').value;
+    document.getElementById('login-error').hidden = true;
+    gasCall({ action: 'adminLogin', password: pass }).then(function(res) {
+      if (res.status !== 'ok') {
+        showLoginError(res.message || 'Prijava nije uspjela.');
+        return;
+      }
+      adminToken = res.token;
+      try { sessionStorage.setItem('intime_admin_token', adminToken); } catch (e2) {}
+      document.getElementById('login-password').value = '';
+      showDashboard();
+    }).catch(function() {
+      showLoginError('Greška u komunikaciji s poslužiteljem. Provjerite internetsku vezu i GAS_WEB_APP_URL.');
+    });
+    return false;
+  }
+
+  function handleLogout() {
+    adminToken = null;
+    try { sessionStorage.removeItem('intime_admin_token'); } catch (e) {}
+    document.getElementById('dashboard').hidden = true;
+    document.getElementById('login-screen').hidden = false;
+  }
+
+  function showDashboard() {
+    document.getElementById('login-screen').hidden = true;
+    document.getElementById('dashboard').hidden = false;
+    loadAll();
+  }
+
+  function loadAll() {
+    loadCounters();
+    loadEntries();
+    loadAnkete();
+  }
+
+  function handleAuthError(res) {
+    if (res && res.status === 'error' && /sesija|prijav/i.test(res.message || '')) {
+      handleLogout();
+      return true;
+    }
+    return false;
+  }
+
+  function loadCounters() {
+    gasCall({ action: 'adminGetCounters', token: adminToken }).then(function(res) {
+      if (handleAuthError(res)) { return; }
+      if (res.status !== 'ok') { return; }
+      document.getElementById('stat-posjete').textContent = res.posjete;
+      document.getElementById('stat-pozitivno').textContent = res.pozitivno;
+      document.getElementById('stat-negativno').textContent = res.negativno;
+      document.getElementById('stat-ankete').textContent = (res.ankete === undefined ? '—' : res.ankete);
+    }).catch(function() {});
+  }
+
+  function loadEntries() {
+    gasCall({ action: 'adminListEntries', token: adminToken }).then(function(res) {
+      if (handleAuthError(res)) { return; }
+      if (res.status !== 'ok') { return; }
+      allEntries = res.entries || [];
+      labelToKeyMap = res.labelToKey || {};
+      renderTabCounts();
+      if (activeTab !== 'Ankete') { renderEntries(); }
+    }).catch(function() {});
+  }
+
+  // Ankete kvalitete žive u zasebnom Google Sheetu (InTime_Ankete) i imaju
+  // sasvim drugačiji oblik zapisa ({rowIndex, fields, prosjek}, bez `status`)
+  // od upita iz InTime_Upiti — zato zaseban popis (allAnketaEntries) i
+  // zasebna funkcija za dohvat, umjesto miješanja s loadEntries()/allEntries.
+  function loadAnkete() {
+    gasCall({ action: 'adminListAnkete', token: adminToken }).then(function(res) {
+      if (handleAuthError(res)) { return; }
+      if (res.status !== 'ok') { return; }
+      allAnketaEntries = res.entries || [];
+      document.getElementById('tab-count-ankete').textContent = allAnketaEntries.length;
+      if (activeTab === 'Ankete') { renderEntries(); }
+    }).catch(function() {});
+  }
+
+  function renderTabCounts() {
+    var interesCount = allEntries.filter(function(e){ return e.status === 'Interes'; }).length;
+    var odbijenicaCount = allEntries.filter(function(e){ return e.status === 'Odbijenica'; }).length;
+    document.getElementById('tab-count-interes').textContent = interesCount;
+    document.getElementById('tab-count-odbijenica').textContent = odbijenicaCount;
+  }
+
+  function switchTab(tab) {
+    activeTab = tab;
+    document.getElementById('tab-btn-interes').classList.toggle('active', tab === 'Interes');
+    document.getElementById('tab-btn-odbijenica').classList.toggle('active', tab === 'Odbijenica');
+    document.getElementById('tab-btn-ankete').classList.toggle('active', tab === 'Ankete');
+    renderEntries();
+  }
+
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function(c) {
+      return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c];
+    });
+  }
+
+  function fieldVal(entry, label) {
+    var v = entry.fields[label];
+    return (v === undefined || v === null) ? '' : v;
+  }
+
+  function renderEntries() {
+    var container = document.getElementById('entries-list');
+    container.innerHTML = '';
+
+    if (activeTab === 'Ankete') {
+      if (allAnketaEntries.length === 0) {
+        var hintA = document.createElement('div');
+        hintA.className = 'empty-hint';
+        hintA.textContent = 'Trenutno nema popunjenih anketa o kvaliteti usluge.';
+        container.appendChild(hintA);
+        return;
+      }
+      allAnketaEntries.forEach(function(entry) {
+        container.appendChild(buildAnketaEntryCard(entry));
+      });
+      return;
+    }
+
+    var list = allEntries.filter(function(e){ return e.status === activeTab; });
+
+    if (list.length === 0) {
+      var hint = document.createElement('div');
+      hint.className = 'empty-hint';
+      hint.textContent = activeTab === 'Interes'
+        ? 'Trenutno nema pristiglih zainteresiranih upita.'
+        : 'Trenutno nema pristiglih odbijenica.';
+      container.appendChild(hint);
+      return;
+    }
+
+    list.forEach(function(entry) {
+      container.appendChild(buildEntryCard(entry));
+    });
+  }
+
+  function buildEntryCard(entry) {
+    var card = document.createElement('div');
+    card.className = 'entry-card';
+    card.dataset.rowIndex = entry.rowIndex;
+
+    var naziv = fieldVal(entry, 'Naziv tvrtke') || '(bez naziva)';
+    var timestamp = fieldVal(entry, 'Timestamp');
+    var subParts = [];
+    if (entry.status === 'Interes') {
+      var kontakt = fieldVal(entry, 'Kontakt osoba');
+      var mobitel = fieldVal(entry, 'Mobitel');
+      var email = fieldVal(entry, 'Email kontakt osobe');
+      if (kontakt) { subParts.push(esc(kontakt)); }
+      if (mobitel) { subParts.push(esc(mobitel)); }
+      if (email) { subParts.push(esc(email)); }
+    } else {
+      var tel = fieldVal(entry, 'Telefon (odbijenica)');
+      var mail = fieldVal(entry, 'Email (odbijenica)');
+      var razlog = fieldVal(entry, 'Razlog (odbijenica)');
+      if (tel) { subParts.push(esc(tel)); }
+      if (mail) { subParts.push(esc(mail)); }
+      if (razlog) { subParts.push(esc(razlog)); }
+    }
+    // Vrijeme popunjavanja (automatski izračunato na frontendu klijenta, od
+    // dolaska na stranicu do slanja upitnika) — prikazano odmah u naslovu
+    // kartice radi brzog uvida, bez potrebe za širenjem kartice.
+    var trajanje = fieldVal(entry, 'Vrijeme popunjavanja (trajanje)');
+    if (trajanje) { subParts.push('Trajanje popunjavanja: ' + esc(trajanje)); }
+
+    var head = document.createElement('div');
+    head.className = 'entry-card-head';
+    head.innerHTML =
+      '<div>' +
+        '<div class="entry-card-title">' + esc(naziv) + '</div>' +
+        '<div class="entry-card-sub">' +
+          (timestamp ? '<span>' + esc(timestamp) + '</span>' : '') +
+          subParts.map(function(p){ return '<span>' + p + '</span>'; }).join('') +
+        '</div>' +
+      '</div>' +
+      '<div class="chevron">▾</div>';
+    head.addEventListener('click', function() {
+      card.classList.toggle('expanded');
+    });
+    card.appendChild(head);
+
+    var body = document.createElement('div');
+    body.className = 'entry-card-body';
+
+    // Generička tablica svih preostalih polja upitnika (osim naziva/OIB-a,
+    // koji imaju svoj poseban obrazac niže, i admin-only polja, koja imaju
+    // svoj obrazac iznad njega) — svako polje koje adminListEntries() prijavi
+    // kroz labelToKeyMap kao poznato polje upitnika postaje ovdje ručno
+    // uredljivo, tako da Sašo (osim putem klijentove poveznice za ispravak)
+    // može i sam izravno promijeniti bilo koji podatak. Vrijednost se šalje
+    // natrag kroz adminUpdateFields(), koja prihvaća BILO KOJI ključ iz
+    // UPIT_FIELDS — vidi opširnu napomenu uz tu funkciju u InTime_Code.gs.
+    var table = document.createElement('table');
+    table.className = 'field-table';
+    var editableInputs = [];
+    Object.keys(entry.fields).forEach(function(label) {
+      if (label === 'Tip') { return; }
+      if (label.indexOf('(admin)') !== -1) { return; } // admin polja se prikazuju u posebnom obrascu iznad
+      if (label === 'Naziv tvrtke' || label === 'OIB') { return; } // imaju svoj poseban obrazac niže
+      var v = entry.fields[label];
+      if (v === '' || v === null || v === undefined) { return; }
+      var tr = document.createElement('tr');
+      var tdK = document.createElement('td');
+      tdK.className = 'k';
+      tdK.textContent = label;
+      var tdV = document.createElement('td');
+      tdV.className = 'v';
+      var key = labelToKeyMap[label];
+      if (key) {
+        var isDugacko = String(v).length > 60 || /\n/.test(String(v));
+        var input = document.createElement(isDugacko ? 'textarea' : 'input');
+        if (!isDugacko) { input.type = 'text'; }
+        input.value = v;
+        input.dataset.key = key;
+        tdV.appendChild(input);
+        editableInputs.push(input);
+      } else {
+        tdV.textContent = v;
+      }
+      tr.appendChild(tdK);
+      tr.appendChild(tdV);
+      table.appendChild(tr);
+    });
+    body.appendChild(table);
+
+    if (editableInputs.length > 0) {
+      var fieldActions = document.createElement('div');
+      fieldActions.className = 'admin-fields-actions';
+      fieldActions.innerHTML = '<span class="save-status"></span><button type="button" class="btn btn-small">Spremi izmjene</button>';
+      var fieldStatusEl = fieldActions.querySelector('.save-status');
+      var fieldSaveBtn = fieldActions.querySelector('.btn');
+      fieldActions.addEventListener('click', function(ev){ ev.stopPropagation(); });
+      fieldSaveBtn.addEventListener('click', function(ev) {
+        ev.stopPropagation();
+        fieldStatusEl.textContent = 'Spremanje…';
+        fieldStatusEl.classList.remove('error');
+        var fields = {};
+        editableInputs.forEach(function(inp) { fields[inp.dataset.key] = inp.value; });
+        gasCall({ action: 'adminUpdateFields', token: adminToken, rowIndex: entry.rowIndex, fields: fields }).then(function(res) {
+          if (handleAuthError(res)) { return; }
+          if (res.status === 'ok') {
+            fieldStatusEl.textContent = 'Spremljeno.';
+            fieldStatusEl.classList.remove('error');
+            loadAll();
+          } else {
+            fieldStatusEl.textContent = res.message || 'Greška pri spremanju.';
+            fieldStatusEl.classList.add('error');
+          }
+        }).catch(function() {
+          fieldStatusEl.textContent = 'Greška u komunikaciji s poslužiteljem.';
+          fieldStatusEl.classList.add('error');
+        });
+      });
+      body.appendChild(fieldActions);
+    }
+
+    if (entry.status === 'Interes') {
+      body.appendChild(buildAdminFieldsBlock(entry));
+      body.appendChild(buildNazivOibBlock(entry));
+      var ispravakBlok = buildIspravakBlock(entry);
+      if (ispravakBlok) { body.appendChild(ispravakBlok); }
+    }
+
+    var actions = document.createElement('div');
+    actions.className = 'entry-card-actions';
+    var delBtn = document.createElement('button');
+    delBtn.className = 'btn btn-danger btn-small';
+    delBtn.textContent = 'Obriši upit';
+    delBtn.addEventListener('click', function(ev) {
+      ev.stopPropagation();
+      openDeleteModal(entry.rowIndex, naziv);
+    });
+    actions.appendChild(delBtn);
+    body.appendChild(actions);
+
+    card.appendChild(body);
+    return card;
+  }
+
+  // ---- Anketa o kvaliteti usluge (treći tab) ----
+  // Samo pregled i brisanje — admin ne uređuje tuđe ocjene, pa nema
+  // editabilnih polja niti adminUpdateFields() poziva ovdje (za razliku od
+  // buildEntryCard() iznad, koji upit dozvoljava ručno ispraviti).
+  function anketaScoreClass(prosjek) {
+    if (prosjek === null || prosjek === undefined) { return ''; }
+    if (prosjek < 6) { return 'low'; }
+    if (prosjek < 8) { return 'mid'; }
+    return 'high';
+  }
+
+  function buildAnketaEntryCard(entry) {
+    var card = document.createElement('div');
+    card.className = 'entry-card';
+    card.dataset.rowIndex = entry.rowIndex;
+
+    var naziv = fieldVal(entry, 'Naziv poslovnog subjekta') || '(bez naziva)';
+    var timestamp = fieldVal(entry, 'Timestamp');
+    var subParts = [];
+    var kontakt = fieldVal(entry, 'Ime i prezime osobe koja ispunjava anketu');
+    var telefon = fieldVal(entry, 'Broj telefona osobe koja ispunjava anketu');
+    var email = fieldVal(entry, 'E-mail adresa osobe koja ispunjava anketu');
+    if (kontakt) { subParts.push(esc(kontakt)); }
+    if (telefon) { subParts.push(esc(telefon)); }
+    if (email) { subParts.push(esc(email)); }
+
+    var prosjekHtml = '';
+    if (entry.prosjek !== null && entry.prosjek !== undefined) {
+      prosjekHtml = ' <span class="anketa-score-badge ' + anketaScoreClass(entry.prosjek) + '">Prosjek: ' + esc(entry.prosjek) + '/10</span>';
+    }
+
+    var head = document.createElement('div');
+    head.className = 'entry-card-head';
+    head.innerHTML =
+      '<div>' +
+        '<div class="entry-card-title">' + esc(naziv) + prosjekHtml + '</div>' +
+        '<div class="entry-card-sub">' +
+          (timestamp ? '<span>' + esc(timestamp) + '</span>' : '') +
+          subParts.map(function(p){ return '<span>' + p + '</span>'; }).join('') +
+        '</div>' +
+      '</div>' +
+      '<div class="chevron">▾</div>';
+    head.addEventListener('click', function() {
+      card.classList.toggle('expanded');
+    });
+    card.appendChild(head);
+
+    var body = document.createElement('div');
+    body.className = 'entry-card-body';
+
+    // Generička, isključivo za čitanje tablica svih odgovora (25 ocjena
+    // kvalitete + 2 NPS pitanja + 3 slobodna komentara + podaci o tvrtki) —
+    // isti label-iteracijski pristup kao u buildEntryCard(), ali bez ijednog
+    // <input>-a, jer admin ovdje samo pregledava i (po potrebi) briše anketu.
+    var table = document.createElement('table');
+    table.className = 'field-table';
+    Object.keys(entry.fields).forEach(function(label) {
+      if (label === 'Timestamp') { return; }
+      if (label === 'Naziv poslovnog subjekta') { return; } // već prikazano u naslovu kartice
+      var v = entry.fields[label];
+      if (v === '' || v === null || v === undefined) { return; }
+      var tr = document.createElement('tr');
+      var tdK = document.createElement('td');
+      tdK.className = 'k';
+      tdK.textContent = label;
+      var tdV = document.createElement('td');
+      tdV.className = 'v';
+      tdV.textContent = v;
+      tr.appendChild(tdK);
+      tr.appendChild(tdV);
+      table.appendChild(tr);
+    });
+    body.appendChild(table);
+
+    var actions = document.createElement('div');
+    actions.className = 'entry-card-actions';
+    var delBtn = document.createElement('button');
+    delBtn.className = 'btn btn-danger btn-small';
+    delBtn.textContent = 'Obriši anketu';
+    delBtn.addEventListener('click', function(ev) {
+      ev.stopPropagation();
+      openDeleteModal(entry.rowIndex, naziv, 'adminDeleteAnketaEntry');
+    });
+    actions.appendChild(delBtn);
+    body.appendChild(actions);
+
+    card.appendChild(body);
+    return card;
+  }
+
+  function buildAdminFieldsBlock(entry) {
+    var wrap = document.createElement('div');
+    wrap.className = 'admin-fields';
+    wrap.innerHTML =
+      '<h3>Podaci koje popunjava In Time (nakon otvaranja klijenta)</h3>' +
+      '<div class="admin-fields-grid">' +
+        '<div><label>Online Booking — korisničko ime</label>' +
+          '<input type="text" class="af-username" value="' + esc(fieldVal(entry, 'OB korisničko ime (admin)')) + '"></div>' +
+        '<div><label>Online Booking — lozinka</label>' +
+          '<input type="text" class="af-password" value="' + esc(fieldVal(entry, 'OB lozinka (admin)')) + '"></div>' +
+        '<div><label>Datum otvaranja klijenta u sustavu</label>' +
+          '<input type="date" class="af-datum" value="' + esc(fieldVal(entry, 'Datum otvaranja klijenta u sustavu (admin)')) + '"></div>' +
+        '<div><label>Zadnje vrijeme unosa naloga</label>' +
+          '<input type="time" class="af-vrijeme" value="' + esc(fieldVal(entry, 'Zadnje vrijeme unosa naloga (admin)')) + '"></div>' +
+      '</div>' +
+      '<div class="admin-fields-actions">' +
+        '<span class="save-status"></span>' +
+        '<button type="button" class="btn btn-small">Spremi</button>' +
+      '</div>';
+
+    var statusEl = wrap.querySelector('.save-status');
+    var saveBtn = wrap.querySelector('.admin-fields-actions .btn');
+    saveBtn.addEventListener('click', function(ev) {
+      ev.stopPropagation();
+      statusEl.textContent = 'Spremanje…';
+      statusEl.classList.remove('error');
+      var fields = {
+        ob_username: wrap.querySelector('.af-username').value,
+        ob_password: wrap.querySelector('.af-password').value,
+        datum_otvaranja: wrap.querySelector('.af-datum').value,
+        zadnje_vrijeme_unosa: wrap.querySelector('.af-vrijeme').value
+      };
+      gasCall({ action: 'adminUpdateFields', token: adminToken, rowIndex: entry.rowIndex, fields: fields }).then(function(res) {
+        if (handleAuthError(res)) { return; }
+        if (res.status === 'ok') {
+          statusEl.textContent = 'Spremljeno.';
+          statusEl.classList.remove('error');
+        } else {
+          statusEl.textContent = res.message || 'Greška pri spremanju.';
+          statusEl.classList.add('error');
+        }
+      }).catch(function() {
+        statusEl.textContent = 'Greška u komunikaciji s poslužiteljem.';
+        statusEl.classList.add('error');
+      });
+    });
+    wrap.addEventListener('click', function(ev){ ev.stopPropagation(); });
+
+    return wrap;
+  }
+
+  // Naziv tvrtke i OIB su JEDINI podaci koje klijent nikad ne smije sam
+  // mijenjati putem poveznice za ispravak (vidi ispravakSaveChanges() u
+  // InTime_Code.gs) — jedinstveni su i koriste se za provjeru duplikata pri
+  // novom slanju upitnika. Ovdje ih, kao admin, možeš naknadno ispraviti.
+  function buildNazivOibBlock(entry) {
+    var wrap = document.createElement('div');
+    wrap.className = 'naziv-oib-block';
+    wrap.innerHTML =
+      '<h3>Naziv tvrtke i OIB (ispravlja isključivo In Time)</h3>' +
+      '<div class="admin-fields-grid">' +
+        '<div><label>Naziv tvrtke</label>' +
+          '<input type="text" class="no-naziv" value="' + esc(fieldVal(entry, 'Naziv tvrtke')) + '"></div>' +
+        '<div><label>OIB</label>' +
+          '<input type="text" class="no-oib" value="' + esc(fieldVal(entry, 'OIB')) + '"></div>' +
+      '</div>' +
+      '<div class="admin-fields-actions">' +
+        '<span class="save-status"></span>' +
+        '<button type="button" class="btn btn-small">Spremi</button>' +
+      '</div>';
+
+    var statusEl = wrap.querySelector('.save-status');
+    var saveBtn = wrap.querySelector('.admin-fields-actions .btn');
+    saveBtn.addEventListener('click', function(ev) {
+      ev.stopPropagation();
+      statusEl.textContent = 'Spremanje…';
+      statusEl.classList.remove('error');
+      var fields = {
+        naziv: wrap.querySelector('.no-naziv').value,
+        oib: wrap.querySelector('.no-oib').value
+      };
+      gasCall({ action: 'adminUpdateFields', token: adminToken, rowIndex: entry.rowIndex, fields: fields }).then(function(res) {
+        if (handleAuthError(res)) { return; }
+        if (res.status === 'ok') {
+          statusEl.textContent = 'Spremljeno.';
+          statusEl.classList.remove('error');
+          loadAll();
+        } else {
+          statusEl.textContent = res.message || 'Greška pri spremanju.';
+          statusEl.classList.add('error');
+        }
+      }).catch(function() {
+        statusEl.textContent = 'Greška u komunikaciji s poslužiteljem.';
+        statusEl.classList.add('error');
+      });
+    });
+    wrap.addEventListener('click', function(ev){ ev.stopPropagation(); });
+
+    return wrap;
+  }
+
+  // Prikaz poveznice + lozinke za "ispravak podataka" koje je klijent
+  // dobio mailom, i checkboxovi kojima Saša određuje koja poglavlja klijent
+  // smije sam ispraviti putem te poveznice (vidi adminSetIspravakOdobrenje()
+  // i ispravakSaveChanges() u InTime_Code.gs — server je autoritet, ovi
+  // checkboxovi samo šalju odabir na spremanje).
+  function buildIspravakBlock(entry) {
+    var token = fieldVal(entry, 'Token za ispravak (admin)');
+    if (!token) { return null; } // stariji upiti (prije uvođenja ove značajke) nemaju token
+
+    var lozinka = fieldVal(entry, 'Lozinka za ispravak (admin)');
+    var odobrenaRaw = fieldVal(entry, 'Odobrena poglavlja za ispravak (admin, brojevi odvojeni zarezom)');
+    var odobrenaSet = {};
+    String(odobrenaRaw || '').split(',').forEach(function(s) {
+      var n = parseInt(String(s).trim(), 10);
+      if (!isNaN(n)) { odobrenaSet[n] = true; }
+    });
+    var link = ISPRAVAK_STRANICA_URL + '?token=' + encodeURIComponent(token);
+
+    var wrap = document.createElement('div');
+    wrap.className = 'ispravak-block';
+
+    var checksHtml = POGLAVLJA_NASLOVI.map(function(pog) {
+      var checked = odobrenaSet[pog.broj] ? ' checked' : '';
+      return '<label class="chapter-check-item"><input type="checkbox" class="ip-chapter" value="' + pog.broj + '"' + checked + '> ' + pog.broj + '. ' + esc(pog.naslov) + '</label>';
+    }).join('');
+
+    wrap.innerHTML =
+      '<h3>Ispravak podataka (klijent) — poveznica i odobrenje</h3>' +
+      '<div class="ispravak-link-row">' +
+        '<label>Poveznica poslana klijentu (samo za pregled)</label>' +
+        '<input type="text" class="ip-link" value="' + esc(link) + '" readonly onclick="this.select()">' +
+      '</div>' +
+      '<div class="ispravak-link-row">' +
+        '<label>Lozinka poslana klijentu (samo za pregled)</label>' +
+        '<input type="text" class="ip-lozinka" value="' + esc(lozinka) + '" readonly onclick="this.select()" style="max-width:160px;">' +
+      '</div>' +
+      '<label class="chapter-checks-all"><input type="checkbox" class="ip-sve"> Odaberi sve (klijent smije sve promijeniti, osim naziva tvrtke i OIB-a)</label>' +
+      '<div class="chapter-checks">' + checksHtml + '</div>' +
+      '<div class="admin-fields-actions">' +
+        '<span class="save-status"></span>' +
+        '<button type="button" class="btn btn-small">Spremi odobrenje</button>' +
+      '</div>';
+
+    var chapterBoxes = wrap.querySelectorAll('.ip-chapter');
+    var sveBox = wrap.querySelector('.ip-sve');
+    function osvjeziSveBox() {
+      var sveOznaceno = Array.prototype.every.call(chapterBoxes, function(cb) { return cb.checked; });
+      sveBox.checked = sveOznaceno;
+    }
+    osvjeziSveBox();
+    sveBox.addEventListener('click', function(ev) { ev.stopPropagation(); });
+    sveBox.addEventListener('change', function() {
+      Array.prototype.forEach.call(chapterBoxes, function(cb) { cb.checked = sveBox.checked; });
+    });
+    Array.prototype.forEach.call(chapterBoxes, function(cb) {
+      cb.addEventListener('click', function(ev) { ev.stopPropagation(); });
+      cb.addEventListener('change', osvjeziSveBox);
+    });
+
+    var statusEl = wrap.querySelector('.admin-fields-actions .save-status');
+    var saveBtn = wrap.querySelector('.admin-fields-actions .btn');
+    saveBtn.addEventListener('click', function(ev) {
+      ev.stopPropagation();
+      statusEl.textContent = 'Spremanje…';
+      statusEl.classList.remove('error');
+      var poglavlja = [];
+      Array.prototype.forEach.call(chapterBoxes, function(cb) {
+        if (cb.checked) { poglavlja.push(parseInt(cb.value, 10)); }
+      });
+      gasCall({ action: 'adminSetIspravakOdobrenje', token: adminToken, rowIndex: entry.rowIndex, poglavlja: poglavlja }).then(function(res) {
+        if (handleAuthError(res)) { return; }
+        if (res.status === 'ok') {
+          statusEl.textContent = 'Spremljeno.';
+          statusEl.classList.remove('error');
+        } else {
+          statusEl.textContent = res.message || 'Greška pri spremanju.';
+          statusEl.classList.add('error');
+        }
+      }).catch(function() {
+        statusEl.textContent = 'Greška u komunikaciji s poslužiteljem.';
+        statusEl.classList.add('error');
+      });
+    });
+    wrap.addEventListener('click', function(ev){ ev.stopPropagation(); });
+
+    return wrap;
+  }
+
+  // ---- Brisanje pojedinačnog upita ili ankete (uz potvrdu riječju BRISATI) ----
+  // `action` je opcionalan — zadano 'adminDeleteEntry' (upiti iz InTime_Upiti,
+  // Interes/Odbijenica), a treći tab (Ankete kvalitete) prosljeđuje
+  // 'adminDeleteAnketaEntry' jer te ankete žive u zasebnom InTime_Ankete
+  // listu — isti modal se koristi za oboje, samo se pamti koju akciju treba
+  // pozvati pri potvrdi (pendingDeleteAction).
+  function openDeleteModal(rowIndex, naziv, action) {
+    pendingDeleteRowIndex = rowIndex;
+    pendingDeleteAction = action || 'adminDeleteEntry';
+    var opis = pendingDeleteAction === 'adminDeleteAnketaEntry'
+      ? 'Trajno brišete anketu o kvaliteti usluge: "' + naziv + '". Ova radnja se odnosi na cijeli redak u tablici (sve odgovore te ankete).'
+      : 'Trajno brišete upit: "' + naziv + '". Ova radnja se odnosi na cijeli redak u tablici (sve podatke tog upita).';
+    document.getElementById('delete-modal-desc').textContent = opis;
+    document.getElementById('delete-confirm-input').value = '';
+    document.getElementById('delete-modal-error').hidden = true;
+    updateDeleteButtonState();
+    document.getElementById('delete-modal').hidden = false;
+  }
+  function closeDeleteModal() {
+    document.getElementById('delete-modal').hidden = true;
+    pendingDeleteRowIndex = null;
+    pendingDeleteAction = 'adminDeleteEntry';
+  }
+  function updateDeleteButtonState() {
+    var val = document.getElementById('delete-confirm-input').value;
+    document.getElementById('delete-confirm-btn').disabled = (val !== 'BRISATI');
+  }
+  function submitDelete() {
+    if (document.getElementById('delete-confirm-input').value !== 'BRISATI') { return; }
+    if (!pendingDeleteRowIndex) { return; }
+    var rowIndex = pendingDeleteRowIndex;
+    var action = pendingDeleteAction || 'adminDeleteEntry';
+    gasCall({ action: action, token: adminToken, rowIndex: rowIndex, confirmWord: 'BRISATI' }).then(function(res) {
+      if (handleAuthError(res)) { return; }
+      if (res.status === 'ok') {
+        closeDeleteModal();
+        loadAll();
+      } else {
+        var errEl = document.getElementById('delete-modal-error');
+        errEl.textContent = res.message || 'Brisanje nije uspjelo.';
+        errEl.hidden = false;
+      }
+    }).catch(function() {
+      var errEl = document.getElementById('delete-modal-error');
+      errEl.textContent = 'Greška u komunikaciji s poslužiteljem.';
+      errEl.hidden = false;
+    });
+  }
+
+  // ---- Promjena lozinke ----
+  function openChangePasswordModal() {
+    document.getElementById('change-password-old').value = '';
+    document.getElementById('change-password-new').value = '';
+    document.getElementById('change-password-new2').value = '';
+    document.getElementById('change-password-error').hidden = true;
+    document.getElementById('change-password-ok').hidden = true;
+    document.getElementById('change-password-modal').hidden = false;
+  }
+  function closeChangePasswordModal() {
+    document.getElementById('change-password-modal').hidden = true;
+  }
+  function submitChangePassword() {
+    var oldPass = document.getElementById('change-password-old').value;
+    var newPass = document.getElementById('change-password-new').value;
+    var newPass2 = document.getElementById('change-password-new2').value;
+    var errEl = document.getElementById('change-password-error');
+    var okEl = document.getElementById('change-password-ok');
+    errEl.hidden = true;
+    okEl.hidden = true;
+    if (newPass !== newPass2) {
+      errEl.textContent = 'Nova lozinka i ponovljena lozinka se ne podudaraju.';
+      errEl.hidden = false;
+      return;
+    }
+    gasCall({ action: 'adminChangePassword', token: adminToken, oldPassword: oldPass, newPassword: newPass }).then(function(res) {
+      if (handleAuthError(res)) { return; }
+      if (res.status === 'ok') {
+        okEl.textContent = 'Lozinka je promijenjena.';
+        okEl.hidden = false;
+        document.getElementById('change-password-old').value = '';
+        document.getElementById('change-password-new').value = '';
+        document.getElementById('change-password-new2').value = '';
+      } else {
+        errEl.textContent = res.message || 'Promjena lozinke nije uspjela.';
+        errEl.hidden = false;
+      }
+    }).catch(function() {
+      errEl.textContent = 'Greška u komunikaciji s poslužiteljem.';
+      errEl.hidden = false;
+    });
+  }
+
+  // Ako je token već spremljen iz ranije sesije (sessionStorage), preskoči
+  // login ekran i probaj izravno učitati podatke — ako je token u
+  // međuvremenu istekao, handleAuthError() će nas vratiti na login.
+  if (adminToken) {
+    showDashboard();
+  }
+</script>
+
+</body>
+</html>
