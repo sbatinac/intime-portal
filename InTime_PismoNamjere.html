@@ -199,6 +199,25 @@
     from{box-shadow:0 0 8px rgba(225,29,46,.55), 0 0 16px rgba(225,29,46,.3);}
     to{box-shadow:0 0 20px rgba(225,29,46,1), 0 0 38px rgba(225,29,46,.7);}
   }
+  .btn-tertiary{
+    background:#facc15;
+    color:#1a1a1a;
+    text-decoration:none;
+    display:inline-block;
+    animation:btn-glow-yellow 1.8s ease-in-out infinite alternate;
+  }
+  .btn-wide{
+    display:block;
+    width:100%;
+    max-width:480px;
+    box-sizing:border-box;
+    margin:18px auto 0;
+    text-align:center;
+  }
+  @keyframes btn-glow-yellow{
+    from{box-shadow:0 0 8px rgba(250,204,21,.55), 0 0 16px rgba(250,204,21,.3);}
+    to{box-shadow:0 0 20px rgba(250,204,21,1), 0 0 38px rgba(250,204,21,.7);}
+  }
 
   /* FORMS */
   .form-panel{
@@ -811,9 +830,7 @@
           <button class="btn btn-primary" onclick="showPanel('interes')">DA, zainteresirani smo</button>
           <button class="btn btn-secondary" onclick="showPanel('odbijenica')">NE, trenutno nas ne zanima</button>
         </div>
-        <p style="margin-top:18px;margin-bottom:0;font-size:13.5px;">
-          <a href="InTime_Anketa.html" target="_blank" style="color:#fff;text-decoration:underline;">Već ste naš postojeći klijent? Ocijenite kvalitetu naše usluge →</a>
-        </p>
+        <a href="InTime_Anketa.html" target="_blank" class="btn btn-tertiary btn-wide">Već ste naš postojeći klijent? Ocijenite kvalitetu naše usluge →</a>
       </div>
 
       <!-- UPITNIK (zainteresirani) -->
@@ -901,7 +918,7 @@
           <h3>3. Poslovni i bankovni podaci</h3>
 
           <label>OIB *</label>
-          <input type="text" name="oib" required>
+          <input type="text" name="oib" id="oib-input" required inputmode="numeric" maxlength="11" oninput="ogranicniOibNaZnamenke(this)">
 
           <label>MBS (matični broj subjekta)</label>
           <input type="text" name="mbs">
@@ -996,7 +1013,25 @@
             </div>
             <div>
               <label>Funkcija kontakt osobe *</label>
-              <input type="text" name="kontakt_funkcija" required>
+              <select name="kontakt_funkcija" required onchange="toggleOstalo(this)">
+                <option value="">— odaberite —</option>
+                <option value="Uprava / direkcija">Uprava / direkcija</option>
+                <option value="Prodaja">Prodaja</option>
+                <option value="Marketing">Marketing</option>
+                <option value="Logistika / distribucija">Logistika / distribucija</option>
+                <option value="Nabava">Nabava</option>
+                <option value="Skladište / operativa">Skladište / operativa</option>
+                <option value="Računovodstvo / financije">Računovodstvo / financije</option>
+                <option value="Ljudski resursi">Ljudski resursi</option>
+                <option value="Informatika / IT">Informatika / IT</option>
+                <option value="Korisnička podrška">Korisnička podrška</option>
+                <option value="Uvoz-izvoz / vanjska trgovina">Uvoz-izvoz / vanjska trgovina</option>
+                <option value="Proizvodnja">Proizvodnja</option>
+                <option value="Kvaliteta">Kvaliteta</option>
+                <option value="Pravna služba">Pravna služba</option>
+                <option value="Ostalo">Ostalo</option>
+              </select>
+              <div class="ostalo-line ostalo-hidden"><input type="text" name="kontakt_funkcija_ostalo" placeholder="Upišite ako ste odabrali Ostalo"></div>
             </div>
           </div>
 
@@ -1349,11 +1384,30 @@
           <label>Imaju li Vaši proizvodi izražen prodajni ciklus ili sezonalnost tijekom godine? *</label>
           <p class="sec-hint">Bilježite li tijekom godine razdoblja s većim ili manjim obujmom slanja paketa koji bi mogli utjecati na organizaciju transporta?</p>
           <div class="choice-group">
-            <label><input type="radio" name="sezonalnost" value="DA" required onchange="toggleChoiceOstalo(this)"> Da</label>
-            <label><input type="radio" name="sezonalnost" value="NE" onchange="toggleChoiceOstalo(this)"> Ne</label>
-            <label><input type="radio" name="sezonalnost" value="Neki proizvodi imaju izražen sezonski karakter u prodaji, no prosječan broj mjesečnih pošiljaka ostaje stabilan" onchange="toggleChoiceOstalo(this)"> Neki proizvodi sezonski, ali ukupan broj pošiljaka ostaje stabilan</label>
-            <label><input type="radio" name="sezonalnost" value="Ostalo" onchange="toggleChoiceOstalo(this)"> Ostalo</label>
+            <label><input type="radio" name="sezonalnost" value="DA" required onchange="toggleChoiceOstalo(this); toggleSezonalnostMjeseci(this)"> Da</label>
+            <label><input type="radio" name="sezonalnost" value="NE" onchange="toggleChoiceOstalo(this); toggleSezonalnostMjeseci(this)"> Ne</label>
+            <label><input type="radio" name="sezonalnost" value="Neki proizvodi imaju izražen sezonski karakter u prodaji, no prosječan broj mjesečnih pošiljaka ostaje stabilan" onchange="toggleChoiceOstalo(this); toggleSezonalnostMjeseci(this)"> Neki proizvodi sezonski, ali ukupan broj pošiljaka ostaje stabilan</label>
+            <label><input type="radio" name="sezonalnost" value="Ostalo" onchange="toggleChoiceOstalo(this); toggleSezonalnostMjeseci(this)"> Ostalo</label>
             <div class="ostalo-line ostalo-hidden"><input type="text" name="sezonalnost_ostalo" placeholder="Upišite ako ste odabrali Ostalo"></div>
+          </div>
+
+          <div id="sezonalnost-mjeseci-podpitanje" class="ostalo-hidden">
+            <label>U kojim mjesecima je sezonalnost najizraženija? *</label>
+            <p class="sec-hint">Označite sve mjesece u kojima primjećujete izrazito veći ili manji obujam pošiljaka.</p>
+            <div class="choice-group">
+              <label><input type="checkbox" name="sezonalnost_mjeseci" value="Siječanj"> Siječanj</label>
+              <label><input type="checkbox" name="sezonalnost_mjeseci" value="Veljača"> Veljača</label>
+              <label><input type="checkbox" name="sezonalnost_mjeseci" value="Ožujak"> Ožujak</label>
+              <label><input type="checkbox" name="sezonalnost_mjeseci" value="Travanj"> Travanj</label>
+              <label><input type="checkbox" name="sezonalnost_mjeseci" value="Svibanj"> Svibanj</label>
+              <label><input type="checkbox" name="sezonalnost_mjeseci" value="Lipanj"> Lipanj</label>
+              <label><input type="checkbox" name="sezonalnost_mjeseci" value="Srpanj"> Srpanj</label>
+              <label><input type="checkbox" name="sezonalnost_mjeseci" value="Kolovoz"> Kolovoz</label>
+              <label><input type="checkbox" name="sezonalnost_mjeseci" value="Rujan"> Rujan</label>
+              <label><input type="checkbox" name="sezonalnost_mjeseci" value="Listopad"> Listopad</label>
+              <label><input type="checkbox" name="sezonalnost_mjeseci" value="Studeni"> Studeni</label>
+              <label><input type="checkbox" name="sezonalnost_mjeseci" value="Prosinac"> Prosinac</label>
+            </div>
           </div>
 
           <label>Koristite li standardizirane kutije i standardiziranu transportnu ambalažu za pakiranje? *</label>
@@ -1687,7 +1741,7 @@
 <script>
   // Placeholder Apps Script Web App URL — zamijeniti pravim linkom nakon deploya (InTime_Code.gs).
   // Format: https://script.google.com/macros/s/SCRIPT_ID/exec
-  var GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzADLzx6HPt1f1AzjhsL9-E1MLTNqRjzb-wht7G5_YytyskwhTc7eCoQ0ypOMsHEudX/exec";
+  var GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbz73zkx72GhrDZ-t3CamF5wuz-9V7Uxe5z9IkFxHA8F5FBlrIlc7zMUd4_EHTILD9FTAw/exec";
 
   // ---- Automatsko bilježenje vremena dolaska/slanja (admin analitika —
   // koliko je vremena trebalo od dolaska na stranicu do slanja upitnika) ----
@@ -1744,6 +1798,15 @@
   // Broj mobitela kontakt osobe nudi se kao prijedlog (ne upisuje se
   // automatski) u Viber i WhatsApp poljima — korisnik ga bira klikom iz
   // padajućeg popisa ako je isti broj, ili upiše drugi ako nije.
+  // Hrvatski OIB je uvijek točno 11 znamenki. Ovo polje smije primiti samo
+  // brojeve (svaki drugi znak se odmah odbaci dok korisnik tipka) i najviše
+  // 11 znakova (maxlength atribut na inputu to već sprječava, ovo je dodatna
+  // sigurnost + čisti eventualni zalijepljeni tekst koji sadrži razmake/crtice).
+  function ogranicniOibNaZnamenke(input){
+    var samoBrojevi = input.value.replace(/[^0-9]/g, '').slice(0, 11);
+    if (samoBrojevi !== input.value) { input.value = samoBrojevi; }
+  }
+
   function suggestPhone(value){
     var datalist = document.getElementById('phone-suggestions');
     if (!datalist || !value) { return; }
@@ -2757,6 +2820,29 @@
     }
   }
 
+  // "Imaju li Vaši proizvodi izražen prodajni ciklus ili sezonalnost..." —
+  // ako korisnik odabere "Da" ili "Neki proizvodi sezonski, ali ukupan broj
+  // pošiljaka ostaje stabilan", otkriva se dodatni okvir s mjesecima gdje
+  // korisnik klikom označava mjesece u kojima je sezonalnost najizraženija.
+  // Kod "Ne" ili "Ostalo" okvir se skriva i sve oznake se brišu.
+  var SEZONALNOST_MJESECI_TRIGERI = [
+    'DA',
+    'Neki proizvodi imaju izražen sezonski karakter u prodaji, no prosječan broj mjesečnih pošiljaka ostaje stabilan'
+  ];
+
+  function toggleSezonalnostMjeseci(radio){
+    var podpitanje = document.getElementById('sezonalnost-mjeseci-podpitanje');
+    if (!podpitanje) { return; }
+    var checkedRadio = document.querySelector('input[name="sezonalnost"]:checked');
+    var showIt = !!checkedRadio && SEZONALNOST_MJESECI_TRIGERI.indexOf(checkedRadio.value) !== -1;
+    if (showIt) {
+      podpitanje.classList.remove('ostalo-hidden');
+    } else {
+      podpitanje.classList.add('ostalo-hidden');
+      podpitanje.querySelectorAll('input[name="sezonalnost_mjeseci"]:checked').forEach(function(cb){ cb.checked = false; });
+    }
+  }
+
   function toggleOstalo(select, triggerValue){
     var trigger = triggerValue || 'Ostalo';
     // Uzima ISKLJUČIVO sljedeći element odmah nakon <select> — ne pretragu
@@ -3216,6 +3302,18 @@
         alert('Molimo popunite sva obavezna polja prije slanja upitnika. Označili smo i postavili kursor na prvo polje koje nedostaje ili nije ispravno popunjeno.');
         neispravnoPolje.scrollIntoView({behavior:'smooth', block:'center'});
         neispravnoPolje.focus();
+        return false;
+      }
+
+      // OIB mora biti točno 11 znamenki (hrvatski standard). Polje već
+      // sprječava upis ne-brojeva i više od 11 znakova (vidi
+      // ogranicniOibNaZnamenke()), ali ovdje dodatno provjeravamo da nije
+      // upisano MANJE od 11 (npr. korisnik upisao samo 8 pa stao).
+      var _oibProvjeraEl = form.querySelector('input[name="oib"]');
+      if (_oibProvjeraEl && _oibProvjeraEl.value.trim().length !== 11) {
+        alert('OIB mora sadržavati točno 11 znamenki. Molimo provjerite i ispravite unos.');
+        _oibProvjeraEl.scrollIntoView({behavior:'smooth', block:'center'});
+        _oibProvjeraEl.focus();
         return false;
       }
     }
