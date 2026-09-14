@@ -42,7 +42,7 @@
   }
   img{max-width:100%;display:block;}
 
-  .wrap{max-width:860px;margin:0 auto;padding:0 24px;}
+  .wrap{max-width:1040px;margin:0 auto;padding:0 24px;}
   .wrap-wide{max-width:1040px;margin:0 auto;padding:0 24px;}
 
   /* HERO / BANNER */
@@ -54,9 +54,9 @@
   .hero-banner img{width:100%;display:block;border-radius:10px;}
 
   /* SECTIONS */
-  section{padding:44px 0;}
+  section{padding:22px 0;}
   section.alt{padding:0;}
-  section.alt > .wrap{padding-top:44px;padding-bottom:44px;border-top:1px solid var(--line);border-bottom:1px solid var(--line);}
+  section.alt > .wrap{padding-top:22px;padding-bottom:22px;border-top:1px solid var(--line);border-bottom:1px solid var(--line);}
 
   h2{
     font-size:25px;
@@ -64,6 +64,16 @@
     border-left:4px solid var(--purple);
     padding-left:12px;
     margin:0 0 18px;
+  }
+  h2.h2-glow{
+    font-size:32px;
+    color:var(--purple);
+    text-shadow:0 0 10px rgba(34,152,145,.55),0 0 22px rgba(34,152,145,.35);
+  }
+  h2.h2-glow-gold{
+    font-size:32px;
+    color:#b8860b;
+    text-shadow:0 0 10px rgba(212,160,17,.55),0 0 22px rgba(212,160,17,.35);
   }
   p{margin:0 0 14px;color:#333;}
 
@@ -108,6 +118,58 @@
   }
   .adv-text{font-size:14.5px;color:#333;}
   .adv-text b{color:var(--graphite);}
+
+  /* DINAMIČKE DRIVE GALERIJE (PDF, slike, video) — svaka se puni
+     dinamički (JS niže, ucitajPdfGaleriju/ucitajSlikeGaleriju/
+     ucitajVideoGaleriju) iz vlastitog Google Drive foldera; svaka sekcija
+     ostaje sakrivena dok njen folder nema sadržaja/greške pri dohvatu. */
+  .galerija-wrap{border-radius:12px;overflow:hidden;margin:10px 0 0;}
+  .galerija-trak{
+    display:flex;
+    gap:10px;
+    overflow-x:auto;
+    padding:16px 20px 20px;
+    -webkit-overflow-scrolling:touch;
+    cursor:grab;
+  }
+  .galerija-trak.dragging{cursor:grabbing;}
+  .galerija-prazno{color:#888;font-size:13px;padding:20px;}
+
+  /* — PDF galerija — */
+  #pdf-galerija-section .galerija-wrap-gornji{background:#fff;padding:20px 24px;border-bottom:2px solid var(--purple-dark);}
+  #pdf-galerija-section .galerija-header-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px;}
+  #pdf-naslov{font-size:15px;font-weight:900;color:var(--graphite);margin:0;}
+  #pdf-open-link{font-size:12px;font-weight:700;color:#fff;text-decoration:none;background:var(--purple);padding:8px 16px;border-radius:6px;}
+  #pdf-viewer{width:100%;height:500px;border:1px solid var(--line);border-radius:8px;}
+  #pdf-galerija-section .galerija-trak{background:#131313;}
+  .pdf-thumb{flex-shrink:0;width:100px;cursor:pointer;border-radius:8px;border:2px solid #333;background:#1a1a1a;padding:10px 8px;text-align:center;transition:border-color .2s,box-shadow .2s;}
+  .pdf-thumb.active{border-color:var(--purple);box-shadow:0 2px 12px rgba(34,152,145,.35);}
+  .pdf-thumb-icon{width:38px;height:38px;margin:0 auto 6px;}
+  .pdf-thumb-naziv{font-size:9px;font-weight:700;color:#e7eef0;line-height:1.3;}
+
+  /* — Galerija slika — */
+  #slike-galerija-section .galerija-glavna-wrap{text-align:center;margin-bottom:16px;}
+  #slika-glavna{max-width:100%;height:auto;object-fit:contain;border-radius:6px;max-height:400px;}
+  #slike-galerija-section .galerija-scrollbar-track{height:6px;background:var(--line);border-radius:4px;margin-bottom:10px;overflow:hidden;}
+  #slike-scrollbar{height:100%;background:var(--purple);border-radius:4px;width:40%;margin-left:0%;}
+  #slike-galerija-section .galerija-trak{padding:0 0 10px;}
+  .slika-thumb{width:120px;height:120px;object-fit:cover;border-radius:6px;cursor:pointer;flex-shrink:0;-webkit-user-drag:none;user-select:none;border:2px solid transparent;}
+  .slika-thumb.active{border-color:var(--purple);}
+
+  /* — Video galerija — */
+  #video-galerija-section .galerija-gornji-trak{background:linear-gradient(135deg,#0d2438,#135450);border-radius:12px 12px 0 0;overflow:hidden;}
+  #video-galerija-section .galerija-header-row{display:flex;align-items:center;justify-content:space-between;padding:16px 20px 10px;flex-wrap:wrap;gap:8px;}
+  #video-naslov{font-family:Arial,sans-serif;text-transform:uppercase;font-size:14px;color:#e7eef0;font-weight:700;}
+  #video-brojac{font-family:monospace;font-size:11px;color:#8fe4da;}
+  #video-galerija-section .galerija-player-wrap{position:relative;padding-bottom:56.25%;height:0;overflow:hidden;}
+  #video-player{position:absolute;top:0;left:0;width:100%;height:100%;background:#000;border:0;}
+  #video-galerija-section .galerija-trak{background:#111;border-radius:0 0 12px 12px;}
+  .video-thumb{width:150px;flex-shrink:0;cursor:pointer;border-radius:8px;overflow:hidden;border:2px solid #333;}
+  .video-thumb.active{border-color:var(--purple);}
+  .video-thumb-slika-wrap{position:relative;height:84px;background:#0d2438;overflow:hidden;}
+  .video-thumb-slika-wrap img{width:100%;height:100%;object-fit:cover;}
+  .video-thumb-play{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:32px;height:32px;background:var(--purple);border-radius:50%;display:flex;align-items:center;justify-content:center;border:2px solid #fff;}
+  .video-thumb-naziv{background:#1a1a1a;padding:8px;font-size:9px;font-weight:700;color:#fff;line-height:1.3;}
 
   /* SERVICES */
   .services{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-top:10px;}
@@ -167,7 +229,7 @@
     color:#fff;
     text-align:center;
   }
-  .cta-box h2{color:#fff;border-left:4px solid var(--purple);font-size:27px;}
+  .cta-box h2{color:#fff;font-size:27px;border-left:none;}
   .cta-box p{color:#d8dedd;font-size:15.5px;}
   .cta-buttons{display:flex;gap:14px;justify-content:center;margin-top:20px;flex-wrap:wrap;}
   .btn{
@@ -219,6 +281,24 @@
     to{box-shadow:0 0 20px rgba(250,204,21,1), 0 0 38px rgba(250,204,21,.7);}
   }
 
+  /* ANKETA — ugrađena (iframe) ispod CTA kutije, vidi opširnu napomenu uz HTML */
+  .anketa-embed-wrap{display:none;margin-top:18px;}
+  .anketa-embed-wrap.active{display:block;}
+  .anketa-embed-bar{
+    display:flex;justify-content:space-between;align-items:center;
+    background:var(--purple-dark);color:#fff;padding:10px 16px;
+    border-radius:10px 10px 0 0;font-weight:700;font-size:14px;
+  }
+  .anketa-embed-close{
+    background:transparent;border:1px solid rgba(255,255,255,.5);color:#fff;
+    border-radius:6px;padding:5px 12px;font-size:12px;cursor:pointer;font-family:inherit;
+  }
+  .anketa-embed-close:hover{background:rgba(255,255,255,.15);}
+  .anketa-embed-iframe{
+    width:100%;height:700px;border:1px solid var(--line);border-top:none;
+    border-radius:0 0 10px 10px;display:block;background:#fff;
+  }
+
   /* FORMS */
   .form-panel{
     display:none;
@@ -229,6 +309,26 @@
     margin-top:18px;
   }
   .form-panel.active{display:block;}
+  /* Zaglavlje upitnika (panel-interes/panel-odbijenica) s gumbom za
+     zatvaranje — isti vizualni jezik kao .anketa-embed-bar, na korisnikov
+     zahtjev da se, kao i ugrađena anketa, i sami upitnici mogu zatvoriti bez
+     slanja (dedicirani gumb "Zatvori ✕" GORE, ILI klik bilo gdje na .cta-box
+     iznad OSIM na njegove gumbove — vidi handleCtaBoxBackgroundClick()). */
+  .panel-header-row{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;flex-wrap:wrap;}
+  .panel-header-row h2{margin:0;}
+  .panel-close-btn{
+    background:transparent;
+    border:1px solid var(--line);
+    border-radius:6px;
+    padding:6px 14px;
+    font-size:13px;
+    font-weight:600;
+    color:var(--grey);
+    cursor:pointer;
+    white-space:nowrap;
+    flex-shrink:0;
+  }
+  .panel-close-btn:hover{background:#f4f4f4;color:var(--graphite);border-color:#c9cdd1;}
   label{
     display:block;
     font-size:13.5px;
@@ -247,6 +347,54 @@
   }
   textarea{resize:vertical;min-height:80px;}
   input[readonly]{background:#f4f4f4;color:var(--grey);cursor:default;}
+
+  /* OBAVEZNA POLJA — isticanje u In Time zelenoj/teal boji (var(--purple)).
+     Pokriva (a) polja s nativnim HTML
+     "required" atributom, (b) polja koja JS označi klasom .required-soft
+     jer nemaju nativni "required" (npr. jer su ponekad unutar .ostalo-hidden
+     bloka — vidi napomenu "nikad nativni required na polju koje može završiti
+     unutar .ostalo-hidden" iz ranijih izmjena), i (c) grupe s više opcija
+     (.choice-group / .msdrop) označene atributom data-required-group.
+     input[type=range] (npr. "Crni petak") je namjerno isključen jer uvijek
+     ima neku vrijednost pa isticanje ne bi imalo smisla. readonly polja su
+     isključena jer su tad automatski popunjena/nisu nešto što korisnik ručno
+     unosi. */
+  input[required]:not([type=range]):not([readonly]),
+  select[required],
+  textarea[required],
+  input.required-soft:not([readonly]),
+  textarea.required-soft{
+    border-color:var(--purple);
+    background:#e6f4f3;
+  }
+  .choice-group[data-required-group]{
+    box-shadow: inset 3px 0 0 0 var(--purple);
+    padding-left:10px;
+    border-radius:4px;
+  }
+  .msdrop[data-required-group] > .msdrop-toggle{
+    border-color:var(--purple);
+    background:#e6f4f3;
+  }
+  .required-note{
+    background:#e6f4f3;
+    border:1px solid var(--purple);
+    border-radius:8px;
+    padding:10px 14px;
+    font-size:12.5px;
+    line-height:1.55;
+    color:var(--purple-dark);
+    margin:14px 0 0;
+  }
+  .required-note strong{color:var(--purple-dark);}
+  /* Blaga napomena uz pitanja koja su za mikro poduzeća postala neobavezna
+     (vidi updateMikroRequiredState()) — namjerno drukčija od standardnog
+     sivog .sec-hint teksta, da se vidi da je riječ o aktivnoj preporuci, a
+     ne samo pojašnjenju pitanja. */
+  .mikro-hint{
+    color:var(--purple-dark);
+    font-style:italic;
+  }
   .form-submit{
     margin-top:20px;
     background:var(--purple);
@@ -693,19 +841,31 @@
   footer{
     background:#fff;
     color:var(--grey);
-    padding:0 0 30px;
+    padding:34px 0 30px;
     font-size:14.5px;
   }
-  footer > .wrap-wide{border-top:1px solid var(--line);padding-top:30px;}
-  footer b{color:var(--graphite);}
-  footer a{color:var(--purple);text-decoration:none;}
+  footer > .wrap{
+    position:relative;
+    background:
+      linear-gradient(180deg,rgba(8,22,36,.10) 0%,rgba(8,22,36,.25) 55%,rgba(8,22,36,.40) 100%),
+      url('https://i.imgur.com/vZcqmsR.png') center/cover no-repeat,
+      #0d2438;
+    aspect-ratio:2374/662;
+    color:#e7eef0;
+    text-shadow:0 1px 4px rgba(0,0,0,.55);
+    border-radius:14px;
+    padding:40px 28px 30px;
+    max-width:1040px;
+  }
+  footer b{color:#fff;}
+  footer a{color:#8fe4da;text-decoration:none;}
   .footer-badge{
     display:inline-block;
     margin-top:10px;
     font-size:11px;
     letter-spacing:1px;
     text-transform:uppercase;
-    color:#999;
+    color:#c7d8d6;
   }
 
   @media(max-width:640px){
@@ -720,14 +880,14 @@
   <!-- HERO / BANNER -->
   <div class="hero-banner">
     <div class="wrap-wide">
-      <img src="https://i.imgur.com/QWOPK7p.png" alt="In Time Express — Uvijek na vrijeme. Povezujemo cijelu Hrvatsku.">
+      <img src="https://i.imgur.com/1jWHsMW.png" alt="In Time Express — Uvijek na vrijeme. Brzo. Točno. Odgovorno.">
     </div>
   </div>
 
   <!-- PREDSTAVLJANJE FIRME -->
   <section>
     <div class="wrap">
-      <h2>Tko smo mi</h2>
+      <h2 class="h2-glow">Tko smo mi</h2>
       <p>Ovim putem želimo Vam ukratko predstaviti usluge i mogućnosti distribucije Vaših pošiljaka putem sustava tvrtke In Time d.o.o. Rado bismo dogovorili kratki susret s našim trgovačkim predstavnikom koji će Vam uživo prezentirati sve prednosti koje sigurno doprinose maksimalnim uštedama i optimizaciji logističkih procesa unutar Vašeg poslovnog subjekta (kontakt predstavnika nalazi se u potpisu na dnu stranice).</p>
       <p>In Time d.o.o. nudi niz usluga — od međunarodnog prijevoza u uvozu i izvozu, uvoznog i izvoznog carinjenja, domaće distribucije, do distribucije pošiljaka širom svijeta (avionom, kamionom ili kombinirano). Dugi niz godina zastupnici smo jedne od vodećih globalnih kurirskih kompanija — Federal Express Corporation (FedEx).</p>
       <p>Kroz Vaše logističke procese omogućujemo korištenje jedne službe od početka do kraja transporta robe do konačnog odredišta — usluga "ključ u ruke" koja donosi veću brzinu dostave, niže troškove po pojedinom segmentu posla i veću sigurnost za Vašu pošiljku.</p>
@@ -745,14 +905,14 @@
   <!-- POKRIVENOST / MREŽA -->
   <section style="padding-top:0;">
     <div class="wrap-wide">
-      <img src="https://i.imgur.com/i7e7PKK.png" alt="In Time Express — pokrivenost Hrvatske, 10+ skladišnih lokacija, 500+ zaposlenih, moderna flota" style="width:100%;border-radius:10px;">
+      <!-- OVDJE IDE NOVA SLIKA (pokrivenost / mreža) -->
     </div>
   </section>
 
   <!-- VRSTE USLUGA -->
   <section class="alt">
     <div class="wrap">
-      <h2>Vrste usluga</h2>
+      <h2 class="h2-glow">Vrste usluga</h2>
       <div class="service-groups">
         <div class="service-group intime">
           <h3>IN TIME Express</h3>
@@ -780,7 +940,7 @@
   <!-- ECOMMERCE / LAST-MILE -->
   <section>
     <div class="wrap">
-      <h2>In Time i e-trgovina</h2>
+      <h2 class="h2-glow">In Time i e-trgovina</h2>
       <p>Logistika je danas dio cjelokupnog kupovnog iskustva. Zato posebnu pažnju posvećujemo web trgovcima i zahtjevima koje pred njih stavlja rastuća e-trgovina:</p>
       <div class="ecom-list">
         <div class="ecom-item">
@@ -802,7 +962,7 @@
   <!-- PREDNOSTI -->
   <section class="alt">
     <div class="wrap">
-      <h2>In Time prednosti</h2>
+      <h2 class="h2-glow-gold">In Time prednosti</h2>
       <div class="adv-list">
         <div class="adv"><div class="adv-num">1</div><div class="adv-text"><b>Ekspresna dostava "od vrata do vrata"</b> — manje pošiljke (Z1) isporučujemo unutar 24 sata od trenutka prikupa.</div></div>
         <div class="adv"><div class="adv-num">2</div><div class="adv-text">Vrlo brzo rješavanje prigovora i nadoknada štete u slučaju oštećenja ili gubitka pošiljke u transportu.</div></div>
@@ -818,11 +978,69 @@
     </div>
   </section>
 
+  <!-- DINAMIČKE DRIVE GALERIJE — PDF, pa slike, pa video (dogovoreni
+       redoslijed). Svaka se puni automatski iz vlastitog Google Drive
+       foldera (JS niže) i sama se sakriva ako njen folder nema sadržaja. -->
+
+  <!-- PDF GALERIJA -->
+  <section id="pdf-galerija-section" style="display:none;">
+    <div class="wrap-wide">
+      <h2>Dokumenti</h2>
+      <div class="galerija-wrap">
+        <div class="galerija-wrap-gornji">
+          <div class="galerija-header-row">
+            <p id="pdf-naslov">Učitavanje...</p>
+            <a id="pdf-open-link" href="#" target="_blank" rel="noopener">↗ Otvori u novoj kartici</a>
+          </div>
+          <iframe id="pdf-viewer" title="Pregled dokumenta"></iframe>
+        </div>
+        <div id="pdf-trak" class="galerija-trak">
+          <div class="galerija-prazno">Učitavanje dokumenata...</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- GALERIJA SLIKA -->
+  <section id="slike-galerija-section" style="display:none;">
+    <div class="wrap-wide">
+      <h2>Galerija slika</h2>
+      <div class="galerija-glavna-wrap">
+        <img id="slika-glavna" src="" alt="In Time — galerija slika">
+      </div>
+      <div class="galerija-scrollbar-track"><div id="slike-scrollbar"></div></div>
+      <div id="slike-trak" class="galerija-trak">
+        <div class="galerija-prazno">Učitavanje slika...</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- VIDEO GALERIJA -->
+  <section id="video-galerija-section" style="display:none;">
+    <div class="wrap-wide">
+      <h2>Video galerija</h2>
+      <div class="galerija-wrap">
+        <div class="galerija-gornji-trak">
+          <div class="galerija-header-row">
+            <div id="video-naslov">🎬 Učitavanje...</div>
+            <div id="video-brojac"></div>
+          </div>
+          <div class="galerija-player-wrap">
+            <iframe id="video-player" title="Video player" allow="autoplay" allowfullscreen></iframe>
+          </div>
+        </div>
+        <div id="video-trak" class="galerija-trak">
+          <div class="galerija-prazno">Učitavanje video materijala...</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <!-- PISMO NAMJERE / CTA -->
   <section class="alt">
     <div class="wrap">
 
-      <div class="cta-box">
+      <div class="cta-box" onclick="handleCtaBoxBackgroundClick(event)">
         <h2>Zainteresirani ste za suradnju?</h2>
         <p>Pozivamo Vas da isprobate kvalitetu i pouzdanost naših usluga prijevoza domaćih i međunarodnih hitnih pošiljaka, kao i carinskog posredovanja.</p>
         <p>Klikom na „DA, zainteresirani smo“ otvorit će se kratki obrazac u kojem možete ostaviti svoje kontakt podatke i osnovne informacije o Vašim potrebama. Na temelju njih pripremit ćemo ponudu prilagođenu Vašem poslovanju i kontaktirati Vas.</p>
@@ -830,13 +1048,39 @@
           <button class="btn btn-primary" onclick="showPanel('interes')">DA, zainteresirani smo</button>
           <button class="btn btn-secondary" onclick="showPanel('odbijenica')">NE, trenutno nas ne zanima</button>
         </div>
-        <a href="InTime_Anketa.html" target="_blank" class="btn btn-tertiary btn-wide">Već ste naš postojeći klijent? Ocijenite kvalitetu naše usluge →</a>
+        <button type="button" class="btn btn-tertiary btn-wide" onclick="toggleAnketaEmbed(event)">Već ste naš postojeći klijent? Ocijenite kvalitetu naše usluge →</button>
+      </div>
+
+      <!-- ANKETA O KVALITETI USLUGE — ugrađena (iframe) UMJESTO otvaranja u
+      novoj kartici/stranici, na izričit zahtjev korisnika: dosad se klikom na
+      žuti gumb iznad InTime_Anketa.html otvarala u NOVOM tabu (target="_blank"),
+      korisnik je zatražio da se umjesto toga otvori ISPOD, na istoj stranici
+      (isti obrazac kao panel-interes/panel-odbijenica), uz mogućnost
+      zatvaranja (gumb "Zatvori" ILI klik bilo gdje na .cta-box OSIM na same
+      gumbove) — budući da je anketa dugačka i inače "spušta" footer stranice
+      daleko. InTime_Anketa.html OSTAJE posve samostalna/self-contained
+      datoteka (i dalje radi i otvorena izravno, ne samo kroz ovaj iframe) —
+      ovdje se samo prikazuje unutar <iframe>-a, "lijeno" (src se postavlja tek
+      pri prvom otvaranju, ne pri učitavanju ove stranice) i visina iframe-a se
+      automatski prilagođava stvarnom sadržaju (JS niže, resizeAnketaIframe()),
+      budući da su obje datoteke na istoj domeni (GitHub Pages) pa čitanje
+      visine unutarnjeg dokumenta nije ograničeno cross-origin pravilima. -->
+      <div id="anketa-embed-wrap" class="anketa-embed-wrap">
+        <div class="anketa-embed-bar">
+          <span>Anketa o kvaliteti usluge</span>
+          <button type="button" class="anketa-embed-close" onclick="closeAnketaEmbed()">Zatvori ✕</button>
+        </div>
+        <iframe id="anketa-embed-iframe" class="anketa-embed-iframe" title="Anketa o kvaliteti usluge" loading="lazy"></iframe>
       </div>
 
       <!-- UPITNIK (zainteresirani) -->
       <form id="panel-interes" class="form-panel" novalidate onsubmit="return submitForm(event,'interes')">
-        <h2 style="margin-top:0;">Prodajni upitnik</h2>
+        <div class="panel-header-row">
+          <h2>Prodajni upitnik</h2>
+          <button type="button" class="panel-close-btn" onclick="closeQuestionnairePanel()">Zatvori ✕</button>
+        </div>
         <p style="font-size:13.5px;">Molimo Vas da ispunite upitnik u nastavku — na temelju ovih podataka pripremit ćemo ponudu i ugovor prilagođene Vašem poslovanju. Polja označena zvjezdicom (*) su obavezna.</p>
+        <p class="required-note"><strong>Napomena:</strong> polja i pitanja označena zelenom bojom su obavezna za popunjavanje kako biste mogli poslati upitnik.</p>
 
         <div class="form-section">
           <h3>1. Podaci o unosu</h3>
@@ -880,7 +1124,7 @@
           <input type="text" name="naziv" required>
 
           <label>Poslovni subjekt prema broju zaposlenika je *</label>
-          <select name="broj_zaposlenika" required>
+          <select name="broj_zaposlenika" required onchange="updateMikroRequiredState()">
             <option value="">— odaberite —</option>
             <option value="Mikro poduzeća (manje od 10 zaposlenih)">Mikro poduzeća (manje od 10 zaposlenih)</option>
             <option value="Mala poduzeća (od 10 do 49 zaposlenih)">Mala poduzeća (od 10 do 49 zaposlenih)</option>
@@ -904,8 +1148,8 @@
 
           <div class="pair">
             <div>
-              <label>Telefon centrale *</label>
-              <input type="tel" name="telefon_centrale" required>
+              <label>Telefon centrale</label>
+              <input type="tel" name="telefon_centrale">
             </div>
             <div>
               <label>Glavna e-mail adresa tvrtke *</label>
@@ -927,7 +1171,7 @@
           <input type="email" name="email_racun" required list="email-suggestions">
 
           <label>IBAN računa za uplatu otkupnina *</label>
-          <input type="text" name="iban" required>
+          <input type="text" name="iban" id="iban-input" required maxlength="21" oninput="ogranicniIban(this)">
 
           <label>Poslovna banka gore navedenog IBAN računa *</label>
           <select name="banka" required onchange="toggleOstalo(this, 'Naša poslovna banka nije ponuđena')">
@@ -1075,8 +1319,8 @@
             </div>
           </div>
 
-          <label>Preferirani oblik poslovne komunikacije *</label>
-          <div class="choice-group" data-required-group="Preferirani oblik poslovne komunikacije">
+          <label>Preferirani oblik poslovne komunikacije</label>
+          <div class="choice-group">
             <label><input type="checkbox" name="komunikacija" value="Fizički sastanak ili osobni sastanak"> Fizički sastanak ili osobni sastanak</label>
             <label><input type="checkbox" name="komunikacija" value="Mail korespodencija"> Mail korespodencija</label>
             <label><input type="checkbox" name="komunikacija" value="Telefonski poziv i razgovor"> Telefonski poziv i razgovor</label>
@@ -1126,7 +1370,7 @@
             </div>
 
             <div id="mjesto-prikupa-potvrda-wrap" class="ostalo-hidden" style="margin-top:14px;">
-              <div class="choice-group" style="grid-template-columns:1fr;">
+              <div class="choice-group" style="grid-template-columns:1fr;" data-required-group="Potvrda adrese mjesta prikupa">
                 <label><input type="checkbox" name="mjesto_prikupa_potvrda" id="mjesto-prikupa-potvrda" value="Da"> Potvrđujem da je mjesto prikupa pošiljaka adresa sjedišta prikazana iznad.</label>
               </div>
             </div>
@@ -1145,7 +1389,7 @@
 
           <div id="dodatni-ob-racuni-podpitanje" class="ostalo-hidden">
             <label>Na koji način želite unijeti podatke za dodatne Online Booking račune? *</label>
-            <div class="choice-group">
+            <div class="choice-group" data-required-group="Način unosa dodatnih Online Booking računa">
               <label><input type="radio" name="dodatni_ob_nacin_unosa" value="Ovdje" onchange="toggleDodatniObNacinUnosa(this)"> Unijet ću podatke odmah, ovdje u obrascu</label>
               <label><input type="radio" name="dodatni_ob_nacin_unosa" value="Mail" onchange="toggleDodatniObNacinUnosa(this)"> Pošaljite mi Excel tablicu na e-mail — popunit ću je naknadno</label>
             </div>
@@ -1159,7 +1403,7 @@
             <div id="dodatni-ob-mail-blok" class="ostalo-hidden">
               <p class="sec-hint" style="margin-top:14px;">Poslat ćemo Vam Excel predložak tablice za unos podataka za dodatne Online Booking račune. Kada ga popunite, jednostavno odgovorite na taj e-mail s ispunjenom tablicom u prilogu (molimo ne mijenjajte naziv datoteke) — podatke ćemo automatski preuzeti i povezati s ovim upitnikom.</p>
               <label>E-mail adresa na koju da pošaljemo predložak tablice *</label>
-              <input type="email" name="dodatni_ob_tablica_mail" id="dodatni-ob-tablica-mail" list="email-suggestions">
+              <input type="email" name="dodatni_ob_tablica_mail" id="dodatni-ob-tablica-mail" class="required-soft" list="email-suggestions">
               <input type="hidden" name="dodatni_ob_tablica_id" id="dodatni-ob-tablica-id">
             </div>
           </div>
@@ -1279,8 +1523,8 @@
           </div>
           </div>
 
-          <label>Dodatne usluge koje bi Vam mogli ponuditi u okviru buduće suradnje? *</label>
-          <div class="choice-group choice-group-1col" data-required-group="Dodatne usluge">
+          <label>Dodatne usluge koje bi Vam mogli ponuditi u okviru buduće suradnje? <span class="req-star" id="dodatne-usluge-group-star">*</span></label>
+          <div id="dodatne-usluge-group" class="choice-group choice-group-1col" data-required-group="Dodatne usluge">
             <label><input type="checkbox" name="dodatne_usluge" value="Slanje SMS poruka primateljima s informacijom o preuzimanju pošiljke i planiranom terminu isporuke"> SMS obavijesti primateljima o terminu isporuke</label>
             <label><input type="checkbox" name="dodatne_usluge" value="Osiguranje pošiljke (zaštita od oštećenja ili gubitka)"> Osiguranje pošiljke</label>
             <label><input type="checkbox" name="dodatne_usluge" value="Prikupljanje otkupnine (pouzećem) – gotovina, uz brzu isplatu sredstava"> Prikupljanje otkupnine (pouzeće) – gotovina</label>
@@ -1290,6 +1534,7 @@
             <label><input type="checkbox" name="dodatne_usluge" value="Ostalo" onchange="toggleChoiceOstalo(this)"> Ostalo</label>
             <div class="ostalo-line ostalo-hidden"><input type="text" name="dodatne_usluge_ostalo" placeholder="Upišite ako ste odabrali Ostalo"></div>
           </div>
+          <p class="sec-hint mikro-hint" id="dodatne-usluge-group-mikro-hint" style="display:none;">Za mikro poduzeća ovo pitanje nije obavezno — no preporučujemo da ga ipak popunite ako imate informaciju, pomaže nam pripremiti precizniju ponudu.</p>
 
           <label>Ukoliko postoji potreba za uslugom (osnovnom ili dodatnom) koja nije navedena s naše strane, molimo Vas da je opišete</label>
           <textarea name="dodatna_specifikacija" placeholder="Opišite traženu uslugu kako bismo provjerili mogućnost realizacije..."></textarea>
@@ -1298,8 +1543,8 @@
         <div class="form-section">
           <h3>10. Proizvodi i pošiljke <span class="sec-subtitle">(kvaliteta pošiljaka)</span></h3>
 
-          <label>Sadržaj Vaših pošiljki – kojoj kategoriji proizvoda pretežno pripadaju? *</label>
-          <div class="msdrop" data-required-group="Sadržaj pošiljki">
+          <label>Sadržaj Vaših pošiljki – kojoj kategoriji proizvoda pretežno pripadaju? <span class="req-star" id="sadrzaj-posiljki-msdrop-star">*</span></label>
+          <div id="sadrzaj-posiljki-msdrop" class="msdrop" data-required-group="Sadržaj pošiljki">
             <button type="button" class="msdrop-toggle" onclick="toggleMsDrop(this)">
               <span class="msdrop-placeholder">Odaberite jednu ili više opcija</span>
               <span class="msdrop-count"></span>
@@ -1330,13 +1575,14 @@
               <div class="ostalo-line ostalo-hidden"><input type="text" name="sadrzaj_posiljki_ostalo" placeholder="Upišite ako ste odabrali Ostalo"></div>
             </div>
           </div>
+          <p class="sec-hint mikro-hint" id="sadrzaj-posiljki-msdrop-mikro-hint" style="display:none;">Za mikro poduzeća ovo pitanje nije obavezno — no preporučujemo da ga ipak popunite ako imate informaciju, pomaže nam pripremiti precizniju ponudu.</p>
 
           <label>Ukratko definirajte i opišite proizvode i/ili pošiljke koje želite slati/distribuirati putem In Time d.o.o. logističke mreže *</label>
           <textarea name="opis_proizvoda" required placeholder="Npr. odjeća, obuća, elektronika, knjige, kozmetika, parfemi, igračke, prehrambeni proizvodi, alati, autodijelovi, uredski materijal..."></textarea>
 
-          <label>Koje od navedenih karakteristika opisuju većinu Vaše pošiljke? *</label>
+          <label>Koje od navedenih karakteristika opisuju većinu Vaše pošiljke? <span class="req-star" id="karakteristika-group-star">*</span></label>
           <p class="sec-hint">Možete odabrati više odgovora.</p>
-          <div class="choice-group" data-required-group="Karakteristike pošiljaka">
+          <div id="karakteristika-group" class="choice-group" data-required-group="Karakteristike pošiljaka">
             <label><input type="checkbox" name="karakteristika" value="Dokumentacija i vrlo male pošiljke – ugovori, osobni dokumenti i sl." onchange="toggleChoiceOstalo(this)"> Dokumentacija i vrlo male pošiljke – ugovori, osobni dokumenti i sl.</label>
             <label><input type="checkbox" name="karakteristika" value="Male i lagane pošiljke – kozmetika, nakit, manja elektronika i sl." onchange="toggleChoiceOstalo(this)"> Male i lagane pošiljke – kozmetika, nakit, manja elektronika i sl.</label>
             <label><input type="checkbox" name="karakteristika" value="Male, ali teške pošiljke – alati, metalni dijelovi i sl." onchange="toggleChoiceOstalo(this)"> Male, ali teške pošiljke – alati, metalni dijelovi i sl.</label>
@@ -1352,6 +1598,7 @@
             <label><input type="checkbox" name="karakteristika" value="Ostalo" onchange="toggleChoiceOstalo(this)"> Ostalo</label>
             <div class="ostalo-line ostalo-hidden"><input type="text" name="karakteristika_ostalo" placeholder="Upišite ako ste odabrali Ostalo"></div>
           </div>
+          <p class="sec-hint mikro-hint" id="karakteristika-group-mikro-hint" style="display:none;">Za mikro poduzeća ovo pitanje nije obavezno — no preporučujemo da ga ipak popunite ako imate informaciju, pomaže nam pripremiti precizniju ponudu.</p>
 
           <label>Definirajte prosječnu težinu Vaših pošiljaka *</label>
           <div class="choice-group" data-required-group="Definicija težine pošiljaka">
@@ -1369,7 +1616,7 @@
           <h3>11. Pakiranje i sezonalnost</h3>
 
           <label>Kako su Vaše pošiljke zapakirane i/ili zaštićene? *</label>
-          <div class="choice-group" data-required-group="Način pakiranja pošiljaka">
+          <div id="pakiranje-group" class="choice-group" data-required-group="Način pakiranja pošiljaka">
             <label><input type="checkbox" name="pakiranje" value="STRECH FOLIJA"> Strech folija</label>
             <label><input type="checkbox" name="pakiranje" value="PAKIRANJE PROIZVODA U FOLIJU S ZRAČNIM JASTUČIĆIMA"> Folija sa zračnim jastučićima</label>
             <label><input type="checkbox" name="pakiranje" value="OBLAGANJE PROIZVODA STIROPOROM, SPUŽVOM ILI SLIČNIM MATERIJALIMA"> Stiropor, spužva ili slični materijali</label>
@@ -1453,7 +1700,7 @@
             <div id="usluga-domaca-broj-blok">
               <label>Prosječan broj pošiljaka – Domaća InTime distribucija *</label>
               <div class="pair">
-                <input type="text" id="broj-usluga-domaca-input" name="broj_usluga_domaca" inputmode="numeric" placeholder="Unesite količinu" oninput="recalcUslugaKategorije('domaca')">
+                <input type="text" id="broj-usluga-domaca-input" name="broj_usluga_domaca" class="required-soft" inputmode="numeric" placeholder="Unesite količinu" oninput="recalcUslugaKategorije('domaca')">
                 <select name="razdoblje_usluga_domaca">
                   <option value="">Odaberite razdoblje</option>
                   <option value="Dnevno">Dnevno</option>
@@ -1484,7 +1731,7 @@
             <div id="usluga-medjunarodna-broj-blok">
               <label>Prosječan broj pošiljaka – Međunarodna InTime distribucija (Slo, BiH, Srb, CG, Sj. Mak.) – UVOZ/IZVOZ *</label>
               <div class="pair">
-                <input type="text" id="broj-usluga-medjunarodna-input" name="broj_usluga_medjunarodna" inputmode="numeric" placeholder="Unesite količinu" oninput="recalcUslugaKategorije('medjunarodna')">
+                <input type="text" id="broj-usluga-medjunarodna-input" name="broj_usluga_medjunarodna" class="required-soft" inputmode="numeric" placeholder="Unesite količinu" oninput="recalcUslugaKategorije('medjunarodna')">
                 <select name="razdoblje_usluga_medjunarodna">
                   <option value="">Odaberite razdoblje</option>
                   <option value="Dnevno">Dnevno</option>
@@ -1535,7 +1782,7 @@
             <div id="usluga-fedex_express-broj-blok">
               <label>Prosječan broj pošiljaka – Međunarodna distribucija – FedEx EXPRESS – UVOZ/IZVOZ *</label>
               <div class="pair">
-                <input type="text" id="broj-usluga-fedex_express-input" name="broj_usluga_fedex_express" inputmode="numeric" placeholder="Unesite količinu" oninput="recalcUslugaKategorije('fedex_express')">
+                <input type="text" id="broj-usluga-fedex_express-input" name="broj_usluga_fedex_express" class="required-soft" inputmode="numeric" placeholder="Unesite količinu" oninput="recalcUslugaKategorije('fedex_express')">
                 <select name="razdoblje_usluga_fedex_express">
                   <option value="">Odaberite razdoblje</option>
                   <option value="Dnevno">Dnevno</option>
@@ -1586,7 +1833,7 @@
             <div id="usluga-fedex_economy-broj-blok">
               <label>Prosječan broj pošiljaka – Međunarodna distribucija – FedEx ECONOMY – UVOZ/IZVOZ *</label>
               <div class="pair">
-                <input type="text" id="broj-usluga-fedex_economy-input" name="broj_usluga_fedex_economy" inputmode="numeric" placeholder="Unesite količinu" oninput="recalcUslugaKategorije('fedex_economy')">
+                <input type="text" id="broj-usluga-fedex_economy-input" name="broj_usluga_fedex_economy" class="required-soft" inputmode="numeric" placeholder="Unesite količinu" oninput="recalcUslugaKategorije('fedex_economy')">
                 <select name="razdoblje_usluga_fedex_economy">
                   <option value="">Odaberite razdoblje</option>
                   <option value="Dnevno">Dnevno</option>
@@ -1641,14 +1888,21 @@
 
       <!-- ODBIJENICA -->
       <form id="panel-odbijenica" class="form-panel" onsubmit="return submitForm(event,'odbijenica')">
-        <h2 style="margin-top:0;">Hvala na povratnoj informaciji</h2>
+        <div class="panel-header-row">
+          <h2>Hvala na povratnoj informaciji</h2>
+          <button type="button" class="panel-close-btn" onclick="closeQuestionnairePanel()">Zatvori ✕</button>
+        </div>
         <p style="font-size:13.5px;">Ako želite, odgovorite na nekoliko kratkih pitanja — pomaže nam da unaprijedimo ponudu.</p>
+        <p class="required-note"><strong>Napomena:</strong> polja i pitanja označena zelenom bojom su obavezna za popunjavanje.</p>
         <input type="hidden" name="vrijeme_dolaska" id="vrijeme-dolaska-hidden-odbijenica">
         <input type="hidden" name="vrijeme_slanja" id="vrijeme-slanja-hidden-odbijenica">
         <input type="hidden" name="vrijeme_popunjavanja" id="vrijeme-popunjavanja-hidden-odbijenica">
 
         <label>Naziv poslovnog subjekta *</label>
         <input type="text" name="naziv" required>
+
+        <label>OIB poslovnog subjekta *</label>
+        <input type="text" name="oib" id="oib-input-odbijenica" required inputmode="numeric" maxlength="11" oninput="ogranicniOibNaZnamenke(this)">
 
         <label>Kontakt ime *</label>
         <input type="text" name="odbijenica_kontakt_ime" required>
@@ -1725,13 +1979,11 @@
 
   <!-- FOOTER / POTPIS -->
   <footer>
-    <div class="wrap-wide" style="margin-bottom:20px;">
-      <img src="https://i.imgur.com/YQa27lw.png" alt="In Time Express i FedEx — Brže do vaših ciljeva. Danas. Sutra. Dalje." style="width:100%;border-radius:8px;">
-    </div>
     <div class="wrap">
       <div><b>Saša Batinac</b> — Sales and Marketing Manager, Voditelj ključnih kupaca</div>
       <div>In Time d.o.o. — Licensee of FedEx</div>
-      <div>Velika cesta 78, 10020 Zagreb, Hrvatska</div>
+      <div>Zelena aleja 28, 10410 Vukovina</div>
+      <div>Tel: 01 6254 444</div>
       <div>M: +385 91 6262 171 · <a href="mailto:sasa.batinac@in-time.hr">sasa.batinac@in-time.hr</a></div>
       <div><a href="https://in-time.hr" target="_blank">in-time.hr</a> · <a href="https://fedex.com" target="_blank">fedex.com</a></div>
       <div class="footer-badge">In Time d.o.o. · FedEx zastupništvo · Hrvatska, BiH, Srbija, Slovenija, Crna Gora, Sjeverna Makedonija</div>
@@ -1791,6 +2043,158 @@
     body: JSON.stringify({ action: 'trackVisit' })
   }).catch(function(){ /* ignoriramo eventualnu grešku — ne utječe na obrazac */ });
 
+  // ---- DINAMIČKE DRIVE GALERIJE (PDF, slike, video) ----
+  // Svaka dohvaća svoj popis datoteka s backenda (akcije listPdfGalerija/
+  // listSlikeGalerija/listVideoGalerija, vidi InTime_Code.gs — svaka čita
+  // vlastiti Google Drive folder) i gradi glavni prikaz + traku sličica sa
+  // scroll/drag ponašanjem. Svaka sekcija ostaje sakrivena (display:none,
+  // postavljeno u HTML-u) ako njen folder još nije postavljen, prazan je,
+  // ili dohvat ne uspije — stranica se tada ponaša kao da te sekcije uopće
+  // nema. Fetch je "obična" (bez no-cors) jer moramo pročitati stvarni JSON
+  // odgovor — isti obrazac kao provjera duplikata (OIB) niže u submitForm().
+  function dohvatiGaleriju_(action, callback) {
+    fetch(GAS_WEB_APP_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ action: action })
+    }).then(function(res){ return res.json(); }).then(callback)
+      .catch(function(){ /* sekcija ostaje sakrivena ako dohvat ne uspije */ });
+  }
+
+  // Zajednički drag-to-scroll za sve tri trake sličica.
+  function omoguciDragScroll_(trak) {
+    if (!trak) { return; }
+    var isDown = false, startX, scrollLeftStart;
+    trak.addEventListener('mousedown', function(e){
+      isDown = true; trak.classList.add('dragging');
+      startX = e.pageX; scrollLeftStart = trak.scrollLeft;
+    });
+    window.addEventListener('mouseup', function(){ isDown = false; trak.classList.remove('dragging'); });
+    window.addEventListener('mousemove', function(e){
+      if (!isDown) { return; }
+      trak.scrollLeft = scrollLeftStart - (e.pageX - startX);
+    });
+  }
+
+  // -- PDF galerija --
+  (function ucitajPdfGaleriju(){
+    dohvatiGaleriju_('listPdfGalerija', function(data){
+      if (!data || data.status !== 'ok' || !data.pdfovi || !data.pdfovi.length) { return; }
+      var trak = document.getElementById('pdf-trak');
+      var section = document.getElementById('pdf-galerija-section');
+      if (!trak || !section) { return; }
+      var dokumenti = data.pdfovi;
+      trak.innerHTML = '';
+      dokumenti.forEach(function(doc, i){
+        var thumb = document.createElement('div');
+        thumb.className = 'pdf-thumb' + (i === 0 ? ' active' : '');
+        thumb.id = 'pdf-thumb-' + i;
+        thumb.innerHTML =
+          '<svg class="pdf-thumb-icon" viewBox="0 0 24 24" fill="none" stroke="#8fe4da" stroke-width="1.5"><path d="M6 2h9l5 5v15a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1z"/><path d="M15 2v5h5"/><text x="12" y="17" font-size="6" text-anchor="middle" fill="#8fe4da" stroke="none" font-weight="bold">PDF</text></svg>' +
+          '<div class="pdf-thumb-naziv"></div>';
+        thumb.querySelector('.pdf-thumb-naziv').textContent = doc.naziv;
+        thumb.addEventListener('click', function(){ otvoriPdf_(i, dokumenti); });
+        trak.appendChild(thumb);
+      });
+      otvoriPdf_(0, dokumenti);
+      omoguciDragScroll_(trak);
+      section.style.display = '';
+    });
+  })();
+  function otvoriPdf_(index, dokumenti) {
+    var doc = dokumenti[index];
+    if (!doc) { return; }
+    document.getElementById('pdf-viewer').src = 'https://drive.google.com/file/d/' + encodeURIComponent(doc.id) + '/preview';
+    document.getElementById('pdf-naslov').textContent = '📄 ' + doc.naziv;
+    document.getElementById('pdf-open-link').href = 'https://drive.google.com/file/d/' + encodeURIComponent(doc.id) + '/view';
+    dokumenti.forEach(function(d, i){
+      var t = document.getElementById('pdf-thumb-' + i);
+      if (t) { t.classList.toggle('active', i === index); }
+    });
+  }
+
+  // -- Galerija slika --
+  (function ucitajSlikeGaleriju(){
+    dohvatiGaleriju_('listSlikeGalerija', function(data){
+      if (!data || data.status !== 'ok' || !data.slike || !data.slike.length) { return; }
+      var trak = document.getElementById('slike-trak');
+      var section = document.getElementById('slike-galerija-section');
+      if (!trak || !section) { return; }
+      var slike = data.slike;
+      trak.innerHTML = '';
+      slike.forEach(function(slika, i){
+        var img = document.createElement('img');
+        img.className = 'slika-thumb' + (i === 0 ? ' active' : '');
+        img.id = 'slika-thumb-' + i;
+        img.src = 'https://drive.google.com/thumbnail?id=' + encodeURIComponent(slika.id) + '&sz=w300';
+        img.alt = slika.naziv || 'In Time — slika';
+        img.loading = 'lazy';
+        img.draggable = false;
+        img.addEventListener('click', function(){ promijeniGlavnuSliku_(i, slike); });
+        trak.appendChild(img);
+      });
+      promijeniGlavnuSliku_(0, slike);
+      var scrollTrak = trak;
+      scrollTrak.addEventListener('scroll', function(){
+        var max = scrollTrak.scrollWidth - scrollTrak.clientWidth;
+        if (max <= 0) { return; }
+        var pct = scrollTrak.scrollLeft / max;
+        document.getElementById('slike-scrollbar').style.marginLeft = (pct * 60) + '%';
+      });
+      omoguciDragScroll_(trak);
+      section.style.display = '';
+    });
+  })();
+  function promijeniGlavnuSliku_(index, slike) {
+    var slika = slike[index];
+    if (!slika) { return; }
+    document.getElementById('slika-glavna').src = 'https://drive.google.com/thumbnail?id=' + encodeURIComponent(slika.id) + '&sz=w1000';
+    slike.forEach(function(s, i){
+      var t = document.getElementById('slika-thumb-' + i);
+      if (t) { t.classList.toggle('active', i === index); }
+    });
+  }
+
+  // -- Video galerija --
+  (function ucitajVideoGaleriju(){
+    dohvatiGaleriju_('listVideoGalerija', function(data){
+      if (!data || data.status !== 'ok' || !data.videos || !data.videos.length) { return; }
+      var trak = document.getElementById('video-trak');
+      var section = document.getElementById('video-galerija-section');
+      if (!trak || !section) { return; }
+      var videi = data.videos;
+      trak.innerHTML = '';
+      videi.forEach(function(video, i){
+        var thumb = document.createElement('div');
+        thumb.className = 'video-thumb' + (i === 0 ? ' active' : '');
+        thumb.id = 'video-thumb-' + i;
+        thumb.innerHTML =
+          '<div class="video-thumb-slika-wrap">' +
+            '<img src="https://drive.google.com/thumbnail?id=' + encodeURIComponent(video.id) + '&sz=w300" loading="lazy" alt="">' +
+            '<div class="video-thumb-play"><svg width="14" height="14" viewBox="0 0 24 24" fill="#0d2438"><path d="M8 5v14l11-7z"/></svg></div>' +
+          '</div>' +
+          '<div class="video-thumb-naziv"></div>';
+        thumb.querySelector('.video-thumb-naziv').textContent = video.naziv;
+        thumb.addEventListener('click', function(){ postaviVideo_(i, videi); });
+        trak.appendChild(thumb);
+      });
+      postaviVideo_(0, videi);
+      omoguciDragScroll_(trak);
+      section.style.display = '';
+    });
+  })();
+  function postaviVideo_(index, videi) {
+    var video = videi[index];
+    if (!video) { return; }
+    document.getElementById('video-player').src = 'https://drive.google.com/file/d/' + encodeURIComponent(video.id) + '/preview';
+    document.getElementById('video-naslov').textContent = '🎬 ' + video.naziv;
+    document.getElementById('video-brojac').textContent = (index + 1) + ' / ' + videi.length;
+    videi.forEach(function(v, i){
+      var t = document.getElementById('video-thumb-' + i);
+      if (t) { t.classList.toggle('active', i === index); }
+    });
+  }
+
   // Prikazuje/skriva pripadajuće tekstualno polje ovisno o tome je li u
   // <select> izborniku odabrana "okidačka" opcija (default "Ostalo", ali
   // se može zadati i druga vrijednost, npr. za banku koja nije ponuđena).
@@ -1809,6 +2213,16 @@
   function ogranicniOibNaZnamenke(input){
     var samoBrojevi = input.value.replace(/[^0-9]/g, '').slice(0, 11);
     if (samoBrojevi !== input.value) { input.value = samoBrojevi; }
+  }
+
+  // Hrvatski IBAN je uvijek točno 21 znak: "HR" + 19 znamenki (2 kontrolne
+  // znamenke + 7 znamenki broja banke + 10 znamenki broja računa). Ovo polje
+  // dopušta samo slova i brojeve (bez razmaka/crtica — korisnici često
+  // kopiraju IBAN s razmacima iz e-bankinga), forsira velika slova, i
+  // ograničava na najviše 21 znak.
+  function ogranicniIban(input){
+    var ociscen = input.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 21);
+    if (ociscen !== input.value) { input.value = ociscen; }
   }
 
   function suggestPhone(value){
@@ -2847,6 +3261,44 @@
     }
   }
 
+  // Za MIKRO poduzeća (manje od 10 zaposlenih, odabrano u 2. poglavlju,
+  // "broj_zaposlenika") nekoliko pitanja koja su korisna za velike/srednje
+  // klijente (dodatne usluge, sadržaj pošiljki, karakteristike pošiljaka,
+  // način pakiranja) korisnik NE mora popuniti — ali polja OSTAJU VIDLJIVA i
+  // dalje se mogu popuniti ako klijent to želi (samo se gasi "required"
+  // ponašanje + zeleno isticanje + zvjezdica, i pokazuje blaga napomena da
+  // je popunjavanje preporučeno, ali neobavezno). Kategorizacija paketa i
+  // brojčani opseg pošiljaka (12. poglavlje) te način pakiranja pošiljaka
+  // (11. poglavlje) NAMJERNO ostaju obavezni za SVE veličine poduzeća — to
+  // se ne dira, korisnikov izričit zahtjev. Budući da generička "obavezna
+  // grupa" provjera u submitForm() (requiredGroups petlja) svaki put iznova
+  // čita data-required-group atribut iz DOM-a u trenutku slanja, dovoljno je
+  // ovdje samo dodavati/uklanjati taj atribut — ne treba dirati logiku
+  // provjere.
+  var MIKRO_RELAX_GROUPS = [
+    {id: 'dodatne-usluge-group', label: 'Dodatne usluge'},
+    {id: 'sadrzaj-posiljki-msdrop', label: 'Sadržaj pošiljki'},
+    {id: 'karakteristika-group', label: 'Karakteristike pošiljaka'}
+  ];
+  var MIKRO_VRIJEDNOST = 'Mikro poduzeća (manje od 10 zaposlenih)';
+  function updateMikroRequiredState(){
+    var sel = document.querySelector('select[name="broj_zaposlenika"]');
+    var isMikro = !!sel && sel.value === MIKRO_VRIJEDNOST;
+    MIKRO_RELAX_GROUPS.forEach(function(g){
+      var el = document.getElementById(g.id);
+      if (!el) { return; }
+      if (isMikro) {
+        el.removeAttribute('data-required-group');
+      } else {
+        el.setAttribute('data-required-group', g.label);
+      }
+      var star = document.getElementById(g.id + '-star');
+      if (star) { star.style.display = isMikro ? 'none' : 'inline'; }
+      var hint = document.getElementById(g.id + '-mikro-hint');
+      if (hint) { hint.style.display = isMikro ? 'block' : 'none'; }
+    });
+  }
+
   function toggleOstalo(select, triggerValue){
     var trigger = triggerValue || 'Ostalo';
     // Uzima ISKLJUČIVO sljedeći element odmah nakon <select> — ne pretragu
@@ -2939,16 +3391,19 @@
     if (!podpitanje) { return; }
     podpitanje.classList.remove('ostalo-hidden');
     if (radio.value === 'Ne') {
-      if (adresa) { adresa.readOnly = false; adresa.value = ''; }
-      if (grad) { grad.readOnly = false; grad.value = ''; }
-      if (postanski) { postanski.readOnly = false; postanski.value = ''; }
+      if (adresa) { adresa.readOnly = false; adresa.value = ''; adresa.classList.add('required-soft'); }
+      if (grad) { grad.readOnly = false; grad.value = ''; grad.classList.add('required-soft'); }
+      if (postanski) { postanski.readOnly = false; postanski.value = ''; postanski.classList.add('required-soft'); }
       if (potvrdaWrap) { potvrdaWrap.classList.add('ostalo-hidden'); }
       if (potvrda) { potvrda.checked = false; }
     } else {
       preuzmiAdresuSjedistaZaPrikup();
-      if (adresa) { adresa.readOnly = true; }
-      if (grad) { grad.readOnly = true; }
-      if (postanski) { postanski.readOnly = true; }
+      // Polja postaju readonly/pre-popunjena — više nisu "polje koje korisnik
+      // treba popuniti", pa se plavo isticanje (required-soft) uklanja s njih;
+      // sad je checkbox potvrde taj koji stvarno treba označiti.
+      if (adresa) { adresa.readOnly = true; adresa.classList.remove('required-soft'); }
+      if (grad) { grad.readOnly = true; grad.classList.remove('required-soft'); }
+      if (postanski) { postanski.readOnly = true; postanski.classList.remove('required-soft'); }
       if (potvrdaWrap) { potvrdaWrap.classList.remove('ostalo-hidden'); }
     }
   }
@@ -3119,7 +3574,7 @@
       var inp = document.createElement('input');
       inp.type = pair[2];
       inp.name = 'dodatni_ob_' + pair[0] + '_' + n;
-      if (pair[3]) { inp.dataset.optional = 'true'; }
+      if (pair[3]) { inp.dataset.optional = 'true'; } else { inp.className = 'required-soft'; }
       wrap.appendChild(lab);
       wrap.appendChild(inp);
       fields.appendChild(wrap);
@@ -3227,11 +3682,100 @@
   // u upitniku (`skociNaSidro()`, vidi njen komentar niže) umjesto scrollIntoView-a,
   // koja skače na POČETAK ciljanog elementa, ne na njegovu sredinu.
   function showPanel(which){
+    closeAnketaEmbed();
     document.getElementById('panel-interes').classList.remove('active');
     document.getElementById('panel-odbijenica').classList.remove('active');
     document.getElementById('confirm-box').classList.remove('active');
     document.getElementById('panel-' + which).classList.add('active');
     skociNaSidro('panel-' + which);
+  }
+
+  // Zatvaranje upitnika (panel-interes ILI panel-odbijenica) BEZ slanja —
+  // dedicirani gumb "Zatvori ✕" u zaglavlju upitnika, ILI klik bilo gdje na
+  // .cta-box iznad osim na njegove gumbove (handleCtaBoxBackgroundClick()) —
+  // isti obrazac ponašanja kao kod ugrađene ankete (closeAnketaEmbed()).
+  // Ništa se ne briše — ako korisnik ponovno klikne DA/NE, upitnik se otvara
+  // s već unesenim podacima jer se DOM ne uklanja, samo se sakriva.
+  function closeQuestionnairePanel(){
+    document.getElementById('panel-interes').classList.remove('active');
+    document.getElementById('panel-odbijenica').classList.remove('active');
+    var ctaBox = document.querySelector('.cta-box');
+    if (ctaBox) { ctaBox.scrollIntoView({behavior:'smooth', block:'start'}); }
+  }
+
+  // ---- ANKETA UGRAĐENA (iframe) — otvaranje/zatvaranje ----
+  // `anketaEmbedResizeInterval` drži ID intervala koji, dok je anketa
+  // otvorena, periodički mjeri stvarnu visinu unutarnjeg dokumenta (jer se
+  // njen sadržaj mijenja dinamički — npr. textarea koja raste, "Ne mogu
+  // procijeniti" koji isključuje klizač — pa jednokratno mjerenje pri
+  // učitavanju ne bi bilo dovoljno).
+  var anketaEmbedResizeInterval = null;
+
+  function toggleAnketaEmbed(event){
+    if (event) { event.stopPropagation(); }
+    var wrap = document.getElementById('anketa-embed-wrap');
+    if (wrap.classList.contains('active')) {
+      closeAnketaEmbed();
+    } else {
+      openAnketaEmbed();
+    }
+  }
+
+  function openAnketaEmbed(){
+    document.getElementById('panel-interes').classList.remove('active');
+    document.getElementById('panel-odbijenica').classList.remove('active');
+    document.getElementById('confirm-box').classList.remove('active');
+    var wrap = document.getElementById('anketa-embed-wrap');
+    var iframe = document.getElementById('anketa-embed-iframe');
+    if (!iframe.getAttribute('src')) {
+      iframe.src = 'InTime_Anketa.html';
+      iframe.addEventListener('load', function(){
+        resizeAnketaIframe();
+        setTimeout(resizeAnketaIframe, 300);
+      });
+    }
+    wrap.classList.add('active');
+    if (anketaEmbedResizeInterval) { clearInterval(anketaEmbedResizeInterval); }
+    anketaEmbedResizeInterval = setInterval(resizeAnketaIframe, 800);
+    skociNaSidro('anketa-embed-wrap');
+  }
+
+  function closeAnketaEmbed(){
+    var wrap = document.getElementById('anketa-embed-wrap');
+    wrap.classList.remove('active');
+    if (anketaEmbedResizeInterval) {
+      clearInterval(anketaEmbedResizeInterval);
+      anketaEmbedResizeInterval = null;
+    }
+  }
+
+  function resizeAnketaIframe(){
+    var iframe = document.getElementById('anketa-embed-iframe');
+    try {
+      var doc = iframe.contentWindow.document;
+      var h = Math.max(doc.documentElement.scrollHeight, doc.body.scrollHeight);
+      if (h > 0) { iframe.style.height = h + 'px'; }
+    } catch (err) {
+      // Cross-origin (npr. otvoreno s drukčije domene) — bez pristupa
+      // unutarnjem dokumentu, ostaje zadana CSS visina (min-height).
+    }
+  }
+
+  // Klik bilo gdje na .cta-box OSIM na sami gumb (Da/Ne/Anketa) — ako je
+  // ugrađena anketa ILI jedan od upitnika (panel-interes/panel-odbijenica)
+  // trenutno otvoren, zatvara ga. Omogućuje korisniku da brzo "spakira"
+  // dugačku anketu/upitnik natrag a da ne mora tražiti mali gumb "Zatvori"
+  // na vrhu, bez utjecaja na klik na same gumbove (koji imaju vlastite
+  // onclick handlere i eksplicitno zaustavljaju propagaciju).
+  function handleCtaBoxBackgroundClick(event){
+    if (event.target.closest('.btn')) { return; }
+    if (document.getElementById('anketa-embed-wrap').classList.contains('active')) {
+      closeAnketaEmbed();
+    }
+    if (document.getElementById('panel-interes').classList.contains('active') ||
+        document.getElementById('panel-odbijenica').classList.contains('active')) {
+      closeQuestionnairePanel();
+    }
   }
 
   // Pouzdan skok na sidro (anchor) po id-u elementa — koristi native
@@ -3308,16 +3852,33 @@
         neispravnoPolje.focus();
         return false;
       }
+    }
 
-      // OIB mora biti točno 11 znamenki (hrvatski standard). Polje već
-      // sprječava upis ne-brojeva i više od 11 znakova (vidi
-      // ogranicniOibNaZnamenke()), ali ovdje dodatno provjeravamo da nije
-      // upisano MANJE od 11 (npr. korisnik upisao samo 8 pa stao).
+    // OIB mora biti točno 11 znamenki (hrvatski standard). Polje već
+    // sprječava upis ne-brojeva i više od 11 znakova (vidi
+    // ogranicniOibNaZnamenke()), ali ovdje dodatno provjeravamo da nije
+    // upisano MANJE od 11 (npr. korisnik upisao samo 8 pa stao). Vrijedi za
+    // OBA panela — 'interes' (glavni upitnik) i 'odbijenica' — jer oba imaju
+    // vlastito OIB polje s istim name="oib".
+    if (which === 'interes' || which === 'odbijenica') {
       var _oibProvjeraEl = form.querySelector('input[name="oib"]');
       if (_oibProvjeraEl && _oibProvjeraEl.value.trim().length !== 11) {
-        alert('OIB mora sadržavati točno 11 znamenki. Molimo provjerite i ispravite unos.');
+        alert('OIB u Republici Hrvatskoj definiran je sa 11 znamenki, a Vaš unos trenutno ima ' + _oibProvjeraEl.value.trim().length + '. Molimo pripazite i ispravite unos prije nastavka.');
         _oibProvjeraEl.scrollIntoView({behavior:'smooth', block:'center'});
         _oibProvjeraEl.focus();
+        return false;
+      }
+    }
+
+    // Hrvatski IBAN mora biti točno 21 znak: "HR" + 19 znamenki. Polje već
+    // sprječava upis razmaka/crtica/malih slova (vidi ogranicniIban()), ali
+    // ovdje provjeravamo da je format u cijelosti ispravan prije slanja.
+    if (which === 'interes') {
+      var _ibanProvjeraEl = form.querySelector('input[name="iban"]');
+      if (_ibanProvjeraEl && !/^HR\d{19}$/.test(_ibanProvjeraEl.value.trim())) {
+        alert('IBAN u Republici Hrvatskoj mora sadržavati točno 21 znak, u formatu HR i 19 znamenki (npr. HR1210010051863000160). Molimo provjerite i ispravite unos prije nastavka.');
+        _ibanProvjeraEl.scrollIntoView({behavior:'smooth', block:'center'});
+        _ibanProvjeraEl.focus();
         return false;
       }
     }

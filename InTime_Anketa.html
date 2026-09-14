@@ -238,7 +238,7 @@
             <input type="text" name="anketa_naziv" required>
 
             <label>OIB poslovnog subjekta *</label>
-            <input type="text" name="anketa_oib" required>
+            <input type="text" name="anketa_oib" id="anketa-oib-input" required inputmode="numeric" maxlength="11" oninput="ogranicniOibNaZnamenke(this)">
 
             <label>Ime i prezime osobe koja ispunjava anketu *</label>
             <input type="text" name="anketa_ime_prezime" required>
@@ -284,7 +284,8 @@
     <div class="wrap-wide">
       <div><b>Saša Batinac</b> — Sales and Marketing Manager, Voditelj ključnih kupaca</div>
       <div>In Time d.o.o. — Licensee of FedEx</div>
-      <div>Velika cesta 78, 10020 Zagreb, Hrvatska</div>
+      <div>Zelena aleja 28, 10410 Vukovina</div>
+      <div>Tel: 01 6254 444</div>
       <div>M: +385 91 6262 171 · <a href="mailto:sasa.batinac@in-time.hr">sasa.batinac@in-time.hr</a></div>
       <div><a href="https://in-time.hr" target="_blank">in-time.hr</a> · <a href="https://fedex.com" target="_blank">fedex.com</a></div>
       <div class="footer-badge">In Time d.o.o. · FedEx zastupništvo · Hrvatska, BiH, Srbija, Slovenija, Crna Gora, Sjeverna Makedonija</div>
@@ -529,9 +530,28 @@
     return sva;
   }
 
+  // Hrvatski OIB je uvijek točno 11 znamenki. Ovo polje smije primiti samo
+  // brojke i najviše 11 znakova (isti obrazac kao u glavnom upitniku,
+  // InTime_PismoNamjere.html).
+  function ogranicniOibNaZnamenke(input){
+    var samoBrojevi = input.value.replace(/[^0-9]/g, '').slice(0, 11);
+    if (samoBrojevi !== input.value) { input.value = samoBrojevi; }
+  }
+
   function submitAnketa(e){
     e.preventDefault();
     var form = document.getElementById('anketa-form');
+
+    // OIB mora biti točno 11 znamenki. Polje već sprječava upis ne-brojeva i
+    // više od 11 znakova (vidi ogranicniOibNaZnamenke()), ali ovdje dodatno
+    // provjeravamo da nije upisano MANJE od 11.
+    var _oibProvjeraEl = document.getElementById('anketa-oib-input');
+    if (_oibProvjeraEl && _oibProvjeraEl.value.trim().length !== 11) {
+      alert('OIB u Republici Hrvatskoj definiran je sa 11 znamenki, a Vaš unos trenutno ima ' + _oibProvjeraEl.value.trim().length + '. Molimo pripazite i ispravite unos prije nastavka.');
+      _oibProvjeraEl.scrollIntoView({behavior:'smooth', block:'center'});
+      _oibProvjeraEl.focus();
+      return false;
+    }
 
     // Sva pitanja (25 + 2 NPS) moraju imati eksplicitan odgovor — ili
     // pomaknut klizač (data-dotaknuto="true") ili označeno "Ne mogu
