@@ -53,6 +53,10 @@
   }
   .hero-banner img{width:100%;display:block;border-radius:10px;}
 
+  /* POKRIVENOST / MREŽA — namjerno manja od pune širine wrap-a */
+  .pokrivenost-img{max-width:920px;width:100%;display:block;margin:0 auto;border-radius:12px;}
+  .cta-pre-img{max-width:992px;width:100%;display:block;margin:0 auto;border-radius:12px;}
+
   /* SECTIONS */
   section{padding:22px 0;}
   section.alt{padding:0;}
@@ -74,6 +78,11 @@
     font-size:32px;
     color:#b8860b;
     text-shadow:0 0 10px rgba(212,160,17,.55),0 0 22px rgba(212,160,17,.35);
+  }
+  h2.h2-glow-yellow{
+    font-size:32px;
+    color:#e0b400;
+    text-shadow:0 0 10px rgba(224,180,0,.55),0 0 22px rgba(224,180,0,.35);
   }
   p{margin:0 0 14px;color:#333;}
 
@@ -108,7 +117,7 @@
     flex:0 0 30px;
     height:30px;
     border-radius:50%;
-    background:var(--purple);
+    background:#e0b400;
     color:#fff;
     display:flex;
     align-items:center;
@@ -138,38 +147,123 @@
   /* — PDF galerija — */
   #pdf-galerija-section .galerija-wrap-gornji{background:#fff;padding:20px 24px;border-bottom:2px solid var(--purple-dark);}
   #pdf-galerija-section .galerija-header-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px;}
-  #pdf-naslov{font-size:15px;font-weight:900;color:var(--graphite);margin:0;}
-  #pdf-open-link{font-size:12px;font-weight:700;color:#fff;text-decoration:none;background:var(--purple);padding:8px 16px;border-radius:6px;}
-  #pdf-viewer{width:100%;height:500px;border:1px solid var(--line);border-radius:8px;}
+  /* Galerije (PDF/Slike/Video) namjerno uže od ostatka stranice (760px
+     umjesto 1040px .wrap-wide) — korisnikov zahtjev da galerije budu malo
+     manje/kompaktnije od ostatka stranice; koristi novu klasu .wrap-galerija. */
+  .wrap-galerija{max-width:760px;margin:0 auto;padding:0 24px;}
+
+  /* ---- FAQ ("Česta pitanja") — accordion popis, ispod sekcije "In Time
+     prednosti". Svako pitanje je gumb koji otvara/zatvara odgovor ispod
+     (koji smije sadržavati tekst + opcionalno sliku/video/PDF prilog,
+     svaki spremljen na Drive i prikazan istim obrascem kao galerije
+     gore — vidi listFaqJavno/InTime_Code.gs). ---- */
+  .faq-lista{max-width:760px;margin:0 auto;}
+  .faq-item{border-bottom:1px solid var(--line);}
+  .faq-item:first-child{border-top:1px solid var(--line);}
+  .faq-pitanje-btn{
+    width:100%;display:flex;justify-content:space-between;align-items:center;gap:12px;
+    background:none;border:none;text-align:left;cursor:pointer;
+    padding:16px 4px;font-size:15px;font-weight:700;color:var(--graphite);
+    font-family:inherit;
+  }
+  .faq-pitanje-btn:hover{color:var(--purple-dark);}
+  .faq-chevron{transition:transform .2s;color:var(--purple);font-size:13px;flex-shrink:0;}
+  .faq-item.open .faq-chevron{transform:rotate(180deg);}
+  .faq-odgovor{padding:0 4px 18px;}
+  .faq-odgovor-tekst{margin:0 0 12px;font-size:14px;line-height:1.55;color:var(--graphite);white-space:pre-wrap;}
+  .faq-odgovor-slika{max-width:100%;border-radius:8px;display:block;margin-bottom:12px;}
+  .faq-odgovor-slika.faq-slika-centar{width:60%;min-width:160px;margin-left:auto;margin-right:auto;}
+  .faq-odgovor-slika.faq-slika-lijevo{width:45%;min-width:140px;margin-left:0;margin-right:auto;}
+  .faq-odgovor-slika.faq-slika-desno{width:45%;min-width:140px;margin-left:auto;margin-right:0;}
+  .faq-odgovor-video{width:100%;aspect-ratio:16/9;border:none;border-radius:8px;display:block;margin-bottom:12px;}
+  .faq-odgovor-link{
+    display:inline-block;font-size:13px;font-weight:700;color:var(--purple-dark);
+    text-decoration:none;border:1px solid var(--purple);border-radius:6px;padding:7px 14px;
+    margin:0 8px 10px 0;
+  }
+  .faq-odgovor-link:hover{background:var(--purple);color:#fff;}
+  .faq-ocjena-row{display:flex;align-items:center;gap:10px;margin-top:14px;padding-top:12px;border-top:1px solid var(--line);flex-wrap:wrap;}
+  .faq-ocjena-tekst{font-size:12px;color:var(--grey);}
+  .faq-ocjena-btn{
+    border:1px solid var(--line);background:#fff;border-radius:6px;padding:5px 11px;
+    font-size:15px;line-height:1;cursor:pointer;font-family:inherit;
+    transition:border-color .15s,background .15s;
+  }
+  .faq-ocjena-btn:hover:not(:disabled){border-color:var(--purple);}
+  .faq-ocjena-btn.faq-ocjena-aktivno{border-color:var(--purple);background:rgba(34,152,145,.12);}
+  .faq-ocjena-btn:disabled{cursor:default;opacity:.55;}
+  .faq-ocjena-hvala{font-size:12px;color:var(--purple-dark);font-weight:700;}
+
+  /* ---- "Zone dostave" — prikvačena PRVA FAQ stavka s poljem za
+     pretragu grada/poštanskog broja umjesto unaprijed napisanog teksta
+     (vidi izgradiZonaFaqStavku_() niže). ---- */
+  .zona-pretraga-input{
+    width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid var(--line);
+    border-radius:8px;font-size:14px;font-family:inherit;margin-bottom:12px;
+  }
+  .zona-pretraga-input:focus{outline:2px solid var(--purple);outline-offset:1px;}
+  .zona-hint{font-size:13px;color:var(--grey);padding:8px 10px;}
+  .zona-rezultati{max-height:340px;overflow-y:auto;overflow-x:auto;border:1px solid var(--line);border-radius:8px;}
+  .zona-tablica{width:100%;border-collapse:collapse;font-size:13px;}
+  .zona-tablica th{
+    text-align:left;background:#f5f7f8;padding:8px 10px;position:sticky;top:0;
+    border-bottom:1px solid var(--line);color:var(--graphite);
+  }
+  .zona-tablica td{padding:7px 10px;border-bottom:1px solid var(--line);color:var(--graphite);}
+  .zona-tablica tr:last-child td{border-bottom:none;}
+
+  #pdf-naslov{font-size:14px;font-weight:900;color:var(--graphite);margin:0;}
+  #pdf-open-link{font-size:12px;font-weight:700;color:#fff;text-decoration:none;background:var(--purple);padding:7px 14px;border-radius:6px;}
+  #pdf-viewer{width:100%;height:380px;border:1px solid var(--line);border-radius:8px;}
   #pdf-galerija-section .galerija-trak{background:#131313;}
-  .pdf-thumb{flex-shrink:0;width:100px;cursor:pointer;border-radius:8px;border:2px solid #333;background:#1a1a1a;padding:10px 8px;text-align:center;transition:border-color .2s,box-shadow .2s;}
+  .pdf-thumb{flex-shrink:0;width:80px;cursor:pointer;border-radius:8px;border:2px solid #333;background:#1a1a1a;padding:8px 6px;text-align:center;transition:border-color .2s,box-shadow .2s;}
   .pdf-thumb.active{border-color:var(--purple);box-shadow:0 2px 12px rgba(34,152,145,.35);}
-  .pdf-thumb-icon{width:38px;height:38px;margin:0 auto 6px;}
+  .pdf-thumb-icon{width:30px;height:30px;margin:0 auto 5px;}
   .pdf-thumb-naziv{font-size:9px;font-weight:700;color:#e7eef0;line-height:1.3;}
 
   /* — Galerija slika — */
-  #slike-galerija-section .galerija-glavna-wrap{text-align:center;margin-bottom:16px;}
-  #slika-glavna{max-width:100%;height:auto;object-fit:contain;border-radius:6px;max-height:400px;}
+  #slike-galerija-section .galerija-glavna-wrap{text-align:center;margin-bottom:10px;}
+  #slika-naslov{font-size:14px;font-weight:900;color:var(--graphite);margin:0 0 10px;}
+  #slika-glavna{max-width:100%;height:auto;object-fit:contain;border-radius:6px;max-height:320px;cursor:zoom-in;display:block;margin:0 auto;}
   #slike-galerija-section .galerija-scrollbar-track{height:6px;background:var(--line);border-radius:4px;margin-bottom:10px;overflow:hidden;}
   #slike-scrollbar{height:100%;background:var(--purple);border-radius:4px;width:40%;margin-left:0%;}
   #slike-galerija-section .galerija-trak{padding:0 0 10px;}
-  .slika-thumb{width:120px;height:120px;object-fit:cover;border-radius:6px;cursor:pointer;flex-shrink:0;-webkit-user-drag:none;user-select:none;border:2px solid transparent;}
+  .slika-thumb{
+    width:90px;flex-shrink:0;cursor:pointer;border-radius:6px;overflow:hidden;
+    border:2px solid transparent;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.1);
+  }
   .slika-thumb.active{border-color:var(--purple);}
+  .slika-thumb img{width:90px;height:90px;object-fit:cover;display:block;-webkit-user-drag:none;user-select:none;}
+  .slika-thumb-naziv{padding:5px 4px;font-size:9px;font-weight:700;color:var(--graphite);line-height:1.3;text-align:center;background:#fff;}
+
+  /* — Lightbox (uvećani prikaz slike na sredinu ekrana) — */
+  .slika-lightbox-overlay{
+    position:fixed;inset:0;background:rgba(10,20,25,.92);z-index:9999;
+    display:flex;align-items:center;justify-content:center;padding:40px 24px;cursor:zoom-out;
+  }
+  .slika-lightbox-overlay[hidden]{display:none;}
+  .slika-lightbox-img{max-width:92vw;max-height:82vh;width:auto;height:auto;object-fit:contain;border-radius:8px;box-shadow:0 10px 50px rgba(0,0,0,.55);cursor:default;}
+  .slika-lightbox-naslov{position:absolute;bottom:26px;left:20px;right:20px;text-align:center;color:#fff;font-size:14px;font-weight:700;}
+  .slika-lightbox-close{
+    position:absolute;top:16px;right:20px;color:#fff;font-size:34px;line-height:1;
+    cursor:pointer;background:none;border:none;font-weight:300;padding:4px 10px;
+  }
+  .slika-lightbox-close:hover{color:var(--purple);}
 
   /* — Video galerija — */
   #video-galerija-section .galerija-gornji-trak{background:linear-gradient(135deg,#0d2438,#135450);border-radius:12px 12px 0 0;overflow:hidden;}
-  #video-galerija-section .galerija-header-row{display:flex;align-items:center;justify-content:space-between;padding:16px 20px 10px;flex-wrap:wrap;gap:8px;}
-  #video-naslov{font-family:Arial,sans-serif;text-transform:uppercase;font-size:14px;color:#e7eef0;font-weight:700;}
+  #video-galerija-section .galerija-header-row{display:flex;align-items:center;justify-content:space-between;padding:14px 18px 8px;flex-wrap:wrap;gap:8px;}
+  #video-naslov{font-family:Arial,sans-serif;text-transform:uppercase;font-size:13px;color:#e7eef0;font-weight:700;}
   #video-brojac{font-family:monospace;font-size:11px;color:#8fe4da;}
   #video-galerija-section .galerija-player-wrap{position:relative;padding-bottom:56.25%;height:0;overflow:hidden;}
   #video-player{position:absolute;top:0;left:0;width:100%;height:100%;background:#000;border:0;}
   #video-galerija-section .galerija-trak{background:#111;border-radius:0 0 12px 12px;}
-  .video-thumb{width:150px;flex-shrink:0;cursor:pointer;border-radius:8px;overflow:hidden;border:2px solid #333;}
+  .video-thumb{width:120px;flex-shrink:0;cursor:pointer;border-radius:8px;overflow:hidden;border:2px solid #333;}
   .video-thumb.active{border-color:var(--purple);}
-  .video-thumb-slika-wrap{position:relative;height:84px;background:#0d2438;overflow:hidden;}
+  .video-thumb-slika-wrap{position:relative;height:64px;background:#0d2438;overflow:hidden;}
   .video-thumb-slika-wrap img{width:100%;height:100%;object-fit:cover;}
-  .video-thumb-play{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:32px;height:32px;background:var(--purple);border-radius:50%;display:flex;align-items:center;justify-content:center;border:2px solid #fff;}
-  .video-thumb-naziv{background:#1a1a1a;padding:8px;font-size:9px;font-weight:700;color:#fff;line-height:1.3;}
+  .video-thumb-play{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:28px;height:28px;background:var(--purple);border-radius:50%;display:flex;align-items:center;justify-content:center;border:2px solid #fff;}
+  .video-thumb-naziv{background:#1a1a1a;padding:7px;font-size:9px;font-weight:700;color:#fff;line-height:1.3;}
 
   /* SERVICES */
   .services{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-top:10px;}
@@ -889,7 +983,7 @@
     <div class="wrap">
       <h2 class="h2-glow">Tko smo mi</h2>
       <p>Ovim putem želimo Vam ukratko predstaviti usluge i mogućnosti distribucije Vaših pošiljaka putem sustava tvrtke In Time d.o.o. Rado bismo dogovorili kratki susret s našim trgovačkim predstavnikom koji će Vam uživo prezentirati sve prednosti koje sigurno doprinose maksimalnim uštedama i optimizaciji logističkih procesa unutar Vašeg poslovnog subjekta (kontakt predstavnika nalazi se u potpisu na dnu stranice).</p>
-      <p>In Time d.o.o. nudi niz usluga — od međunarodnog prijevoza u uvozu i izvozu, uvoznog i izvoznog carinjenja, domaće distribucije, do distribucije pošiljaka širom svijeta (avionom, kamionom ili kombinirano). Dugi niz godina zastupnici smo jedne od vodećih globalnih kurirskih kompanija — Federal Express Corporation (FedEx).</p>
+      <p><strong>In Time d.o.o. nudi niz usluga — od međunarodnog prijevoza u uvozu i izvozu, uvoznog i izvoznog carinjenja, domaće distribucije, do distribucije pošiljaka širom svijeta (avionom, kamionom ili kombinirano). Dugi niz godina zastupnici smo jedne od vodećih globalnih kurirskih kompanija — Federal Express Corporation (FedEx).</strong></p>
       <p>Kroz Vaše logističke procese omogućujemo korištenje jedne službe od početka do kraja transporta robe do konačnog odredišta — usluga "ključ u ruke" koja donosi veću brzinu dostave, niže troškove po pojedinom segmentu posla i veću sigurnost za Vašu pošiljku.</p>
 
       <div class="facts">
@@ -905,7 +999,7 @@
   <!-- POKRIVENOST / MREŽA -->
   <section style="padding-top:0;">
     <div class="wrap-wide">
-      <!-- OVDJE IDE NOVA SLIKA (pokrivenost / mreža) -->
+      <img class="pokrivenost-img" src="https://i.imgur.com/vuTDks0.png" alt="In Time — pokrivenost i mreža">
     </div>
   </section>
 
@@ -962,12 +1056,12 @@
   <!-- PREDNOSTI -->
   <section class="alt">
     <div class="wrap">
-      <h2 class="h2-glow-gold">In Time prednosti</h2>
+      <h2 class="h2-glow-yellow">In Time prednosti</h2>
       <div class="adv-list">
         <div class="adv"><div class="adv-num">1</div><div class="adv-text"><b>Ekspresna dostava "od vrata do vrata"</b> — manje pošiljke (Z1) isporučujemo unutar 24 sata od trenutka prikupa.</div></div>
         <div class="adv"><div class="adv-num">2</div><div class="adv-text">Vrlo brzo rješavanje prigovora i nadoknada štete u slučaju oštećenja ili gubitka pošiljke u transportu.</div></div>
         <div class="adv"><div class="adv-num">3</div><div class="adv-text">Prodajni agent zadužen za Vas kao klijenta brzo i efikasno rješava svu problematiku — ne morate sami kontaktirati interne službe.</div></div>
-        <div class="adv"><div class="adv-num">4</div><div class="adv-text">Više paketa na istu adresu tretiramo kao dijelove iste pošiljke — zbrajaju se samo težine.</div></div>
+        <div class="adv"><div class="adv-num">4</div><div class="adv-text"><strong>Više paketa na istu adresu tretiramo kao dijelove iste pošiljke — zbrajaju se samo težine.</strong></div></div>
         <div class="adv"><div class="adv-num">5</div><div class="adv-text"><b>Kompletna dropshipping usluga</b> — prikup s dodatnih adresa, obrada i slanje u Vaše ime, uz automatsku obavijest na online računu.</div></div>
         <div class="adv"><div class="adv-num">6</div><div class="adv-text">Interno tjedno i mjesečno vanjsko ocjenjivanje kvalitete usluge, uz brzu korekciju uočenih nedostataka.</div></div>
         <div class="adv"><div class="adv-num">7</div><div class="adv-text"><b>ONLINE BOOKING aplikacija</b> — otvaranje i storniranje naloga, praćenje pošiljke u realnom vremenu te ispis dostavnih naljepnica direktno na A4 printeru.</div></div>
@@ -978,13 +1072,24 @@
     </div>
   </section>
 
+  <!-- FAQ ("Česta pitanja") — puni se dinamički iz InTime_Code.gs
+       (akcija listFaqJavno, čita InTime_FAQ Sheet), uređuje se u
+       InTime_Admin.html (tab "Česta pitanja"). Sekcija ostaje sakrivena
+       ako trenutno nema nijednog objavljenog pitanja. -->
+  <section id="faq-section" style="display:none;">
+    <div class="wrap">
+      <h2 class="h2-glow-gold">Vaša česta pitanja, In Time odgovori</h2>
+      <div id="faq-lista" class="faq-lista"></div>
+    </div>
+  </section>
+
   <!-- DINAMIČKE DRIVE GALERIJE — PDF, pa slike, pa video (dogovoreni
        redoslijed). Svaka se puni automatski iz vlastitog Google Drive
        foldera (JS niže) i sama se sakriva ako njen folder nema sadržaja. -->
 
   <!-- PDF GALERIJA -->
   <section id="pdf-galerija-section" style="display:none;">
-    <div class="wrap-wide">
+    <div class="wrap-galerija">
       <h2>Dokumenti</h2>
       <div class="galerija-wrap">
         <div class="galerija-wrap-gornji">
@@ -1003,10 +1108,11 @@
 
   <!-- GALERIJA SLIKA -->
   <section id="slike-galerija-section" style="display:none;">
-    <div class="wrap-wide">
+    <div class="wrap-galerija">
       <h2>Galerija slika</h2>
       <div class="galerija-glavna-wrap">
         <img id="slika-glavna" src="" alt="In Time — galerija slika">
+        <p id="slika-naslov"></p>
       </div>
       <div class="galerija-scrollbar-track"><div id="slike-scrollbar"></div></div>
       <div id="slike-trak" class="galerija-trak">
@@ -1015,9 +1121,16 @@
     </div>
   </section>
 
+  <!-- LIGHTBOX — uvećani prikaz slike na sredini ekrana (klik na glavnu sliku u galeriji) -->
+  <div id="slika-lightbox" class="slika-lightbox-overlay" hidden>
+    <button type="button" class="slika-lightbox-close" aria-label="Zatvori">&times;</button>
+    <img id="slika-lightbox-img" class="slika-lightbox-img" src="" alt="">
+    <div id="slika-lightbox-naslov" class="slika-lightbox-naslov"></div>
+  </div>
+
   <!-- VIDEO GALERIJA -->
   <section id="video-galerija-section" style="display:none;">
-    <div class="wrap-wide">
+    <div class="wrap-galerija">
       <h2>Video galerija</h2>
       <div class="galerija-wrap">
         <div class="galerija-gornji-trak">
@@ -1033,6 +1146,13 @@
           <div class="galerija-prazno">Učitavanje video materijala...</div>
         </div>
       </div>
+    </div>
+  </section>
+
+  <!-- SLIKA PRIJE CTA SEKCIJE -->
+  <section style="padding-top:0;">
+    <div class="wrap-wide">
+      <img class="cta-pre-img" src="https://i.imgur.com/QWOPK7p.png" alt="In Time">
     </div>
   </section>
 
@@ -2123,15 +2243,16 @@
       var slike = data.slike;
       trak.innerHTML = '';
       slike.forEach(function(slika, i){
-        var img = document.createElement('img');
-        img.className = 'slika-thumb' + (i === 0 ? ' active' : '');
-        img.id = 'slika-thumb-' + i;
-        img.src = 'https://drive.google.com/thumbnail?id=' + encodeURIComponent(slika.id) + '&sz=w300';
-        img.alt = slika.naziv || 'In Time — slika';
-        img.loading = 'lazy';
-        img.draggable = false;
-        img.addEventListener('click', function(){ promijeniGlavnuSliku_(i, slike); });
-        trak.appendChild(img);
+        var thumb = document.createElement('div');
+        thumb.className = 'slika-thumb' + (i === 0 ? ' active' : '');
+        thumb.id = 'slika-thumb-' + i;
+        thumb.innerHTML =
+          '<img src="https://drive.google.com/thumbnail?id=' + encodeURIComponent(slika.id) + '&sz=w300" loading="lazy" alt="" draggable="false">' +
+          '<div class="slika-thumb-naziv"></div>';
+        thumb.querySelector('img').alt = slika.naziv || 'In Time — slika';
+        thumb.querySelector('.slika-thumb-naziv').textContent = slika.naziv || '';
+        thumb.addEventListener('click', function(){ promijeniGlavnuSliku_(i, slike); });
+        trak.appendChild(thumb);
       });
       promijeniGlavnuSliku_(0, slike);
       var scrollTrak = trak;
@@ -2148,12 +2269,49 @@
   function promijeniGlavnuSliku_(index, slike) {
     var slika = slike[index];
     if (!slika) { return; }
-    document.getElementById('slika-glavna').src = 'https://drive.google.com/thumbnail?id=' + encodeURIComponent(slika.id) + '&sz=w1000';
+    var glavna = document.getElementById('slika-glavna');
+    glavna.src = 'https://drive.google.com/thumbnail?id=' + encodeURIComponent(slika.id) + '&sz=w1000';
+    glavna.dataset.slikaId = slika.id;
+    document.getElementById('slika-naslov').textContent = slika.naziv || '';
     slike.forEach(function(s, i){
       var t = document.getElementById('slika-thumb-' + i);
       if (t) { t.classList.toggle('active', i === index); }
     });
   }
+
+  // Lightbox — klik na glavnu (uvećanu) sliku galerije otvara istu sliku još
+  // većom, centriranu preko cijelog ekrana (tamna pozadina, zatvara se klikom
+  // izvan slike, na X gumb, ili tipkom Escape).
+  function otvoriSlikaLightbox_(id, naziv) {
+    var overlay = document.getElementById('slika-lightbox');
+    var img = document.getElementById('slika-lightbox-img');
+    if (!overlay || !img || !id) { return; }
+    img.src = 'https://drive.google.com/thumbnail?id=' + encodeURIComponent(id) + '&sz=w1600';
+    img.alt = naziv || '';
+    var naslov = document.getElementById('slika-lightbox-naslov');
+    if (naslov) { naslov.textContent = naziv || ''; }
+    overlay.hidden = false;
+  }
+  function zatvoriSlikaLightbox_() {
+    var overlay = document.getElementById('slika-lightbox');
+    if (overlay) { overlay.hidden = true; }
+  }
+  (function initSlikaLightbox(){
+    var overlay = document.getElementById('slika-lightbox');
+    var glavna = document.getElementById('slika-glavna');
+    if (!overlay || !glavna) { return; }
+    overlay.addEventListener('click', function(e){
+      if (e.target === overlay) { zatvoriSlikaLightbox_(); }
+    });
+    var closeBtn = overlay.querySelector('.slika-lightbox-close');
+    if (closeBtn) { closeBtn.addEventListener('click', zatvoriSlikaLightbox_); }
+    document.addEventListener('keydown', function(e){
+      if (e.key === 'Escape') { zatvoriSlikaLightbox_(); }
+    });
+    glavna.addEventListener('click', function(){
+      otvoriSlikaLightbox_(glavna.dataset.slikaId, document.getElementById('slika-naslov').textContent);
+    });
+  })();
 
   // -- Video galerija --
   (function ucitajVideoGaleriju(){
@@ -2194,6 +2352,329 @@
       if (t) { t.classList.toggle('active', i === index); }
     });
   }
+
+  // -- FAQ ("Česta pitanja") --
+  // Dohvaća objavljena pitanja (akcija listFaqJavno, isti dohvatiGaleriju_
+  // obrazac kao tri galerije gore) i gradi accordion — klik na pitanje
+  // otvara/zatvara odgovor ispod. Odgovor smije sadržavati sliku i/ili
+  // video i/ili PDF prilog (Drive file ID iz admina), prikazane istim
+  // thumbnail/preview/view URL obrascem kao galerije. Sekcija ostaje
+  // sakrivena ako nema objavljenih pitanja ili dohvat ne uspije.
+  // Pretvara FAQ odgovor (obični tekst koji Saša upiše u adminu) u sigurni
+  // HTML s klikabilnim linkovima — tekst se PRVO HTML-escapea (isti obrazac
+  // kao esc() u InTime_Admin.html, ovdje samostalna kopija jer se koristi
+  // izvan admina), a tek onda se prepoznaju linkovi u dva oblika: (1)
+  // markdown-stil "[tekst poveznice](https://...)" za vlastiti naziv linka;
+  // (2) "goli" URL (https://...) zalijepljen u tekst, automatski postaje
+  // klikabilan sa samim URL-om kao tekstom linka. Regex za goli URL
+  // eksplicitno preskače URL-ove koji su već unutar href="..." (iz koraka 1)
+  // provjerom znaka ispred (ne smije biti navodnik) — sprječava dvostruko
+  // linkanje istog URL-a.
+  function escHtmlFaq_(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function(c) {
+      return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c];
+    });
+  }
+  function linkifyFaqTekst_(text) {
+    var html = escHtmlFaq_(text);
+    html = html.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, function(m, label, url) {
+      return '<a href="' + url + '" target="_blank" rel="noopener">' + label + '</a>';
+    });
+    html = html.replace(/(^|[^"])(https?:\/\/[^\s<]+)/g, function(m, pre, url) {
+      return pre + '<a href="' + url + '" target="_blank" rel="noopener">' + url + '</a>';
+    });
+    return html;
+  }
+
+  // Red s 👍/👎 ispod svakog FAQ odgovora ("Je li Vam ovaj odgovor pomogao?")
+  // — klik šalje tihi fire-and-forget POST (isti no-cors obrazac kao
+  // trackVisit() gore) na akciju 'faqOcjena', koja uvećava Lajkovi/Nelajkovi
+  // stupac za taj redak u InTime_FAQ (vidi InTime_Code.gs). Nakon klika oba
+  // gumba postaju onemogućena (spriječi dvoklik) i odabrani se istakne;
+  // stanje se pamti u localStorage (po rowIndex-u) da glasanje ostane
+  // "zapamćeno" i nakon osvježavanja stranice u istom pregledniku — ovo
+  // nije kriptografski dokazana zaštita od višestrukog glasanja, samo
+  // razumna "good faith" mjera (localStorage nije dostupan svugdje pa je
+  // sve u try/catch — glasanje i dalje radi, samo se možda ne pamti).
+  function izgradiFaqOcjenaRed_(rowIndex) {
+    var row = document.createElement('div');
+    row.className = 'faq-ocjena-row';
+
+    var vecGlasano = null;
+    try { vecGlasano = localStorage.getItem('intime_faq_glas_' + rowIndex); } catch (e) { /* nedostupno — nastavljamo bez pamćenja */ }
+
+    var tekst = document.createElement('span');
+    tekst.className = 'faq-ocjena-tekst';
+    tekst.textContent = 'Je li Vam ovaj odgovor pomogao?';
+
+    var likeBtn = document.createElement('button');
+    likeBtn.type = 'button';
+    likeBtn.className = 'faq-ocjena-btn faq-ocjena-like';
+    likeBtn.setAttribute('aria-label', 'Da, pomoglo je');
+    likeBtn.textContent = '👍';
+
+    var dislikeBtn = document.createElement('button');
+    dislikeBtn.type = 'button';
+    dislikeBtn.className = 'faq-ocjena-btn faq-ocjena-dislike';
+    dislikeBtn.setAttribute('aria-label', 'Ne, nije pomoglo');
+    dislikeBtn.textContent = '👎';
+
+    var hvala = document.createElement('span');
+    hvala.className = 'faq-ocjena-hvala';
+    hvala.textContent = 'Hvala na povratnoj informaciji!';
+    hvala.hidden = true;
+
+    function postaviGlasanoStanje_(tip) {
+      likeBtn.disabled = true;
+      dislikeBtn.disabled = true;
+      likeBtn.classList.toggle('faq-ocjena-aktivno', tip === 'like');
+      dislikeBtn.classList.toggle('faq-ocjena-aktivno', tip === 'dislike');
+      hvala.hidden = false;
+    }
+
+    function posaljiOcjenu_(tip) {
+      if (likeBtn.disabled) { return; }
+      postaviGlasanoStanje_(tip);
+      try { localStorage.setItem('intime_faq_glas_' + rowIndex, tip); } catch (e) { /* nije kritično */ }
+      fetch(GAS_WEB_APP_URL, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ action: 'faqOcjena', rowIndex: rowIndex, tip: tip })
+      }).catch(function(){ /* fire-and-forget, ne utječe na prikaz */ });
+    }
+
+    likeBtn.addEventListener('click', function(){ posaljiOcjenu_('like'); });
+    dislikeBtn.addEventListener('click', function(){ posaljiOcjenu_('dislike'); });
+
+    if (vecGlasano === 'like' || vecGlasano === 'dislike') { postaviGlasanoStanje_(vecGlasano); }
+
+    row.appendChild(tekst);
+    row.appendChild(likeBtn);
+    row.appendChild(dislikeBtn);
+    row.appendChild(hvala);
+    return row;
+  }
+
+  // Posebna, uvijek PRVA stavka u FAQ popisu — "In Time - popis gradova,
+  // mjesta i zone". Za razliku od običnih pitanja, ovdje odgovor nije
+  // unaprijed napisan tekst nego polje za pretragu koje pretražuje zaseban
+  // skup podataka (akcija listZoneJavno, ~6700 redaka, backend InTime_Zone
+  // Sheet — vidi InTime_Code.gs). Podaci se dohvaćaju LIJENO, tek pri
+  // prvom otvaranju ove stavke (ne pri učitavanju stranice), i onda
+  // filtriraju u pregledniku po svakom unosu u polje za pretragu (nema
+  // ponovnog dohvata s backenda pri svakoj tipkici). Prikaz je ograničen
+  // na prvih 50 rezultata radi preglednosti/performansi.
+  function izgradiZonaFaqStavku_() {
+    var item = document.createElement('div');
+    item.className = 'faq-item';
+
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'faq-pitanje-btn';
+    btn.setAttribute('aria-expanded', 'false');
+    btn.innerHTML = '<span></span><span class="faq-chevron">▾</span>';
+    btn.querySelector('span').textContent = 'In Time - popis gradova, mjesta i zone';
+
+    var odgovorWrap = document.createElement('div');
+    odgovorWrap.className = 'faq-odgovor';
+    odgovorWrap.hidden = true;
+
+    var opis = document.createElement('p');
+    opis.className = 'faq-odgovor-tekst';
+    opis.textContent = 'Upišite naziv grada/mjesta ili poštanski broj kako biste pronašli pripadajuću dostavnu zonu.';
+    odgovorWrap.appendChild(opis);
+
+    var pretraga = document.createElement('input');
+    pretraga.type = 'text';
+    pretraga.className = 'zona-pretraga-input';
+    pretraga.placeholder = 'Npr. Zagreb ili 10000...';
+    odgovorWrap.appendChild(pretraga);
+
+    var rezultati = document.createElement('div');
+    rezultati.className = 'zona-rezultati';
+    odgovorWrap.appendChild(rezultati);
+
+    var sviPodaci = null; // popunjava se lijeno, vidi ucitajPodatke_() niže
+    var ucitavaSe = false;
+
+    function prikaziRezultate_(filtar) {
+      rezultati.innerHTML = '';
+      if (!sviPodaci) { return; }
+      var f = filtar.trim().toLowerCase();
+      if (!f) {
+        var hint = document.createElement('div');
+        hint.className = 'zona-hint';
+        hint.textContent = 'Ukupno u bazi: ' + sviPodaci.length + ' gradova/mjesta. Upišite naziv ili poštanski broj za pretragu.';
+        rezultati.appendChild(hint);
+        return;
+      }
+      var popis = sviPodaci.filter(function(z){
+        return z.grad.toLowerCase().indexOf(f) !== -1 || z.postanski.indexOf(f) !== -1;
+      });
+      if (!popis.length) {
+        var prazno = document.createElement('div');
+        prazno.className = 'zona-hint';
+        prazno.textContent = 'Nema rezultata za "' + filtar + '".';
+        rezultati.appendChild(prazno);
+        return;
+      }
+      var prikazano = popis.slice(0, 50);
+      var tablica = document.createElement('table');
+      tablica.className = 'zona-tablica';
+      var thead = document.createElement('thead');
+      thead.innerHTML = '<tr><th>Grad / mjesto</th><th>Poštanski broj</th><th>Zona</th></tr>';
+      tablica.appendChild(thead);
+      var tbody = document.createElement('tbody');
+      prikazano.forEach(function(z){
+        var tr = document.createElement('tr');
+        var tdGrad = document.createElement('td'); tdGrad.textContent = z.grad;
+        var tdPostanski = document.createElement('td'); tdPostanski.textContent = z.postanski;
+        var tdZona = document.createElement('td'); tdZona.textContent = z.zona;
+        tr.appendChild(tdGrad); tr.appendChild(tdPostanski); tr.appendChild(tdZona);
+        tbody.appendChild(tr);
+      });
+      tablica.appendChild(tbody);
+      rezultati.appendChild(tablica);
+      if (popis.length > prikazano.length) {
+        var vise = document.createElement('div');
+        vise.className = 'zona-hint';
+        vise.textContent = 'Prikazano prvih ' + prikazano.length + ' od ' + popis.length + ' rezultata — suzite pretragu za točniji prikaz.';
+        rezultati.appendChild(vise);
+      }
+    }
+
+    function ucitajPodatke_() {
+      if (sviPodaci || ucitavaSe) { return; }
+      ucitavaSe = true;
+      rezultati.innerHTML = '<div class="zona-hint">Učitavanje popisa...</div>';
+      dohvatiGaleriju_('listZoneJavno', function(data){
+        ucitavaSe = false;
+        if (!data || data.status !== 'ok') {
+          rezultati.innerHTML = '<div class="zona-hint">Popis trenutno nije dostupan.</div>';
+          return;
+        }
+        sviPodaci = data.zone || [];
+        prikaziRezultate_(pretraga.value);
+      });
+    }
+
+    pretraga.addEventListener('input', function(){
+      prikaziRezultate_(pretraga.value);
+    });
+
+    btn.addEventListener('click', function(){
+      var otvoreno = !odgovorWrap.hidden;
+      odgovorWrap.hidden = otvoreno;
+      btn.setAttribute('aria-expanded', String(!otvoreno));
+      item.classList.toggle('open', !otvoreno);
+      if (!otvoreno) { ucitajPodatke_(); }
+    });
+
+    item.appendChild(btn);
+    item.appendChild(odgovorWrap);
+    return item;
+  }
+
+  (function ucitajFaq(){
+    dohvatiGaleriju_('listFaqJavno', function(data){
+      if (!data || data.status !== 'ok') { return; }
+      var pitanja = data.pitanja || [];
+      var zoneBroj = data.zoneBroj || 0;
+      if (!pitanja.length && !zoneBroj) { return; }
+      var lista = document.getElementById('faq-lista');
+      var section = document.getElementById('faq-section');
+      if (!lista || !section) { return; }
+      lista.innerHTML = '';
+      if (zoneBroj > 0) {
+        lista.appendChild(izgradiZonaFaqStavku_());
+      }
+      pitanja.forEach(function(faq, i){
+        var item = document.createElement('div');
+        item.className = 'faq-item';
+
+        var btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'faq-pitanje-btn';
+        btn.setAttribute('aria-expanded', 'false');
+        btn.innerHTML = '<span></span><span class="faq-chevron">▾</span>';
+        btn.querySelector('span').textContent = faq.pitanje;
+
+        var odgovorWrap = document.createElement('div');
+        odgovorWrap.className = 'faq-odgovor';
+        odgovorWrap.id = 'faq-odgovor-' + i;
+        odgovorWrap.hidden = true;
+
+        var tekst = document.createElement('p');
+        tekst.className = 'faq-odgovor-tekst';
+        tekst.innerHTML = linkifyFaqTekst_(faq.odgovor);
+        odgovorWrap.appendChild(tekst);
+
+        // Svaki prilog (slika/video/PDF) dobiva SVOJ aktivni klikabilni link
+        // "Otvori u novoj kartici" (uz sam embed/pregled), ne samo pasivni
+        // prikaz — korisnikov izričit zahtjev.
+        if (faq.slikaId) {
+          var img = document.createElement('img');
+          img.className = 'faq-odgovor-slika';
+          img.loading = 'lazy';
+          img.alt = faq.pitanje;
+          img.src = 'https://drive.google.com/thumbnail?id=' + encodeURIComponent(faq.slikaId) + '&sz=w800';
+          if (faq.slikaPoravnanje === 'centar' || faq.slikaPoravnanje === 'lijevo' || faq.slikaPoravnanje === 'desno') {
+            img.classList.add('faq-slika-' + faq.slikaPoravnanje);
+          }
+          odgovorWrap.appendChild(img);
+
+          var slikaLink = document.createElement('a');
+          slikaLink.className = 'faq-odgovor-link';
+          slikaLink.href = 'https://drive.google.com/file/d/' + encodeURIComponent(faq.slikaId) + '/view';
+          slikaLink.target = '_blank';
+          slikaLink.rel = 'noopener';
+          slikaLink.textContent = '🖼️ Otvori sliku u punoj veličini';
+          odgovorWrap.appendChild(slikaLink);
+        }
+        if (faq.videoId) {
+          var iframeVideo = document.createElement('iframe');
+          iframeVideo.className = 'faq-odgovor-video';
+          iframeVideo.loading = 'lazy';
+          iframeVideo.src = 'https://drive.google.com/file/d/' + encodeURIComponent(faq.videoId) + '/preview';
+          odgovorWrap.appendChild(iframeVideo);
+
+          var videoLink = document.createElement('a');
+          videoLink.className = 'faq-odgovor-link';
+          videoLink.href = 'https://drive.google.com/file/d/' + encodeURIComponent(faq.videoId) + '/view';
+          videoLink.target = '_blank';
+          videoLink.rel = 'noopener';
+          videoLink.textContent = '🎬 Otvori video u novoj kartici';
+          odgovorWrap.appendChild(videoLink);
+        }
+        if (faq.pdfId) {
+          var pdfLink = document.createElement('a');
+          pdfLink.className = 'faq-odgovor-link';
+          pdfLink.href = 'https://drive.google.com/file/d/' + encodeURIComponent(faq.pdfId) + '/view';
+          pdfLink.target = '_blank';
+          pdfLink.rel = 'noopener';
+          pdfLink.textContent = '📄 Otvori PDF dokument';
+          odgovorWrap.appendChild(pdfLink);
+        }
+
+        if (faq.rowIndex) {
+          odgovorWrap.appendChild(izgradiFaqOcjenaRed_(faq.rowIndex));
+        }
+
+        btn.addEventListener('click', function(){
+          var otvoreno = !odgovorWrap.hidden;
+          odgovorWrap.hidden = otvoreno;
+          btn.setAttribute('aria-expanded', String(!otvoreno));
+          item.classList.toggle('open', !otvoreno);
+        });
+
+        item.appendChild(btn);
+        item.appendChild(odgovorWrap);
+        lista.appendChild(item);
+      });
+      section.style.display = '';
+    });
+  })();
 
   // Prikazuje/skriva pripadajuće tekstualno polje ovisno o tome je li u
   // <select> izborniku odabrana "okidačka" opcija (default "Ostalo", ali
@@ -4157,6 +4638,192 @@
     document.getElementById('confirm-box').scrollIntoView({behavior:'smooth', block:'center'});
     return false;
   }
+</script>
+
+<!-- ========================================================================
+     PLUTAJUĆI WIDGET (donji lijevi kut) — kontakt / dijeli / glazba.
+     Adaptirano iz HSC widgeta (isti obrazac), boje usklađene s In Time
+     brendom (var(--purple) / var(--purple-dark) umjesto žute/crne).
+
+     Sve postavljeno i gotovo:
+       1) LOGO na glavnom gumbu — pravi In Time logo (alcRVFr.png).
+       2) GLAZBA — <audio id="bgMusic"> ima src (INTIME_PJESMA_UA
+          BUTTON.mp3), PLAY MUSIC gumb radi.
+       3) Kontakt linkovi koriste postojeće podatke iz potpisa
+          (Tel 01 6254 444, M +385 91 6262 171, sasa.batinac@in-time.hr) —
+          ako neki kanal treba drugi broj/mail, samo zamijeni link.
+     ======================================================================== -->
+<style>
+#mainBtn.purplePulse{animation:purplePulseAnim 2.2s ease-in-out infinite;}
+@keyframes purplePulseAnim{
+  0%   { box-shadow:0 0 12px 4px rgba(34,152,145,.5), 0 0 30px 8px rgba(34,152,145,.2); }
+  50%  { box-shadow:0 0 24px 10px rgba(34,152,145,.75), 0 0 55px 18px rgba(34,152,145,.35); }
+  100% { box-shadow:0 0 12px 4px rgba(34,152,145,.5), 0 0 30px 8px rgba(34,152,145,.2); }
+}
+#musicPlayer.green-state{background:#25D366 !important;border:2px solid #25D366 !important;animation:greenPulse 2.2s ease-in-out infinite !important;}
+#musicPlayer.red-state{background:#cc0000 !important;border:2px solid #cc0000 !important;animation:redPulse 2.2s ease-in-out infinite !important;}
+@keyframes redPulse{
+  0%   { box-shadow:0 0 12px 4px rgba(204,0,0,.5), 0 0 30px 8px rgba(204,0,0,.2); }
+  50%  { box-shadow:0 0 24px 10px rgba(204,0,0,.75), 0 0 55px 18px rgba(204,0,0,.35); }
+  100% { box-shadow:0 0 12px 4px rgba(204,0,0,.5), 0 0 30px 8px rgba(204,0,0,.2); }
+}
+@keyframes greenPulse{
+  0%   { box-shadow:0 0 12px 4px rgba(37,211,102,.5), 0 0 30px 8px rgba(37,211,102,.2); }
+  50%  { box-shadow:0 0 24px 10px rgba(37,211,102,.75), 0 0 55px 18px rgba(37,211,102,.35); }
+  100% { box-shadow:0 0 12px 4px rgba(37,211,102,.5), 0 0 30px 8px rgba(37,211,102,.2); }
+}
+</style>
+
+<!-- KOMBINIRANI GUMB -->
+<div id="mainBtn" class="purplePulse" onclick="toggleMainMenu()" style="position:fixed;left:30px;bottom:30px;z-index:9998;background:var(--purple);border:3px solid var(--purple);outline:3px solid var(--purple-dark);outline-offset:-1px;border-radius:50%;width:144px;height:144px;cursor:pointer;box-shadow:0 4px 20px rgba(34,152,145,.5);display:flex;align-items:center;justify-content:center;">
+  <span id="mainBtnLabel" style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;">
+    <img src="https://i.imgur.com/VBHeTCW.png" alt="In Time" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">
+  </span>
+</div>
+
+<!-- GLAVNI IZBOR - 3 gumba -->
+<div id="mainMenu" style="display:none;position:fixed;left:30px;bottom:182px;z-index:9999;flex-direction:column;gap:10px;">
+  <div onclick="showKontakt()" style="background:var(--purple);border:2px solid var(--purple);outline:2px solid var(--purple-dark);outline-offset:-1px;border-radius:50px;padding:10px 16px;cursor:pointer;display:flex;align-items:center;gap:8px;box-shadow:0 4px 12px rgba(34,152,145,.4);">
+    <span style="font-size:16px;">📞</span>
+    <span style="color:#fff;font-size:11px;font-weight:900;letter-spacing:0.5px;">KONTAKTIRAJ NAS</span>
+  </div>
+  <div onclick="showShare()" style="background:var(--purple);border:2px solid var(--purple);outline:2px solid var(--purple-dark);outline-offset:-1px;border-radius:50px;padding:10px 16px;cursor:pointer;display:flex;align-items:center;gap:8px;box-shadow:0 4px 12px rgba(34,152,145,.4);">
+    <span style="font-size:16px;">📤</span>
+    <span style="color:#fff;font-size:11px;font-weight:900;letter-spacing:0.5px;">PODIJELI</span>
+  </div>
+  <div onclick="toggleMusicFromMenu()" id="musicSubBtn" style="background:#25D366;border:2px solid #25D366;outline:2px solid var(--purple-dark);outline-offset:-1px;border-radius:50px;padding:10px 16px;cursor:pointer;display:flex;align-items:center;gap:8px;box-shadow:0 4px 12px rgba(37,211,102,.4);">
+    <span id="musicSubIcon" style="font-size:16px;">▶️</span>
+    <span id="musicSubLabel" style="color:#111111;font-size:11px;font-weight:900;letter-spacing:0.5px;">PLAY MUSIC</span>
+  </div>
+</div>
+
+<!-- KONTAKT POPUP -->
+<div id="kontaktMenu" style="display:none;position:fixed;left:210px;bottom:30px;z-index:9999;background:var(--graphite);border:2px solid var(--purple);border-radius:16px;padding:16px;box-shadow:0 8px 32px rgba(0,0,0,.5);min-width:200px;">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+    <span style="color:#fff;font-size:13px;font-weight:900;letter-spacing:1px;">KONTAKTIRAJ NAS</span>
+    <span onclick="closeAll()" style="color:#888;cursor:pointer;font-size:18px;line-height:1;">×</span>
+  </div>
+  <a href="https://wa.me/385916262171" target="_blank" style="width:100%;background:#25D366;color:#111111;border:1px solid #25D366;border-radius:8px;padding:10px 14px;font-size:12px;font-weight:700;cursor:pointer;margin-bottom:8px;text-align:left;display:flex;align-items:center;gap:10px;text-decoration:none;box-sizing:border-box;"><span style="font-size:16px;">💬</span> WhatsApp</a>
+  <a href="viber://chat/?number=%2B385916262171" style="width:100%;background:#7360F2;color:#ffffff;border:1px solid #7360F2;border-radius:8px;padding:10px 14px;font-size:12px;font-weight:700;cursor:pointer;margin-bottom:8px;text-align:left;display:flex;align-items:center;gap:10px;text-decoration:none;box-sizing:border-box;"><span style="font-size:16px;">📳</span> Viber</a>
+  <a href="mailto:sasa.batinac@in-time.hr" style="width:100%;background:#1a1a1a;color:#ffffff;border:1px solid #333;border-radius:8px;padding:10px 14px;font-size:12px;font-weight:700;cursor:pointer;text-align:left;display:flex;align-items:center;gap:10px;text-decoration:none;box-sizing:border-box;"><span style="font-size:16px;">✉️</span> Email</a>
+</div>
+
+<!-- SHARE POPUP -->
+<div id="shareMenu" style="display:none;position:fixed;left:210px;bottom:30px;z-index:9999;background:var(--graphite);border:2px solid var(--purple);border-radius:16px;padding:16px;box-shadow:0 8px 32px rgba(0,0,0,.5);min-width:200px;">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+    <span style="color:#fff;font-size:13px;font-weight:900;letter-spacing:1px;">PODIJELI</span>
+    <span onclick="closeAll()" style="color:#888;cursor:pointer;font-size:18px;line-height:1;">×</span>
+  </div>
+  <button onclick="shareNative()" style="width:100%;background:#1a1a1a;color:var(--purple);border:1px solid #333;border-radius:8px;padding:10px 14px;font-size:12px;font-weight:700;cursor:pointer;margin-bottom:8px;text-align:left;display:flex;align-items:center;gap:10px;"><span style="font-size:16px;">📤</span> Podijeli / Kopiraj link</button>
+  <a href="#" id="shareEmailLink" style="width:100%;background:#1a1a1a;color:#ffffff;border:1px solid #333;border-radius:8px;padding:10px 14px;font-size:12px;font-weight:700;cursor:pointer;margin-bottom:8px;text-align:left;display:flex;align-items:center;gap:10px;text-decoration:none;box-sizing:border-box;"><span style="font-size:16px;">✉️</span> Email</a>
+  <a href="#" id="shareViberLink" style="width:100%;background:#1a1a1a;color:#7360F2;border:1px solid #333;border-radius:8px;padding:10px 14px;font-size:12px;font-weight:700;cursor:pointer;margin-bottom:8px;text-align:left;display:flex;align-items:center;gap:10px;text-decoration:none;box-sizing:border-box;"><span style="font-size:16px;">📳</span> Viber</a>
+  <a href="#" id="shareWaLink" target="_blank" style="width:100%;background:#1a1a1a;color:#25D366;border:1px solid #333;border-radius:8px;padding:10px 14px;font-size:12px;font-weight:700;cursor:pointer;text-align:left;display:flex;align-items:center;gap:10px;text-decoration:none;box-sizing:border-box;"><span style="font-size:16px;">💬</span> WhatsApp</a>
+</div>
+
+<!-- GLAZBA — nema src dok Saša ne ubaci pravi audio link (vidi napomenu gore) -->
+<audio id="bgMusic" loop src="https://ia600403.us.archive.org/35/items/intime-pjesma-ua-button/INTIME_PJESMA_UA%20BUTTON.mp3"></audio>
+
+<script>
+(function(){
+  var SHARE_TEXT = 'In Time d.o.o. — brza i pouzdana dostava, međunarodni prijevoz i carinjenje, službeno FedEx zastupništvo za Hrvatsku. Pogledajte ponudu:';
+  var SHARE_URL = 'https://batinac.com/intime';
+
+  function shareUrl_(){ return SHARE_URL; }
+
+  function postaviShareLinkove_(){
+    var url = encodeURIComponent(shareUrl_());
+    var txt = encodeURIComponent(SHARE_TEXT + ' 👇 ' + shareUrl_());
+    var emailLink = document.getElementById('shareEmailLink');
+    var viberLink = document.getElementById('shareViberLink');
+    var waLink = document.getElementById('shareWaLink');
+    if (emailLink) emailLink.href = 'mailto:?subject=' + encodeURIComponent('In Time d.o.o. — pošiljke') + '&body=' + txt;
+    if (viberLink) viberLink.href = 'viber://forward?text=' + txt;
+    if (waLink) waLink.href = 'https://wa.me/?text=' + txt;
+  }
+
+  window.toggleMainMenu = function(){
+    var menu = document.getElementById('mainMenu');
+    var btn = document.getElementById('mainBtn');
+    var label = document.getElementById('mainBtnLabel');
+    if (menu.style.display === 'none' || menu.style.display === '') {
+      closeAll();
+      menu.style.display = 'flex';
+      btn.style.background = 'var(--graphite)';
+      btn.style.border = '2px solid var(--purple)';
+    } else {
+      closeAll();
+    }
+  };
+
+  window.showKontakt = function(){
+    document.getElementById('shareMenu').style.display = 'none';
+    var km = document.getElementById('kontaktMenu');
+    km.style.display = km.style.display === 'block' ? 'none' : 'block';
+  };
+
+  window.showShare = function(){
+    document.getElementById('kontaktMenu').style.display = 'none';
+    postaviShareLinkove_();
+    var sm = document.getElementById('shareMenu');
+    sm.style.display = sm.style.display === 'block' ? 'none' : 'block';
+  };
+
+  window.closeAll = function(){
+    document.getElementById('mainMenu').style.display = 'none';
+    document.getElementById('kontaktMenu').style.display = 'none';
+    document.getElementById('shareMenu').style.display = 'none';
+    var btn = document.getElementById('mainBtn');
+    btn.style.background = 'var(--purple)';
+    btn.style.border = '2px solid var(--purple)';
+  };
+
+  document.addEventListener('click', function(e){
+    var btn = document.getElementById('mainBtn');
+    var main = document.getElementById('mainMenu');
+    var kontakt = document.getElementById('kontaktMenu');
+    var share = document.getElementById('shareMenu');
+    if (!btn.contains(e.target) && !main.contains(e.target) && !kontakt.contains(e.target) && !share.contains(e.target)) {
+      closeAll();
+    }
+  });
+
+  var audio;
+
+  window.toggleMusicFromMenu = function(){
+    if (!audio) audio = document.getElementById('bgMusic');
+    var icon = document.getElementById('musicSubIcon');
+    var label = document.getElementById('musicSubLabel');
+    var subBtn = document.getElementById('musicSubBtn');
+    if (!audio.paused) {
+      audio.pause();
+      icon.textContent = '▶️';
+      label.textContent = 'PLAY MUSIC';
+      subBtn.style.background = '#25D366';
+      subBtn.style.border = '2px solid #25D366';
+      label.style.color = '#111111';
+    } else {
+      audio.play().catch(function(){ /* nema src ili je autoplay blokiran — tiho zanemari */ });
+      icon.textContent = '⏹️';
+      label.textContent = 'STOP MUSIC';
+      subBtn.style.background = '#cc0000';
+      subBtn.style.border = '2px solid #cc0000';
+      label.style.color = '#ffffff';
+    }
+  };
+
+  window.shareNative = function(){
+    if (navigator.share) {
+      navigator.share({ title: 'In Time d.o.o.', text: SHARE_TEXT, url: shareUrl_() });
+    } else {
+      navigator.clipboard.writeText(shareUrl_()).then(function(){
+        var btn = document.querySelector('#shareMenu button');
+        var orig = btn.innerHTML;
+        btn.innerHTML = '<span style="font-size:16px;">✓</span> Link kopiran ✓';
+        setTimeout(function(){ btn.innerHTML = orig; }, 2000);
+      });
+    }
+  };
+})();
 </script>
 
 </body>

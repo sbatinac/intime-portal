@@ -149,6 +149,17 @@
   }
   .anketa-na-label input[type=checkbox]{width:auto;margin:0;}
 
+  /* Slobodni komentar ispod SVAKOG pitanja — korisnikov izričit zahtjev da
+     ispitanik može napisati svoje iskustvo/stavove/probleme vezane baš za to
+     pitanje, ne samo dati ocjenu. Namjerno lakši/manji stil (nije podebljano,
+     sivo, manje polje) od glavnih labela/textarea u upitniku, da vizualno
+     ostane sporedan/opcionalan element uz ocjenu, ne ravnopravan s pitanjem. */
+  .anketa-komentar-label{
+    font-weight:400;font-size:12px;color:var(--grey);
+    margin:10px 0 4px;
+  }
+  textarea.anketa-komentar-ta{min-height:48px;font-size:13px;}
+
   .form-submit{
     margin-top:22px;
     background:var(--purple);
@@ -487,6 +498,22 @@
     hidden.name = p.key;
     hidden.id = 'anketa-' + p.key + '-hidden';
     wrap.appendChild(hidden);
+
+    // Slobodni komentar vezan baš za ovo pitanje — opcionalan, nije required
+    // (za razliku od same ocjene, koja je obavezna preko slidera/"Ne mogu
+    // procijeniti"). Ime polja: "{key}_komentar" (npr. q1_komentar).
+    var komentarLabel = document.createElement('label');
+    komentarLabel.className = 'anketa-komentar-label';
+    komentarLabel.setAttribute('for', 'anketa-' + p.key + '-komentar');
+    komentarLabel.textContent = 'Vaše iskustvo, stav ili problem vezan za ovo pitanje (nije obavezno):';
+    wrap.appendChild(komentarLabel);
+
+    var komentarTa = document.createElement('textarea');
+    komentarTa.className = 'anketa-komentar-ta';
+    komentarTa.name = p.key + '_komentar';
+    komentarTa.id = 'anketa-' + p.key + '-komentar';
+    komentarTa.placeholder = 'Slobodno opišite svoje iskustvo, primjer ili problem...';
+    wrap.appendChild(komentarTa);
 
     return wrap;
   }

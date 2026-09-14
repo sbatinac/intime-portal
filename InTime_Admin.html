@@ -272,6 +272,20 @@
     border-radius:6px;
     font-size:13px;
   }
+  /* Interna napomena — veliko polje slobodnog teksta, preko cijele širine
+     grida (bez obzira je li grid trenutno u 2 ili 1 stupca). */
+  .admin-fields-grid .af-napomena-wrap{grid-column:1 / -1;}
+  .admin-fields textarea{
+    width:100%;
+    padding:8px 10px;
+    border:1px solid var(--line);
+    border-radius:6px;
+    font-size:13px;
+    font-family:inherit;
+    min-height:90px;
+    resize:vertical;
+    box-sizing:border-box;
+  }
   .admin-fields-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:12px;align-items:center;}
   .save-status{font-size:12px;color:var(--green);}
   .save-status.error{color:var(--red);}
@@ -341,6 +355,74 @@
   .anketa-score-badge.low{background:var(--red);}
   .anketa-score-badge.mid{background:#c9971f;}
   .anketa-score-badge.high{background:var(--green);}
+
+  /* Panel s prosječnim ocjenama po kategoriji + ukupno, zbrojeno preko SVIH
+     ispunjenih anketa (korisnikov zahtjev) — prikazan iznad popisa kartica,
+     samo dok je aktivan tab "Ankete kvalitete". */
+  .anketa-stat-panel{
+    background:#fff;
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:16px 18px;
+    margin-bottom:16px;
+  }
+  .anketa-stat-panel h3{margin:0 0 10px;font-size:14px;color:var(--purple-dark);}
+  .anketa-stat-ukupno{
+    display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+    font-size:13px;color:var(--graphite);font-weight:700;
+    padding-bottom:10px;margin-bottom:10px;border-bottom:2px solid var(--line);
+  }
+  .anketa-stat-list{display:flex;flex-direction:column;gap:2px;}
+  .anketa-stat-row{
+    display:flex;justify-content:space-between;align-items:center;gap:10px;
+    font-size:13px;padding:7px 0;border-bottom:1px solid var(--line);
+  }
+  .anketa-stat-row:last-child{border-bottom:none;}
+  .anketa-stat-row .kat-naziv{color:var(--graphite);}
+
+  /* ---- FAQ (tab "Česta pitanja") — svako pitanje je zasebna kartica s
+     poljima za uređivanje + do 3 priloga (slika/video/PDF), ista vizualna
+     obitelj kao anketa-stat-panel iznad. ---- */
+  .faq-admin-card{
+    background:#fff;border:1px solid var(--line);border-radius:10px;
+    padding:16px 18px;margin-bottom:14px;
+  }
+  .faq-admin-card h3{margin:0 0 12px;font-size:14px;color:var(--purple-dark);}
+  .faq-admin-card label{display:block;font-size:12px;font-weight:700;color:var(--graphite);margin:10px 0 4px;}
+  .faq-admin-card label:first-of-type{margin-top:0;}
+  .faq-admin-card input[type=text], .faq-admin-card input[type=number], .faq-admin-card textarea{
+    width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:6px;
+    font-size:13px;font-family:inherit;box-sizing:border-box;
+  }
+  .faq-admin-card textarea{min-height:80px;resize:vertical;}
+  .faq-admin-media-row{display:flex;flex-wrap:wrap;gap:14px;margin-top:6px;}
+  .faq-admin-media-item{flex:1 1 170px;min-width:170px;}
+  .faq-admin-media-item input[type=file]{font-size:12px;width:100%;}
+  .faq-admin-media-item .faq-slika-poravnanje-input{
+    font-size:12px;width:100%;margin-top:6px;padding:5px 6px;
+    border:1px solid var(--line);border-radius:6px;font-family:inherit;
+  }
+  .faq-admin-media-preview{
+    margin-top:6px;font-size:12px;color:var(--purple-dark);
+    display:flex;align-items:center;gap:8px;flex-wrap:wrap;min-height:20px;
+  }
+  .faq-admin-media-preview img{max-width:70px;max-height:50px;border-radius:4px;border:1px solid var(--line);}
+  .faq-admin-media-preview a{color:var(--purple-dark);}
+  .faq-admin-media-preview .faq-media-remove{
+    font-size:11px;background:none;border:none;color:var(--red);cursor:pointer;
+    text-decoration:underline;padding:0;
+  }
+  .faq-admin-card-actions{
+    display:flex;justify-content:space-between;align-items:center;gap:10px;
+    margin-top:14px;flex-wrap:wrap;
+  }
+  .faq-admin-status{font-size:12px;color:var(--green);}
+  .faq-admin-status.error{color:var(--red);}
+  .faq-admin-hint{font-size:11px;color:var(--grey);margin:-4px 0 10px;}
+  .faq-admin-ocjene{font-size:13px;color:var(--graphite);margin:0 0 12px;font-weight:700;}
+  .faq-admin-ocjene .faq-ocjena-like{color:var(--green);}
+  .faq-admin-ocjene .faq-ocjena-dislike{color:var(--red);}
+  .zone-admin-status-line{font-size:13px;color:var(--graphite);background:#f5f7f8;border:1px solid var(--line);border-radius:8px;padding:10px 12px;margin-bottom:6px;}
 
   /* ---- MODAL (promjena lozinke, potvrda brisanja) ---- */
   .modal-overlay{
@@ -422,6 +504,8 @@
       <button type="button" class="tab-btn" id="tab-btn-odbijenica" onclick="switchTab('Odbijenica')">Nisu zainteresirani (<span id="tab-count-odbijenica">0</span>)</button>
       <button type="button" class="tab-btn" id="tab-btn-ankete" onclick="switchTab('Ankete')">Ankete kvalitete (<span id="tab-count-ankete">0</span>)</button>
       <button type="button" class="tab-btn" id="tab-btn-novi-klijenti" onclick="switchTab('NoviKlijenti')">Novi klijenti (<span id="tab-count-novi-klijenti">0</span>)</button>
+      <button type="button" class="tab-btn" id="tab-btn-faq" onclick="switchTab('FAQ')">Česta pitanja (<span id="tab-count-faq">0</span>)</button>
+      <button type="button" class="tab-btn" id="tab-btn-zone" onclick="switchTab('Zone')">Zone dostave (<span id="tab-count-zone">0</span>)</button>
     </div>
 
     <div id="bulk-actions-bar" class="bulk-actions-bar" hidden>
@@ -431,6 +515,8 @@
         <button type="button" class="btn btn-danger btn-small" onclick="startBulkDelete()">Obriši odabrano</button>
       </div>
     </div>
+
+    <div id="anketa-statistika-panel" class="anketa-stat-panel" hidden></div>
 
     <div id="entries-list"></div>
 
@@ -561,6 +647,7 @@
   var adminToken = null;
   var allEntries = [];
   var allAnketaEntries = [];
+  var allFaqEntries = [];
   var activeTab = 'Interes';
   var pendingDeleteRowIndex = null;
   // Koju GAS akciju treba pozvati za trenutno otvoreni modal brisanja —
@@ -632,6 +719,46 @@
     loadCounters();
     loadEntries();
     loadAnkete();
+    loadFaq();
+    loadZoneStatus();
+  }
+
+  // FAQ ("Česta pitanja") — zaseban popis (allFaqEntries), zaseban
+  // InTime_FAQ Sheet na backendu (adminFaqList), isti obrazac kao
+  // allAnketaEntries/loadAnkete() iznad.
+  function loadFaq() {
+    gasCall({ action: 'adminFaqList', token: adminToken }).then(function(res) {
+      if (handleAuthError(res)) { return; }
+      if (res.status !== 'ok') { return; }
+      allFaqEntries = res.entries || [];
+      document.getElementById('tab-count-faq').textContent = allFaqEntries.length;
+      if (activeTab === 'FAQ') { renderEntries(); }
+    }).catch(function() {});
+  }
+
+  // Zone dostave — čisto informativno stanje (broj gradova + kad je zadnje
+  // ažurirano), zaseban InTime_Zone Sheet na backendu (adminZoneStatus),
+  // odvojeno od allFaqEntries jer se ovdje ne uređuju pojedinačni retci
+  // nego se cijeli popis zamjenjuje jednim Excel uploadom.
+  var zoneStatusData = null;
+  function loadZoneStatus() {
+    gasCall({ action: 'adminZoneStatus', token: adminToken }).then(function(res) {
+      if (handleAuthError(res)) { return; }
+      if (res.status !== 'ok') { return; }
+      zoneStatusData = res;
+      document.getElementById('tab-count-zone').textContent = res.broj;
+      if (activeTab === 'Zone') { renderZoneStatusLine_(); }
+    }).catch(function() {});
+  }
+
+  function renderZoneStatusLine_() {
+    var el = document.getElementById('zone-status-line');
+    if (!el) { return; }
+    if (!zoneStatusData) { el.textContent = 'Učitavanje stanja...'; return; }
+    el.textContent = zoneStatusData.broj > 0
+      ? ('Trenutno u bazi: ' + zoneStatusData.broj + ' gradova/mjesta' +
+         (zoneStatusData.datum ? ' — zadnje ažurirano ' + zoneStatusData.datum + (zoneStatusData.naziv ? ' (' + zoneStatusData.naziv + ')' : '') : '') + '.')
+      : 'Još nije učitan popis gradova i zona — učitajte Excel datoteku ispod.';
   }
 
   function handleAuthError(res) {
@@ -713,6 +840,50 @@
       document.getElementById('tab-count-ankete').textContent = allAnketaEntries.length;
       if (activeTab === 'Ankete') { renderEntries(); }
     }).catch(function() {});
+    loadAnketaStatistika();
+  }
+
+  // Prosječna ocjena po kategoriji + ukupno, zbrojeno preko SVIH ispunjenih
+  // anketa (ne samo jedne) — korisnikov izričit zahtjev. Zaseban poziv od
+  // loadAnkete()/allAnketaEntries jer backend sam radi zbrajanje/prosjek
+  // preko cijelog Sheeta (adminGetAnketaStatistika), umjesto da se to računa
+  // ovdje iz već učitanog popisa.
+  function loadAnketaStatistika() {
+    gasCall({ action: 'adminGetAnketaStatistika', token: adminToken }).then(function(res) {
+      if (handleAuthError(res)) { return; }
+      if (res.status !== 'ok') { return; }
+      renderAnketaStatistika(res);
+    }).catch(function() {});
+  }
+
+  function renderAnketaStatistika(res) {
+    var panel = document.getElementById('anketa-statistika-panel');
+    if (!panel) { return; }
+    if (!res.brojAnketa) {
+      panel.innerHTML = '';
+      panel.hidden = true;
+      return;
+    }
+    var ukupnoKlasa = anketaScoreClass(res.ukupnoProsjek);
+    var ukupnoTekst = res.ukupnoProsjek !== null ? (esc(res.ukupnoProsjek) + '/10') : 'Nema odgovora';
+    var html =
+      '<h3>Prosječne ocjene po kategorijama (' + res.brojAnketa + ' ' +
+        (res.brojAnketa === 1 ? 'ispunjena anketa' : 'ispunjenih anketa') + ')</h3>' +
+      '<div class="anketa-stat-ukupno">Ukupna prosječna ocjena — sva pitanja, sve ankete zajedno:' +
+        ' <span class="anketa-score-badge ' + ukupnoKlasa + '">' + ukupnoTekst + '</span>' +
+      '</div>' +
+      '<div class="anketa-stat-list">' +
+      res.kategorije.map(function(kat) {
+        var klasa = anketaScoreClass(kat.prosjek);
+        var tekst = kat.prosjek !== null ? (esc(kat.prosjek) + '/10') : 'Nema odgovora';
+        return '<div class="anketa-stat-row">' +
+          '<span class="kat-naziv">' + esc(kat.naziv) + '</span>' +
+          '<span class="anketa-score-badge ' + klasa + '">' + tekst + '</span>' +
+        '</div>';
+      }).join('') +
+      '</div>';
+    panel.innerHTML = html;
+    panel.hidden = (activeTab !== 'Ankete');
   }
 
   // "Novi klijenti" je poseban prikaz unutar postojećih "Interes" zapisa —
@@ -740,6 +911,10 @@
     document.getElementById('tab-btn-odbijenica').classList.toggle('active', tab === 'Odbijenica');
     document.getElementById('tab-btn-ankete').classList.toggle('active', tab === 'Ankete');
     document.getElementById('tab-btn-novi-klijenti').classList.toggle('active', tab === 'NoviKlijenti');
+    document.getElementById('tab-btn-faq').classList.toggle('active', tab === 'FAQ');
+    document.getElementById('tab-btn-zone').classList.toggle('active', tab === 'Zone');
+    var statPanel = document.getElementById('anketa-statistika-panel');
+    if (statPanel) { statPanel.hidden = (tab !== 'Ankete') || !statPanel.innerHTML; }
     renderEntries();
   }
 
@@ -777,6 +952,27 @@
       return;
     }
 
+    if (activeTab === 'FAQ') {
+      container.appendChild(buildFaqAddForm_());
+      if (allFaqEntries.length === 0) {
+        var hintF = document.createElement('div');
+        hintF.className = 'empty-hint';
+        hintF.textContent = 'Još nema dodanih pitanja — dodajte prvo gore.';
+        container.appendChild(hintF);
+      } else {
+        allFaqEntries.forEach(function(entry) {
+          container.appendChild(buildFaqEntryCard_(entry));
+        });
+      }
+      return;
+    }
+
+    if (activeTab === 'Zone') {
+      container.appendChild(buildZonePanel_());
+      renderZoneStatusLine_();
+      return;
+    }
+
     var list;
     if (activeTab === 'NoviKlijenti') {
       list = allEntries.filter(function(e){ return e.status === 'Interes' && jeOtvorenKlijent(e); });
@@ -801,6 +997,314 @@
     list.forEach(function(entry) {
       container.appendChild(buildEntryCard(entry));
     });
+  }
+
+  // ============================================================
+  // FAQ ("Česta pitanja") — kartica za dodavanje novog pitanja (uvijek na
+  // vrhu taba) + jedna kartica po postojećem pitanju (uređivanje/brisanje).
+  // Prilozi (slika/video/PDF) šalju se izravno s računala kroz
+  // adminFaqUploadMedia (base64), backend ih sprema na Drive i vraća file
+  // ID koji se onda šalje uz adminFaqSave — vidi InTime_Code.gs.
+  // ============================================================
+  function faqMediaFieldHtml_(vrsta, naziv, accept) {
+    // Slika (jedina od tri vrste priloga koja se prikazuje ugrađeno na
+    // stranici, ne samo kao link) dobiva dodatni izbornik za širinu/
+    // poravnanje — video/PDF ga nemaju jer se prikazuju drugačije (video
+    // uvijek preko cijele širine, PDF samo kao link).
+    var poravnanjeHtml = (vrsta === 'slika')
+      ? '<select class="faq-slika-poravnanje-input">' +
+          '<option value="puna">Puna širina</option>' +
+          '<option value="centar">Srednje, centrirano</option>' +
+          '<option value="lijevo">Malo, lijevo</option>' +
+          '<option value="desno">Malo, desno</option>' +
+        '</select>'
+      : '';
+    return '<div class="faq-admin-media-item" data-vrsta="' + vrsta + '">' +
+      '<label>' + naziv + '</label>' +
+      '<input type="file" class="faq-media-input" accept="' + accept + '">' +
+      poravnanjeHtml +
+      '<div class="faq-admin-media-preview"></div>' +
+    '</div>';
+  }
+
+  function faqSlikaPoravnanje_(cardEl) {
+    var sel = cardEl.querySelector('.faq-slika-poravnanje-input');
+    return sel ? sel.value : 'puna';
+  }
+  function setFaqSlikaPoravnanje_(cardEl, value) {
+    var sel = cardEl.querySelector('.faq-slika-poravnanje-input');
+    if (sel) { sel.value = value || 'puna'; }
+  }
+
+  function faqMediaPreviewHtml_(vrsta, fileId) {
+    if (!fileId) { return ''; }
+    if (vrsta === 'slika') {
+      return '<img src="https://drive.google.com/thumbnail?id=' + encodeURIComponent(fileId) + '&sz=w100" alt="">' +
+        '<button type="button" class="faq-media-remove">✕ Ukloni</button>';
+    }
+    var oznaka = (vrsta === 'video') ? '🎬 Video priložen' : '📄 PDF priložen';
+    return '<span>' + oznaka + '</span>' +
+      '<a href="https://drive.google.com/file/d/' + encodeURIComponent(fileId) + '/view" target="_blank" rel="noopener">↗ otvori</a>' +
+      '<button type="button" class="faq-media-remove">✕ Ukloni</button>';
+  }
+
+  function setFaqMediaItem_(itemEl, fileId) {
+    if (!itemEl) { return; }
+    itemEl.dataset.fileId = fileId || '';
+    var preview = itemEl.querySelector('.faq-admin-media-preview');
+    preview.innerHTML = faqMediaPreviewHtml_(itemEl.dataset.vrsta, fileId);
+    var removeBtn = preview.querySelector('.faq-media-remove');
+    if (removeBtn) {
+      removeBtn.addEventListener('click', function() { setFaqMediaItem_(itemEl, ''); });
+    }
+  }
+
+  function faqItemFileId_(cardEl, vrsta) {
+    var itemEl = cardEl.querySelector('.faq-admin-media-item[data-vrsta="' + vrsta + '"]');
+    return itemEl ? (itemEl.dataset.fileId || '') : '';
+  }
+
+  // Kači "change" listener na sva 3 file inputa unutar kartice — pri odabiru
+  // datoteke odmah je šalje (adminFaqUploadMedia), a dobiveni Drive file ID
+  // pamti se u data-file-id atributu tog polja (koristi ga faqItemFileId_
+  // pri spremanju pitanja).
+  function wireFaqMediaInputs_(cardEl) {
+    var statusEl = cardEl.querySelector('.faq-admin-status');
+    cardEl.querySelectorAll('.faq-admin-media-item').forEach(function(itemEl) {
+      var input = itemEl.querySelector('.faq-media-input');
+      input.addEventListener('change', function() {
+        var file = input.files && input.files[0];
+        if (!file) { return; }
+        if (statusEl) { statusEl.textContent = 'Slanje datoteke "' + file.name + '"...'; statusEl.className = 'faq-admin-status'; }
+        var reader = new FileReader();
+        reader.onload = function() {
+          var base64 = String(reader.result).split(',')[1] || '';
+          gasCall({
+            action: 'adminFaqUploadMedia', token: adminToken,
+            base64Data: base64, mimeType: file.type || 'application/octet-stream', filename: file.name
+          }).then(function(res) {
+            if (handleAuthError(res)) { return; }
+            if (res.status !== 'ok') {
+              if (statusEl) { statusEl.textContent = res.message || 'Slanje datoteke nije uspjelo.'; statusEl.className = 'faq-admin-status error'; }
+              return;
+            }
+            setFaqMediaItem_(itemEl, res.id);
+            if (statusEl) { statusEl.textContent = 'Datoteka poslana — ne zaboravite spremiti pitanje.'; statusEl.className = 'faq-admin-status'; }
+            input.value = '';
+          }).catch(function() {
+            if (statusEl) { statusEl.textContent = 'Greška u komunikaciji s poslužiteljem.'; statusEl.className = 'faq-admin-status error'; }
+          });
+        };
+        reader.readAsDataURL(file);
+      });
+    });
+  }
+
+  function buildFaqAddForm_() {
+    var wrap = document.createElement('div');
+    wrap.className = 'faq-admin-card';
+    wrap.innerHTML =
+      '<h3>Dodaj novo pitanje</h3>' +
+      '<label>Pitanje</label>' +
+      '<input type="text" class="faq-pitanje-input" placeholder="Npr. Koliko traje isporuka?">' +
+      '<label>Odgovor</label>' +
+      '<textarea class="faq-odgovor-input" placeholder="Upišite odgovor..."></textarea>' +
+      '<p class="faq-admin-hint">Linkovi: zalijepljeni link (https://...) postaje klikabilan automatski, ili upišite [tekst poveznice](https://...) za vlastiti naziv linka.</p>' +
+      '<label>Redoslijed prikaza na stranici (manji broj = više gore; prazno = na kraj)</label>' +
+      '<input type="number" class="faq-redoslijed-input" placeholder="npr. 10">' +
+      '<div class="faq-admin-media-row">' +
+        faqMediaFieldHtml_('slika', 'Slika (JPG/PNG)', 'image/*') +
+        faqMediaFieldHtml_('video', 'Video', 'video/*') +
+        faqMediaFieldHtml_('pdf', 'PDF dokument', 'application/pdf') +
+      '</div>' +
+      '<div class="faq-admin-card-actions">' +
+        '<span class="faq-admin-status"></span>' +
+        '<button type="button" class="btn btn-small">Dodaj pitanje</button>' +
+      '</div>';
+    wrap.querySelector('.faq-admin-card-actions .btn').addEventListener('click', function() {
+      submitNewFaq_(wrap);
+    });
+    wireFaqMediaInputs_(wrap);
+    return wrap;
+  }
+
+  function submitNewFaq_(cardEl) {
+    var pitanje = cardEl.querySelector('.faq-pitanje-input').value.trim();
+    var odgovor = cardEl.querySelector('.faq-odgovor-input').value.trim();
+    var redoslijedRaw = cardEl.querySelector('.faq-redoslijed-input').value;
+    var statusEl = cardEl.querySelector('.faq-admin-status');
+    if (!pitanje || !odgovor) {
+      statusEl.textContent = 'Pitanje i odgovor su obavezni.';
+      statusEl.className = 'faq-admin-status error';
+      return;
+    }
+    var faq = {
+      pitanje: pitanje,
+      odgovor: odgovor,
+      redoslijed: redoslijedRaw === '' ? undefined : parseFloat(redoslijedRaw),
+      slikaId: faqItemFileId_(cardEl, 'slika'),
+      videoId: faqItemFileId_(cardEl, 'video'),
+      pdfId: faqItemFileId_(cardEl, 'pdf'),
+      slikaPoravnanje: faqSlikaPoravnanje_(cardEl)
+    };
+    gasCall({ action: 'adminFaqSave', token: adminToken, faq: faq }).then(function(res) {
+      if (handleAuthError(res)) { return; }
+      if (res.status !== 'ok') {
+        statusEl.textContent = res.message || 'Spremanje nije uspjelo.';
+        statusEl.className = 'faq-admin-status error';
+        return;
+      }
+      loadFaq();
+    }).catch(function() {
+      statusEl.textContent = 'Greška u komunikaciji s poslužiteljem.';
+      statusEl.className = 'faq-admin-status error';
+    });
+  }
+
+  function buildFaqEntryCard_(entry) {
+    var wrap = document.createElement('div');
+    wrap.className = 'faq-admin-card';
+    wrap.innerHTML =
+      '<div class="faq-admin-ocjene">' +
+        '👍 <b class="faq-ocjena-like">' + (entry.lajkovi || 0) + '</b>' +
+        '&nbsp;&nbsp;👎 <b class="faq-ocjena-dislike">' + (entry.nelajkovi || 0) + '</b>' +
+      '</div>' +
+      '<label>Pitanje</label>' +
+      '<input type="text" class="faq-pitanje-input">' +
+      '<label>Odgovor</label>' +
+      '<textarea class="faq-odgovor-input"></textarea>' +
+      '<p class="faq-admin-hint">Linkovi: zalijepljeni link (https://...) postaje klikabilan automatski, ili upišite [tekst poveznice](https://...) za vlastiti naziv linka.</p>' +
+      '<label>Redoslijed prikaza na stranici</label>' +
+      '<input type="number" class="faq-redoslijed-input">' +
+      '<div class="faq-admin-media-row">' +
+        faqMediaFieldHtml_('slika', 'Slika (JPG/PNG)', 'image/*') +
+        faqMediaFieldHtml_('video', 'Video', 'video/*') +
+        faqMediaFieldHtml_('pdf', 'PDF dokument', 'application/pdf') +
+      '</div>' +
+      '<div class="faq-admin-card-actions">' +
+        '<span class="faq-admin-status"></span>' +
+        '<div>' +
+          '<button type="button" class="btn btn-danger btn-small faq-delete-btn">Obriši pitanje</button> ' +
+          '<button type="button" class="btn btn-small faq-save-btn">Spremi</button>' +
+        '</div>' +
+      '</div>';
+    wrap.querySelector('.faq-pitanje-input').value = entry.pitanje || '';
+    wrap.querySelector('.faq-odgovor-input').value = entry.odgovor || '';
+    wrap.querySelector('.faq-redoslijed-input').value = (entry.redoslijed === '' || entry.redoslijed === null || entry.redoslijed === undefined) ? '' : entry.redoslijed;
+    wireFaqMediaInputs_(wrap);
+    setFaqMediaItem_(wrap.querySelector('.faq-admin-media-item[data-vrsta="slika"]'), entry.slikaId);
+    setFaqMediaItem_(wrap.querySelector('.faq-admin-media-item[data-vrsta="video"]'), entry.videoId);
+    setFaqMediaItem_(wrap.querySelector('.faq-admin-media-item[data-vrsta="pdf"]'), entry.pdfId);
+    setFaqSlikaPoravnanje_(wrap, entry.slikaPoravnanje);
+    wrap.querySelector('.faq-save-btn').addEventListener('click', function() {
+      submitEditFaq_(wrap, entry.rowIndex);
+    });
+    wrap.querySelector('.faq-delete-btn').addEventListener('click', function() {
+      openDeleteModal(entry.rowIndex, entry.pitanje || '(bez teksta)', 'adminFaqDelete');
+    });
+    return wrap;
+  }
+
+  function submitEditFaq_(cardEl, rowIndex) {
+    var pitanje = cardEl.querySelector('.faq-pitanje-input').value.trim();
+    var odgovor = cardEl.querySelector('.faq-odgovor-input').value.trim();
+    var redoslijedRaw = cardEl.querySelector('.faq-redoslijed-input').value;
+    var statusEl = cardEl.querySelector('.faq-admin-status');
+    if (!pitanje || !odgovor) {
+      statusEl.textContent = 'Pitanje i odgovor su obavezni.';
+      statusEl.className = 'faq-admin-status error';
+      return;
+    }
+    var faq = {
+      rowIndex: rowIndex,
+      pitanje: pitanje,
+      odgovor: odgovor,
+      redoslijed: redoslijedRaw === '' ? undefined : parseFloat(redoslijedRaw),
+      slikaId: faqItemFileId_(cardEl, 'slika'),
+      videoId: faqItemFileId_(cardEl, 'video'),
+      pdfId: faqItemFileId_(cardEl, 'pdf'),
+      slikaPoravnanje: faqSlikaPoravnanje_(cardEl)
+    };
+    gasCall({ action: 'adminFaqSave', token: adminToken, faq: faq }).then(function(res) {
+      if (handleAuthError(res)) { return; }
+      if (res.status !== 'ok') {
+        statusEl.textContent = res.message || 'Spremanje nije uspjelo.';
+        statusEl.className = 'faq-admin-status error';
+        return;
+      }
+      statusEl.textContent = 'Spremljeno.';
+      statusEl.className = 'faq-admin-status';
+      loadFaq();
+    }).catch(function() {
+      statusEl.textContent = 'Greška u komunikaciji s poslužiteljem.';
+      statusEl.className = 'faq-admin-status error';
+    });
+  }
+
+  // Zone dostave — kartica s Excel uploadom koji ZAMJENJUJE cijeli popis
+  // grad/poštanski broj/zona na javnoj stranici (vidi napomenu uz
+  // adminZoneUpload() u InTime_Code.gs). Isti "faq-admin-card" izgled kao
+  // FAQ kartice radi vizualne dosljednosti, ali bez pojedinačnih redaka za
+  // uređivanje — ovdje se cijela baza mijenja jednim uploadom.
+  function buildZonePanel_() {
+    var wrap = document.createElement('div');
+    wrap.className = 'faq-admin-card';
+    wrap.innerHTML =
+      '<h3>Zone dostave — popis gradova, mjesta i poštanskih brojeva</h3>' +
+      '<p class="faq-admin-hint">Učitajte Excel (.xlsx) sa stupcima Grad, Poštanski broj, Zona. Svaki novi upload ZAMJENJUJE cijeli dosadašnji popis na javnoj stranici (u FAQ-u, kao prvo pitanje).</p>' +
+      '<div class="zone-admin-status-line" id="zone-status-line">Učitavanje stanja...</div>' +
+      '<label>Excel datoteka (.xlsx)</label>' +
+      '<input type="file" id="zone-file-input" accept=".xlsx">' +
+      '<div class="faq-admin-card-actions">' +
+        '<span class="faq-admin-status" id="zone-admin-status"></span>' +
+        '<button type="button" class="btn btn-small" id="zone-upload-btn">Učitaj i zamijeni podatke</button>' +
+      '</div>';
+    wrap.querySelector('#zone-upload-btn').addEventListener('click', function() {
+      submitZoneUpload_(wrap);
+    });
+    return wrap;
+  }
+
+  function submitZoneUpload_(cardEl) {
+    var fileInput = cardEl.querySelector('#zone-file-input');
+    var statusEl = cardEl.querySelector('#zone-admin-status');
+    var btn = cardEl.querySelector('#zone-upload-btn');
+    var file = fileInput.files && fileInput.files[0];
+    if (!file) {
+      statusEl.textContent = 'Odaberite Excel (.xlsx) datoteku.';
+      statusEl.className = 'faq-admin-status error';
+      return;
+    }
+    statusEl.textContent = 'Učitavanje i obrada — kod velike tablice ovo može potrajati malo dulje...';
+    statusEl.className = 'faq-admin-status';
+    btn.disabled = true;
+    var reader = new FileReader();
+    reader.onload = function() {
+      var base64Data = String(reader.result).split(',')[1];
+      gasCall({ action: 'adminZoneUpload', token: adminToken, base64Data: base64Data, filename: file.name }).then(function(res) {
+        btn.disabled = false;
+        if (handleAuthError(res)) { return; }
+        if (res.status !== 'ok') {
+          statusEl.textContent = res.message || 'Učitavanje nije uspjelo.';
+          statusEl.className = 'faq-admin-status error';
+          return;
+        }
+        statusEl.textContent = 'Gotovo — spremljeno ' + res.broj + ' gradova/mjesta.';
+        statusEl.className = 'faq-admin-status';
+        fileInput.value = '';
+        loadZoneStatus();
+      }).catch(function() {
+        btn.disabled = false;
+        statusEl.textContent = 'Greška u komunikaciji s poslužiteljem.';
+        statusEl.className = 'faq-admin-status error';
+      });
+    };
+    reader.onerror = function() {
+      btn.disabled = false;
+      statusEl.textContent = 'Čitanje datoteke nije uspjelo.';
+      statusEl.className = 'faq-admin-status error';
+    };
+    reader.readAsDataURL(file);
   }
 
   function buildEntryCard(entry) {
@@ -1069,6 +1573,8 @@
           '<input type="text" class="af-datum" placeholder="npr. 25.09.2026 13h 45 minuta 34 sekunde" value="' + esc(fieldVal(entry, 'Datum otvaranja klijenta u sustavu (admin)')) + '"></div>' +
         '<div><label>Zadnje vrijeme unosa naloga</label>' +
           '<input type="time" class="af-vrijeme" value="' + esc(fieldVal(entry, 'Zadnje vrijeme unosa naloga (admin)')) + '"></div>' +
+        '<div class="af-napomena-wrap"><label>Interna napomena (samo za tebe, ne šalje se klijentu)</label>' +
+          '<textarea class="af-napomena" placeholder="Slobodne bilješke o ovom klijentu...">' + esc(fieldVal(entry, 'Interna napomena (admin)')) + '</textarea></div>' +
       '</div>' +
       '<div class="admin-fields-actions">' +
         '<span class="save-status"></span>' +
@@ -1088,7 +1594,8 @@
         ob_username: wrap.querySelector('.af-username').value,
         ob_password: wrap.querySelector('.af-password').value,
         datum_otvaranja: wrap.querySelector('.af-datum').value,
-        zadnje_vrijeme_unosa: wrap.querySelector('.af-vrijeme').value
+        zadnje_vrijeme_unosa: wrap.querySelector('.af-vrijeme').value,
+        interna_napomena: wrap.querySelector('.af-napomena').value
       };
       gasCall({ action: 'adminUpdateFields', token: adminToken, rowIndex: entry.rowIndex, fields: fields }).then(function(res) {
         if (handleAuthError(res)) { return; }
@@ -1335,6 +1842,8 @@
     pendingDeleteAction = action || 'adminDeleteEntry';
     var opis = pendingDeleteAction === 'adminDeleteAnketaEntry'
       ? 'Trajno brišete anketu o kvaliteti usluge: "' + naziv + '". Ova radnja se odnosi na cijeli redak u tablici (sve odgovore te ankete).'
+      : pendingDeleteAction === 'adminFaqDelete'
+      ? 'Trajno brišete FAQ pitanje: "' + naziv + '". Odmah nestaje i s javne stranice.'
       : 'Trajno brišete upit: "' + naziv + '". Ova radnja se odnosi na cijeli redak u tablici (sve podatke tog upita).';
     document.getElementById('delete-modal-desc').textContent = opis;
     document.getElementById('delete-confirm-input').value = '';
