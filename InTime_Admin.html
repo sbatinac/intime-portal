@@ -173,6 +173,11 @@
   }
   .broj-panel-naslov{font-size:13px;font-weight:700;color:var(--graphite);margin-right:4px;}
   .broj-toggle-item{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--graphite);}
+  .broj-stanje-badge{font-size:11px;font-family:monospace;color:#8a8f98;background:#f3f4f6;border-radius:4px;padding:1px 6px;}
+  .podesi-broj-red{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px solid var(--line);}
+  .podesi-broj-red:last-of-type{border-bottom:none;}
+  .podesi-broj-red label{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--graphite);}
+  .podesi-broj-red input{width:90px;padding:6px 8px;border:1px solid var(--line);border-radius:6px;font-size:14px;}
   .broj-toggle-switch{
     position:relative;display:inline-block;width:38px;height:21px;flex-shrink:0;
   }
@@ -312,6 +317,7 @@
     border-radius:6px;
     font-size:13px;
   }
+  .admin-fields input[readonly]{background:#f3f4f6;color:var(--grey);}
   /* Interna napomena — veliko polje slobodnog teksta, preko cijele širine
      grida (bez obzira je li grid trenutno u 2 ili 1 stupca). */
   .admin-fields-grid .af-napomena-wrap{grid-column:1 / -1;}
@@ -560,16 +566,17 @@
       <span class="broj-panel-naslov">Numeracija — testni način:</span>
       <label class="broj-toggle-item">
         <span class="broj-toggle-switch"><input type="checkbox" id="broj-test-upitnik" onchange="postaviBrojTest_('upitnik', this.checked)"><span class="broj-toggle-slider"></span></span>
-        Upitnik
+        Upitnik <span id="broj-stanje-upitnik" class="broj-stanje-badge"></span>
       </label>
       <label class="broj-toggle-item">
         <span class="broj-toggle-switch"><input type="checkbox" id="broj-test-odbijenica" onchange="postaviBrojTest_('odbijenica', this.checked)"><span class="broj-toggle-slider"></span></span>
-        Odbijenica
+        Odbijenica <span id="broj-stanje-odbijenica" class="broj-stanje-badge"></span>
       </label>
       <label class="broj-toggle-item">
         <span class="broj-toggle-switch"><input type="checkbox" id="broj-test-anketa" onchange="postaviBrojTest_('anketa', this.checked)"><span class="broj-toggle-slider"></span></span>
-        Ocjena kvalitete
+        Ocjena kvalitete <span id="broj-stanje-anketa" class="broj-stanje-badge"></span>
       </label>
+      <button type="button" class="stat-reset-btn" onclick="openPodesiBrojeveModal()" title="Ručno podesi sljedeći broj za bilo koju vrstu (zaštićeno lozinkom + potvrdom riječju)">⚙ Podesi numeraciju</button>
       <span id="broj-panel-status" class="broj-toggle-label-test" hidden>Testni način uključen — novi unosi dobivaju fiksni testni broj, pravi brojač se ne diže.</span>
     </div>
 
@@ -679,15 +686,60 @@
   </div>
 </div>
 
-<!-- Modal: potvrda resetiranja brojača posjeta -->
+<!-- Modal: potvrda resetiranja brojača (posjeta ILI numeracije — naslov/opis se puni dinamički u openResetModal()) -->
 <div class="modal-overlay" id="reset-modal" hidden>
   <div class="modal-box">
-    <h2>Resetiranje brojača posjeta</h2>
+    <h2 id="reset-modal-naslov">Resetiranje brojača posjeta</h2>
     <p class="desc" id="reset-modal-desc"></p>
     <p class="form-error" id="reset-modal-error" hidden></p>
     <div class="modal-actions">
       <button class="btn btn-outline btn-small" onclick="closeResetModal()">Odustani</button>
       <button class="btn btn-small" onclick="submitReset()">Da, resetiraj</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: "Podesi numeraciju" — ručni unos SLJEDEĆEG broja za svaku od 3
+     vrste (prazno polje = ta se vrsta ne mijenja). Nakon "Dalje" slijede JOŠ
+     dva koraka zaštite (lozinka pa potvrda riječju) prije stvarnog izvršenja
+     — vidi submitPodesiBrojeve() u JS bloku niže. -->
+<div class="modal-overlay" id="podesi-brojeve-modal" hidden>
+  <div class="modal-box">
+    <h2>Podesi numeraciju</h2>
+    <p class="desc">Upiši SLJEDEĆI broj (bez vodećih nula) za vrste koje želiš promijeniti — ostavi prazno za vrste koje ne diraš. Slijedi potvrda lozinkom i riječju.</p>
+    <div class="podesi-broj-red">
+      <label for="podesi-broj-upitnik">Upitnik <span id="podesi-trenutno-upitnik" class="broj-stanje-badge"></span></label>
+      <input type="number" min="1" max="9999" id="podesi-broj-upitnik" placeholder="npr. 1">
+    </div>
+    <div class="podesi-broj-red">
+      <label for="podesi-broj-odbijenica">Odbijenica <span id="podesi-trenutno-odbijenica" class="broj-stanje-badge"></span></label>
+      <input type="number" min="1" max="9999" id="podesi-broj-odbijenica" placeholder="npr. 1">
+    </div>
+    <div class="podesi-broj-red">
+      <label for="podesi-broj-anketa">Ocjena kvalitete <span id="podesi-trenutno-anketa" class="broj-stanje-badge"></span></label>
+      <input type="number" min="1" max="9999" id="podesi-broj-anketa" placeholder="npr. 1">
+    </div>
+    <p class="form-error" id="podesi-brojeve-error" hidden></p>
+    <div class="modal-actions">
+      <button class="btn btn-outline btn-small" onclick="closePodesiBrojeveModal()">Odustani</button>
+      <button class="btn btn-danger btn-small" onclick="submitPodesiBrojeve()">Dalje</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: generička potvrda nasumičnom riječju (superjunak) — koristi ga
+     "Podesi numeraciju" (nakon lozinke); stariji bulk-delete-word-modal
+     iznad ostaje zaseban jer je vezan uz rowIndexes, ne callback. -->
+<div class="modal-overlay" id="word-confirm-modal" hidden>
+  <div class="modal-box">
+    <h2 id="word-confirm-title">Potvrda riječju</h2>
+    <p class="desc" id="word-confirm-desc"></p>
+    <p class="warn">Za potvrdu upišite riječ <strong id="word-confirm-word-display">—</strong> (velikim slovima) u polje ispod.</p>
+    <input type="text" id="word-confirm-input" placeholder="Upišite riječ za potvrdu" oninput="updateWordConfirmButtonState()" autocomplete="off">
+    <p class="form-error" id="word-confirm-error" hidden></p>
+    <div class="modal-actions">
+      <button class="btn btn-outline btn-small" onclick="closeSuperheroWordConfirmModal()">Odustani</button>
+      <button class="btn btn-danger btn-small" id="word-confirm-btn" disabled onclick="submitSuperheroWordConfirm()">Potvrdi i izvrši</button>
     </div>
   </div>
 </div>
@@ -814,6 +866,16 @@
       document.getElementById('broj-test-upitnik').checked = !!res.testUpitnik;
       document.getElementById('broj-test-odbijenica').checked = !!res.testOdbijenica;
       document.getElementById('broj-test-anketa').checked = !!res.testAnketa;
+      // Prikaz "zadnji izdani broj → sljedeći broj" (npr. "0 → sljedeći 0001"),
+      // tako da Saša vidi treba li uopće resetirati prije nego klikne.
+      var godina = new Date().getFullYear();
+      [['upitnik', res.zadnjiUpitnik], ['odbijenica', res.zadnjiOdbijenica], ['anketa', res.zadnjiAnketa]].forEach(function(par){
+        var el = document.getElementById('broj-stanje-' + par[0]);
+        if (!el) { return; }
+        var zadnji = par[1] || 0;
+        var sljedeciFormatiran = ('0000' + (zadnji + 1)).slice(-4);
+        el.textContent = godina + ': zadnji ' + ('0000' + zadnji).slice(-4) + ' → sljedeći ' + sljedeciFormatiran;
+      });
       azurirajBrojPanelStatus_();
     }).catch(function() {});
   }
@@ -959,13 +1021,17 @@
   }
 
   // Resetiranje brojača posjeta (dnevni ili ukupni — sveukupni/trajni brojač
-  // nema reset ni ovdje ni u InTime_Code.gs, namjerno).
+  // nema reset ni ovdje ni u InTime_Code.gs, namjerno). Brojači numeracije
+  // (Upitnik/Odbijenica/Ocjena kvalitete) imaju ZASEBAN, strože zaštićen tok
+  // — vidi "Podesi numeraciju" niže (openPodesiBrojeveModal).
   var pendingResetAction = null;
+  var BROJ_NAZIVI_ = { upitnik: 'Upitnik', odbijenica: 'Odbijenica', anketa: 'Ocjena kvalitete' };
   function openResetModal(kind) {
     pendingResetAction = (kind === 'danas') ? 'adminResetPosjeteDanas' : 'adminResetPosjeteUkupno';
     var opis = (kind === 'danas')
       ? 'Brojač "Posjeta stranici danas" bit će vraćen na 0. Ovo ne utječe na ukupni ni na trajni (sveukupni) brojač.'
       : 'Brojač "Posjeta stranici ukupno" bit će vraćen na 0. Ovo ne utječe na dnevni ni na trajni (sveukupni) brojač.';
+    document.getElementById('reset-modal-naslov').textContent = 'Resetiranje brojača posjeta';
     document.getElementById('reset-modal-desc').textContent = opis;
     document.getElementById('reset-modal-error').hidden = true;
     document.getElementById('reset-modal').hidden = false;
@@ -991,6 +1057,131 @@
       errEl.textContent = 'Greška u komunikaciji s poslužiteljem.';
       errEl.hidden = false;
     });
+  }
+
+  // ==== "PODESI NUMERACIJU" — ručno postavljanje SLJEDEĆEG broja za bilo
+  // koju od 3 vrste (Sašin izričit zahtjev 15.9.2026., nakon slučajnog
+  // stvarnog testiranja bez uključenog testnog načina): gumb otvara pregled
+  // sa zadnjim izdanim brojem svake vrste i praznim poljem za novi "sljedeći
+  // broj" po vrsti (prazno = ne mijenja se). NAJVIŠA razina zaštite u cijelom
+  // adminu — lozinka I potvrda riječju (isti dvostruki obrazac kao kod
+  // brisanja već otvorenih klijenata, samo ovdje kombinirano, jer pogrešno
+  // postavljen brojač može poremetiti već poslane ponude/dokumente s tim
+  // brojevima). ====
+  function openPodesiBrojeveModal() {
+    ['upitnik', 'odbijenica', 'anketa'].forEach(function(tip){
+      var el = document.getElementById('podesi-broj-' + tip);
+      if (el) { el.value = ''; }
+    });
+    document.getElementById('podesi-brojeve-error').hidden = true;
+    // Prikaži trenutno zadnji broj svake vrste kao referencu (uzima iz
+    // istog izvora kao broj-stanje-* bedževi u panelu, bez novog poziva).
+    gasCall({ action: 'adminGetBrojStatus', token: adminToken }).then(function(res) {
+      if (handleAuthError(res)) { return; }
+      if (res.status !== 'ok') { return; }
+      var godina = new Date().getFullYear();
+      [['upitnik', res.zadnjiUpitnik], ['odbijenica', res.zadnjiOdbijenica], ['anketa', res.zadnjiAnketa]].forEach(function(par){
+        var el = document.getElementById('podesi-trenutno-' + par[0]);
+        if (el) { el.textContent = 'trenutno zadnji: ' + ('0000' + (par[1] || 0)).slice(-4) + ' (' + godina + ')'; }
+      });
+    }).catch(function() {});
+    document.getElementById('podesi-brojeve-modal').hidden = false;
+  }
+  function closePodesiBrojeveModal() {
+    document.getElementById('podesi-brojeve-modal').hidden = true;
+  }
+  function submitPodesiBrojeve() {
+    var errEl = document.getElementById('podesi-brojeve-error');
+    errEl.hidden = true;
+    var izmjene = [];
+    var greska = null;
+    ['upitnik', 'odbijenica', 'anketa'].forEach(function(tip){
+      var el = document.getElementById('podesi-broj-' + tip);
+      var sirovo = el ? el.value.trim() : '';
+      if (!sirovo) { return; } // prazno polje = ne mijenja se ta vrsta
+      var broj = parseInt(sirovo, 10);
+      if (isNaN(broj) || broj < 1 || broj > 9999 || String(broj) !== sirovo.replace(/^0+(?=\d)/, '')) {
+        greska = 'Broj za "' + (BROJ_NAZIVI_[tip] || tip) + '" mora biti cijeli broj između 1 i 9999.';
+        return;
+      }
+      izmjene.push({ tip: tip, broj: broj });
+    });
+    if (greska) { errEl.textContent = greska; errEl.hidden = false; return; }
+    if (izmjene.length === 0) { errEl.textContent = 'Unesite barem jedan broj (ostavite prazno za vrste koje ne mijenjate).'; errEl.hidden = false; return; }
+
+    var opisIzmjena = izmjene.map(function(iz){
+      return (BROJ_NAZIVI_[iz.tip] || iz.tip) + ' → sljedeći broj ' + ('0000' + iz.broj).slice(-4);
+    }).join(', ');
+
+    closePodesiBrojeveModal();
+    // Korak 1: lozinka (postojeći opći sustav — isti kao za brisanje već
+    // otvorenih klijenata).
+    openAdminPasswordConfirmModal(
+      'Podešavanje numeracije',
+      'Postavit ćete: ' + opisIzmjena + '. U sljedećem koraku tražit će se i potvrda riječju.',
+      function() {
+        // Korak 2: potvrda nasumičnom riječju (isti sustav kao masovno
+        // brisanje) — tek nakon OBA koraka se stvarno izvršava.
+        openSuperheroWordConfirmModal(
+          'Podešavanje numeracije',
+          'Za potvrdu upišite riječ ispod. Postavit ćete: ' + opisIzmjena + '.',
+          function() { izvrsiPodesiBrojeve_(izmjene); }
+        );
+      }
+    );
+  }
+  function izvrsiPodesiBrojeve_(izmjene) {
+    var greske = 0;
+    function next(i) {
+      if (i >= izmjene.length) {
+        loadBrojStatus_();
+        if (greske > 0) { alert('Dio izmjena nije uspio (' + greske + ') — provjeri stanje brojača i pokušaj ponovno.'); }
+        return;
+      }
+      gasCall({ action: 'adminSetBrojac', token: adminToken, tipBroja: izmjene[i].tip, sljedeciBroj: izmjene[i].broj }).then(function(res) {
+        if (res.status !== 'ok') { greske++; }
+        next(i + 1);
+      }).catch(function() {
+        greske++;
+        next(i + 1);
+      });
+    }
+    next(0);
+  }
+
+  // ---- Generički modal: potvrda nasumičnom riječju (superjunak), NEOVISNO
+  // o brisanju — koristi istu SUPERHERO_RIJECI bazu i izvuciSljedecuRijec(),
+  // ali s vlastitim callback-om (pendingWordConfirmCallback) umjesto da bude
+  // vezan uz rowIndexes kao stariji bulk-delete-word-modal. ----
+  var pendingWordConfirmCallback = null;
+  function openSuperheroWordConfirmModal(title, desc, onConfirm) {
+    pendingWordConfirmCallback = onConfirm;
+    var rijec = izvuciSljedecuRijec();
+    var modal = document.getElementById('word-confirm-modal');
+    modal.dataset.word = rijec;
+    document.getElementById('word-confirm-title').textContent = title;
+    document.getElementById('word-confirm-desc').textContent = desc;
+    document.getElementById('word-confirm-word-display').textContent = rijec;
+    document.getElementById('word-confirm-input').value = '';
+    document.getElementById('word-confirm-error').hidden = true;
+    updateWordConfirmButtonState();
+    modal.hidden = false;
+  }
+  function closeSuperheroWordConfirmModal() {
+    document.getElementById('word-confirm-modal').hidden = true;
+    pendingWordConfirmCallback = null;
+  }
+  function updateWordConfirmButtonState() {
+    var modal = document.getElementById('word-confirm-modal');
+    var val = document.getElementById('word-confirm-input').value;
+    document.getElementById('word-confirm-btn').disabled = (val !== modal.dataset.word);
+  }
+  function submitSuperheroWordConfirm() {
+    var modal = document.getElementById('word-confirm-modal');
+    if (document.getElementById('word-confirm-input').value !== modal.dataset.word) { return; }
+    var callback = pendingWordConfirmCallback;
+    closeSuperheroWordConfirmModal();
+    if (callback) { callback(); }
   }
 
   function loadEntries() {
@@ -1891,20 +2082,56 @@
     return card;
   }
 
+  // Redoslijed i sadržaj ove kartice je Sašin izričit zahtjev (15.9.2026.,
+  // "znaci demo redom ti opnda podesi..."): 1) šifra upitnika (samo za
+  // prikaz, čita se iz stupca "Broj" — nije dio adminUpdateFields payloada),
+  // 2) datum popunjavanja upitnika (PRELABELIRANO — isto polje/stupac kao
+  // prije, "Datum otvaranja klijenta u sustavu", vidi napomenu uz
+  // ADMIN_ONLY_FIELDS u Code.gs zašto se stupac ne preimenuje), 3) šifra
+  // ponude, 4) tri datuma slanja ponude (jer se ponude znaju ponovno slati
+  // pod istim brojem), 5) datum prihvaćanja ponude, 6) datum otvaranja
+  // Online Bookinga, 7) OB korisničko ime/lozinka, 8) zadnje vrijeme unosa
+  // naloga, 9) vrijeme prikupa — Saša želi moći RUČNO promijeniti ono što je
+  // klijent upisao u upitniku (jer je to samo "preporuka") — polje se sprema
+  // u SVOJ zaseban admin stupac i NE mijenja izvorni klijentov odgovor;
+  // dok Saša sama ne spremi ništa u to polje, prikazuje se klijentova
+  // vrijednost kao početni prijedlog, 10) interna napomena na kraju (kao i
+  // dosad). Ovo je "prva faza" (samo polja) — automatizacija/obavijesti oko
+  // ovih podataka dolaze kasnije, po Sašinom planu.
   function buildAdminFieldsBlock(entry) {
     var wrap = document.createElement('div');
     wrap.className = 'admin-fields';
+    var vrijemePrikupaKlijent = fieldVal(entry, 'Vrijeme prikupa pošiljaka (dolazak vozila)');
+    var vrijemePrikupaAdmin = fieldVal(entry, 'Vrijeme prikupa — ručno uređeno (admin)');
+    var vrijemePrikupaPrikaz = vrijemePrikupaAdmin || vrijemePrikupaKlijent;
+    var vrijemePrikupaLabel = 'Vrijeme prikupa' + ((!vrijemePrikupaAdmin && vrijemePrikupaKlijent) ? ' (preporuka klijenta — može se urediti)' : ' (ručno uređeno)');
     wrap.innerHTML =
       '<h3>Podaci koje popunjava In Time (nakon otvaranja klijenta)</h3>' +
       '<div class="admin-fields-grid">' +
+        '<div><label>Šifra prodajnog upitnika</label>' +
+          '<input type="text" class="af-sifra-upitnika" value="' + esc(fieldVal(entry, 'Broj')) + '" readonly></div>' +
+        '<div><label>Datum popunjavanja online prodajnog upitnika</label>' +
+          '<input type="text" class="af-datum" placeholder="npr. 25.09.2026 13h 45 minuta 34 sekunde" value="' + esc(fieldVal(entry, 'Datum otvaranja klijenta u sustavu (admin)')) + '"></div>' +
+        '<div><label>Šifra ponude</label>' +
+          '<input type="text" class="af-sifra-ponude" placeholder="interna šifra ponude" value="' + esc(fieldVal(entry, 'Šifra ponude (admin)')) + '"></div>' +
+        '<div><label>Datum slanja ponude 1</label>' +
+          '<input type="text" class="af-datum-ponude-1" placeholder="npr. 25.09.2026" value="' + esc(fieldVal(entry, 'Datum slanja ponude 1 (admin)')) + '"></div>' +
+        '<div><label>Datum slanja ponude 2</label>' +
+          '<input type="text" class="af-datum-ponude-2" placeholder="npr. 25.09.2026" value="' + esc(fieldVal(entry, 'Datum slanja ponude 2 (admin)')) + '"></div>' +
+        '<div><label>Datum slanja ponude 3</label>' +
+          '<input type="text" class="af-datum-ponude-3" placeholder="npr. 25.09.2026" value="' + esc(fieldVal(entry, 'Datum slanja ponude 3 (admin)')) + '"></div>' +
+        '<div><label>Datum prihvaćanja ponude</label>' +
+          '<input type="text" class="af-datum-prihvacanja" placeholder="npr. 25.09.2026" value="' + esc(fieldVal(entry, 'Datum prihvaćanja ponude (admin)')) + '"></div>' +
+        '<div><label>Datum otvaranja Online Bookinga</label>' +
+          '<input type="text" class="af-datum-ob" placeholder="npr. 25.09.2026" value="' + esc(fieldVal(entry, 'Datum otvaranja Online Bookinga (admin)')) + '"></div>' +
         '<div><label>Online Booking — korisničko ime</label>' +
           '<input type="text" class="af-username" value="' + esc(fieldVal(entry, 'OB korisničko ime (admin)')) + '"></div>' +
         '<div><label>Online Booking — lozinka</label>' +
           '<input type="text" class="af-password" value="' + esc(fieldVal(entry, 'OB lozinka (admin)')) + '"></div>' +
-        '<div><label>Datum otvaranja klijenta u sustavu</label>' +
-          '<input type="text" class="af-datum" placeholder="npr. 25.09.2026 13h 45 minuta 34 sekunde" value="' + esc(fieldVal(entry, 'Datum otvaranja klijenta u sustavu (admin)')) + '"></div>' +
         '<div><label>Zadnje vrijeme unosa naloga</label>' +
           '<input type="time" class="af-vrijeme" value="' + esc(fieldVal(entry, 'Zadnje vrijeme unosa naloga (admin)')) + '"></div>' +
+        '<div><label>' + esc(vrijemePrikupaLabel) + '</label>' +
+          '<input type="text" class="af-vrijeme-prikupa" placeholder="npr. 08:00 - 10:00" value="' + esc(vrijemePrikupaPrikaz) + '"></div>' +
         '<div class="af-napomena-wrap"><label>Interna napomena (samo za tebe, ne šalje se klijentu)</label>' +
           '<textarea class="af-napomena" placeholder="Slobodne bilješke o ovom klijentu...">' + esc(fieldVal(entry, 'Interna napomena (admin)')) + '</textarea></div>' +
       '</div>' +
@@ -1927,7 +2154,14 @@
         ob_password: wrap.querySelector('.af-password').value,
         datum_otvaranja: wrap.querySelector('.af-datum').value,
         zadnje_vrijeme_unosa: wrap.querySelector('.af-vrijeme').value,
-        interna_napomena: wrap.querySelector('.af-napomena').value
+        interna_napomena: wrap.querySelector('.af-napomena').value,
+        sifra_ponude: wrap.querySelector('.af-sifra-ponude').value,
+        datum_slanja_ponude_1: wrap.querySelector('.af-datum-ponude-1').value,
+        datum_slanja_ponude_2: wrap.querySelector('.af-datum-ponude-2').value,
+        datum_slanja_ponude_3: wrap.querySelector('.af-datum-ponude-3').value,
+        datum_prihvacanja_ponude: wrap.querySelector('.af-datum-prihvacanja').value,
+        datum_otvaranja_ob: wrap.querySelector('.af-datum-ob').value,
+        admin_vrijeme_prikupa: wrap.querySelector('.af-vrijeme-prikupa').value
       };
       gasCall({ action: 'adminUpdateFields', token: adminToken, rowIndex: entry.rowIndex, fields: fields }).then(function(res) {
         if (handleAuthError(res)) { return; }
