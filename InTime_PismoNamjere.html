@@ -248,6 +248,7 @@
   .faq-odgovor-slika.faq-slika-lijevo{width:45%;min-width:140px;margin-left:0;margin-right:auto;}
   .faq-odgovor-slika.faq-slika-desno{width:45%;min-width:140px;margin-left:auto;margin-right:0;}
   .faq-odgovor-video{width:100%;aspect-ratio:16/9;border:none;border-radius:8px;display:block;margin-bottom:12px;}
+  .faq-odgovor-pdf{width:100%;height:520px;border:1px solid var(--line);border-radius:8px;display:block;margin-bottom:12px;}
   .faq-odgovor-link{
     display:inline-block;font-size:13px;font-weight:700;color:var(--purple-dark);
     text-decoration:none;border:1px solid var(--purple);border-radius:6px;padding:7px 14px;
@@ -269,6 +270,16 @@
   /* ---- "Zone dostave" — prikvačena PRVA FAQ stavka s poljem za
      pretragu grada/poštanskog broja umjesto unaprijed napisanog teksta
      (vidi izgradiZonaFaqStavku_() niže). ---- */
+  .zona-faq-naslov{font-size:17px;color:var(--graphite);}
+  .zona-faq-vazno{
+    color:#e11d2e;font-weight:800;
+    animation:zona-faq-vazno-glow 1.8s ease-in-out infinite alternate;
+  }
+  @keyframes zona-faq-vazno-glow{
+    from{text-shadow:0 0 6px rgba(225,29,46,.55),0 0 12px rgba(225,29,46,.3);}
+    to{text-shadow:0 0 16px rgba(225,29,46,1),0 0 30px rgba(225,29,46,.7);}
+  }
+
   .zona-pretraga-input{
     width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid var(--line);
     border-radius:8px;font-size:14px;font-family:inherit;margin-bottom:12px;
@@ -2590,8 +2601,9 @@
     btn.type = 'button';
     btn.className = 'faq-pitanje-btn';
     btn.setAttribute('aria-expanded', 'false');
-    btn.innerHTML = '<span></span><span class="faq-chevron">▾</span>';
-    btn.querySelector('span').textContent = 'In Time - popis gradova, mjesta i zone';
+    btn.innerHTML = '<span class="zona-faq-naslov">IN TIME d.o.o. - Pretraživač gradova, mjesta, poštanskih brojeva i zona' +
+        '<span class="zona-faq-vazno"> - VAŽNO !!!</span>' +
+      '</span><span class="faq-chevron">▾</span>';
 
     var odgovorWrap = document.createElement('div');
     odgovorWrap.className = 'faq-odgovor';
@@ -2735,17 +2747,27 @@
           img.className = 'faq-odgovor-slika';
           img.loading = 'lazy';
           img.alt = faq.pitanje;
-          img.src = 'https://drive.google.com/thumbnail?id=' + encodeURIComponent(faq.slikaId) + '&sz=w800';
+          // Prvo pokušaj lh3.googleusercontent.com (Googleov izravni format
+          // za posluživanje Drive slika — pouzdaniji za hotlink prikaz izvan
+          // Drivea), a ako i to ne uspije, pokušaj stari thumbnail?id= oblik
+          // prije nego se slika sakrije — dva pokušaja s različitim Google
+          // domenama umjesto oslanjanja samo na jednu (korisnikov izričit
+          // zahtjev da se prikaz slika popravi).
+          img.src = 'https://lh3.googleusercontent.com/d/' + encodeURIComponent(faq.slikaId) + '=w1000';
           if (faq.slikaPoravnanje === 'centar' || faq.slikaPoravnanje === 'lijevo' || faq.slikaPoravnanje === 'desno') {
             img.classList.add('faq-slika-' + faq.slikaPoravnanje);
           }
-          // Ako se slika ne uspije učitati (npr. Drive datoteka nije stvarno
-          // javno dostupna unatoč setSharing() pozivu u backendu — poznato
-          // kod Google Workspace računa s ograničenom vanjskom razmjenom),
-          // sakrij slomljenu ikonu umjesto da ostavi ružan "broken image"
-          // prikaz — poveznica "Otvori sliku" ispod ostaje dostupna.
           img.addEventListener('error', function() {
-            console.warn('FAQ slika se nije uspjela učitati (Drive ID: ' + faq.slikaId + ') — provjeri je li datoteka stvarno javno dijeljena ("Bilo tko s poveznicom").');
+            if (this.dataset.fallbackPokusan !== 'true') {
+              this.dataset.fallbackPokusan = 'true';
+              this.src = 'https://drive.google.com/thumbnail?id=' + encodeURIComponent(faq.slikaId) + '&sz=w1000';
+              return;
+            }
+            // Ako ni jedan od dva oblika ne uspije (npr. Drive datoteka nije
+            // stvarno javno dostupna unatoč setSharing() pozivu u backendu),
+            // sakrij slomljenu ikonu umjesto da ostavi ružan "broken image"
+            // prikaz — poveznica "Otvori sliku" ispod ostaje dostupna.
+            console.warn('FAQ slika se nije uspjela učitati ni jednim od dva formata (Drive ID: ' + faq.slikaId + ') — provjeri je li datoteka stvarno javno dijeljena ("Bilo tko s poveznicom").');
             this.style.display = 'none';
           });
           odgovorWrap.appendChild(img);
@@ -2774,12 +2796,21 @@
           odgovorWrap.appendChild(videoLink);
         }
         if (faq.pdfId) {
+          // Mali ugrađeni PDF preglednik (isti Drive /preview embed kao za
+          // video iznad) — korisnikov izričit zahtjev, ranije je PDF imao
+          // samo poveznicu bez ugrađenog prikaza.
+          var iframePdf = document.createElement('iframe');
+          iframePdf.className = 'faq-odgovor-pdf';
+          iframePdf.loading = 'lazy';
+          iframePdf.src = 'https://drive.google.com/file/d/' + encodeURIComponent(faq.pdfId) + '/preview';
+          odgovorWrap.appendChild(iframePdf);
+
           var pdfLink = document.createElement('a');
           pdfLink.className = 'faq-odgovor-link';
           pdfLink.href = 'https://drive.google.com/file/d/' + encodeURIComponent(faq.pdfId) + '/view';
           pdfLink.target = '_blank';
           pdfLink.rel = 'noopener';
-          pdfLink.textContent = '📄 Otvori PDF dokument';
+          pdfLink.textContent = '📄 Otvori PDF dokument u novoj kartici';
           odgovorWrap.appendChild(pdfLink);
         }
 
@@ -4778,21 +4809,34 @@
       }
     });
 
-    // Tihi POST na Apps Script backend (no-cors — ne čekamo odgovor).
-    // text/plain kao Content-Type izbjegava CORS preflight koji Apps Script web app ne podržava.
-    fetch(GAS_WEB_APP_URL, {
-      method: 'POST',
-      mode: 'no-cors',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify(payload)
-    }).catch(function(){ /* ignoriramo — no-cors ionako ne vraća čitljiv odgovor */ });
+    // POST na Apps Script backend — SADA čekamo i čitamo stvarni JSON odgovor
+    // (isti obrazac, bez no-cors, kao provjera duplikata OIB-a iznad) kako
+    // bismo klijentu odmah mogli prikazati dodijeljeni broj (PO-.../NE!-...,
+    // vidi generirajBroj_ u InTime_Code.gs). Ranije je ovo bio "fire-and-
+    // forget" POST s mode:'no-cors' jer se odgovor nije čitao — sad se čita,
+    // ali "fail-open" ostaje: ako sam poziv ne uspije, klijent svejedno vidi
+    // zahvalu (bez broja), infrastrukturni problem ne smije blokirati potvrdu.
+    var _submitBtnFinal = form.querySelector('button[type="submit"]');
+    if (_submitBtnFinal) { _submitBtnFinal.disabled = true; _submitBtnFinal.textContent = 'Šaljem...'; }
+    var _broj = '';
+    try {
+      var _posaljiResp = await fetch(GAS_WEB_APP_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify(payload)
+      });
+      var _posaljiJson = await _posaljiResp.json();
+      _broj = (_posaljiJson && _posaljiJson.broj) || '';
+    } catch (posaljiErr) {
+      _broj = '';
+    }
 
     document.getElementById('panel-interes').classList.remove('active');
     document.getElementById('panel-odbijenica').classList.remove('active');
 
     var msg = which === 'interes'
-      ? 'Hvala na interesu! Naš prodajni predstavnik javit će Vam se u najkraćem mogućem roku radi dogovora oko prezentacije.'
-      : 'Hvala Vam na odvojenom vremenu i povratnoj informaciji.';
+      ? 'Predali ste prodajni upitnik' + (_broj ? ' — broj ' + _broj : '') + '. Hvala na interesu! Naš prodajni predstavnik javit će Vam se u najkraćem mogućem roku radi dogovora oko prezentacije.'
+      : 'Predali ste odbijenicu' + (_broj ? ' — broj ' + _broj : '') + '. Hvala Vam na odvojenom vremenu i povratnoj informaciji.';
     document.getElementById('confirm-text').textContent = msg;
     document.getElementById('confirm-box').classList.add('active');
     document.getElementById('confirm-box').scrollIntoView({behavior:'smooth', block:'center'});

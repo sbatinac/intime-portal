@@ -62,6 +62,7 @@
     font-weight:600;
   }
   .btn:hover{background:var(--purple-dark);border-color:var(--purple-dark);}
+  .btn[disabled]{background:#a9c4c1;border-color:#a9c4c1;cursor:not-allowed;}
   .btn-outline{background:#fff;color:var(--purple);}
   .btn-outline:hover{background:var(--bg);}
   .btn-danger{background:var(--red);border-color:var(--red);}
@@ -162,6 +163,37 @@
     border-radius:8px;
   }
   .permanent-stat-note strong{color:var(--purple-dark);font-size:14px;}
+
+  /* ---- Numeracija — testni način (3 zasebna prekidača: Upitnik/Odbijenica/
+     Anketa). Vidi adminGetBrojStatus/adminSetBrojTest u InTime_Code.gs. ---- */
+  .broj-panel{
+    display:flex;flex-wrap:wrap;gap:18px;align-items:center;
+    background:#fff;border:1px solid var(--line);border-radius:10px;
+    padding:12px 16px;margin:0 0 20px;
+  }
+  .broj-panel-naslov{font-size:13px;font-weight:700;color:var(--graphite);margin-right:4px;}
+  .broj-toggle-item{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--graphite);}
+  .broj-toggle-switch{
+    position:relative;display:inline-block;width:38px;height:21px;flex-shrink:0;
+  }
+  .broj-toggle-switch input{opacity:0;width:0;height:0;}
+  .broj-toggle-slider{
+    position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;
+    background:var(--line);border-radius:21px;transition:.15s;
+  }
+  .broj-toggle-slider:before{
+    content:"";position:absolute;height:15px;width:15px;left:3px;bottom:3px;
+    background:#fff;border-radius:50%;transition:.15s;
+  }
+  .broj-toggle-switch input:checked + .broj-toggle-slider{background:var(--red);}
+  .broj-toggle-switch input:checked + .broj-toggle-slider:before{transform:translateX(17px);}
+  .broj-toggle-label-test{color:var(--red);font-weight:700;}
+
+  .entry-broj-badge{
+    display:inline-block;font-size:11.5px;font-weight:700;color:var(--purple-dark);
+    background:rgba(34,152,145,.12);border:1px solid var(--purple);border-radius:5px;
+    padding:2px 7px;margin-right:8px;vertical-align:middle;font-family:monospace;
+  }
 
   .tabs{display:flex;gap:8px;margin-bottom:16px;border-bottom:2px solid var(--line);}
   .tab-btn{
@@ -416,6 +448,7 @@
   }
   .faq-admin-media-preview img{max-width:70px;max-height:50px;border-radius:4px;border:1px solid var(--line);}
   .faq-admin-media-preview a{color:var(--purple-dark);}
+  .faq-media-naziv{width:100%;font-weight:700;color:var(--graphite);}
   .faq-admin-media-preview .faq-media-remove{
     font-size:11px;background:none;border:none;color:var(--red);cursor:pointer;
     text-decoration:underline;padding:0;
@@ -425,7 +458,10 @@
     margin-top:14px;flex-wrap:wrap;
   }
   .faq-admin-status{font-size:12px;color:var(--green);}
-  .faq-admin-status.error{color:var(--red);}
+  .faq-admin-status.error{
+    color:var(--red);font-weight:700;background:#fdecea;border:1px solid var(--red);
+    border-radius:6px;padding:6px 10px;display:inline-block;
+  }
   .faq-admin-hint{font-size:11px;color:var(--grey);margin:-4px 0 10px;}
   .faq-admin-ocjene{font-size:13px;color:var(--graphite);margin:0 0 12px;font-weight:700;}
   .faq-admin-ocjene .faq-ocjena-like{color:var(--green);}
@@ -468,6 +504,7 @@
 <div id="login-screen">
   <div class="login-card">
     <img src="https://i.imgur.com/XVKObib.png" alt="In Time — FedEx" class="login-banner">
+    <h1>In Time d.o.o. - portal za nove klijente - REGIJA ISTOK</h1>
     <p class="form-error" id="login-error" hidden></p>
     <form id="login-form" onsubmit="return handleLogin(event)">
       <input type="password" id="login-password" placeholder="Lozinka" autocomplete="current-password" required>
@@ -518,6 +555,23 @@
     </div>
 
     <p class="permanent-stat-note">Ukupan broj dolazaka na stranicu od početka rada stranice (trajna statistika, ne može se resetirati): <strong id="stat-posjete-sveukupno">—</strong></p>
+
+    <div class="broj-panel">
+      <span class="broj-panel-naslov">Numeracija — testni način:</span>
+      <label class="broj-toggle-item">
+        <span class="broj-toggle-switch"><input type="checkbox" id="broj-test-upitnik" onchange="postaviBrojTest_('upitnik', this.checked)"><span class="broj-toggle-slider"></span></span>
+        Upitnik
+      </label>
+      <label class="broj-toggle-item">
+        <span class="broj-toggle-switch"><input type="checkbox" id="broj-test-odbijenica" onchange="postaviBrojTest_('odbijenica', this.checked)"><span class="broj-toggle-slider"></span></span>
+        Odbijenica
+      </label>
+      <label class="broj-toggle-item">
+        <span class="broj-toggle-switch"><input type="checkbox" id="broj-test-anketa" onchange="postaviBrojTest_('anketa', this.checked)"><span class="broj-toggle-slider"></span></span>
+        Ocjena kvalitete
+      </label>
+      <span id="broj-panel-status" class="broj-toggle-label-test" hidden>Testni način uključen — novi unosi dobivaju fiksni testni broj, pravi brojač se ne diže.</span>
+    </div>
 
     <div class="tabs">
       <button type="button" class="tab-btn active" id="tab-btn-interes" onclick="switchTab('Interes')">Zainteresirani (<span id="tab-count-interes">0</span>)</button>
@@ -747,6 +801,46 @@
     loadFaq();
     loadZoneStatus();
     loadZoneArhiva_();
+    loadBrojStatus_();
+  }
+
+  // Numeracija — testni način (3 zasebna prekidača). Učita trenutno stanje
+  // pri otvaranju admina, tako da preklopnici odražavaju stvarnu situaciju
+  // (npr. ako je Saša uključila test na mobitelu, pa se vrati na desktop).
+  function loadBrojStatus_() {
+    gasCall({ action: 'adminGetBrojStatus', token: adminToken }).then(function(res) {
+      if (handleAuthError(res)) { return; }
+      if (res.status !== 'ok') { return; }
+      document.getElementById('broj-test-upitnik').checked = !!res.testUpitnik;
+      document.getElementById('broj-test-odbijenica').checked = !!res.testOdbijenica;
+      document.getElementById('broj-test-anketa').checked = !!res.testAnketa;
+      azurirajBrojPanelStatus_();
+    }).catch(function() {});
+  }
+
+  function azurirajBrojPanelStatus_() {
+    var ijedan = document.getElementById('broj-test-upitnik').checked ||
+      document.getElementById('broj-test-odbijenica').checked ||
+      document.getElementById('broj-test-anketa').checked;
+    document.getElementById('broj-panel-status').hidden = !ijedan;
+  }
+
+  // Uključi/isključi testni način numeracije za jednu od tri vrste — dok je
+  // uključen, svaki novi unos TE vrste dobiva identičan testni broj (npr.
+  // PO-TEST-SB-ABC-2026) i pravi brojač se ne diže (vidi generirajBroj_ u
+  // InTime_Code.gs).
+  function postaviBrojTest_(tip, ukljuceno) {
+    azurirajBrojPanelStatus_();
+    gasCall({ action: 'adminSetBrojTest', token: adminToken, tipBroja: tip, ukljuceno: ukljuceno }).then(function(res) {
+      if (handleAuthError(res)) { return; }
+      if (res.status !== 'ok') {
+        alert(res.message || 'Promjena nije uspjela.');
+        loadBrojStatus_(); // vrati preklopnik na stvarno stanje
+      }
+    }).catch(function() {
+      alert('Greška u komunikaciji s poslužiteljem.');
+      loadBrojStatus_();
+    });
   }
 
   // FAQ ("Česta pitanja") — zaseban popis (allFaqEntries), zaseban
@@ -1145,26 +1239,41 @@
     if (sel) { sel.value = value || 'puna'; }
   }
 
-  function faqMediaPreviewHtml_(vrsta, fileId) {
+  function escapeHtmlFaq_(tekst) {
+    var div = document.createElement('div');
+    div.textContent = tekst || '';
+    return div.innerHTML;
+  }
+
+  // Naziv priložene datoteke prikazuje se PRVI, u vlastitom retku iznad
+  // sličice/oznake — inače je jedino vizualno vidljivo bilo polje za
+  // poravnanje slike ("Puna širina" i sl.), pa se nije moglo na prvi
+  // pogled vidjeti JE li i KOJA datoteka zapravo priložena (Sašin
+  // izričit zahtjev nakon zabune oko "Nije odabrana niti jedna datoteka").
+  function faqMediaPreviewHtml_(vrsta, fileId, naziv) {
     if (!fileId) { return ''; }
+    var nazivHtml = naziv ? '<div class="faq-media-naziv">📎 ' + escapeHtmlFaq_(naziv) + '</div>' : '';
     if (vrsta === 'slika') {
-      return '<img src="https://drive.google.com/thumbnail?id=' + encodeURIComponent(fileId) + '&sz=w100" alt="">' +
+      return nazivHtml +
+        '<img src="https://drive.google.com/thumbnail?id=' + encodeURIComponent(fileId) + '&sz=w100" alt="">' +
         '<button type="button" class="faq-media-remove">✕ Ukloni</button>';
     }
     var oznaka = (vrsta === 'video') ? '🎬 Video priložen' : '📄 PDF priložen';
-    return '<span>' + oznaka + '</span>' +
+    return nazivHtml +
+      '<span>' + oznaka + '</span>' +
       '<a href="https://drive.google.com/file/d/' + encodeURIComponent(fileId) + '/view" target="_blank" rel="noopener">↗ otvori</a>' +
       '<button type="button" class="faq-media-remove">✕ Ukloni</button>';
   }
 
-  function setFaqMediaItem_(itemEl, fileId) {
+  function setFaqMediaItem_(itemEl, fileId, naziv) {
     if (!itemEl) { return; }
     itemEl.dataset.fileId = fileId || '';
+    if (naziv !== undefined) { itemEl.dataset.naziv = naziv || ''; }
     var preview = itemEl.querySelector('.faq-admin-media-preview');
-    preview.innerHTML = faqMediaPreviewHtml_(itemEl.dataset.vrsta, fileId);
+    preview.innerHTML = faqMediaPreviewHtml_(itemEl.dataset.vrsta, fileId, itemEl.dataset.naziv);
     var removeBtn = preview.querySelector('.faq-media-remove');
     if (removeBtn) {
-      removeBtn.addEventListener('click', function() { setFaqMediaItem_(itemEl, ''); });
+      removeBtn.addEventListener('click', function() { itemEl.dataset.naziv = ''; setFaqMediaItem_(itemEl, ''); });
     }
   }
 
@@ -1177,14 +1286,48 @@
   // datoteke odmah je šalje (adminFaqUploadMedia), a dobiveni Drive file ID
   // pamti se u data-file-id atributu tog polja (koristi ga faqItemFileId_
   // pri spremanju pitanja).
+  // Dok se prilog šalje na Drive (adminFaqUploadMedia), gumb za spremanje
+  // pitanja (faq-save-btn) je NAMJERNO onemogućen — u suprotnom je moguće
+  // kliknuti "Dodaj pitanje"/"Spremi" prije nego se upload stigne završiti
+  // i pošalje prazan slikaId (setFaqMediaItem_ se poziva tek u .then()
+  // nakon uploada), pa se pitanje spremi BEZ priloga iako je datoteka
+  // izgledala kao da je odabrana. cardEl.dataset.faqUploadsUToku broji
+  // koliko je trenutno aktivnih uploada unutar te kartice (slika+video+PDF
+  // mogu ići istovremeno) — gumb se vraća tek kad brojač padne na 0.
   function wireFaqMediaInputs_(cardEl) {
     var statusEl = cardEl.querySelector('.faq-admin-status');
+    var submitBtn = cardEl.querySelector('.faq-save-btn');
     cardEl.querySelectorAll('.faq-admin-media-item').forEach(function(itemEl) {
       var input = itemEl.querySelector('.faq-media-input');
       input.addEventListener('change', function() {
         var file = input.files && input.files[0];
         if (!file) { return; }
-        if (statusEl) { statusEl.textContent = 'Slanje datoteke "' + file.name + '"...'; statusEl.className = 'faq-admin-status'; }
+        // Apps Script Web App ima praktično ograničenje veličine POST tijela
+        // (base64 kodiranje uvećava datoteku ~37%, plus JSON omot) — velike
+        // video datoteke (i ponekad fotografije visoke rezolucije s mobitela)
+        // mogu tiho pasti na tom limitu. Ovdje blokiramo prije slanja uz
+        // jasnu poruku, umjesto da pitanje na kraju ispadne spremljeno BEZ
+        // priloga a da korisnik i ne primijeti zašto — korisnikov prijavljeni
+        // problem ("video/slika se ne pojavi, samo PDF").
+        var MAX_MB = 20;
+        var velicinaMB = file.size / (1024 * 1024);
+        if (velicinaMB > MAX_MB) {
+          input.value = '';
+          if (statusEl) {
+            statusEl.textContent = '❌ Datoteka "' + file.name + '" je ' + velicinaMB.toFixed(1) + ' MB — prevelika za slanje (ograničenje ' + MAX_MB + ' MB). Smanjite rezoluciju/trajanje ili datoteku pošaljite drugim putem.';
+            statusEl.className = 'faq-admin-status error';
+          }
+          return;
+        }
+        var uToku = (parseInt(cardEl.dataset.faqUploadsUToku, 10) || 0) + 1;
+        cardEl.dataset.faqUploadsUToku = String(uToku);
+        if (submitBtn) { submitBtn.disabled = true; }
+        if (statusEl) { statusEl.textContent = 'Slanje datoteke "' + file.name + '" (' + velicinaMB.toFixed(1) + ' MB)...'; statusEl.className = 'faq-admin-status'; }
+        var zavrsiUpload = function() {
+          var preostalo = Math.max(0, (parseInt(cardEl.dataset.faqUploadsUToku, 10) || 1) - 1);
+          cardEl.dataset.faqUploadsUToku = String(preostalo);
+          if (preostalo === 0 && submitBtn) { submitBtn.disabled = false; }
+        };
         var reader = new FileReader();
         reader.onload = function() {
           var base64 = String(reader.result).split(',')[1] || '';
@@ -1192,16 +1335,18 @@
             action: 'adminFaqUploadMedia', token: adminToken,
             base64Data: base64, mimeType: file.type || 'application/octet-stream', filename: file.name
           }).then(function(res) {
+            zavrsiUpload();
             if (handleAuthError(res)) { return; }
             if (res.status !== 'ok') {
-              if (statusEl) { statusEl.textContent = res.message || 'Slanje datoteke nije uspjelo.'; statusEl.className = 'faq-admin-status error'; }
+              if (statusEl) { statusEl.textContent = '❌ ' + (res.message || 'Slanje datoteke nije uspjelo.') + ' (datoteka: ' + velicinaMB.toFixed(1) + ' MB — ako je velika, pokušajte manju verziju.)'; statusEl.className = 'faq-admin-status error'; }
               return;
             }
-            setFaqMediaItem_(itemEl, res.id);
-            if (statusEl) { statusEl.textContent = 'Datoteka poslana — ne zaboravite spremiti pitanje.'; statusEl.className = 'faq-admin-status'; }
+            setFaqMediaItem_(itemEl, res.id, file.name);
+            if (statusEl) { statusEl.textContent = '✅ Datoteka poslana — sad možete spremiti pitanje.'; statusEl.className = 'faq-admin-status'; }
             input.value = '';
           }).catch(function() {
-            if (statusEl) { statusEl.textContent = 'Greška u komunikaciji s poslužiteljem.'; statusEl.className = 'faq-admin-status error'; }
+            zavrsiUpload();
+            if (statusEl) { statusEl.textContent = '❌ Greška u komunikaciji s poslužiteljem — moguće da je datoteka (' + velicinaMB.toFixed(1) + ' MB) prevelika ili je veza prekinuta. Pokušajte ponovno ili s manjom datotekom.'; statusEl.className = 'faq-admin-status error'; }
           });
         };
         reader.readAsDataURL(file);
@@ -1228,7 +1373,7 @@
       '</div>' +
       '<div class="faq-admin-card-actions">' +
         '<span class="faq-admin-status"></span>' +
-        '<button type="button" class="btn btn-small">Dodaj pitanje</button>' +
+        '<button type="button" class="btn btn-small faq-save-btn">Dodaj pitanje</button>' +
       '</div>';
     wrap.querySelector('.faq-admin-card-actions .btn').addEventListener('click', function() {
       submitNewFaq_(wrap);
@@ -1301,9 +1446,9 @@
     wrap.querySelector('.faq-odgovor-input').value = entry.odgovor || '';
     wrap.querySelector('.faq-redoslijed-input').value = (entry.redoslijed === '' || entry.redoslijed === null || entry.redoslijed === undefined) ? '' : entry.redoslijed;
     wireFaqMediaInputs_(wrap);
-    setFaqMediaItem_(wrap.querySelector('.faq-admin-media-item[data-vrsta="slika"]'), entry.slikaId);
-    setFaqMediaItem_(wrap.querySelector('.faq-admin-media-item[data-vrsta="video"]'), entry.videoId);
-    setFaqMediaItem_(wrap.querySelector('.faq-admin-media-item[data-vrsta="pdf"]'), entry.pdfId);
+    setFaqMediaItem_(wrap.querySelector('.faq-admin-media-item[data-vrsta="slika"]'), entry.slikaId, entry.slikaNaziv);
+    setFaqMediaItem_(wrap.querySelector('.faq-admin-media-item[data-vrsta="video"]'), entry.videoId, entry.videoNaziv);
+    setFaqMediaItem_(wrap.querySelector('.faq-admin-media-item[data-vrsta="pdf"]'), entry.pdfId, entry.pdfNaziv);
     setFaqSlikaPoravnanje_(wrap, entry.slikaPoravnanje);
     wrap.querySelector('.faq-save-btn').addEventListener('click', function() {
       submitEditFaq_(wrap, entry.rowIndex);
@@ -1425,38 +1570,54 @@
     card.className = 'entry-card';
     card.dataset.rowIndex = entry.rowIndex;
 
+    var broj = fieldVal(entry, 'Broj');
     var naziv = fieldVal(entry, 'Naziv tvrtke') || '(bez naziva)';
-    var timestamp = fieldVal(entry, 'Timestamp');
+    var oib = fieldVal(entry, 'OIB');
+    var timestamp = fieldVal(entry, 'Timestamp'); // "dd.MM.yyyy. HH:mm"
+    var datumDio = '', vrijemeDio = '';
+    if (timestamp) {
+      var zadnjiRazmak = timestamp.lastIndexOf(' ');
+      if (zadnjiRazmak !== -1) {
+        datumDio = timestamp.substring(0, zadnjiRazmak);
+        vrijemeDio = timestamp.substring(zadnjiRazmak + 1);
+      } else {
+        datumDio = timestamp;
+      }
+    }
+    var trajanje = fieldVal(entry, 'Vrijeme popunjavanja (trajanje)');
+    var mail;
+    if (entry.status === 'Interes') { mail = fieldVal(entry, 'Email kontakt osobe'); }
+    else { mail = fieldVal(entry, 'Email (odbijenica)'); }
+
+    // Redoslijed prikaza u sažetku kartice (Sašin izričit zahtjev): Broj —
+    // Naziv — OIB — Mail — Datum unosa — Vrijeme — Trajanje popunjavanja,
+    // odmah vidljivo bez otvaranja kartice. Ostali podaci (kontakt/mobitel
+    // za Interes, telefon/razlog za Odbijenicu) ostaju iza, kao dodatak.
     var subParts = [];
+    if (oib) { subParts.push('OIB: ' + esc(oib)); }
+    if (mail) { subParts.push(esc(mail)); }
+    if (datumDio) { subParts.push(esc(datumDio)); }
+    if (vrijemeDio) { subParts.push(esc(vrijemeDio)); }
+    if (trajanje) { subParts.push('Trajanje popunjavanja: ' + esc(trajanje)); }
     if (entry.status === 'Interes') {
       var kontakt = fieldVal(entry, 'Kontakt osoba');
       var mobitel = fieldVal(entry, 'Mobitel');
-      var email = fieldVal(entry, 'Email kontakt osobe');
       if (kontakt) { subParts.push(esc(kontakt)); }
       if (mobitel) { subParts.push(esc(mobitel)); }
-      if (email) { subParts.push(esc(email)); }
     } else {
       var tel = fieldVal(entry, 'Telefon (odbijenica)');
-      var mail = fieldVal(entry, 'Email (odbijenica)');
       var razlog = fieldVal(entry, 'Razlog (odbijenica)');
       if (tel) { subParts.push(esc(tel)); }
-      if (mail) { subParts.push(esc(mail)); }
       if (razlog) { subParts.push(esc(razlog)); }
     }
-    // Vrijeme popunjavanja (automatski izračunato na frontendu klijenta, od
-    // dolaska na stranicu do slanja upitnika) — prikazano odmah u naslovu
-    // kartice radi brzog uvida, bez potrebe za širenjem kartice.
-    var trajanje = fieldVal(entry, 'Vrijeme popunjavanja (trajanje)');
-    if (trajanje) { subParts.push('Trajanje popunjavanja: ' + esc(trajanje)); }
 
     var head = document.createElement('div');
     head.className = 'entry-card-head';
     head.innerHTML =
       '<label class="entry-select-wrap"><input type="checkbox" class="entry-select-cb"></label>' +
       '<div>' +
-        '<div class="entry-card-title">' + esc(naziv) + '</div>' +
+        '<div class="entry-card-title">' + (broj ? '<span class="entry-broj-badge">' + esc(broj) + '</span>' : '') + esc(naziv) + '</div>' +
         '<div class="entry-card-sub">' +
-          (timestamp ? '<span>' + esc(timestamp) + '</span>' : '') +
           subParts.map(function(p){ return '<span>' + p + '</span>'; }).join('') +
         '</div>' +
       '</div>' +
@@ -1484,7 +1645,7 @@
     table.className = 'field-table';
     var editableInputs = [];
     Object.keys(entry.fields).forEach(function(label) {
-      if (label === 'Tip') { return; }
+      if (label === 'Tip' || label === 'Broj') { return; } // Broj je već prikazan u naslovu kartice, nepromjenjiv je
       if (label.indexOf('(admin)') !== -1) { return; } // admin polja se prikazuju u posebnom obrascu iznad
       if (label === 'Naziv tvrtke' || label === 'OIB') { return; } // imaju svoj poseban obrazac niže
       var v = entry.fields[label];
@@ -1594,15 +1755,35 @@
     card.className = 'entry-card';
     card.dataset.rowIndex = entry.rowIndex;
 
+    var broj = fieldVal(entry, 'Broj');
     var naziv = fieldVal(entry, 'Naziv poslovnog subjekta') || '(bez naziva)';
-    var timestamp = fieldVal(entry, 'Timestamp');
+    var oib = fieldVal(entry, 'OIB poslovnog subjekta');
+    var timestamp = fieldVal(entry, 'Timestamp'); // "dd.MM.yyyy. HH:mm"
+    var datumDio = '', vrijemeDio = '';
+    if (timestamp) {
+      var zadnjiRazmak = timestamp.lastIndexOf(' ');
+      if (zadnjiRazmak !== -1) {
+        datumDio = timestamp.substring(0, zadnjiRazmak);
+        vrijemeDio = timestamp.substring(zadnjiRazmak + 1);
+      } else {
+        datumDio = timestamp;
+      }
+    }
+    var trajanje = fieldVal(entry, 'Vrijeme popunjavanja (trajanje)');
+    var email = fieldVal(entry, 'E-mail adresa osobe koja ispunjava anketu');
+
+    // Isti redoslijed kao kod buildEntryCard() (Sašin izričit zahtjev): Broj
+    // — Naziv — OIB — Mail — Datum unosa — Vrijeme — Trajanje popunjavanja.
     var subParts = [];
+    if (oib) { subParts.push('OIB: ' + esc(oib)); }
+    if (email) { subParts.push(esc(email)); }
+    if (datumDio) { subParts.push(esc(datumDio)); }
+    if (vrijemeDio) { subParts.push(esc(vrijemeDio)); }
+    if (trajanje) { subParts.push('Trajanje popunjavanja: ' + esc(trajanje)); }
     var kontakt = fieldVal(entry, 'Ime i prezime osobe koja ispunjava anketu');
     var telefon = fieldVal(entry, 'Broj telefona osobe koja ispunjava anketu');
-    var email = fieldVal(entry, 'E-mail adresa osobe koja ispunjava anketu');
     if (kontakt) { subParts.push(esc(kontakt)); }
     if (telefon) { subParts.push(esc(telefon)); }
-    if (email) { subParts.push(esc(email)); }
 
     var prosjekHtml = '';
     if (entry.prosjek !== null && entry.prosjek !== undefined) {
@@ -1614,9 +1795,8 @@
     head.innerHTML =
       '<label class="entry-select-wrap"><input type="checkbox" class="entry-select-cb"></label>' +
       '<div>' +
-        '<div class="entry-card-title">' + esc(naziv) + prosjekHtml + '</div>' +
+        '<div class="entry-card-title">' + (broj ? '<span class="entry-broj-badge">' + esc(broj) + '</span>' : '') + esc(naziv) + prosjekHtml + '</div>' +
         '<div class="entry-card-sub">' +
-          (timestamp ? '<span>' + esc(timestamp) + '</span>' : '') +
           subParts.map(function(p){ return '<span>' + p + '</span>'; }).join('') +
         '</div>' +
       '</div>' +
@@ -1639,7 +1819,7 @@
     var table = document.createElement('table');
     table.className = 'field-table';
     Object.keys(entry.fields).forEach(function(label) {
-      if (label === 'Timestamp') { return; }
+      if (label === 'Timestamp' || label === 'Broj') { return; } // Broj je već prikazan u naslovu kartice
       if (label === 'Naziv poslovnog subjekta') { return; } // već prikazano u naslovu kartice
       var v = entry.fields[label];
       if (v === '' || v === null || v === undefined) { return; }

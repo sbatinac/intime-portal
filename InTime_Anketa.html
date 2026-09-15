@@ -232,7 +232,7 @@
 
       <div id="anketa-zahvala" class="confirm-msg">
         <div class="check">✓</div>
-        <p>Hvala Vam na izdvojenom vremenu i iskrenim odgovorima. Vaše mišljenje pomoći će nam unaprijediti kvalitetu naših usluga i daljnju suradnju.</p>
+        <p id="anketa-zahvala-tekst">Hvala Vam na izdvojenom vremenu i iskrenim odgovorima. Vaše mišljenje pomoći će nam unaprijediti kvalitetu naših usluga i daljnju suradnju.</p>
       </div>
 
       <form id="anketa-form" onsubmit="return submitAnketa(event)">
@@ -565,7 +565,7 @@
     if (samoBrojevi !== input.value) { input.value = samoBrojevi; }
   }
 
-  function submitAnketa(e){
+  async function submitAnketa(e){
     e.preventDefault();
     var form = document.getElementById('anketa-form');
 
@@ -623,14 +623,29 @@
       }
     });
 
-    fetch(GAS_WEB_APP_URL, {
-      method: 'POST',
-      mode: 'no-cors',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify(payload)
-    }).catch(function(){ /* ignoriramo — no-cors ionako ne vraća čitljiv odgovor */ });
+    // POST na Apps Script backend — čekamo i čitamo stvarni JSON odgovor
+    // (isti obrazac kao u InTime_PismoNamjere.html) da bismo klijentu odmah
+    // mogli prikazati dodijeljeni broj (OCJENA-..., vidi generirajBroj_ u
+    // InTime_Code.gs). "Fail-open": ako sam poziv ne uspije, klijent
+    // svejedno vidi zahvalu (bez broja).
+    var _broj = '';
+    try {
+      var _posaljiResp = await fetch(GAS_WEB_APP_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify(payload)
+      });
+      var _posaljiJson = await _posaljiResp.json();
+      _broj = (_posaljiJson && _posaljiJson.broj) || '';
+    } catch (posaljiErr) {
+      _broj = '';
+    }
 
     document.getElementById('anketa-form-wrap').style.display = 'none';
+    var _zahvalaTekstEl = document.getElementById('anketa-zahvala-tekst');
+    if (_zahvalaTekstEl) {
+      _zahvalaTekstEl.textContent = 'Predali ste ocjenu kvalitete' + (_broj ? ' — broj ' + _broj : '') + '. Hvala Vam na izdvojenom vremenu i iskrenim odgovorima. Vaše mišljenje pomoći će nam unaprijediti kvalitetu naših usluga i daljnju suradnju.';
+    }
     document.getElementById('anketa-zahvala').classList.add('active');
     window.scrollTo({top:0, behavior:'smooth'});
     return false;
