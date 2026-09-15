@@ -658,6 +658,27 @@
     }
     document.getElementById('anketa-zahvala').classList.add('active');
     window.scrollTo({top:0, behavior:'smooth'});
+    // BUG NAĐEN 15.9.2026. (Sašin nalaz — nakon slanja ankete "ostane otvoren
+    // okvir stranice... tekst nestane ali se ne povuče nazad"): ova stranica
+    // se često puni UNUTAR <iframe>-a na InTime_PismoNamjere.html (gumb "Već
+    // ste naš klijent? Ocijenite kvalitetu..."), koja taj iframe kontinuirano
+    // visinski prilagođava sadržaju (resizeAnketaIframe(), svakih 800ms).
+    // Gornji window.scrollTo(top:0) skroluje samo UNUTAR ovog iframe-a — kad
+    // se forma (dosad vrlo visoka, 25+ pitanja) zamijeni kratkom zahvalom,
+    // iframe se izvana naglo smanji, ali VANJSKA stranica ostaje skrolana na
+    // staroj poziciji (duboko dolje, gdje je korisnik upravo ocjenjivao
+    // zadnje pitanje) — taj prostor je sad prazan jer se sav sadržaj sažeo
+    // prema vrhu, otud dojam "prazne stranice" koju treba ručno skrolati
+    // gore da se vidi zahvala. Rješenje: javi RODITELJSKOM prozoru (ako
+    // postoji, tj. ako se ova stranica trenutno prikazuje unutar iframe-a) da
+    // je anketa poslana, kako bi on mogao odmah osvježiti visinu iframe-a i
+    // vratiti VANJSKI scroll na vrh okvira ankete — vidi odgovarajući
+    // 'message' listener u InTime_PismoNamjere.html. Kad se ova stranica
+    // otvori samostalno (izravan link, bez iframe-a), window.parent === window
+    // pa se ništa dodatno ne šalje.
+    if (window.parent && window.parent !== window) {
+      try { window.parent.postMessage({ intimeAnketaSubmitted: true }, '*'); } catch (postMsgErr) { /* bezopasno ako ne uspije */ }
+    }
     return false;
   }
 </script>

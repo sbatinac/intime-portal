@@ -328,6 +328,10 @@
   /* Interna napomena — veliko polje slobodnog teksta, preko cijele širine
      grida (bez obzira je li grid trenutno u 2 ili 1 stupca). */
   .admin-fields-grid .af-napomena-wrap{grid-column:1 / -1;}
+  /* Sašin izričit zahtjev (15.9.2026.) — "Datum slanja ponude 1/2/3" grupirani
+     u JEDNU grid-ćeliju koja ih iznutra slaže okomito, jedno ispod drugoga,
+     umjesto da se (kao ostala polja) prelijevaju kroz 2-stupčanu mrežu. */
+  .admin-fields-grid .af-stack{display:flex;flex-direction:column;gap:10px;}
   .admin-fields textarea{
     width:100%;
     padding:8px 10px;
@@ -1883,7 +1887,19 @@
     poredajLabeleZaPrikaz_(entry).forEach(function(label) {
       if (label === 'Tip' || label === 'Broj') { return; } // Broj je već prikazan u naslovu kartice, nepromjenjiv je
       if (label.indexOf('(admin)') !== -1) { return; } // admin polja se prikazuju u posebnom obrascu iznad
-      if (label === 'Naziv tvrtke' || label === 'OIB') { return; } // imaju svoj poseban obrazac niže
+      // NAPOMENA 15.9.2026. (Sašin izričit zahtjev): za Interes ("Zainteresirani"/
+      // "Novi klijenti") 'Naziv tvrtke' i 'OIB' se i dalje izostavljaju ovdje jer
+      // imaju svoj poseban UREDLJIVI obrazac niže (buildNazivOibBlock, vidi
+      // entry.status === 'Interes' granu ispod). No taj poseban obrazac se NE
+      // prikazuje za Odbijenicu (nema smisla nuditi izmjenu naziva/OIB-a za
+      // tvrtku koja je odbila ponudu), pa su ta dva polja dosad kod Odbijenice
+      // bila potpuno nevidljiva čak i u otvorenoj kartici. Ograničavanjem
+      // izostavljanja samo na Interes, kod Odbijenice ova polja sad prolaze
+      // kroz generičku (samo za čitanje) tablicu ispod — a budući da UPIT_FIELDS
+      // u Code.gs ima 'Naziv tvrtke' odmah prije 'OIB' (razmak čine polja koja su
+      // kod Odbijenice prazna, pa se automatski preskaču), naziv će se pojaviti
+      // neposredno iznad OIB-a, kako je traženo.
+      if (entry.status === 'Interes' && (label === 'Naziv tvrtke' || label === 'OIB')) { return; }
       var v = entry.fields[label];
       if (v === '' || v === null || v === undefined) { return; }
       var tr = document.createElement('tr');
@@ -2057,7 +2073,15 @@
     table.className = 'field-table';
     Object.keys(entry.fields).forEach(function(label) {
       if (label === 'Timestamp' || label === 'Broj') { return; } // Broj je već prikazan u naslovu kartice
-      if (label === 'Naziv poslovnog subjekta') { return; } // već prikazano u naslovu kartice
+      // NAPOMENA 15.9.2026. (Sašin izričit zahtjev): "Naziv poslovnog subjekta"
+      // se VIŠE ne izostavlja ovdje — ranije je bio isključen jer je već
+      // prikazan (skraćeno) u naslovu kartice, ali Saša želi da se puni naziv
+      // vidi i unutar otvorene kartice, odmah IZNAD OIB-a. Budući da
+      // ANKETA_FIELDS u Code.gs već ima 'Naziv poslovnog subjekta' odmah prije
+      // 'OIB poslovnog subjekta', a ovaj generički prikaz ide redom kojim
+      // polja stižu iz tablice (isti redoslijed kao ANKETA_FIELDS), dovoljno
+      // je maknuti isključivanje — naziv će se sam pojaviti iznad OIB-a, bez
+      // dodatnog ručnog premještanja.
       var v = entry.fields[label];
       if (v === '' || v === null || v === undefined) { return; }
       var tr = document.createElement('tr');
@@ -2105,13 +2129,45 @@
   // vrijednost kao početni prijedlog, 10) interna napomena na kraju (kao i
   // dosad). Ovo je "prva faza" (samo polja) — automatizacija/obavijesti oko
   // ovih podataka dolaze kasnije, po Sašinom planu.
+  // Sašin izričit zahtjev (15.9.2026., "testirao sam unos podataka otkrio sam
+  // jednu malu pogreškicu ka klizno odredi vrijeme prikupa...u adminu zelim 2
+  // podatka zadnji termin za unso naloga i drugi pdoatak najraniji momenat
+  // dolaska vozila na prikup to je ovo za 30 minuta sknije"): klizač na
+  // upitniku (InTime_PismoNamjere.html, poglavlje 6) klijentu prikazuje DVA
+  // izvedena vremena — "zadnje vrijeme za unos u OB" i "vrijeme prikupa" — ali
+  // u bazu/admin se dosad spremala SAMO jedna vrijednost (sam odabir klijenta,
+  // vrijeme dolaska vozila), pa je admin vidio samo jedan podatak umjesto oba.
+  // Ova funkcija sad iz TE JEDNE spremljene klijentove vrijednosti izračunava
+  // i drugu (oduzimanjem pola sata), po ISTOJ logici kao na upitniku (vidi
+  // formatVrijemePrikupa()/updateVrijemePrikupa() u InTime_PismoNamjere.html)
+  // — tako da admin odmah vidi oba podatka, bez ručnog računanja.
+  // Preimenovano iz oduzmi30MinutaOdVremena_ u općenitiji pomakniVrijeme_(hhmm,
+  // deltaMin) — 15.9.2026., isti dan, drugi Sašin zahtjev ("a mi možemo to
+  // podesiti... i kad to podesimo automatski se pola sata kasnije podesi
+  // vrijeme prikupa"): sad treba pomicati vrijeme u OBA smjera (i oduzimati
+  // za prikaz izvornog izračuna, i dodavati kad admin ručno promijeni "Zadnji
+  // termin za unos naloga", pa se "Najraniji dolazak vozila" mora automatski
+  // pomjeriti 30 min UNAPRIJED) — vidi listener na .af-vrijeme niže.
+  function pomakniVrijeme_(hhmm, deltaMin) {
+    if (!hhmm || !/^\d{1,2}:\d{2}$/.test(String(hhmm))) { return ''; }
+    var dijelovi = String(hhmm).split(':');
+    var ukupnoMin = parseInt(dijelovi[0], 10) * 60 + parseInt(dijelovi[1], 10) + deltaMin;
+    ukupnoMin = ((ukupnoMin % (24 * 60)) + 24 * 60) % (24 * 60);
+    function dv(n) { return (n < 10 ? '0' : '') + n; }
+    return dv(Math.floor(ukupnoMin / 60)) + ':' + dv(ukupnoMin % 60);
+  }
+
   function buildAdminFieldsBlock(entry) {
     var wrap = document.createElement('div');
     wrap.className = 'admin-fields';
     var vrijemePrikupaKlijent = fieldVal(entry, 'Vrijeme prikupa pošiljaka (dolazak vozila)');
     var vrijemePrikupaAdmin = fieldVal(entry, 'Vrijeme prikupa — ručno uređeno (admin)');
     var vrijemePrikupaPrikaz = vrijemePrikupaAdmin || vrijemePrikupaKlijent;
-    var vrijemePrikupaLabel = 'Vrijeme prikupa' + ((!vrijemePrikupaAdmin && vrijemePrikupaKlijent) ? ' (preporuka klijenta — može se urediti)' : ' (ručno uređeno)');
+    var vrijemePrikupaLabel = 'Najraniji dolazak vozila na prikup' + ((!vrijemePrikupaAdmin && vrijemePrikupaKlijent) ? ' (preporuka klijenta — može se urediti)' : ' (ručno uređeno)');
+    var zadnjeVrijemeUnosaAdmin = fieldVal(entry, 'Zadnje vrijeme unosa naloga (admin)');
+    var zadnjeVrijemeUnosaIzracunato = pomakniVrijeme_(vrijemePrikupaKlijent, -30);
+    var zadnjeVrijemeUnosaPrikaz = zadnjeVrijemeUnosaAdmin || zadnjeVrijemeUnosaIzracunato;
+    var zadnjeVrijemeUnosaLabel = 'Zadnji termin za unos naloga' + ((!zadnjeVrijemeUnosaAdmin && zadnjeVrijemeUnosaIzracunato) ? ' (izračunato iz odabira klijenta — može se urediti)' : (!zadnjeVrijemeUnosaAdmin ? '' : ' (ručno uređeno)'));
     wrap.innerHTML =
       '<h3>Podaci koje popunjava In Time (nakon otvaranja klijenta)</h3>' +
       '<div class="admin-fields-grid">' +
@@ -2119,14 +2175,32 @@
           '<input type="text" class="af-sifra-upitnika" value="' + esc(fieldVal(entry, 'Broj')) + '" readonly></div>' +
         '<div><label>Datum popunjavanja online prodajnog upitnika</label>' +
           '<input type="text" class="af-datum" placeholder="npr. 25.09.2026 13h 45 minuta 34 sekunde" value="' + esc(fieldVal(entry, 'Datum otvaranja klijenta u sustavu (admin)')) + '"></div>' +
-        '<div><label>Šifra ponude</label>' +
-          '<input type="text" class="af-sifra-ponude" placeholder="interna šifra ponude" value="' + esc(fieldVal(entry, 'Šifra ponude (admin)')) + '"></div>' +
-        '<div><label>Datum slanja ponude 1</label>' +
-          '<input type="text" class="af-datum-ponude-1" placeholder="npr. 25.09.2026" value="' + esc(fieldVal(entry, 'Datum slanja ponude 1 (admin)')) + '"></div>' +
-        '<div><label>Datum slanja ponude 2</label>' +
-          '<input type="text" class="af-datum-ponude-2" placeholder="npr. 25.09.2026" value="' + esc(fieldVal(entry, 'Datum slanja ponude 2 (admin)')) + '"></div>' +
-        '<div><label>Datum slanja ponude 3</label>' +
-          '<input type="text" class="af-datum-ponude-3" placeholder="npr. 25.09.2026" value="' + esc(fieldVal(entry, 'Datum slanja ponude 3 (admin)')) + '"></div>' +
+        // Sašin izričit zahtjev (15.9.2026., "šifra ponude.. Interna In Time
+        // šifra ponude - INTRIX"): naziv polja pojašnjen da je riječ o
+        // internoj In Time šifri ponude iz sustava INTRIX, da ne bude
+        // zabune s "Brojem" upitnika/ponude iz ovog sustava.
+        '<div><label>Interna In Time šifra ponude (INTRIX)</label>' +
+          '<input type="text" class="af-sifra-ponude" placeholder="npr. šifra ponude iz INTRIX-a" value="' + esc(fieldVal(entry, 'Šifra ponude (admin)')) + '"></div>' +
+        // Sašin izričit zahtjev (15.9.2026., "na polje Datum slanja ponude 1,
+        // na to mjesto stavi polje koje ću ručno unijeti, zove se
+        // Identifikacijski TM broj klijenta... a Datum slanja ponude 1/2/3
+        // neka budu polja jedno ispod drugoga"): novo polje sad zauzima TOČNO
+        // mjesto na kojem je prije bilo "Datum slanja ponude 1" (ovdje, prvo
+        // u nizu nakon Šifre ponude), a sva tri "Datum slanja ponude"
+        // premještena su u jedan zaseban .af-stack blok odmah iza — jedna
+        // grid-ćelija koja iznutra slaže polja okomito, jedno ispod drugoga,
+        // umjesto da se (kao dosad) prelijevaju izmiješano kroz 2-stupčanu
+        // mrežu.
+        '<div><label>Identifikacijski TM broj klijenta</label>' +
+          '<input type="text" class="af-tm-broj" placeholder="npr. TM broj klijenta" value="' + esc(fieldVal(entry, 'Identifikacijski TM broj klijenta (admin)')) + '"></div>' +
+        '<div class="af-stack">' +
+          '<div><label>Datum slanja ponude 1</label>' +
+            '<input type="text" class="af-datum-ponude-1" placeholder="npr. 25.09.2026" value="' + esc(fieldVal(entry, 'Datum slanja ponude 1 (admin)')) + '"></div>' +
+          '<div><label>Datum slanja ponude 2</label>' +
+            '<input type="text" class="af-datum-ponude-2" placeholder="npr. 25.09.2026" value="' + esc(fieldVal(entry, 'Datum slanja ponude 2 (admin)')) + '"></div>' +
+          '<div><label>Datum slanja ponude 3</label>' +
+            '<input type="text" class="af-datum-ponude-3" placeholder="npr. 25.09.2026" value="' + esc(fieldVal(entry, 'Datum slanja ponude 3 (admin)')) + '"></div>' +
+        '</div>' +
         '<div><label>Datum prihvaćanja ponude</label>' +
           '<input type="text" class="af-datum-prihvacanja" placeholder="npr. 25.09.2026" value="' + esc(fieldVal(entry, 'Datum prihvaćanja ponude (admin)')) + '"></div>' +
         '<div><label>Datum otvaranja Online Bookinga</label>' +
@@ -2135,8 +2209,8 @@
           '<input type="text" class="af-username" value="' + esc(fieldVal(entry, 'OB korisničko ime (admin)')) + '"></div>' +
         '<div><label>Online Booking — lozinka</label>' +
           '<input type="text" class="af-password" value="' + esc(fieldVal(entry, 'OB lozinka (admin)')) + '"></div>' +
-        '<div><label>Zadnje vrijeme unosa naloga</label>' +
-          '<input type="time" class="af-vrijeme" value="' + esc(fieldVal(entry, 'Zadnje vrijeme unosa naloga (admin)')) + '"></div>' +
+        '<div><label>' + esc(zadnjeVrijemeUnosaLabel) + '</label>' +
+          '<input type="time" class="af-vrijeme" value="' + esc(zadnjeVrijemeUnosaPrikaz) + '"></div>' +
         '<div><label>' + esc(vrijemePrikupaLabel) + '</label>' +
           '<input type="text" class="af-vrijeme-prikupa" placeholder="npr. 08:00 - 10:00" value="' + esc(vrijemePrikupaPrikaz) + '"></div>' +
         '<div class="af-napomena-wrap"><label>Interna napomena (samo za tebe, ne šalje se klijentu)</label>' +
@@ -2152,6 +2226,22 @@
     var saveBtn = wrap.querySelector('.admin-fields-actions .btn:not(.btn-prebaci)');
     var prebaciBtn = wrap.querySelector('.btn-prebaci');
 
+    // Sašin izričit zahtjev (15.9.2026., "kad to podesimo automatski se pola
+    // sata kasnije podesi vrijeme prikupa... automatski... ostavi sa strane
+    // mogućnost korekcije da kliknem i promijenim ručno ako želim da bude
+    // veći razmak od pola sata"): kad admin ručno promijeni "Zadnji termin za
+    // unos naloga", polje "Najraniji dolazak vozila na prikup" se AUTOMATSKI
+    // pomjeri na točno 30 min kasnije — ali samo kao prijedlog/default; admin
+    // i dalje može ručno kliknuti u to polje i upisati bilo koju drugu
+    // vrijednost (npr. veći razmak), i ta ručna izmjena se NE prepisuje sama
+    // od sebe (listener je samo na .af-vrijeme, ne obrnuto).
+    var afVrijeme = wrap.querySelector('.af-vrijeme');
+    var afVrijemePrikupa = wrap.querySelector('.af-vrijeme-prikupa');
+    afVrijeme.addEventListener('input', function(){
+      var pomjereno = pomakniVrijeme_(afVrijeme.value, 30);
+      if (pomjereno) { afVrijemePrikupa.value = pomjereno; }
+    });
+
     saveBtn.addEventListener('click', function(ev) {
       ev.stopPropagation();
       statusEl.textContent = 'Spremanje…';
@@ -2163,6 +2253,7 @@
         zadnje_vrijeme_unosa: wrap.querySelector('.af-vrijeme').value,
         interna_napomena: wrap.querySelector('.af-napomena').value,
         sifra_ponude: wrap.querySelector('.af-sifra-ponude').value,
+        identifikacijski_tm_broj: wrap.querySelector('.af-tm-broj').value,
         datum_slanja_ponude_1: wrap.querySelector('.af-datum-ponude-1').value,
         datum_slanja_ponude_2: wrap.querySelector('.af-datum-ponude-2').value,
         datum_slanja_ponude_3: wrap.querySelector('.af-datum-ponude-3').value,

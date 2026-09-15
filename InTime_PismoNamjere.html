@@ -652,6 +652,11 @@
   .form-section h3{margin:0 0 2px;font-size:14.5px;color:var(--purple-dark);text-transform:none;letter-spacing:0;}
   .form-section h3 .sec-subtitle{font-size:12px;font-weight:400;color:var(--grey);}
   .form-section .sec-hint{font-size:12px;color:var(--grey);margin:0 0 4px;}
+  /* Sašin izričit zahtjev (15.9.2026.) — podebljana varijanta .sec-hint naslova,
+     trenutno korištena samo za "Kontakt osoba u računovodstvu" (3. poglavlje),
+     kako bi taj pod-naslov vizualno odskakao od običnih .sec-hint napomena i
+     klijent odmah uočio da slijedi važan kontakt-podatak. */
+  .form-section .sec-hint-podebljano{font-weight:700;color:var(--purple-dark);font-size:13px;}
   .pair{display:grid;grid-template-columns:1fr 1fr;gap:0 16px;}
   select{
     width:100%;
@@ -1304,6 +1309,20 @@
           <h3>1. Podaci o unosu</h3>
           <p class="sec-hint">Datum i vrijeme dolaska na stranicu, vrijeme slanja upitnika i trajanje popunjavanja bilježe se automatski.</p>
           <input type="hidden" name="vrijeme_dolaska" id="vrijeme-dolaska-hidden-interes">
+          <!-- Sašin izričit zahtjev (15.9.2026., "datum stavi točno vrijeme kad je
+               počeo popunjavati ne kad je [stigao] na web stranicu... znači sve
+               upitnike gledamo od momenta kad je počeo popunjavati do momenta
+               kada je završio... datum sat,minuta,sekunda početka - sat minuta
+               sekunda završetka - ukupno trajalo"): "vrijeme_dolaska" mjeri dolazak
+               na CIJELU stranicu (ostaje netaknuto — koristi se za to, ne za
+               početak popunjavanja), a stvarni POČETAK popunjavanja OVOG upitnika
+               je trenutak kad se ovaj panel prvi put otvori (VRIJEME_OTVARANJA_PANELA,
+               vidi showPanel() niže — ista podloga koja se već koristi za ISPRAVAN
+               izračun trajanja, samo dosad nije bila poslana kao svoj vidljivi
+               podatak). "vrijeme_slanja" niže već predstavlja ZAVRŠETAK, a
+               "vrijeme_popunjavanja" već UKUPNO TRAJANJE — ovime su tako sva tri
+               tražena podatka (početak/završetak/trajanje) eksplicitno dostupna. -->
+          <input type="hidden" name="vrijeme_pocetka_popunjavanja" id="vrijeme-pocetka-popunjavanja-hidden-interes">
           <input type="hidden" name="vrijeme_slanja" id="vrijeme-slanja-hidden-interes">
           <input type="hidden" name="vrijeme_popunjavanja" id="vrijeme-popunjavanja-hidden-interes">
 
@@ -1420,16 +1439,33 @@
           <label>E-mail za primanje specifikacija uplata otkupnina *</label>
           <input type="email" name="email_specifikacija" required list="email-suggestions">
 
-          <p class="sec-hint" style="margin-top:14px;">Kontakt osoba u računovodstvu</p>
+          <!-- Sašin izričit zahtjev (15.9.2026., "kontakt osoba u računvopdstvu to
+               podeblaj - napisi obasnjenje / u slucjau potrebe za uskaldama,a
+               kompenazcijama, financisjkim akrticama, obavijestima za iskakanje iz
+               valute palcanja"): naslov ovog pod-odjeljka podebljan je (razlika
+               od standardnog .sec-hint stila korištenog svugdje drugdje u
+               obrascu — vidi .sec-hint-podebljano niže) i dodano je kratko
+               objašnjenje ZAŠTO tražimo baš ovaj kontakt, kako bi klijentu bilo
+               jasno da nije riječ o "još jednom" kontaktu nego o osobi s kojom
+               ćemo se stvarno javljati po financijskim pitanjima tijekom suradnje. -->
+          <p class="sec-hint sec-hint-podebljano" style="margin-top:14px;">Kontakt osoba u računovodstvu</p>
+          <p class="sec-hint" style="margin:0 0 8px;">Ovaj kontakt koristimo isključivo za financijska pitanja tijekom suradnje — primjerice u slučaju potrebe za usklađivanjem stanja (IOS), kompenzacijama, financijskim karticama, te za obavijesti ukoliko dođe do odstupanja od ugovorene valute plaćanja.</p>
 
+          <!-- Sašin izričit zahtjev (15.9.2026., "kontakt osobe u računovodstvu je
+               obavezan bez obzira na veličinu poslovnog subjekta za sve... i broj
+               telefona i mail adresa"): sva tri polja kontakta u računovodstvu su
+               sada obavezna (required + zvjezdica), za SVE veličine poduzeća — ovaj
+               pod-odjeljak NIJE dio MIKRO_RELAX_GROUPS (vidi updateMikroRequiredState()
+               niže u skripti), pa odabir "Mikro poduzeća" ni na koji način ne
+               utječe na ova tri polja, kako je i traženo. -->
           <label>Ime i prezime *</label>
           <input type="text" name="racunovodstvo_kontakt_ime" required>
 
-          <label>Broj telefona</label>
-          <input type="tel" name="racunovodstvo_kontakt_telefon">
+          <label>Broj telefona *</label>
+          <input type="tel" name="racunovodstvo_kontakt_telefon" required>
 
-          <label>Mail adresa</label>
-          <input type="email" name="racunovodstvo_kontakt_email" list="email-suggestions">
+          <label>Mail adresa *</label>
+          <input type="email" name="racunovodstvo_kontakt_email" list="email-suggestions" required>
         </div>
 
         <div class="form-section">
@@ -2097,6 +2133,24 @@
           </div>
         </div>
 
+        <!-- Sašin izričit zahtjev (15.9.2026., "možemo li još u upitnik na kraju
+             postaviti jedno pitanje... potvrdite na koju mail adresu želite da
+             Vam sustav pošalje ponudu... da onda budu ponuđene sve adrese koje
+             je unio sa checkboxom i to je obavezno pitanje"): posljednje pitanje
+             upitnika — checkbox popis SVIH e-mail adresa koje je klijent do sad
+             upisao bilo gdje u upitniku (automatski se gradi iz stvarnih
+             vrijednosti tih polja, ne iz statičnog popisa — vidi
+             azurirajPonudaEmailOpcije() niže), da Saša zna na koju/e adresu/e
+             klijent stvarno želi primiti ponudu. Obavezno (data-required-group),
+             ista generička provjera "barem jedna opcija" kao i ostale
+             checkbox-grupe u ovom upitniku. -->
+        <div class="form-section">
+          <h3>13. Potvrda adrese za slanje ponude</h3>
+          <label>Molimo Vas potvrdite na koju e-mail adresu (ili adrese) želite da Vam sustav pošalje ponudu. *</label>
+          <p class="sec-hint">Ponuđene su sve e-mail adrese koje ste naveli u ovom upitniku — odaberite jednu ili više njih.</p>
+          <div class="choice-group choice-group-1col" id="ponuda-email-izbor" data-required-group="Adresa za slanje ponude"></div>
+        </div>
+
         <datalist id="email-suggestions"></datalist>
         <datalist id="adresa-suggestions"></datalist>
         <datalist id="grad-suggestions"></datalist>
@@ -2116,6 +2170,11 @@
         <p style="font-size:13.5px;">Ako želite, odgovorite na nekoliko kratkih pitanja — pomaže nam da unaprijedimo ponudu.</p>
         <p class="required-note"><strong>Napomena:</strong> polja i pitanja označena zelenom bojom su obavezna za popunjavanje.</p>
         <input type="hidden" name="vrijeme_dolaska" id="vrijeme-dolaska-hidden-odbijenica">
+        <!-- Vidi opširnu napomenu uz isto polje u panel-interes iznad — ista
+             logika (početak popunjavanja OVOG panela) vrijedi i za Odbijenicu,
+             po Sašinom izričitom zahtjevu "sve upitnike gledamo od momenta kad
+             je počeo popunjavati do momenta kada je završio". -->
+        <input type="hidden" name="vrijeme_pocetka_popunjavanja" id="vrijeme-pocetka-popunjavanja-hidden-odbijenica">
         <input type="hidden" name="vrijeme_slanja" id="vrijeme-slanja-hidden-odbijenica">
         <input type="hidden" name="vrijeme_popunjavanja" id="vrijeme-popunjavanja-hidden-odbijenica">
 
@@ -2270,6 +2329,19 @@
       if (el) { el.value = formatirano; }
     });
   })();
+  // BUG NAĐEN 15.9.2026. (Sašin nalaz — "Vrijeme popunjavanja (trajanje)" za
+  // Odbijenicu pokazivalo puno više od stvarnog vremena provedenog u
+  // obrascu): trajanje se dosad računalo od VRIJEME_DOLASKA_DATE (trenutak
+  // učitavanja CIJELE stranice) do slanja — ako korisnik prvo neko vrijeme
+  // čita stranicu, gleda usluge itd. PRIJE nego uopće otvori upitnik/
+  // odbijenicu, sve to vrijeme pogrešno ulazi u "trajanje popunjavanja".
+  // VRIJEME_DOLASKA_DATE ostaje ISPRAVNO za polje "Vrijeme dolaska na
+  // stranicu" (to polje namjerno mjeri dolazak na stranicu, ne diramo ga) —
+  // ali za TRAJANJE POPUNJAVANJA sad se bilježi zaseban trenutak za svaki
+  // panel, ONOG TRENUTKA kad se panel stvarno otvori (showPanel() niže),
+  // pa se trajanje računa od TOG trenutka do slanja, ne od učitavanja
+  // stranice.
+  var VRIJEME_OTVARANJA_PANELA = {};
 
   // Broji SVAKO učitavanje ove stranice (ne jedinstvene posjetitelje) — tihi
   // "fire-and-forget" POST (isti no-cors obrazac kao submitForm() niže, ne
@@ -4373,6 +4445,77 @@
     });
   })();
 
+  // ---- 13. poglavlje — "Potvrda adrese za slanje ponude" ----
+  // Sašin izričit zahtjev (15.9.2026.): posljednje pitanje upitnika nudi kao
+  // checkbox opcije SVE e-mail adrese koje je klijent stvarno upisao bilo gdje
+  // u upitniku — gradi se dinamički iz TRENUTNIH vrijednosti tih polja (ne iz
+  // statičnog popisa), pa se ažurira uživo dok korisnik popunjava obrazac.
+  // NAMJERNO se ovdje ne koriste dodatni_ob_mail_{n} (mailovi za DRUGE
+  // poslovnice/osobe kod dodatnih Online Booking računa, 6. poglavlje) ni
+  // dodatni_ob_tablica_mail (mail za slanje EXCEL predloška, poseban tok) —
+  // ponuda ide na adresu(e) GLAVNE tvrtke/kontakta, ne na te posebne mailove.
+  var PONUDA_EMAIL_IZVORI = [
+    ['unosnik_email', 'osoba koja unosi podatke'],
+    ['email_tvrtke', 'glavna e-mail adresa tvrtke'],
+    ['email_racun', 'e-računi'],
+    ['email_specifikacija', 'specifikacije uplata otkupnina'],
+    ['racunovodstvo_kontakt_email', 'računovodstvo'],
+    ['odgovorna_email', 'odgovorna osoba'],
+    ['kontakt_email', 'kontakt osoba'],
+    ['logistika_osoba_email', 'osoba zadužena za logistiku'],
+    ['online_booking_email', 'Online Booking pristup']
+  ];
+  function azurirajPonudaEmailOpcije(){
+    var container = document.getElementById('ponuda-email-izbor');
+    if (!container) { return; }
+    // Zapamti koje su adrese TRENUTNO označene (po vrijednosti, ne po indeksu
+    // checkboxa — jer se cijeli popis iznova gradi, pa redoslijed/broj opcija
+    // može varirati dok korisnik tipka) da ih ne izgubimo pri obnavljanju.
+    var oznaceneAdrese = {};
+    container.querySelectorAll('input[type=checkbox]:checked').forEach(function(cb){
+      oznaceneAdrese[cb.value.toLowerCase()] = true;
+    });
+    // Skupi jedinstvene adrese (case-insensitive) iz svih izvornih polja,
+    // uz spajanje opisa izvora ako ista adresa dolazi iz više polja odjednom
+    // (npr. ista osoba upisana i kao "kontakt osoba" i kao "odgovorna osoba").
+    var poAdresi = {};
+    var poredak = [];
+    PONUDA_EMAIL_IZVORI.forEach(function(par){
+      var input = document.querySelector('#panel-interes input[name="' + par[0] + '"]');
+      if (!input) { return; }
+      var v = input.value.trim();
+      if (!v) { return; }
+      var kljuc = v.toLowerCase();
+      if (!poAdresi[kljuc]) {
+        poAdresi[kljuc] = { adresa: v, opisi: [] };
+        poredak.push(kljuc);
+      }
+      if (poAdresi[kljuc].opisi.indexOf(par[1]) === -1) { poAdresi[kljuc].opisi.push(par[1]); }
+    });
+    if (poredak.length === 0) {
+      container.innerHTML = '<p class="sec-hint" style="margin:0;">Još niste unijeli nijednu e-mail adresu u upitnik — čim upišete barem jednu, ponudit će se ovdje.</p>';
+      return;
+    }
+    container.innerHTML = poredak.map(function(kljuc){
+      var stavka = poAdresi[kljuc];
+      var checked = oznaceneAdrese[kljuc] ? ' checked' : '';
+      return '<label><input type="checkbox" name="ponuda_email_adrese" value="' + escHtmlAtribut_(stavka.adresa) + '"' + checked + '> ' +
+        escHtmlAtribut_(stavka.adresa) + ' <span style="color:var(--grey);font-size:12px;">(' + escHtmlAtribut_(stavka.opisi.join(', ')) + ')</span></label>';
+    }).join('');
+  }
+  // Mala pomoćna funkcija za escapanje pri gradnji ovog innerHTML-a (adresa
+  // dolazi izravno od korisnika, pa mora biti sigurno ubačena u atribut/tekst).
+  function escHtmlAtribut_(s){
+    return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+  (function initPonudaEmailIzbor(){
+    PONUDA_EMAIL_IZVORI.forEach(function(par){
+      var input = document.querySelector('#panel-interes input[name="' + par[0] + '"]');
+      if (input) { input.addEventListener('input', azurirajPonudaEmailOpcije); }
+    });
+    azurirajPonudaEmailOpcije();
+  })();
+
   // Adresa/grad/poštanski broj sjedišta (2. poglavlje) i mjesta prikupa (ako
   // je uneseno kao drugačije od sjedišta) odmah se nude kao prijedlog u
   // poljima za dodatne Online Booking račune (11. poglavlje) — te se
@@ -4411,6 +4554,20 @@
     document.getElementById('confirm-box').classList.remove('active');
     document.getElementById('panel-' + which).classList.add('active');
     skociNaSidro('panel-' + which);
+    // Bilježi PRVI trenutak otvaranja OVOG panela — vidi napomenu uz
+    // VRIJEME_OTVARANJA_PANELA na vrhu datoteke. Namjerno se NE prepisuje
+    // ako se panel zatvori pa ponovno otvori (isto ponašanje kao i do sad
+    // za sam upitnik — ništa se ne briše, samo se nastavlja).
+    // Sašin izričit zahtjev (15.9.2026.) — u ISTOM trenutku upisuje se i u
+    // vidljivo skriveno polje "vrijeme_pocetka_popunjavanja" (isti Date objekt,
+    // isti format kao i za dolazak/slanje), tako da je stvarni početak
+    // popunjavanja i eksplicitno POSLAN na server, ne samo interno korišten
+    // za izračun trajanja.
+    if (!VRIJEME_OTVARANJA_PANELA[which]) {
+      VRIJEME_OTVARANJA_PANELA[which] = new Date();
+      var pocetakEl = document.getElementById('vrijeme-pocetka-popunjavanja-hidden-' + which);
+      if (pocetakEl) { pocetakEl.value = formatDatumVrijemePuni(VRIJEME_OTVARANJA_PANELA[which]); }
+    }
   }
 
   // Zatvaranje upitnika (panel-interes ILI panel-odbijenica) BEZ slanja —
@@ -4476,13 +4633,43 @@
     var iframe = document.getElementById('anketa-embed-iframe');
     try {
       var doc = iframe.contentWindow.document;
-      var h = Math.max(doc.documentElement.scrollHeight, doc.body.scrollHeight);
+      // BUG NAĐEN 15.9.2026. (dio istog nalaza kao napomena uz 'message'
+      // listener niže): nakon što se anketa unutar iframe-a pošalje i
+      // njezin sadržaj naglo smanji (forma nestane, ostane kratka zahvala),
+      // doc.documentElement.scrollHeight zna ostati "zaglavljen" na STAROJ,
+      // velikoj vrijednosti (izmjereno: 8883px iako je stvarni sadržaj samo
+      // 783px) — poznata nespretnost preglednika kod naglog smanjenja
+      // sadržaja nakon dubokog skrola, dok se doc.body.scrollHeight ispravno
+      // ažurira. Zato se OVDJE koristi isključivo doc.body.scrollHeight
+      // (bez Math.max s documentElement), koji je pouzdano točan i za
+      // normalan rast (dok se anketa puni) i za ovo naglo smanjenje (kad se
+      // pošalje) — ranija Math.max-kombinacija je u ovom drugom slučaju
+      // uzimala upravo tu "zaglavljenu" veću (pogrešnu) vrijednost.
+      var h = doc.body.scrollHeight;
       if (h > 0) { iframe.style.height = h + 'px'; }
     } catch (err) {
       // Cross-origin (npr. otvoreno s drukčije domene) — bez pristupa
       // unutarnjem dokumentu, ostaje zadana CSS visina (min-height).
     }
   }
+
+  // BUG NAĐEN 15.9.2026. (Sašin nalaz — nakon slanja ugrađene ankete "ostane
+  // otvoren okvir stranice... tekst nestane ali se ne povuče nazad"): kad se
+  // anketa unutar iframe-a pošalje, njen sadržaj se naglo smanji (forma s
+  // 25+ pitanja zamijeni se kratkom zahvalom) — resizeAnketaIframe() to prati
+  // i skupi VANJSKI <iframe>, ali VANJSKA stranica ostaje skrolana na staroj
+  // (dubokoj) poziciji, sad praznoj. InTime_Anketa.html javlja ovamo preko
+  // postMessage-a čim uspješno pošalje anketu (vidi submitAnketa() ondje) —
+  // ovdje odmah osvježimo visinu iframe-a i vratimo vanjski scroll na vrh
+  // okvira ankete (isto ponašanje kao skociNaSidro() pri OTVARANJU ankete),
+  // umjesto da korisnik mora sam ručno skrolati gore.
+  window.addEventListener('message', function(ev){
+    if (ev.data && ev.data.intimeAnketaSubmitted) {
+      resizeAnketaIframe();
+      setTimeout(resizeAnketaIframe, 300);
+      skociNaSidro('anketa-embed-wrap');
+    }
+  });
 
   // Klik bilo gdje na .cta-box OSIM na sami gumb (Da/Ne/Anketa) — ako je
   // ugrađena anketa ILI jedan od upitnika (panel-interes/panel-odbijenica)
@@ -4833,12 +5020,18 @@
       }
     }
 
-    // Bilježenje vremena slanja + trajanja popunjavanja (od automatski
-    // zabilježenog vremena dolaska do ovog trenutka) — automatski, tik prije
-    // stvarnog slanja, korisnik ne može utjecati (polja su skrivena). Vidi
-    // VRIJEME_DOLASKA_DATE/formatDatumVrijemePuni/formatTrajanje na vrhu datoteke.
+    // Bilježenje vremena slanja + trajanja popunjavanja — automatski, tik
+    // prije stvarnog slanja, korisnik ne može utjecati (polja su skrivena).
+    // Trajanje se računa od trenutka OTVARANJA OVOG KONKRETNOG panela
+    // (VRIJEME_OTVARANJA_PANELA[which], vidi napomenu uz showPanel/vrh
+    // datoteke) — NE od VRIJEME_DOLASKA_DATE (dolazak na cijelu stranicu),
+    // jer bi inače svako vrijeme provedeno na stranici PRIJE otvaranja
+    // upitnika/odbijenice pogrešno ušlo u "trajanje popunjavanja" (Sašin
+    // nalaz 15.9.2026.). Fallback na VRIJEME_DOLASKA_DATE ostaje samo za
+    // svaki slučaj ako iz nekog razloga panel-otvaranje nije zabilježeno.
     var _vrijemeSlanjaDate = new Date();
-    var _trajanjeSek = Math.round((_vrijemeSlanjaDate - VRIJEME_DOLASKA_DATE) / 1000);
+    var _vrijemePocetkaOvogPanela = VRIJEME_OTVARANJA_PANELA[which] || VRIJEME_DOLASKA_DATE;
+    var _trajanjeSek = Math.round((_vrijemeSlanjaDate - _vrijemePocetkaOvogPanela) / 1000);
     var _slanjaEl = document.getElementById('vrijeme-slanja-hidden-' + which);
     var _trajanjeEl = document.getElementById('vrijeme-popunjavanja-hidden-' + which);
     if (_slanjaEl) { _slanjaEl.value = formatDatumVrijemePuni(_vrijemeSlanjaDate); }
