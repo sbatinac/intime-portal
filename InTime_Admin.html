@@ -199,6 +199,13 @@
     background:rgba(34,152,145,.12);border:1px solid var(--purple);border-radius:5px;
     padding:2px 7px;margin-right:8px;vertical-align:middle;font-family:monospace;
   }
+  /* Značka broja za Odbijenicu (Sašin izričit zahtjev 15.9.2026.) — CRVENA
+     umjesto standardne InTime teal boje, jer se radi o odbijenom/negativnom
+     upitu, ne o pozitivnom (Interes). Isti oblik/veličina, samo boja. */
+  .entry-broj-badge-odbijenica{
+    color:var(--red);
+    background:rgba(192,57,43,.12);border-color:var(--red);
+  }
 
   .tabs{display:flex;gap:8px;margin-bottom:16px;border-bottom:2px solid var(--line);}
   .tab-btn{
@@ -1845,7 +1852,7 @@
     head.innerHTML =
       '<label class="entry-select-wrap"><input type="checkbox" class="entry-select-cb"></label>' +
       '<div>' +
-        '<div class="entry-card-title">' + (broj ? '<span class="entry-broj-badge">' + esc(broj) + '</span>' : '') + esc(naziv) + '</div>' +
+        '<div class="entry-card-title">' + (broj ? '<span class="entry-broj-badge' + (entry.status === 'Odbijenica' ? ' entry-broj-badge-odbijenica' : '') + '">' + esc(broj) + '</span>' : '') + esc(naziv) + '</div>' +
         '<div class="entry-card-sub">' +
           subParts.map(function(p){ return '<span>' + p + '</span>'; }).join('') +
         '</div>' +
