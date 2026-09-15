@@ -23,6 +23,9 @@
     --grey:#6b6b6b;
     --line:#e2e6ea;
     --bg:#f7fafb;
+    --red:#c0392b;
+    --yellow:#c9971f;
+    --green:#1e8449;
   }
 
   *{box-sizing:border-box;}
@@ -95,13 +98,20 @@
   .anketa-pitanje:first-of-type{margin-top:14px;padding-top:0;border-top:none;}
 
   .impact-slider-wrap{margin-top:10px;}
+  /* Klizna skala u boji — Sašin izričit zahtjev 15.9.2026.: cijela skala
+     odmah vizualno pokazuje raspon ocjene, crveno (najniža ocjena) preko
+     žute (sredina) do zelene (najviša ocjena) — umjesto dosadašnjeg
+     ljubičastog "popunjavanja" trake do trenutne vrijednosti. Boja trake je
+     STATIČNA (cijeli raspon 0-10 uvijek vidljiv), klizač (kružić) samo
+     pokazuje gdje je trenutna ocjena na toj skali. --val varijablu (JS,
+     ispod) više ne treba za boju, ali je bezopasno ostaviti je netaknutu.*/
   input[type=range].impact-slider-input{
     -webkit-appearance:none;
     appearance:none;
     width:100%;
     height:6px;
     border-radius:3px;
-    background:linear-gradient(to right, var(--purple) 0%, var(--purple) var(--val,0%), var(--line) var(--val,0%), var(--line) 100%);
+    background:linear-gradient(to right, var(--red) 0%, var(--yellow) 50%, var(--green) 100%);
     outline:none;
     cursor:pointer;
     margin:0;
@@ -128,7 +138,7 @@
   input[type=range].impact-slider-input::-moz-range-track{
     height:6px;
     border-radius:3px;
-    background:var(--line);
+    background:linear-gradient(to right, var(--red) 0%, var(--yellow) 50%, var(--green) 100%);
   }
   .anketa-slider-untouched{opacity:.5;}
   input[type=range].anketa-slider.anketa-slider-na{opacity:.3;cursor:not-allowed;}
