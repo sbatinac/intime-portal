@@ -1110,6 +1110,40 @@
     return (v === undefined || v === null) ? '' : v;
   }
 
+  // "Opseg pošiljaka" (12., ZADNJE poglavlje u obrascu) i "Pakiranje i
+  // sezonalnost" (11. poglavlje, dolazi PRIJE opsega) su u UPIT_FIELDS
+  // (InTime_Code.gs) — a time i u redoslijedu stupaca Google Sheeta —
+  // greškom zamijenjeni mjestima (Opseg prije Pakiranja) — Sašin izričit
+  // nalaz. NAMJERNO ne diramo redoslijed u UPIT_FIELDS/Sheetu (to bi
+  // pomaknulo postojeće stupce udesno/ulijevo i pokvarilo već spremljene
+  // retke) — umjesto toga se SAMO za prikaz u generičkoj tablici (vidi
+  // buildEntryCard niže) ta dva bloka izdvoje iz trenutnog redoslijeda i
+  // ponovno umetnu na kraj ispravnim redoslijedom (Pakiranje pa Opseg),
+  // točno kao u obrascu — svi ostali podaci zadrže svoj postojeći redoslijed.
+  var OPSEG_POSILJAKA_PREFIKSI_ = ['broj_usluga_', 'razdoblje_usluga_', 'kategorije_tezine_', 'kat_tezine_', 'zemlje_', 'udio_izvoza_'];
+  var OPSEG_POSILJAKA_KLJUCEVI_ = ['novi_klijent_bez_opsega'];
+  var PAKIRANJE_SEZONALNOST_PREFIKSI_ = ['sezonalnost', 'kutija_'];
+  var PAKIRANJE_SEZONALNOST_KLJUCEVI_ = ['pakiranje', 'pakiranje_ostalo', 'standardizirane_kutije', 'crni_petak'];
+  function pripadaGrupi_(kljuc, prefiksi, tocniKljucevi) {
+    if (!kljuc) { return false; }
+    if (tocniKljucevi.indexOf(kljuc) !== -1) { return true; }
+    return prefiksi.some(function(p){ return kljuc.indexOf(p) === 0; });
+  }
+  // Vraća labele iz entry.fields poredane tako da "Opseg pošiljaka" dođe
+  // NAKON "Pakiranje i sezonalnost", umjesto trenutnog (pogrešnog) Sheet
+  // redoslijeda — svi ostali podaci zadrže postojeći međusobni redoslijed.
+  function poredajLabeleZaPrikaz_(entry) {
+    var poredak = Object.keys(entry.fields);
+    var grupaOpseg = [], grupaPakiranje = [], ostalo = [];
+    poredak.forEach(function(label){
+      var kljuc = labelToKeyMap[label];
+      if (pripadaGrupi_(kljuc, OPSEG_POSILJAKA_PREFIKSI_, OPSEG_POSILJAKA_KLJUCEVI_)) { grupaOpseg.push(label); }
+      else if (pripadaGrupi_(kljuc, PAKIRANJE_SEZONALNOST_PREFIKSI_, PAKIRANJE_SEZONALNOST_KLJUCEVI_)) { grupaPakiranje.push(label); }
+      else { ostalo.push(label); }
+    });
+    return ostalo.concat(grupaPakiranje, grupaOpseg);
+  }
+
   function renderEntries() {
     // Popis se u cijelosti ponovno gradi (innerHTML = ''), pa bi stari
     // checkboxovi svejedno nestali iz DOM-a — čistimo i selectedRowIndexes
@@ -1593,22 +1627,26 @@
     // Naziv — OIB — Mail — Datum unosa — Vrijeme — Trajanje popunjavanja,
     // odmah vidljivo bez otvaranja kartice. Ostali podaci (kontakt/mobitel
     // za Interes, telefon/razlog za Odbijenicu) ostaju iza, kao dodatak.
+    // Svaka stavka u sažetku ima oblik "Naziv kategorije: podatak" (Sašin
+    // izričit zahtjev, na sve 3 vrste unosa — vidi i buildAnketaEntryCard
+    // niže) — tako se odmah vidi KOJI je podatak u pitanju, bez nagađanja,
+    // radi lakšeg uočavanja eventualne greške u unosu.
     var subParts = [];
     if (oib) { subParts.push('OIB: ' + esc(oib)); }
-    if (mail) { subParts.push(esc(mail)); }
-    if (datumDio) { subParts.push(esc(datumDio)); }
-    if (vrijemeDio) { subParts.push(esc(vrijemeDio)); }
+    if (mail) { subParts.push('Mail: ' + esc(mail)); }
+    if (datumDio) { subParts.push('Datum unosa: ' + esc(datumDio)); }
+    if (vrijemeDio) { subParts.push('Vrijeme: ' + esc(vrijemeDio)); }
     if (trajanje) { subParts.push('Trajanje popunjavanja: ' + esc(trajanje)); }
     if (entry.status === 'Interes') {
       var kontakt = fieldVal(entry, 'Kontakt osoba');
       var mobitel = fieldVal(entry, 'Mobitel');
-      if (kontakt) { subParts.push(esc(kontakt)); }
-      if (mobitel) { subParts.push(esc(mobitel)); }
+      if (kontakt) { subParts.push('Kontakt osoba: ' + esc(kontakt)); }
+      if (mobitel) { subParts.push('Mobitel: ' + esc(mobitel)); }
     } else {
       var tel = fieldVal(entry, 'Telefon (odbijenica)');
       var razlog = fieldVal(entry, 'Razlog (odbijenica)');
-      if (tel) { subParts.push(esc(tel)); }
-      if (razlog) { subParts.push(esc(razlog)); }
+      if (tel) { subParts.push('Telefon: ' + esc(tel)); }
+      if (razlog) { subParts.push('Razlog: ' + esc(razlog)); }
     }
 
     var head = document.createElement('div');
@@ -1644,7 +1682,7 @@
     var table = document.createElement('table');
     table.className = 'field-table';
     var editableInputs = [];
-    Object.keys(entry.fields).forEach(function(label) {
+    poredajLabeleZaPrikaz_(entry).forEach(function(label) {
       if (label === 'Tip' || label === 'Broj') { return; } // Broj je već prikazan u naslovu kartice, nepromjenjiv je
       if (label.indexOf('(admin)') !== -1) { return; } // admin polja se prikazuju u posebnom obrascu iznad
       if (label === 'Naziv tvrtke' || label === 'OIB') { return; } // imaju svoj poseban obrazac niže
@@ -1774,16 +1812,17 @@
 
     // Isti redoslijed kao kod buildEntryCard() (Sašin izričit zahtjev): Broj
     // — Naziv — OIB — Mail — Datum unosa — Vrijeme — Trajanje popunjavanja.
+    // Svaka stavka ima oblik "Naziv kategorije: podatak" (isto kao gore).
     var subParts = [];
     if (oib) { subParts.push('OIB: ' + esc(oib)); }
-    if (email) { subParts.push(esc(email)); }
-    if (datumDio) { subParts.push(esc(datumDio)); }
-    if (vrijemeDio) { subParts.push(esc(vrijemeDio)); }
+    if (email) { subParts.push('Mail: ' + esc(email)); }
+    if (datumDio) { subParts.push('Datum unosa: ' + esc(datumDio)); }
+    if (vrijemeDio) { subParts.push('Vrijeme: ' + esc(vrijemeDio)); }
     if (trajanje) { subParts.push('Trajanje popunjavanja: ' + esc(trajanje)); }
     var kontakt = fieldVal(entry, 'Ime i prezime osobe koja ispunjava anketu');
     var telefon = fieldVal(entry, 'Broj telefona osobe koja ispunjava anketu');
-    if (kontakt) { subParts.push(esc(kontakt)); }
-    if (telefon) { subParts.push(esc(telefon)); }
+    if (kontakt) { subParts.push('Kontakt osoba: ' + esc(kontakt)); }
+    if (telefon) { subParts.push('Telefon: ' + esc(telefon)); }
 
     var prosjekHtml = '';
     if (entry.prosjek !== null && entry.prosjek !== undefined) {

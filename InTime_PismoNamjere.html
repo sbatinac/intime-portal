@@ -1351,16 +1351,16 @@
           </select>
 
           <label>Adresa sjedišta *</label>
-          <input type="text" name="adresa" required>
+          <input type="text" name="adresa" required list="adresa-suggestions">
 
           <div class="pair">
             <div>
               <label>Grad ili mjesto *</label>
-              <input type="text" name="grad" required>
+              <input type="text" name="grad" required list="grad-suggestions">
             </div>
             <div>
               <label>Poštanski broj *</label>
-              <input type="text" name="postanski_broj" required>
+              <input type="text" name="postanski_broj" required list="postanski-broj-suggestions">
             </div>
           </div>
 
@@ -1575,15 +1575,15 @@
 
           <div id="mjesto-prikupa-podpitanje" class="ostalo-hidden">
             <label>Adresa mjesta prikupa pošiljaka *</label>
-            <input type="text" name="mjesto_prikupa_adresa" id="mjesto-prikupa-adresa">
+            <input type="text" name="mjesto_prikupa_adresa" id="mjesto-prikupa-adresa" list="adresa-suggestions">
             <div class="pair">
               <div>
                 <label>Grad ili mjesto *</label>
-                <input type="text" name="mjesto_prikupa_grad" id="mjesto-prikupa-grad">
+                <input type="text" name="mjesto_prikupa_grad" id="mjesto-prikupa-grad" list="grad-suggestions">
               </div>
               <div>
                 <label>Poštanski broj *</label>
-                <input type="text" name="mjesto_prikupa_postanski_broj" id="mjesto-prikupa-postanski-broj">
+                <input type="text" name="mjesto_prikupa_postanski_broj" id="mjesto-prikupa-postanski-broj" list="postanski-broj-suggestions">
               </div>
             </div>
 
@@ -2098,6 +2098,9 @@
         </div>
 
         <datalist id="email-suggestions"></datalist>
+        <datalist id="adresa-suggestions"></datalist>
+        <datalist id="grad-suggestions"></datalist>
+        <datalist id="postanski-broj-suggestions"></datalist>
 
         <button type="submit" class="form-submit">Pošalji upitnik</button>
         <div class="form-note">Podaci se koriste isključivo za pripremu ponude i ugovora o suradnji te se ne dijele s trećim stranama.</div>
@@ -3789,10 +3792,22 @@
       if (!blok) { return; }
       if (cb && cb.checked) {
         blok.classList.remove('ostalo-hidden');
+        // Ponovno omogući polja (vidi disable niže) da bi FormData opet
+        // pokupio njihove vrijednosti pri slanju.
+        blok.querySelectorAll('input,select,textarea').forEach(function(el){ el.disabled = false; });
         brojVidljivih++;
       } else {
         blok.classList.add('ostalo-hidden');
         clearUslugaBlok(u.key);
+        // KLJUČNO: onemogući (disabled) sva polja unutar skrivenog bloka —
+        // FormData (submitForm) automatski PRESKAČE disabled polja, pa se
+        // tako spriječava da zadane vrijednosti (npr. "razdoblje" resetiran
+        // na 'Mjesečno' ili klizač izvoz/uvoz resetiran na 50 u
+        // clearUslugaBlok() iznad) budu poslane i spremljene za uslugu koju
+        // korisnik uopće nije odabrao (npr. FedEx EXPRESS/ECONOMY podaci su
+        // se prije ovog popravka znali pojaviti u adminu iako korisnik tu
+        // uslugu nikad nije označio/otvorio).
+        blok.querySelectorAll('input,select,textarea').forEach(function(el){ el.disabled = true; });
       }
     });
     var noneHint = document.getElementById('usluga-blokovi-none-hint');
@@ -4247,6 +4262,14 @@
       inp.type = pair[2];
       inp.name = 'dodatni_ob_' + pair[0] + '_' + n;
       if (pair[3]) { inp.dataset.optional = 'true'; } else { inp.className = 'required-soft'; }
+      // Adresa/grad/poštanski broj se kod dodatnih OB računa vrlo često
+      // ponavljaju (ista lokacija, samo druga kontakt osoba) — ponudi kao
+      // prijedlog već upisanu adresu sjedišta i/ili mjesta prikupa umjesto da
+      // se korisnik tjera na ponovno tipkanje iste vrijednosti (isti obrazac
+      // <datalist> mehanizam kao i kod initEmailSuggestions niže).
+      if (pair[0] === 'adresa') { wireSuggestionField_(inp, 'adresa-suggestions'); }
+      else if (pair[0] === 'grad') { wireSuggestionField_(inp, 'grad-suggestions'); }
+      else if (pair[0] === 'postanski_broj') { wireSuggestionField_(inp, 'postanski-broj-suggestions'); }
       wrap.appendChild(lab);
       wrap.appendChild(inp);
       fields.appendChild(wrap);
@@ -4319,28 +4342,56 @@
     if (input) { updateCrniPetakSlider(input); }
   })();
 
+  // Zajednička pomoćna funkcija za sve <datalist> prijedloge (mail, adresa,
+  // grad, poštanski broj): kad korisnik upiše vrijednost i napusti polje
+  // ('change', ne 'input' — dodaje se tek kad završi unos, ne na svaki
+  // pritisnuti znak), ta vrijednost postaje prijedlog u SVIM poljima koja
+  // dijele isti <datalist> (uključujući naknadno dodane retke dodatnih OB
+  // računa — zato se poziva i iz addDodatniObRacunRow() iznad).
+  function wireSuggestionField_(input, datalistId){
+    var datalist = document.getElementById(datalistId);
+    if (!datalist || !input) { return; }
+    input.setAttribute('list', datalistId);
+    input.addEventListener('change', function(){
+      var v = input.value.trim();
+      if (!v) { return; }
+      for (var i = 0; i < datalist.options.length; i++) {
+        if (datalist.options[i].value === v) { return; }
+      }
+      var opt = document.createElement('option');
+      opt.value = v;
+      datalist.appendChild(opt);
+    });
+  }
+
   // Svaka upisana e-mail adresa (bilo koje od 5 mail polja) odmah se nudi
   // kao prijedlog u ostalim mail poljima — korisnik je klikom bira umjesto
   // ponovnog tipkanja iste adrese.
   (function initEmailSuggestions(){
-    var datalist = document.getElementById('email-suggestions');
-    if (!datalist) { return; }
-    var emailInputs = document.querySelectorAll('#panel-interes input[type=email]');
-    emailInputs.forEach(function(input){
-      // 'change' (ne 'input') — dodaje se tek kad korisnik završi unos i
-      // napusti polje, ne na svaki pritisnuti znak.
-      input.addEventListener('change', function(){
-        var v = input.value.trim();
-        if (!v) { return; }
-        var exists = false;
-        for (var i = 0; i < datalist.options.length; i++) {
-          if (datalist.options[i].value === v) { exists = true; break; }
-        }
-        if (!exists) {
-          var opt = document.createElement('option');
-          opt.value = v;
-          datalist.appendChild(opt);
-        }
+    document.querySelectorAll('#panel-interes input[type=email]').forEach(function(input){
+      wireSuggestionField_(input, 'email-suggestions');
+    });
+  })();
+
+  // Adresa/grad/poštanski broj sjedišta (2. poglavlje) i mjesta prikupa (ako
+  // je uneseno kao drugačije od sjedišta) odmah se nude kao prijedlog u
+  // poljima za dodatne Online Booking račune (11. poglavlje) — te se
+  // vrijednosti tamo vrlo često ponavljaju (ista lokacija/tvrtka, samo druga
+  // kontakt osoba), pa korisnik prijedlog samo odabere klikom umjesto
+  // ponovnog tipkanja iste adrese, grada i poštanskog broja. Dinamički
+  // dodani retci dodatnih OB računa vežu se na isti <datalist> izravno u
+  // addDodatniObRacunRow() (poziva wireSuggestionField_ iznad).
+  (function initAdresaGradPostanskiSuggestions(){
+    [
+      ['input[name="adresa"]', 'adresa-suggestions'],
+      ['input[name="mjesto_prikupa_adresa"]', 'adresa-suggestions'],
+      ['input[name="grad"]', 'grad-suggestions'],
+      ['input[name="mjesto_prikupa_grad"]', 'grad-suggestions'],
+      ['input[name="postanski_broj"]', 'postanski-broj-suggestions'],
+      ['input[name="mjesto_prikupa_postanski_broj"]', 'postanski-broj-suggestions']
+    ].forEach(function(pair){
+      document.querySelectorAll('#panel-interes ' + pair[0]).forEach(function(input){
+        wireSuggestionField_(input, pair[1]);
       });
     });
   })();
@@ -4680,7 +4731,7 @@
     for (var i = 0; i < requiredGroups.length; i++) {
       var group = requiredGroups[i];
       if (group.closest('.ostalo-hidden')) { continue; }
-      var checked = group.querySelectorAll('input[type=checkbox]:checked');
+      var checked = group.querySelectorAll('input[type=checkbox]:checked,input[type=radio]:checked');
       if (checked.length === 0) {
         alert('Molimo označite barem jednu opciju za: ' + group.getAttribute('data-required-group'));
         group.scrollIntoView({behavior:'smooth', block:'center'});
