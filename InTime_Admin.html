@@ -80,7 +80,7 @@
     padding:24px;
   }
   .login-card{
-    max-width:480px;
+    max-width:760px;
     width:100%;
     background:#fff;
     border:1px solid var(--line);
@@ -90,7 +90,8 @@
   }
   .login-card h1{color:var(--purple-dark);margin-bottom:14px;font-size:19px;text-align:center;line-height:1.35;}
   .login-card p.hint{font-size:12px;color:var(--grey);margin:6px 0 18px;}
-  .login-banner{width:100%;border-radius:8px;margin-bottom:18px;display:block;}
+  .login-banner{width:100%;border-radius:8px;margin-bottom:24px;display:block;}
+  .login-card form{max-width:360px;margin:0 auto;}
   .site-footer{
     max-width:900px;
     margin:0 auto;
@@ -229,6 +230,13 @@
     color:var(--graphite);
   }
   .bulk-actions-bar .bulk-actions-buttons{display:flex;gap:8px;}
+
+  /* Traka "Označi sve / Odznači sve" — iznad popisa kartica, na svakom tabu
+     koji ima checkbox za višestruki odabir (Zainteresirani/Nisu
+     zainteresirani/Novi klijenti/Ankete). Odvojena od .bulk-actions-bar jer
+     ta traka postoji SAMO kad je već nešto označeno — ova je vidljiva čim
+     tab ima barem jednu karticu, bez obzira je li išta označeno. */
+  .select-all-row{display:flex;gap:8px;margin:0 0 14px;}
 
   .entry-card-body{
     display:none;
@@ -423,6 +431,15 @@
   .faq-admin-ocjene .faq-ocjena-like{color:var(--green);}
   .faq-admin-ocjene .faq-ocjena-dislike{color:var(--red);}
   .zone-admin-status-line{font-size:13px;color:var(--graphite);background:#f5f7f8;border:1px solid var(--line);border-radius:8px;padding:10px 12px;margin-bottom:6px;}
+  .zone-arhiva-naslov{margin:22px 0 4px;font-size:15px;}
+  .zone-arhiva-item{
+    display:flex;align-items:center;justify-content:space-between;gap:10px;
+    background:#f5f7f8;border:1px solid var(--line);border-radius:8px;
+    padding:10px 12px;margin-bottom:8px;
+  }
+  .zone-arhiva-naziv{font-weight:700;font-size:13px;color:var(--graphite);}
+  .zone-arhiva-meta{font-size:12px;color:var(--grey);margin-top:2px;}
+  .zone-arhiva-vrati-btn{flex-shrink:0;}
 
   /* ---- MODAL (promjena lozinke, potvrda brisanja) ---- */
   .modal-overlay{
@@ -450,8 +467,7 @@
 
 <div id="login-screen">
   <div class="login-card">
-    <img src="https://i.imgur.com/Y25KLaF.png" alt="In Time" class="login-banner">
-    <h1>In Time d.o.o. - portal za nove klijente - REGIJA ISTOK</h1>
+    <img src="https://i.imgur.com/XVKObib.png" alt="In Time — FedEx" class="login-banner">
     <p class="form-error" id="login-error" hidden></p>
     <form id="login-form" onsubmit="return handleLogin(event)">
       <input type="password" id="login-password" placeholder="Lozinka" autocomplete="current-password" required>
@@ -495,6 +511,10 @@
         <div class="stat-value" id="stat-ankete" style="color:#8a6d00;">—</div>
         <div class="stat-label">Popunjenih anketa kvalitete</div>
       </div>
+      <div class="stat-card" style="border-left-color:var(--purple);">
+        <div class="stat-value" id="stat-klijenti-ukupno" style="color:var(--purple-dark);">—</div>
+        <div class="stat-label">Ukupno klijenata u bazi</div>
+      </div>
     </div>
 
     <p class="permanent-stat-note">Ukupan broj dolazaka na stranicu od početka rada stranice (trajna statistika, ne može se resetirati): <strong id="stat-posjete-sveukupno">—</strong></p>
@@ -506,6 +526,11 @@
       <button type="button" class="tab-btn" id="tab-btn-novi-klijenti" onclick="switchTab('NoviKlijenti')">Novi klijenti (<span id="tab-count-novi-klijenti">0</span>)</button>
       <button type="button" class="tab-btn" id="tab-btn-faq" onclick="switchTab('FAQ')">Česta pitanja (<span id="tab-count-faq">0</span>)</button>
       <button type="button" class="tab-btn" id="tab-btn-zone" onclick="switchTab('Zone')">Zone dostave (<span id="tab-count-zone">0</span>)</button>
+    </div>
+
+    <div id="select-all-row" class="select-all-row" hidden>
+      <button type="button" class="btn btn-outline btn-small" onclick="toggleSelectAll(true)">☑ Označi sve</button>
+      <button type="button" class="btn btn-outline btn-small" onclick="toggleSelectAll(false)">☐ Odznači sve</button>
     </div>
 
     <div id="bulk-actions-bar" class="bulk-actions-bar" hidden>
@@ -721,6 +746,7 @@
     loadAnkete();
     loadFaq();
     loadZoneStatus();
+    loadZoneArhiva_();
   }
 
   // FAQ ("Česta pitanja") — zaseban popis (allFaqEntries), zaseban
@@ -759,6 +785,62 @@
       ? ('Trenutno u bazi: ' + zoneStatusData.broj + ' gradova/mjesta' +
          (zoneStatusData.datum ? ' — zadnje ažurirano ' + zoneStatusData.datum + (zoneStatusData.naziv ? ' (' + zoneStatusData.naziv + ')' : '') : '') + '.')
       : 'Još nije učitan popis gradova i zona — učitajte Excel datoteku ispod.';
+  }
+
+  // Arhiva Zone uploada — popis ranijih verzija (svaki upload i svaki
+  // restore ostavlja svoj zapis, vidi arhivirajZoneDatoteku_ na backendu).
+  // Učitava se jednom u loadAll() i ponovno nakon svakog uploada/restorea;
+  // renderira se iz keša (zoneArhivaData) kad god je Zone tab aktivan.
+  var zoneArhivaData = null;
+  function loadZoneArhiva_() {
+    gasCall({ action: 'adminZoneArhivaList', token: adminToken }).then(function(res) {
+      if (handleAuthError(res)) { return; }
+      if (res.status !== 'ok') { return; }
+      zoneArhivaData = res.entries || [];
+      if (activeTab === 'Zone') { renderZoneArhivaList_(); }
+    }).catch(function() {});
+  }
+
+  function renderZoneArhivaList_() {
+    var el = document.getElementById('zone-arhiva-list');
+    if (!el) { return; }
+    if (!zoneArhivaData) { el.innerHTML = '<div class="faq-admin-hint">Učitavanje arhive...</div>'; return; }
+    if (!zoneArhivaData.length) { el.innerHTML = '<div class="faq-admin-hint">Arhiva je još prazna — pojavit će se ovdje nakon prvog uploada.</div>'; return; }
+    el.innerHTML = '';
+    zoneArhivaData.forEach(function(entry) {
+      var row = document.createElement('div');
+      row.className = 'zone-arhiva-item';
+      row.innerHTML =
+        '<div class="zone-arhiva-info">' +
+          '<div class="zone-arhiva-naziv">' + esc(entry.naziv || 'zone.xlsx') + '</div>' +
+          '<div class="zone-arhiva-meta">' + esc(entry.datum) + ' — ' + esc(String(entry.brojGradova)) + ' gradova/mjesta</div>' +
+        '</div>' +
+        '<button type="button" class="btn btn-outline btn-small zone-arhiva-vrati-btn">Vrati kao aktivno</button>';
+      row.querySelector('.zone-arhiva-vrati-btn').addEventListener('click', function() {
+        vratiZoneArhivu_(entry.fileId, entry.naziv);
+      });
+      el.appendChild(row);
+    });
+  }
+
+  function vratiZoneArhivu_(fileId, naziv) {
+    if (!confirm('Vratiti "' + naziv + '" kao trenutno aktivan popis gradova/zona? Ovo će zamijeniti sadašnje podatke na javnoj stranici (trenutno stanje će se ipak samo automatski arhivirati prije toga).')) {
+      return;
+    }
+    var statusEl = document.getElementById('zone-admin-status');
+    if (statusEl) { statusEl.textContent = 'Vraćanje verzije u tijeku...'; statusEl.className = 'faq-admin-status'; }
+    gasCall({ action: 'adminZoneArhivaRestore', token: adminToken, fileId: fileId }).then(function(res) {
+      if (handleAuthError(res)) { return; }
+      if (res.status !== 'ok') {
+        if (statusEl) { statusEl.textContent = res.message || 'Vraćanje nije uspjelo.'; statusEl.className = 'faq-admin-status error'; }
+        return;
+      }
+      if (statusEl) { statusEl.textContent = 'Gotovo — vraćeno ' + res.broj + ' gradova/mjesta.'; statusEl.className = 'faq-admin-status'; }
+      loadZoneStatus();
+      loadZoneArhiva_();
+    }).catch(function() {
+      if (statusEl) { statusEl.textContent = 'Greška u komunikaciji s poslužiteljem.'; statusEl.className = 'faq-admin-status error'; }
+    });
   }
 
   function handleAuthError(res) {
@@ -903,6 +985,11 @@
     document.getElementById('tab-count-interes').textContent = interesCount;
     document.getElementById('tab-count-odbijenica').textContent = odbijenicaCount;
     document.getElementById('tab-count-novi-klijenti').textContent = noviKlijentiCount;
+    // Glavni dashboard counter — ukupan broj klijenata u bazi (isti brojevi
+    // kao kartica "Novi klijenti", samo istaknuto na vrhu među ostalim
+    // brojačima da Saša odmah vidi koliko je zapisa ukupno prebačeno).
+    var stKlijenti = document.getElementById('stat-klijenti-ukupno');
+    if (stKlijenti) { stKlijenti.textContent = noviKlijentiCount; }
   }
 
   function switchTab(tab) {
@@ -937,6 +1024,11 @@
     clearSelection();
     var container = document.getElementById('entries-list');
     container.innerHTML = '';
+    // "Označi sve / Odznači sve" ima smisla samo na tabovima s karticama koje
+    // imaju checkbox (Zainteresirani/Nisu zainteresirani/Novi klijenti/
+    // Ankete) — na FAQ i Zone tabu nema višestrukog odabira, pa se sakriva
+    // po defaultu i eksplicitno prikazuje niže samo kad je stvarno relevantno.
+    document.getElementById('select-all-row').hidden = true;
 
     if (activeTab === 'Ankete') {
       if (allAnketaEntries.length === 0) {
@@ -946,6 +1038,7 @@
         container.appendChild(hintA);
         return;
       }
+      document.getElementById('select-all-row').hidden = false;
       allAnketaEntries.forEach(function(entry) {
         container.appendChild(buildAnketaEntryCard(entry));
       });
@@ -970,6 +1063,7 @@
     if (activeTab === 'Zone') {
       container.appendChild(buildZonePanel_());
       renderZoneStatusLine_();
+      renderZoneArhivaList_();
       return;
     }
 
@@ -994,8 +1088,23 @@
       return;
     }
 
+    document.getElementById('select-all-row').hidden = false;
     list.forEach(function(entry) {
       container.appendChild(buildEntryCard(entry));
+    });
+  }
+
+  // Označi/odznači SVE trenutno vidljive kartice (na aktivnom tabu) odjednom
+  // — klikom na "Označi sve"/"Odznači sve" iznad popisa. Postavlja checked
+  // na svaki checkbox i ručno okida toggleRowSelection (isti efekt kao da je
+  // korisnik svaku karticu kliknuo pojedinačno), jer promjena `checked`
+  // svojstva skriptom NE pokreće 'change' event sam od sebe.
+  function toggleSelectAll(checked) {
+    document.querySelectorAll('#entries-list .entry-select-cb').forEach(function(cb) {
+      if (cb.checked !== checked) {
+        cb.checked = checked;
+        cb.dispatchEvent(new Event('change'));
+      }
     });
   }
 
@@ -1258,7 +1367,10 @@
       '<div class="faq-admin-card-actions">' +
         '<span class="faq-admin-status" id="zone-admin-status"></span>' +
         '<button type="button" class="btn btn-small" id="zone-upload-btn">Učitaj i zamijeni podatke</button>' +
-      '</div>';
+      '</div>' +
+      '<h3 class="zone-arhiva-naslov">Arhiva ranijih verzija</h3>' +
+      '<p class="faq-admin-hint">Svaki upload (i svako vraćanje starije verzije) ostaje ovdje zabilježen s datumom — možete ga u bilo kojem trenutku ponovno vratiti kao aktivan popis.</p>' +
+      '<div id="zone-arhiva-list"></div>';
     wrap.querySelector('#zone-upload-btn').addEventListener('click', function() {
       submitZoneUpload_(wrap);
     });
@@ -1293,6 +1405,7 @@
         statusEl.className = 'faq-admin-status';
         fileInput.value = '';
         loadZoneStatus();
+        loadZoneArhiva_();
       }).catch(function() {
         btn.disabled = false;
         statusEl.textContent = 'Greška u komunikaciji s poslužiteljem.';

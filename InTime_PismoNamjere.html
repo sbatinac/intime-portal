@@ -76,8 +76,8 @@
   }
   h2.h2-glow-gold{
     font-size:32px;
-    color:#b8860b;
-    text-shadow:0 0 10px rgba(212,160,17,.55),0 0 22px rgba(212,160,17,.35);
+    color:var(--purple-dark);
+    text-shadow:0 0 10px rgba(19,84,80,.55),0 0 22px rgba(19,84,80,.35);
   }
   h2.h2-glow-yellow{
     font-size:32px;
@@ -117,7 +117,7 @@
     flex:0 0 30px;
     height:30px;
     border-radius:50%;
-    background:#e0b400;
+    background:var(--purple);
     color:#fff;
     display:flex;
     align-items:center;
@@ -132,7 +132,7 @@
      dinamički (JS niže, ucitajPdfGaleriju/ucitajSlikeGaleriju/
      ucitajVideoGaleriju) iz vlastitog Google Drive foldera; svaka sekcija
      ostaje sakrivena dok njen folder nema sadržaja/greške pri dohvatu. */
-  .galerija-wrap{border-radius:12px;overflow:hidden;margin:10px 0 0;}
+  .galerija-wrap{border:1px solid var(--line);border-radius:12px;overflow:hidden;margin:10px 0 0;}
   .galerija-trak{
     display:flex;
     gap:10px;
@@ -144,20 +144,92 @@
   .galerija-trak.dragging{cursor:grabbing;}
   .galerija-prazno{color:#888;font-size:13px;padding:20px;}
 
+  /* Svaka od tri galerije (Dokumenti/Slike/Video) je sklopiva — isti obrazac
+     kao FAQ popis niže (vidi .faq-toggle-btn): gumb otvara/zatvara sadržaj
+     ispod naslova, zatvoreno po defaultu. toggleGalerijaSadrzaj_() u JS-u
+     jedna zajednička funkcija za sve tri. Prikazano kao velika kartica
+     (pravokutnik) preko cijele širine sredine stranice, ne mali gumb —
+     korisnikov izričit zahtjev. */
+  .galerija-toggle-btn{
+    display:flex;align-items:center;justify-content:space-between;
+    width:100%;box-sizing:border-box;margin:0 0 16px;
+    background:var(--purple);color:#fff;border:none;border-radius:10px;
+    padding:40px 32px;font-size:18px;font-weight:700;cursor:pointer;
+    font-family:inherit;transition:background .15s;
+    box-shadow:0 2px 8px rgba(0,0,0,.10);
+    text-shadow:0 1px 3px rgba(0,0,0,.35);
+  }
+  .galerija-toggle-btn:hover{background:var(--purple-dark);}
+  .galerija-toggle-btn .galerija-toggle-arrow{transition:transform .2s;display:inline-block;font-size:20px;}
+  .galerija-toggle-btn.otvoreno .galerija-toggle-arrow{transform:rotate(180deg);}
+  /* Svaka kartica svojom bojom — sve tri i dalje unutar postojeće In Time
+     palete (teal je default gore, dodane su navy i gold, obje već korištene
+     drugdje na stranici/adminu — nema strane/nove boje). */
+  .galerija-toggle-btn.tema-navy{background:var(--navy);}
+  .galerija-toggle-btn.tema-navy:hover{background:#0d2438;}
+  .galerija-toggle-btn.tema-gold{background:#e0b400;color:var(--graphite);}
+  .galerija-toggle-btn.tema-gold:hover{background:#c9971f;}
+  /* Kartice sa slikom u pozadini (umjesto pune boje) — korisnikove vlastite
+     fotografije, tamna gradijent-prevlaka preko slike drži tekst/strelicu
+     čitljivima bez obzira na sadržaj fotografije. cover+center tako da ista
+     slika lijepo pokrije karticu na svim širinama ekrana. */
+  .galerija-toggle-btn.tema-foto-dokumenti{
+    background:
+      linear-gradient(90deg, rgba(8,20,28,.66), rgba(8,20,28,.32)),
+      url('https://i.imgur.com/O4k3g0E.png') center/cover no-repeat;
+  }
+  .galerija-toggle-btn.tema-foto-dokumenti:hover{
+    background:
+      linear-gradient(90deg, rgba(8,20,28,.76), rgba(8,20,28,.42)),
+      url('https://i.imgur.com/O4k3g0E.png') center/cover no-repeat;
+  }
+  .galerija-toggle-btn.tema-foto-slike{
+    background:
+      linear-gradient(90deg, rgba(8,20,28,.66), rgba(8,20,28,.32)),
+      url('https://i.imgur.com/FCcrIzB.png') center/cover no-repeat;
+  }
+  .galerija-toggle-btn.tema-foto-slike:hover{
+    background:
+      linear-gradient(90deg, rgba(8,20,28,.76), rgba(8,20,28,.42)),
+      url('https://i.imgur.com/FCcrIzB.png') center/cover no-repeat;
+  }
+  .galerija-toggle-btn.tema-foto-video{
+    background:
+      linear-gradient(90deg, rgba(8,20,28,.66), rgba(8,20,28,.32)),
+      url('https://i.imgur.com/TNz1GBw.png') center/cover no-repeat;
+  }
+  .galerija-toggle-btn.tema-foto-video:hover{
+    background:
+      linear-gradient(90deg, rgba(8,20,28,.76), rgba(8,20,28,.42)),
+      url('https://i.imgur.com/TNz1GBw.png') center/cover no-repeat;
+  }
+
   /* — PDF galerija — */
   #pdf-galerija-section .galerija-wrap-gornji{background:#fff;padding:20px 24px;border-bottom:2px solid var(--purple-dark);}
   #pdf-galerija-section .galerija-header-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px;}
-  /* Galerije (PDF/Slike/Video) namjerno uže od ostatka stranice (760px
-     umjesto 1040px .wrap-wide) — korisnikov zahtjev da galerije budu malo
-     manje/kompaktnije od ostatka stranice; koristi novu klasu .wrap-galerija. */
-  .wrap-galerija{max-width:760px;margin:0 auto;padding:0 24px;}
+  /* Galerije (PDF/Slike/Video) iste širine kao ostatak stranice (1040px,
+     isto kao .wrap-wide — npr. slika prije CTA sekcije) — korisnikov
+     zahtjev da kartice budu šire (sad imaju fotke u pozadini pa uska
+     traka nije dobro izgledala); koristi novu klasu .wrap-galerija. */
+  .wrap-galerija{max-width:1040px;margin:0 auto;padding:0 24px;}
 
-  /* ---- FAQ ("Česta pitanja") — accordion popis, ispod sekcije "In Time
-     prednosti". Svako pitanje je gumb koji otvara/zatvara odgovor ispod
-     (koji smije sadržavati tekst + opcionalno sliku/video/PDF prilog,
-     svaki spremljen na Drive i prikazan istim obrascem kao galerije
-     gore — vidi listFaqJavno/InTime_Code.gs). ---- */
-  .faq-lista{max-width:760px;margin:0 auto;}
+  /* ---- FAQ ("Česta pitanja") — accordion popis, na SAMOM KRAJU stranice
+     (nakon CTA-a, prije footera). Svako pitanje je gumb koji otvara/zatvara
+     odgovor ispod (koji smije sadržavati tekst + opcionalno sliku/video/PDF
+     prilog, svaki spremljen na Drive i prikazan istim obrascem kao galerije
+     gore — vidi listFaqJavno/InTime_Code.gs). Cijeli popis je sklopiv —
+     .faq-toggle-btn otvara/zatvara #faq-lista (toggleFaqLista_() u JS-u). ---- */
+  .faq-intro-tekst{margin:0 0 16px;color:#333;}
+  .faq-toggle-btn{
+    display:flex;align-items:center;gap:8px;margin:0 0 20px;
+    background:var(--purple);color:#fff;border:none;border-radius:8px;
+    padding:12px 22px;font-size:15px;font-weight:700;cursor:pointer;
+    font-family:inherit;transition:background .15s;
+  }
+  .faq-toggle-btn:hover{background:var(--purple-dark);}
+  .faq-toggle-btn .faq-toggle-arrow{transition:transform .2s;display:inline-block;}
+  .faq-toggle-btn.otvoreno .faq-toggle-arrow{transform:rotate(180deg);}
+  .faq-lista{margin:0;}
   .faq-item{border-bottom:1px solid var(--line);}
   .faq-item:first-child{border-top:1px solid var(--line);}
   .faq-pitanje-btn{
@@ -222,6 +294,7 @@
   .pdf-thumb-naziv{font-size:9px;font-weight:700;color:#e7eef0;line-height:1.3;}
 
   /* — Galerija slika — */
+  #slike-galerija-section .galerija-wrap{background:#fff;padding:20px 24px 4px;}
   #slike-galerija-section .galerija-glavna-wrap{text-align:center;margin-bottom:10px;}
   #slika-naslov{font-size:14px;font-weight:900;color:var(--graphite);margin:0 0 10px;}
   #slika-glavna{max-width:100%;height:auto;object-fit:contain;border-radius:6px;max-height:320px;cursor:zoom-in;display:block;margin:0 auto;}
@@ -257,7 +330,7 @@
   #video-brojac{font-family:monospace;font-size:11px;color:#8fe4da;}
   #video-galerija-section .galerija-player-wrap{position:relative;padding-bottom:56.25%;height:0;overflow:hidden;}
   #video-player{position:absolute;top:0;left:0;width:100%;height:100%;background:#000;border:0;}
-  #video-galerija-section .galerija-trak{background:#111;border-radius:0 0 12px 12px;}
+  #video-galerija-section .galerija-trak{background:#2c2f33;border-radius:0 0 12px 12px;}
   .video-thumb{width:120px;flex-shrink:0;cursor:pointer;border-radius:8px;overflow:hidden;border:2px solid #333;}
   .video-thumb.active{border-color:var(--purple);}
   .video-thumb-slika-wrap{position:relative;height:64px;background:#0d2438;overflow:hidden;}
@@ -290,14 +363,20 @@
   .service-group ul{margin:0;padding-left:18px;}
   .service-group li{font-size:13.5px;color:#333;margin-bottom:6px;}
 
-  /* In Time — puna teal pozadina */
-  .service-group.intime{background:var(--purple);border-left-color:var(--purple);}
+  /* In Time — puna teal pozadina, čist okvir bez ičega (isti obrazac kao
+     .fact kartice gore — border iste boje kao pozadina, bez glow/sjene). */
+  .service-group.intime{
+    background:var(--purple);border:1px solid var(--purple);
+  }
   .service-group.intime h3{color:#fff;}
   .service-group.intime .sg-desc{color:#dff5f3;}
   .service-group.intime li{color:#f2fdfc;}
 
-  /* FedEx — puna FedEx ljubičasta pozadina, narančasti akcent */
-  .service-group.fedex{background:#4D148C;border-left-color:#FF6600;}
+  /* FedEx — puna FedEx ljubičasta pozadina, čist okvir bez ičega (isti
+     obrazac kao .fact kartice, bez narančastog ruba slijeva). */
+  .service-group.fedex{
+    background:#4D148C;border:1px solid #4D148C;padding-left:20px;
+  }
   .service-group.fedex h3{color:#fff;}
   .service-group.fedex .sg-desc{color:#e6d9f4;}
   .service-group.fedex li{color:#f3ecfa;}
@@ -312,12 +391,14 @@
     border-radius:8px;
     padding:16px 18px;
   }
-  .ecom-item h3{margin:0 0 6px;font-size:17px;color:var(--graphite);}
+  .ecom-item h3{margin:0 0 8px;font-size:20px;font-weight:800;color:var(--graphite);text-transform:uppercase;letter-spacing:.3px;}
   .ecom-item p{margin:0;font-size:14px;color:#333;}
 
   /* CTA / PISMO NAMJERE */
   .cta-box{
-    background:linear-gradient(120deg,var(--navy),var(--purple-dark));
+    background:
+      linear-gradient(120deg, rgba(10,30,48,.78), rgba(19,84,80,.78)),
+      url('https://i.imgur.com/t8mrFr7.png') center/cover no-repeat;
     border-radius:12px;
     padding:32px 28px;
     color:#fff;
@@ -1056,7 +1137,7 @@
   <!-- PREDNOSTI -->
   <section class="alt">
     <div class="wrap">
-      <h2 class="h2-glow-yellow">In Time prednosti</h2>
+      <h2 class="h2-glow">In Time prednosti</h2>
       <div class="adv-list">
         <div class="adv"><div class="adv-num">1</div><div class="adv-text"><b>Ekspresna dostava "od vrata do vrata"</b> — manje pošiljke (Z1) isporučujemo unutar 24 sata od trenutka prikupa.</div></div>
         <div class="adv"><div class="adv-num">2</div><div class="adv-text">Vrlo brzo rješavanje prigovora i nadoknada štete u slučaju oštećenja ili gubitka pošiljke u transportu.</div></div>
@@ -1072,17 +1153,6 @@
     </div>
   </section>
 
-  <!-- FAQ ("Česta pitanja") — puni se dinamički iz InTime_Code.gs
-       (akcija listFaqJavno, čita InTime_FAQ Sheet), uređuje se u
-       InTime_Admin.html (tab "Česta pitanja"). Sekcija ostaje sakrivena
-       ako trenutno nema nijednog objavljenog pitanja. -->
-  <section id="faq-section" style="display:none;">
-    <div class="wrap">
-      <h2 class="h2-glow-gold">Vaša česta pitanja, In Time odgovori</h2>
-      <div id="faq-lista" class="faq-lista"></div>
-    </div>
-  </section>
-
   <!-- DINAMIČKE DRIVE GALERIJE — PDF, pa slike, pa video (dogovoreni
        redoslijed). Svaka se puni automatski iz vlastitog Google Drive
        foldera (JS niže) i sama se sakriva ako njen folder nema sadržaja. -->
@@ -1090,17 +1160,22 @@
   <!-- PDF GALERIJA -->
   <section id="pdf-galerija-section" style="display:none;">
     <div class="wrap-galerija">
-      <h2>Dokumenti</h2>
-      <div class="galerija-wrap">
-        <div class="galerija-wrap-gornji">
-          <div class="galerija-header-row">
-            <p id="pdf-naslov">Učitavanje...</p>
-            <a id="pdf-open-link" href="#" target="_blank" rel="noopener">↗ Otvori u novoj kartici</a>
+      <button type="button" id="pdf-galerija-toggle-btn" class="galerija-toggle-btn tema-foto-dokumenti" onclick="toggleGalerijaSadrzaj_('pdf-galerija-sadrzaj','pdf-galerija-toggle-btn')">
+        <span>Dokumenti</span>
+        <span class="galerija-toggle-arrow">▾</span>
+      </button>
+      <div id="pdf-galerija-sadrzaj" hidden>
+        <div class="galerija-wrap">
+          <div class="galerija-wrap-gornji">
+            <div class="galerija-header-row">
+              <p id="pdf-naslov">Učitavanje...</p>
+              <a id="pdf-open-link" href="#" target="_blank" rel="noopener">↗ Otvori u novoj kartici</a>
+            </div>
+            <iframe id="pdf-viewer" title="Pregled dokumenta"></iframe>
           </div>
-          <iframe id="pdf-viewer" title="Pregled dokumenta"></iframe>
-        </div>
-        <div id="pdf-trak" class="galerija-trak">
-          <div class="galerija-prazno">Učitavanje dokumenata...</div>
+          <div id="pdf-trak" class="galerija-trak">
+            <div class="galerija-prazno">Učitavanje dokumenata...</div>
+          </div>
         </div>
       </div>
     </div>
@@ -1109,14 +1184,21 @@
   <!-- GALERIJA SLIKA -->
   <section id="slike-galerija-section" style="display:none;">
     <div class="wrap-galerija">
-      <h2>Galerija slika</h2>
-      <div class="galerija-glavna-wrap">
-        <img id="slika-glavna" src="" alt="In Time — galerija slika">
-        <p id="slika-naslov"></p>
-      </div>
-      <div class="galerija-scrollbar-track"><div id="slike-scrollbar"></div></div>
-      <div id="slike-trak" class="galerija-trak">
-        <div class="galerija-prazno">Učitavanje slika...</div>
+      <button type="button" id="slike-galerija-toggle-btn" class="galerija-toggle-btn tema-foto-slike" onclick="toggleGalerijaSadrzaj_('slike-galerija-sadrzaj','slike-galerija-toggle-btn')">
+        <span>Galerija slika</span>
+        <span class="galerija-toggle-arrow">▾</span>
+      </button>
+      <div id="slike-galerija-sadrzaj" hidden>
+        <div class="galerija-wrap">
+          <div class="galerija-glavna-wrap">
+            <img id="slika-glavna" src="" alt="In Time — galerija slika">
+            <p id="slika-naslov"></p>
+          </div>
+          <div class="galerija-scrollbar-track"><div id="slike-scrollbar"></div></div>
+          <div id="slike-trak" class="galerija-trak">
+            <div class="galerija-prazno">Učitavanje slika...</div>
+          </div>
+        </div>
       </div>
     </div>
   </section>
@@ -1131,19 +1213,24 @@
   <!-- VIDEO GALERIJA -->
   <section id="video-galerija-section" style="display:none;">
     <div class="wrap-galerija">
-      <h2>Video galerija</h2>
-      <div class="galerija-wrap">
-        <div class="galerija-gornji-trak">
-          <div class="galerija-header-row">
-            <div id="video-naslov">🎬 Učitavanje...</div>
-            <div id="video-brojac"></div>
+      <button type="button" id="video-galerija-toggle-btn" class="galerija-toggle-btn tema-foto-video" onclick="toggleGalerijaSadrzaj_('video-galerija-sadrzaj','video-galerija-toggle-btn')">
+        <span>Video galerija</span>
+        <span class="galerija-toggle-arrow">▾</span>
+      </button>
+      <div id="video-galerija-sadrzaj" hidden>
+        <div class="galerija-wrap">
+          <div class="galerija-gornji-trak">
+            <div class="galerija-header-row">
+              <div id="video-naslov">🎬 Učitavanje...</div>
+              <div id="video-brojac"></div>
+            </div>
+            <div class="galerija-player-wrap">
+              <iframe id="video-player" title="Video player" allow="autoplay" allowfullscreen></iframe>
+            </div>
           </div>
-          <div class="galerija-player-wrap">
-            <iframe id="video-player" title="Video player" allow="autoplay" allowfullscreen></iframe>
+          <div id="video-trak" class="galerija-trak">
+            <div class="galerija-prazno">Učitavanje video materijala...</div>
           </div>
-        </div>
-        <div id="video-trak" class="galerija-trak">
-          <div class="galerija-prazno">Učitavanje video materijala...</div>
         </div>
       </div>
     </div>
@@ -2097,6 +2184,25 @@
     </div>
   </section>
 
+  <!-- FAQ ("Česta pitanja") — puni se dinamički iz InTime_Code.gs
+       (akcija listFaqJavno, čita InTime_FAQ Sheet), uređuje se u
+       InTime_Admin.html (tab "Česta pitanja"). Sekcija ostaje sakrivena
+       ako trenutno nema nijednog objavljenog pitanja. Premješteno na kraj
+       stranice (nakon CTA-a, prije footera) — korisnikov izričit zahtjev.
+       Popis pitanja je sklopiv (collapsed po defaultu), otvara/zatvara se
+       klikom na gumb ispod uvodnog opisa (toggleFaqLista_() niže u JS-u). -->
+  <section id="faq-section" class="alt" style="display:none;">
+    <div class="wrap">
+      <h2 class="h2-glow-gold">Najčešća pitanja naših klijenata (FAQ):</h2>
+      <p class="faq-intro-tekst">Ovdje možete pronaći odgovore na najčešće postavljena pitanja o našim uslugama, dostavi i suradnji — a na vrhu popisa i pretragu pokrivenosti po gradovima, mjestima i poštanskim brojevima.</p>
+      <button type="button" id="faq-toggle-btn" class="faq-toggle-btn" onclick="toggleFaqLista_()">
+        <span id="faq-toggle-tekst">Prikaži česta pitanja</span>
+        <span class="faq-toggle-arrow">▾</span>
+      </button>
+      <div id="faq-lista" class="faq-lista" hidden></div>
+    </div>
+  </section>
+
   <!-- FOOTER / POTPIS -->
   <footer>
     <div class="wrap">
@@ -2169,16 +2275,27 @@
   // vlastiti Google Drive folder) i gradi glavni prikaz + traku sličica sa
   // scroll/drag ponašanjem. Svaka sekcija ostaje sakrivena (display:none,
   // postavljeno u HTML-u) ako njen folder još nije postavljen, prazan je,
-  // ili dohvat ne uspije — stranica se tada ponaša kao da te sekcije uopće
-  // nema. Fetch je "obična" (bez no-cors) jer moramo pročitati stvarni JSON
-  // odgovor — isti obrazac kao provjera duplikata (OIB) niže u submitForm().
-  function dohvatiGaleriju_(action, callback) {
+  // ili dohvat ne uspije (ni nakon retryja) — stranica se tada ponaša kao
+  // da te sekcije uopće nema. Fetch je "obična" (bez no-cors) jer moramo
+  // pročitati stvarni JSON odgovor — isti obrazac kao provjera duplikata
+  // (OIB) niže u submitForm().
+  // Jedan automatski retry (kratka pauza pa ponovni pokušaj) — hvata
+  // povremene mrežne/Apps Script glitcheve zbog kojih je galerija znala
+  // "zatreperiti" (pojaviti se pa nestati) između učitavanja stranice;
+  // backend (InTime_Code.gs) dodatno ima svoj cache + retry + pamćenje
+  // zadnje uspješne liste.
+  function dohvatiGaleriju_(action, callback, jePonovniPokusaj) {
     fetch(GAS_WEB_APP_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
       body: JSON.stringify({ action: action })
     }).then(function(res){ return res.json(); }).then(callback)
-      .catch(function(){ /* sekcija ostaje sakrivena ako dohvat ne uspije */ });
+      .catch(function(){
+        if (!jePonovniPokusaj) {
+          setTimeout(function(){ dohvatiGaleriju_(action, callback, true); }, 1200);
+        }
+        // sekcija ostaje sakrivena samo ako ne uspije ni ponovni pokušaj
+      });
   }
 
   // Zajednički drag-to-scroll za sve tri trake sličica.
@@ -2622,6 +2739,15 @@
           if (faq.slikaPoravnanje === 'centar' || faq.slikaPoravnanje === 'lijevo' || faq.slikaPoravnanje === 'desno') {
             img.classList.add('faq-slika-' + faq.slikaPoravnanje);
           }
+          // Ako se slika ne uspije učitati (npr. Drive datoteka nije stvarno
+          // javno dostupna unatoč setSharing() pozivu u backendu — poznato
+          // kod Google Workspace računa s ograničenom vanjskom razmjenom),
+          // sakrij slomljenu ikonu umjesto da ostavi ružan "broken image"
+          // prikaz — poveznica "Otvori sliku" ispod ostaje dostupna.
+          img.addEventListener('error', function() {
+            console.warn('FAQ slika se nije uspjela učitati (Drive ID: ' + faq.slikaId + ') — provjeri je li datoteka stvarno javno dijeljena ("Bilo tko s poveznicom").');
+            this.style.display = 'none';
+          });
           odgovorWrap.appendChild(img);
 
           var slikaLink = document.createElement('a');
@@ -2675,6 +2801,40 @@
       section.style.display = '';
     });
   })();
+
+  // Otvara/zatvara cijeli FAQ popis (#faq-lista je collapsed po defaultu —
+  // korisnikov izričit zahtjev) klikom na gumb ispod uvodnog opisa. Mijenja
+  // i tekst/strelicu gumba te ga vizualno označava kao "otvoreno".
+  function toggleFaqLista_() {
+    var lista = document.getElementById('faq-lista');
+    var btn = document.getElementById('faq-toggle-btn');
+    var tekst = document.getElementById('faq-toggle-tekst');
+    if (!lista || !btn || !tekst) { return; }
+    var otvoreno = lista.hidden; // trenutno zatvoreno -> ovaj klik otvara
+    lista.hidden = !otvoreno;
+    btn.classList.toggle('otvoreno', otvoreno);
+    tekst.textContent = otvoreno ? 'Sakrij česta pitanja' : 'Prikaži česta pitanja';
+    if (otvoreno) {
+      lista.scrollIntoView({behavior:'smooth', block:'start'});
+    }
+  }
+
+  // Zajednička funkcija za sve tri Drive galerije (Dokumenti/Slike/Video) —
+  // svaka je prikazana kao velika kartica (naslov je statičan: "Dokumenti" /
+  // "Galerija slika" / "Video galerija"), klik otvara/zatvara sadržaj ispod,
+  // zatvoreno po defaultu; strelica na kartici se okrene kao indikator
+  // stanja (klasa "otvoreno" na gumbu).
+  function toggleGalerijaSadrzaj_(sadrzajId, btnId) {
+    var sadrzaj = document.getElementById(sadrzajId);
+    var btn = document.getElementById(btnId);
+    if (!sadrzaj || !btn) { return; }
+    var otvoreno = sadrzaj.hidden; // trenutno zatvoreno -> ovaj klik otvara
+    sadrzaj.hidden = !otvoreno;
+    btn.classList.toggle('otvoreno', otvoreno);
+    if (otvoreno) {
+      sadrzaj.scrollIntoView({behavior:'smooth', block:'start'});
+    }
+  }
 
   // Prikazuje/skriva pripadajuće tekstualno polje ovisno o tome je li u
   // <select> izborniku odabrana "okidačka" opcija (default "Ostalo", ali
@@ -4693,7 +4853,7 @@
   </div>
   <div onclick="toggleMusicFromMenu()" id="musicSubBtn" style="background:#25D366;border:2px solid #25D366;outline:2px solid var(--purple-dark);outline-offset:-1px;border-radius:50px;padding:10px 16px;cursor:pointer;display:flex;align-items:center;gap:8px;box-shadow:0 4px 12px rgba(37,211,102,.4);">
     <span id="musicSubIcon" style="font-size:16px;">▶️</span>
-    <span id="musicSubLabel" style="color:#111111;font-size:11px;font-weight:900;letter-spacing:0.5px;">PLAY MUSIC</span>
+    <span id="musicSubLabel" style="color:#fff;font-size:11px;font-weight:900;letter-spacing:0.5px;">PLAY MUSIC</span>
   </div>
 </div>
 
@@ -4703,9 +4863,21 @@
     <span style="color:#fff;font-size:13px;font-weight:900;letter-spacing:1px;">KONTAKTIRAJ NAS</span>
     <span onclick="closeAll()" style="color:#888;cursor:pointer;font-size:18px;line-height:1;">×</span>
   </div>
-  <a href="https://wa.me/385916262171" target="_blank" style="width:100%;background:#25D366;color:#111111;border:1px solid #25D366;border-radius:8px;padding:10px 14px;font-size:12px;font-weight:700;cursor:pointer;margin-bottom:8px;text-align:left;display:flex;align-items:center;gap:10px;text-decoration:none;box-sizing:border-box;"><span style="font-size:16px;">💬</span> WhatsApp</a>
-  <a href="viber://chat/?number=%2B385916262171" style="width:100%;background:#7360F2;color:#ffffff;border:1px solid #7360F2;border-radius:8px;padding:10px 14px;font-size:12px;font-weight:700;cursor:pointer;margin-bottom:8px;text-align:left;display:flex;align-items:center;gap:10px;text-decoration:none;box-sizing:border-box;"><span style="font-size:16px;">📳</span> Viber</a>
-  <a href="mailto:sasa.batinac@in-time.hr" style="width:100%;background:#1a1a1a;color:#ffffff;border:1px solid #333;border-radius:8px;padding:10px 14px;font-size:12px;font-weight:700;cursor:pointer;text-align:left;display:flex;align-items:center;gap:10px;text-decoration:none;box-sizing:border-box;"><span style="font-size:16px;">✉️</span> Email</a>
+  <a href="https://wa.me/385916262171" target="_blank" style="width:100%;background:#25D366;color:#fff;border:1px solid #25D366;border-radius:8px;padding:10px 14px;font-size:12px;font-weight:700;cursor:pointer;margin-bottom:8px;text-align:left;display:flex;align-items:center;gap:10px;text-decoration:none;box-sizing:border-box;"><span style="font-size:16px;">💬</span> WhatsApp</a>
+  <a href="viber://chat/?number=%2B385916262171" style="width:100%;background:#7360F2;color:#fff;border:1px solid #7360F2;border-radius:8px;padding:10px 14px;font-size:12px;font-weight:700;cursor:pointer;margin-bottom:8px;text-align:left;display:flex;align-items:center;gap:10px;text-decoration:none;box-sizing:border-box;"><span style="font-size:16px;">📳</span> Viber</a>
+  <a href="mailto:sasa.batinac@in-time.hr" style="width:100%;background:#ff6600;color:#fff;border:1px solid #ff6600;border-radius:8px;padding:10px 14px;font-size:12px;font-weight:700;cursor:pointer;margin-bottom:8px;text-align:left;display:flex;align-items:center;gap:10px;text-decoration:none;box-sizing:border-box;"><span style="font-size:16px;">✉️</span> Email</a>
+  <a href="https://us05web.zoom.us/launch/chat?src=direct_chat_link&amp;email=sbatinac.intime%40gmail.com" id="kontaktZoom" target="_blank" style="width:100%;background:#2D8CFF;color:#fff;border:1px solid #2D8CFF;border-radius:8px;padding:10px 14px;font-size:12px;font-weight:700;cursor:pointer;margin-bottom:8px;text-align:left;display:flex;align-items:center;gap:10px;text-decoration:none;box-sizing:border-box;"><span style="font-size:16px;">🎦</span> Zoom</a>
+  <a href="https://teams.microsoft.com/l/chat/0/0?users=sasa.batinac@in-time.hr" id="kontaktTeams" target="_blank" style="width:100%;background:#6264A7;color:#fff;border:1px solid #6264A7;border-radius:8px;padding:10px 14px;font-size:12px;font-weight:700;cursor:pointer;text-align:left;display:flex;align-items:center;gap:10px;text-decoration:none;box-sizing:border-box;"><span style="font-size:16px;">🖥️</span> Microsoft Teams</a>
+
+  <!-- GRUPE — odvojeno od gornjeg osobnog kontakta (korisnikov zahtjev).
+       Linkovi su PLACEHOLDER ("#") dok Saša ne pošalje stvarne pozivnice/
+       linkove za svaku grupu — zamijeniti kad stignu. -->
+  <div style="border-top:1px solid #333;margin:10px 0 10px;padding-top:10px;">
+    <span style="color:#888;font-size:10px;font-weight:900;letter-spacing:1px;">GRUPE</span>
+  </div>
+  <a href="https://signal.group/#CjQKII_LUQ-FGkqOQ5cWgJOWVJ8sYuKvF4FEBgwbkNnWZE6-EhCTiFk_mAP6k1HR3idt0HAA" id="kontaktSignalGrupa" target="_blank" style="width:100%;background:#3A76F0;color:#fff;border:1px solid #3A76F0;border-radius:8px;padding:10px 14px;font-size:12px;font-weight:700;cursor:pointer;margin-bottom:8px;text-align:left;display:flex;align-items:center;gap:10px;text-decoration:none;box-sizing:border-box;"><span style="font-size:16px;">🔒</span> Signal grupa</a>
+  <a href="https://invite.viber.com/?g=3T2yLFZ1KFfhb8170cP0TK4HT-g0jnbb" id="kontaktViberGrupa" target="_blank" style="width:100%;background:#7360F2;color:#fff;border:1px solid #7360F2;border-radius:8px;padding:10px 14px;font-size:12px;font-weight:700;cursor:pointer;margin-bottom:8px;text-align:left;display:flex;align-items:center;gap:10px;text-decoration:none;box-sizing:border-box;"><span style="font-size:16px;">📳</span> Viber grupa</a>
+  <a href="https://chat.whatsapp.com/JIpQguSjTVwLBAG44HVMwA" id="kontaktWhatsappGrupa" target="_blank" style="width:100%;background:#25D366;color:#fff;border:1px solid #25D366;border-radius:8px;padding:10px 14px;font-size:12px;font-weight:700;cursor:pointer;text-align:left;display:flex;align-items:center;gap:10px;text-decoration:none;box-sizing:border-box;"><span style="font-size:16px;">💬</span> WhatsApp grupa</a>
 </div>
 
 <!-- SHARE POPUP -->
@@ -4714,10 +4886,10 @@
     <span style="color:#fff;font-size:13px;font-weight:900;letter-spacing:1px;">PODIJELI</span>
     <span onclick="closeAll()" style="color:#888;cursor:pointer;font-size:18px;line-height:1;">×</span>
   </div>
-  <button onclick="shareNative()" style="width:100%;background:#1a1a1a;color:var(--purple);border:1px solid #333;border-radius:8px;padding:10px 14px;font-size:12px;font-weight:700;cursor:pointer;margin-bottom:8px;text-align:left;display:flex;align-items:center;gap:10px;"><span style="font-size:16px;">📤</span> Podijeli / Kopiraj link</button>
-  <a href="#" id="shareEmailLink" style="width:100%;background:#1a1a1a;color:#ffffff;border:1px solid #333;border-radius:8px;padding:10px 14px;font-size:12px;font-weight:700;cursor:pointer;margin-bottom:8px;text-align:left;display:flex;align-items:center;gap:10px;text-decoration:none;box-sizing:border-box;"><span style="font-size:16px;">✉️</span> Email</a>
-  <a href="#" id="shareViberLink" style="width:100%;background:#1a1a1a;color:#7360F2;border:1px solid #333;border-radius:8px;padding:10px 14px;font-size:12px;font-weight:700;cursor:pointer;margin-bottom:8px;text-align:left;display:flex;align-items:center;gap:10px;text-decoration:none;box-sizing:border-box;"><span style="font-size:16px;">📳</span> Viber</a>
-  <a href="#" id="shareWaLink" target="_blank" style="width:100%;background:#1a1a1a;color:#25D366;border:1px solid #333;border-radius:8px;padding:10px 14px;font-size:12px;font-weight:700;cursor:pointer;text-align:left;display:flex;align-items:center;gap:10px;text-decoration:none;box-sizing:border-box;"><span style="font-size:16px;">💬</span> WhatsApp</a>
+  <button onclick="shareNative()" style="width:100%;background:#4d148c;color:#fff;border:1px solid #4d148c;border-radius:8px;padding:10px 14px;font-size:12px;font-weight:700;cursor:pointer;margin-bottom:8px;text-align:left;display:flex;align-items:center;gap:10px;"><span style="font-size:16px;">📤</span> Podijeli / Kopiraj link</button>
+  <a href="#" id="shareEmailLink" style="width:100%;background:#ff6600;color:#fff;border:1px solid #ff6600;border-radius:8px;padding:10px 14px;font-size:12px;font-weight:700;cursor:pointer;margin-bottom:8px;text-align:left;display:flex;align-items:center;gap:10px;text-decoration:none;box-sizing:border-box;"><span style="font-size:16px;">✉️</span> Email</a>
+  <a href="#" id="shareViberLink" style="width:100%;background:#7360F2;color:#fff;border:1px solid #7360F2;border-radius:8px;padding:10px 14px;font-size:12px;font-weight:700;cursor:pointer;margin-bottom:8px;text-align:left;display:flex;align-items:center;gap:10px;text-decoration:none;box-sizing:border-box;"><span style="font-size:16px;">📳</span> Viber</a>
+  <a href="#" id="shareWaLink" target="_blank" style="width:100%;background:#25D366;color:#fff;border:1px solid #25D366;border-radius:8px;padding:10px 14px;font-size:12px;font-weight:700;cursor:pointer;text-align:left;display:flex;align-items:center;gap:10px;text-decoration:none;box-sizing:border-box;"><span style="font-size:16px;">💬</span> WhatsApp</a>
 </div>
 
 <!-- GLAZBA — nema src dok Saša ne ubaci pravi audio link (vidi napomenu gore) -->
