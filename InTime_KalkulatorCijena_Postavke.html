@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="hr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>In Time — Postavke kalkulatora</title>
+<style>
+  :root{
+    --teal:#229891;
+    --teal-dark:#1b7a74;
+    --black:#131313;
+    --bg:#ffffff;
+    --panel:#f6f9f9;
+    --border:#e1e8e7;
+    --muted:#5b6664;
+    --danger:#c0392b;
+    --green:#2e8b57;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:'Segoe UI', Roboto, Arial, sans-serif;
+    background:var(--bg);
+    color:var(--black);
+    line-height:1.5;
+  }
+  header{
+    background:var(--teal);
+    color:#fff;
+    padding:28px 20px 24px;
+    text-align:center;
+  }
+  header .brand{
+    font-size:14px;
+    letter-spacing:2px;
+    text-transform:uppercase;
+    opacity:.9;
+    margin-bottom:6px;
+  }
+  header h1{
+    margin:0;
+    font-size:24px;
+    font-weight:700;
+  }
+  header p{
+    margin:8px 0 0;
+    font-size:14px;
+    opacity:.95;
+  }
+  .wrap{
+    max-width:640px;
+    margin:0 auto;
+    padding:24px 16px 60px;
+  }
+  .card{
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:12px;
+    padding:20px 20px 22px;
+    margin-bottom:20px;
+  }
+  .card h2{
+    margin:0 0 6px;
+    font-size:16px;
+    color:var(--teal-dark);
+    text-transform:uppercase;
+    letter-spacing:.5px;
+  }
+  .card .desc{
+    margin:0 0 18px;
+    font-size:13px;
+    color:var(--muted);
+  }
+  .switch-row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:16px;
+    padding:14px 16px;
+    background:#fff;
+    border:1.5px solid var(--border);
+    border-radius:10px;
+  }
+  .switch-row .label{
+    font-size:15px;
+    font-weight:700;
+    color:var(--black);
+  }
+  .switch-row .sub{
+    font-size:12px;
+    color:var(--muted);
+    margin-top:2px;
+    font-weight:400;
+  }
+  /* CSS toggle switch */
+  .switch{
+    position:relative;
+    display:inline-block;
+    width:56px;
+    height:30px;
+    flex:0 0 auto;
+  }
+  .switch input{
+    opacity:0;
+    width:0;
+    height:0;
+  }
+  .slider{
+    position:absolute;
+    cursor:pointer;
+    top:0; left:0; right:0; bottom:0;
+    background:#ccc;
+    transition:.2s;
+    border-radius:30px;
+  }
+  .slider:before{
+    position:absolute;
+    content:"";
+    height:24px;
+    width:24px;
+    left:3px;
+    bottom:3px;
+    background:#fff;
+    transition:.2s;
+    border-radius:50%;
+    box-shadow:0 1px 3px rgba(0,0,0,.3);
+  }
+  .switch input:checked + .slider{
+    background:var(--green);
+  }
+  .switch input:checked + .slider:before{
+    transform:translateX(26px);
+  }
+  .status-box{
+    margin-top:16px;
+    padding:12px 14px;
+    border-radius:8px;
+    font-size:14px;
+    font-weight:700;
+    text-align:center;
+    border:1.5px solid var(--border);
+    background:#fff;
+    color:var(--muted);
+  }
+  .status-box.on{
+    background:#eaf7ec;
+    border-color:var(--green);
+    color:#1f6e42;
+  }
+  .status-box.off{
+    background:#fdecea;
+    border-color:var(--danger);
+    color:var(--danger);
+  }
+  .note{
+    font-size:12px;
+    color:var(--muted);
+    margin-top:14px;
+    line-height:1.6;
+  }
+  .note b{ color:var(--black); }
+  .saved-flash{
+    display:inline-block;
+    margin-left:10px;
+    font-size:12px;
+    color:var(--green);
+    font-weight:700;
+    opacity:0;
+    transition:opacity .3s;
+  }
+  .saved-flash.show{ opacity:1; }
+  a{ color:var(--teal-dark); }
+
+  .izvor-section{
+    margin-top:18px;
+    padding-top:16px;
+    border-top:1.5px dashed var(--border);
+    transition:opacity .2s;
+  }
+  .izvor-section.disabled{
+    opacity:.5;
+    pointer-events:none;
+  }
+  .izvor-label{
+    font-size:14px;
+    font-weight:700;
+    color:var(--black);
+    margin-bottom:4px;
+  }
+  .izvor-sub{
+    font-size:12px;
+    color:var(--muted);
+    margin-bottom:10px;
+  }
+  .izvor-options{
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+  }
+  .izvor-opt{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:10px 14px;
+    background:#fff;
+    border:1.5px solid var(--border);
+    border-radius:10px;
+    cursor:pointer;
+    font-size:14px;
+  }
+  .izvor-opt input{
+    width:18px;
+    height:18px;
+    accent-color:var(--teal);
+    flex:0 0 auto;
+    cursor:pointer;
+  }
+  .izvor-opt:has(input:checked){
+    border-color:var(--teal);
+    background:#eaf6f5;
+    font-weight:700;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">IN TIME</div>
+  <h1>Postavke kalkulatora cijene dostave</h1>
+  <p>Interna stranica — upravljanje ugovornim dodacima po klijentu</p>
+</header>
+
+<div class="wrap">
+
+  <div class="card">
+    <h2>Sezonski dodatak</h2>
+    <p class="desc">Nadoplata na cijenu tijekom određenog razdoblja u godini (trenutno 1.11.–31.12., 15% na osnovnu cijenu s dodacima). Uključi isključivo za klijente koji imaju ugovoren sezonski dodatak — inače kalkulator uvijek prikazuje 0% za sezonski dodatak, neovisno o odabranom datumu.</p>
+
+    <div class="switch-row">
+      <div>
+        <div class="label">Sezonski dodatak aktivan</div>
+        <div class="sub">Kad je isključeno: sezonski dodatak = 0% (nije ugovoren)</div>
+      </div>
+      <label class="switch">
+        <input type="checkbox" id="sezonskiToggle">
+        <span class="slider"></span>
+      </label>
+    </div>
+
+    <div class="status-box" id="statusBox">ISKLJUČENO — sezonski dodatak se ne obračunava (0%)</div>
+    <div style="text-align:center;"><span class="saved-flash" id="savedFlash">✓ Spremljeno</span></div>
+
+    <div class="izvor-section" id="izvorSection">
+      <div class="izvor-label">Izvor postotka sezonskog dodatka</div>
+      <div class="izvor-sub">Vrijedi samo dok je gornji prekidač uključen. Ako klijent u svom cjeniku ima drugačiji ugovoreni postotak sezonskog dodatka (npr. 35% umjesto 15%), ovdje se može odabrati da kalkulator koristi tu vrijednost iz učitanog cjenika.</div>
+      <div class="izvor-options">
+        <label class="izvor-opt">
+          <input type="radio" name="sezonskiIzvor" id="izvorFiksno" value="fiksno">
+          <span>Fiksnih 15% (zadano, neovisno o cjeniku)</span>
+        </label>
+        <label class="izvor-opt">
+          <input type="radio" name="sezonskiIzvor" id="izvorCjenik" value="cjenik">
+          <span>Iz učitanog cjenika/ponude klijenta (ako nije prepoznat, koristi 15%)</span>
+        </label>
+      </div>
+    </div>
+
+    <div class="note">
+      Ova postavka se sprema u preglednik (<b>localStorage</b>) i čita je glavni kalkulator (<b>InTime_KalkulatorCijena.html</b>) prilikom izračuna. Da bi postavka vrijedila, obje stranice moraju biti otvorene na <b>istoj web adresi/domeni</b> (npr. obje ugrađene na in-time.hr) — ako se kalkulator otvara kao lokalna datoteka na drugom računalu ili u drugom pregledniku, postavka se ne prenosi automatski i potrebno ju je ovdje ponovno uključiti za taj preglednik/uređaj.
+    </div>
+  </div>
+
+</div>
+
+<script>
+  const LS_KEY = 'intime_sezonskiDodatakAktivan';
+  const IZVOR_LS_KEY = 'intime_sezonskiDodatakIzvor';
+  const toggle = document.getElementById('sezonskiToggle');
+  const statusBox = document.getElementById('statusBox');
+  const savedFlash = document.getElementById('savedFlash');
+  const izvorSection = document.getElementById('izvorSection');
+  const izvorFiksno = document.getElementById('izvorFiksno');
+  const izvorCjenik = document.getElementById('izvorCjenik');
+
+  function getState(){
+    try{ return localStorage.getItem(LS_KEY) === 'true'; }
+    catch(e){ return false; }
+  }
+
+  // Izvor postotka sezonskog dodatka (18.9.2026., Saša: "u onom prekidaču mozemo napraviti mogucnost da pita
+  // da li ide sezonski dodatak iz ponude ili osnovnih 15%"). 'fiksno' (zadano) = uvijek 15%; 'cjenik' = koristi
+  // postotak prepoznat iz učitanog cjenika klijenta u glavnom kalkulatoru (ako ga cjenik nema, i dalje 15%).
+  function getIzvor(){
+    try{ return localStorage.getItem(IZVOR_LS_KEY) === 'cjenik' ? 'cjenik' : 'fiksno'; }
+    catch(e){ return 'fiksno'; }
+  }
+
+  function render(){
+    const on = getState();
+    toggle.checked = on;
+    const izvor = getIzvor();
+    if(on){
+      statusBox.textContent = (izvor === 'cjenik')
+        ? 'UKLJUČENO — postotak se uzima iz učitanog cjenika klijenta (ako nije prepoznat, koristi se 15%)'
+        : 'UKLJUČENO — 15% (u sezoni 1.11.–31.12.)';
+    } else {
+      statusBox.textContent = 'ISKLJUČENO — sezonski dodatak se ne obračunava (0%)';
+    }
+    statusBox.classList.toggle('on', on);
+    statusBox.classList.toggle('off', !on);
+
+    izvorFiksno.checked = (izvor === 'fiksno');
+    izvorCjenik.checked = (izvor === 'cjenik');
+    izvorFiksno.disabled = !on;
+    izvorCjenik.disabled = !on;
+    izvorSection.classList.toggle('disabled', !on);
+  }
+
+  function flashSaved(){
+    savedFlash.classList.add('show');
+    clearTimeout(flashSaved._t);
+    flashSaved._t = setTimeout(() => savedFlash.classList.remove('show'), 1500);
+  }
+
+  toggle.addEventListener('change', () => {
+    try{
+      localStorage.setItem(LS_KEY, toggle.checked ? 'true' : 'false');
+      flashSaved();
+    } catch(e){
+      alert('Nije moguće spremiti postavku u ovom pregledniku (localStorage nedostupan).');
+    }
+    render();
+  });
+
+  [izvorFiksno, izvorCjenik].forEach(function(el){
+    el.addEventListener('change', () => {
+      try{
+        localStorage.setItem(IZVOR_LS_KEY, izvorCjenik.checked ? 'cjenik' : 'fiksno');
+        flashSaved();
+      } catch(e){
+        alert('Nije moguće spremiti postavku u ovom pregledniku (localStorage nedostupan).');
+      }
+      render();
+    });
+  });
+
+  render();
+</script>
+
+</body>
+</html>

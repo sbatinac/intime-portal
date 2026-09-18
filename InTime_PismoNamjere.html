@@ -253,6 +253,52 @@
   .booking-embed-wrap.fullscreen .booking-embed-bar{border-radius:0;flex:0 0 auto;}
   .booking-embed-wrap.fullscreen .booking-embed-iframe{flex:1 1 auto;height:auto;border-radius:0;border:none;}
 
+  /* KALKULATOR CIJENA — kartica ista veličina kao Online Booking/Dokumenti/
+     Galerija, ODMAH ISPOD Online Bookinga (Sašin izričit zahtjev, 18.9.2026.).
+     PRIVREMENO bez fotografije u pozadini (Saša šalje sliku naknadno) —
+     koristi se gradijent u bojama brenda umjesto url() pozadinske slike koju
+     imaju ostale "tema-foto-*" kartice. Kad slika stigne, zamijeniti pozadinu
+     istim obrascem kao .tema-foto-booking (linear-gradient overlay + url(...)
+     center/cover no-repeat). */
+  .galerija-toggle-btn.tema-foto-kalkulator{
+    background: linear-gradient(135deg, var(--purple) 0%, var(--purple-dark) 100%);
+  }
+  .galerija-toggle-btn.tema-foto-kalkulator:hover{
+    background: linear-gradient(135deg, var(--purple-dark) 0%, #0d3d3a 100%);
+  }
+  /* KALKULATOR — ugrađen (iframe) ispod kartice, isti obrazac kao Online
+     Booking (ručni fullscreen prekidač "Raširi", ne automatsko mjerenje
+     visine) — kalkulator je vrlo velika, interaktivna stranica pa je
+     fullscreen najpouzdaniji način da korisnik dobije dovoljno prostora.
+     Za razliku od Online Bookinga, kalkulator JEST na istoj domeni (GitHub
+     Pages) pa ugrađivanje u iframe nema rizika od X-Frame-Options odbijanja
+     — svejedno je zadržan isti obrazac zbog dosljednosti i jer je kalkulator
+     opsežan alat kojem korisnik treba puno prostora. */
+  .kalkulator-embed-wrap{display:none;margin-top:18px;}
+  .kalkulator-embed-wrap.active{display:block;}
+  .kalkulator-embed-bar{
+    display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;
+    background:var(--purple-dark);color:#fff;padding:10px 16px;
+    border-radius:10px 10px 0 0;font-weight:700;font-size:14px;
+  }
+  .kalkulator-embed-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
+  .kalkulator-embed-btn{
+    background:transparent;border:1px solid rgba(255,255,255,.5);color:#fff;
+    border-radius:6px;padding:5px 12px;font-size:12px;cursor:pointer;font-family:inherit;
+    text-decoration:none;display:inline-block;
+  }
+  .kalkulator-embed-btn:hover{background:rgba(255,255,255,.15);}
+  .kalkulator-embed-iframe{
+    width:100%;height:700px;border:1px solid var(--line);border-top:none;
+    border-radius:0 0 10px 10px;display:block;background:#fff;
+  }
+  .kalkulator-embed-wrap.fullscreen{
+    position:fixed;top:0;left:0;right:0;bottom:0;width:100%;height:100%;
+    margin:0;z-index:9500;background:#fff;display:flex;flex-direction:column;
+  }
+  .kalkulator-embed-wrap.fullscreen .kalkulator-embed-bar{border-radius:0;flex:0 0 auto;}
+  .kalkulator-embed-wrap.fullscreen .kalkulator-embed-iframe{flex:1 1 auto;height:auto;border-radius:0;border:none;}
+
   /* — PDF galerija — */
   #pdf-galerija-section .galerija-wrap-gornji{background:#fff;padding:20px 24px;border-bottom:2px solid var(--purple-dark);}
   #pdf-galerija-section .galerija-header-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px;}
@@ -1265,6 +1311,32 @@
           </div>
         </div>
         <iframe id="booking-embed-iframe" class="booking-embed-iframe" title="In Time Online Booking" loading="lazy"></iframe>
+      </div>
+    </div>
+  </section>
+
+  <!-- KALKULATOR CIJENA — kartica ista veličina/stil kao ostale, ODMAH
+       ISPOD Online Bookinga (Sašin izričit zahtjev, 18.9.2026.). Klik
+       otvara kalkulator UGRAĐEN (iframe) ispod kartice, isti obrazac
+       ponašanja kao Online Booking, s gumbom "Raširi" za fullscreen.
+       Slika za pozadinu kartice stiže naknadno od Saše — vidi CSS
+       .tema-foto-kalkulator (trenutno gradijent bez fotografije). -->
+  <section>
+    <div class="wrap-galerija">
+      <button type="button" id="kalkulator-toggle-btn" class="galerija-toggle-btn tema-foto-kalkulator" onclick="toggleKalkulatorEmbed(event)">
+        <span>Kalkulator cijene dostave</span>
+        <span class="galerija-toggle-arrow">▾</span>
+      </button>
+      <div id="kalkulator-embed-wrap" class="kalkulator-embed-wrap">
+        <div class="kalkulator-embed-bar">
+          <span>In Time — kalkulator cijene dostave</span>
+          <div class="kalkulator-embed-actions">
+            <a href="InTime_KalkulatorCijena.html" target="_blank" rel="noopener" class="kalkulator-embed-btn">↗ Otvori u novom prozoru</a>
+            <button type="button" id="kalkulator-fullscreen-btn" class="kalkulator-embed-btn" onclick="toggleKalkulatorFullscreen(event)">⛶ Raširi</button>
+            <button type="button" class="kalkulator-embed-btn" onclick="closeKalkulatorEmbed()">Zatvori ✕</button>
+          </div>
+        </div>
+        <iframe id="kalkulator-embed-iframe" class="kalkulator-embed-iframe" title="In Time — kalkulator cijene dostave" loading="lazy"></iframe>
       </div>
     </div>
   </section>
@@ -4650,6 +4722,7 @@
   function showPanel(which){
     closeAnketaEmbed();
     closeBookingEmbed();
+    closeKalkulatorEmbed();
     document.getElementById('panel-interes').classList.remove('active');
     document.getElementById('panel-odbijenica').classList.remove('active');
     document.getElementById('confirm-box').classList.remove('active');
@@ -4707,6 +4780,7 @@
     document.getElementById('panel-odbijenica').classList.remove('active');
     document.getElementById('confirm-box').classList.remove('active');
     closeBookingEmbed();
+    closeKalkulatorEmbed();
     var wrap = document.getElementById('anketa-embed-wrap');
     var iframe = document.getElementById('anketa-embed-iframe');
     if (!iframe.getAttribute('src')) {
@@ -4753,6 +4827,7 @@
     document.getElementById('panel-odbijenica').classList.remove('active');
     document.getElementById('confirm-box').classList.remove('active');
     closeAnketaEmbed();
+    closeKalkulatorEmbed();
     var wrap = document.getElementById('booking-embed-wrap');
     var iframe = document.getElementById('booking-embed-iframe');
     if (!iframe.getAttribute('src')) {
@@ -4778,13 +4853,65 @@
     btn.textContent = suziIce ? '⤢ Suzi' : '⛶ Raširi';
   }
 
-  // Izlazak iz fullscreen prikaza Online Bookinga tipkom Escape (isti
-  // ugođaj kao lightbox za slike, koji Escape već koristi za zatvaranje).
+  // KALKULATOR CIJENA — ugrađen (iframe) isto kao Online Booking, uz
+  // fullscreen prekidač. Za razliku od Bookinga, kalkulator je na ISTOJ
+  // domeni (GitHub Pages) pa nema rizika od X-Frame-Options odbijanja —
+  // ipak je zadržan isti fullscreen obrazac jer je kalkulator vrlo velika,
+  // detaljna stranica i korisnik će htjeti što više prostora za rad s njim.
+  // Sašin izričit zahtjev (18.9.2026.).
+  function toggleKalkulatorEmbed(event){
+    if (event) { event.stopPropagation(); }
+    var wrap = document.getElementById('kalkulator-embed-wrap');
+    if (wrap.classList.contains('active')) {
+      closeKalkulatorEmbed();
+    } else {
+      openKalkulatorEmbed();
+    }
+  }
+
+  function openKalkulatorEmbed(){
+    document.getElementById('panel-interes').classList.remove('active');
+    document.getElementById('panel-odbijenica').classList.remove('active');
+    document.getElementById('confirm-box').classList.remove('active');
+    closeAnketaEmbed();
+    closeBookingEmbed();
+    var wrap = document.getElementById('kalkulator-embed-wrap');
+    var iframe = document.getElementById('kalkulator-embed-iframe');
+    if (!iframe.getAttribute('src')) {
+      iframe.src = 'InTime_KalkulatorCijena.html';
+    }
+    wrap.classList.add('active');
+    skociNaSidro('kalkulator-embed-wrap');
+  }
+
+  function closeKalkulatorEmbed(){
+    var wrap = document.getElementById('kalkulator-embed-wrap');
+    wrap.classList.remove('active');
+    wrap.classList.remove('fullscreen');
+    var fsBtn = document.getElementById('kalkulator-fullscreen-btn');
+    if (fsBtn) { fsBtn.textContent = '⛶ Raširi'; }
+  }
+
+  function toggleKalkulatorFullscreen(event){
+    if (event) { event.stopPropagation(); }
+    var wrap = document.getElementById('kalkulator-embed-wrap');
+    var btn = document.getElementById('kalkulator-fullscreen-btn');
+    var suziIce = wrap.classList.toggle('fullscreen');
+    btn.textContent = suziIce ? '⤢ Suzi' : '⛶ Raširi';
+  }
+
+  // Izlazak iz fullscreen prikaza Online Bookinga ili Kalkulatora tipkom
+  // Escape (isti ugođaj kao lightbox za slike, koji Escape već koristi za
+  // zatvaranje).
   document.addEventListener('keydown', function(e){
     if (e.key !== 'Escape') { return; }
     var bookingWrap = document.getElementById('booking-embed-wrap');
     if (bookingWrap && bookingWrap.classList.contains('fullscreen')) {
       toggleBookingFullscreen();
+    }
+    var kalkulatorWrap = document.getElementById('kalkulator-embed-wrap');
+    if (kalkulatorWrap && kalkulatorWrap.classList.contains('fullscreen')) {
+      toggleKalkulatorFullscreen();
     }
   });
 
