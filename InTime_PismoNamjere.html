@@ -255,16 +255,18 @@
 
   /* KALKULATOR CIJENA — kartica ista veličina kao Online Booking/Dokumenti/
      Galerija, ODMAH ISPOD Online Bookinga (Sašin izričit zahtjev, 18.9.2026.).
-     PRIVREMENO bez fotografije u pozadini (Saša šalje sliku naknadno) —
-     koristi se gradijent u bojama brenda umjesto url() pozadinske slike koju
-     imaju ostale "tema-foto-*" kartice. Kad slika stigne, zamijeniti pozadinu
-     istim obrascem kao .tema-foto-booking (linear-gradient overlay + url(...)
+     Pozadinska fotografija dodana 18.9.2026. (Sašina slika), isti obrazac
+     kao ostale "tema-foto-*" kartice (linear-gradient overlay + url(...)
      center/cover no-repeat). */
   .galerija-toggle-btn.tema-foto-kalkulator{
-    background: linear-gradient(135deg, var(--purple) 0%, var(--purple-dark) 100%);
+    background:
+      linear-gradient(90deg, rgba(8,20,28,.66), rgba(8,20,28,.32)),
+      url('https://i.imgur.com/V2krix2.png') center/cover no-repeat;
   }
   .galerija-toggle-btn.tema-foto-kalkulator:hover{
-    background: linear-gradient(135deg, var(--purple-dark) 0%, #0d3d3a 100%);
+    background:
+      linear-gradient(90deg, rgba(8,20,28,.76), rgba(8,20,28,.42)),
+      url('https://i.imgur.com/V2krix2.png') center/cover no-repeat;
   }
   /* KALKULATOR — ugrađen (iframe) ispod kartice, isti obrazac kao Online
      Booking (ručni fullscreen prekidač "Raširi", ne automatsko mjerenje
@@ -1319,8 +1321,7 @@
        ISPOD Online Bookinga (Sašin izričit zahtjev, 18.9.2026.). Klik
        otvara kalkulator UGRAĐEN (iframe) ispod kartice, isti obrazac
        ponašanja kao Online Booking, s gumbom "Raširi" za fullscreen.
-       Slika za pozadinu kartice stiže naknadno od Saše — vidi CSS
-       .tema-foto-kalkulator (trenutno gradijent bez fotografije). -->
+       Pozadinska slika kartice — vidi CSS .tema-foto-kalkulator. -->
   <section>
     <div class="wrap-galerija">
       <button type="button" id="kalkulator-toggle-btn" class="galerija-toggle-btn tema-foto-kalkulator" onclick="toggleKalkulatorEmbed(event)">
