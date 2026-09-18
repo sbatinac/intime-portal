@@ -1280,6 +1280,7 @@
             <span class="live-fee-label">Iznos dodatka:</span>
             <span class="live-fee-value" id="dodatakGorivoFeeValue">—</span>
           </div>
+          <div class="note" id="dodatakGorivoLockNote" style="display:none; margin-top:6px; color:#c0392b; font-weight:700;"></div>
         </div>
       </div>
 
@@ -1292,6 +1293,7 @@
             <span class="live-fee-label">Iznos dodatka:</span>
             <span class="live-fee-value" id="dodatakTezinaFeeValue">—</span>
           </div>
+          <div class="note" id="dodatakTezinaLockNote" style="display:none; margin-top:6px; color:#c0392b; font-weight:700;"></div>
         </div>
       </div>
 
@@ -2195,6 +2197,7 @@ document.getElementById('cjenikFile').addEventListener('change', function(e){
       updateSezonskiPctBox();
       const maxKoletaLock = parseMaxKoletaFromRows(rows);
       applyMaxKoletaLock(maxKoletaLock);
+      applyRucniDodaciLock(true);
       const maxKoletaNapomena = maxKoletaLock === null ? '' : (maxKoletaLock.limited ? `, max. broj koleta: ${maxKoletaLock.value}` : ', max. broj koleta: neograničen');
       const ostaleNapomeneDijelovi = [];
       if(cjenikPreuzimanjeCijena !== null) ostaleNapomeneDijelovi.push(`preuzimanje ${fmt(cjenikPreuzimanjeCijena)}`);
@@ -2250,6 +2253,7 @@ function resetCjenik(){
   cjenikSezonskiPct = null;
   updateSezonskiPctBox();
   applyMaxKoletaLock(null);
+  applyRucniDodaciLock(false);
   const status = document.getElementById('cjenikStatus');
   status.textContent = 'Učitan zadani In Time cjenik (33 kategorije težine × 3 zone).';
   status.style.color = '';
@@ -2697,6 +2701,29 @@ function parseMaxKoletaFromRows(rows){
     if(!isNaN(n) && n > 0) return {limited: true, value: Math.round(n)};
   }
   return {limited: false};
+}
+
+// Zaključavanje "Dodatak za gorivo" i "Dodatak na težinu" kad je učitan cjenik klijenta (18.9.2026.,
+// Sašin izričit zahtjev): oba polja postaju disabled čim je bilo koji cjenik učitan, neovisno o tome je li
+// u tom cjeniku prepoznat redak "Dodatak na težinu" (za gorivo trenutno NE postoji redak/izvor u cjeniku —
+// odakle se ta vrijednost povlači za pojedinog klijenta dogovara se naknadno u administraciji; do tada je
+// polje samo zaključano da ga korisnik ne može ručno mijenjati kad je cjenik učitan). "Vrati zadani cjenik"
+// (resetCjenik()) ih ponovno otključava.
+function applyRucniDodaciLock(locked){
+  const gorivoInput = document.getElementById('dodatakGorivoPct');
+  const tezinaInput = document.getElementById('dodatakTezinaPct');
+  const gorivoNote = document.getElementById('dodatakGorivoLockNote');
+  const tezinaNote = document.getElementById('dodatakTezinaLockNote');
+  gorivoInput.disabled = locked;
+  tezinaInput.disabled = locked;
+  if(gorivoNote){
+    gorivoNote.style.display = locked ? 'block' : 'none';
+    gorivoNote.textContent = locked ? 'Zaključano jer je učitan cjenik klijenta — izvor ove vrijednosti za pojedinog klijenta još nije definiran, dogovara se naknadno u administraciji.' : '';
+  }
+  if(tezinaNote){
+    tezinaNote.style.display = locked ? 'block' : 'none';
+    tezinaNote.textContent = locked ? 'Zaključano jer je učitan cjenik klijenta — vrijednost se preuzima iz cjenika (ili zadano 10% ako cjenik ne sadrži taj redak).' : '';
+  }
 }
 
 function applyMaxKoletaLock(lock){
