@@ -1274,13 +1274,12 @@
       <div class="chk gorivo-field">
         <div style="width:100%;">
           <label for="dodatakGorivoPct">Dodatak za gorivo (%)</label>
-          <span class="price-tag">mijenja se iz mjeseca u mjesec — uvijek obavezan, primjenjuje se na osnovnu cijenu</span>
-          <input type="number" id="dodatakGorivoPct" min="0" step="0.01" value="21.50" style="margin-top:8px; max-width:120px;">
+          <span class="price-tag">Dodatak na gorivo: primjenjuje se na osnovnu cijenu usluge, uz pravo jednostrane korekcije iznosa od strane IN TIME. Visina dodatka na gorivo definira se svaki mjesec, u ovisnosti o maloprodajnoj cijeni goriva. Iznos istog možete provjeriti na <a href="https://www.in-time.hr" target="_blank" rel="noopener">www.in-time.hr</a>.</span>
+          <input type="number" id="dodatakGorivoPct" min="0" step="0.01" value="21.50" style="margin-top:8px; max-width:120px;" disabled>
           <div class="live-fee-box" id="dodatakGorivoFeeBox">
             <span class="live-fee-label">Iznos dodatka:</span>
             <span class="live-fee-value" id="dodatakGorivoFeeValue">—</span>
           </div>
-          <div class="note" id="dodatakGorivoLockNote" style="display:none; margin-top:6px; color:#c0392b; font-weight:700;"></div>
         </div>
       </div>
 
@@ -1288,12 +1287,11 @@
         <div style="width:100%;">
           <label for="dodatakTezinaPct">Dodatak na težinu (% po svakih 100 kg preko najviše kategorije)</label>
           <span class="price-tag">automatski se uključuje kad težina pošiljke premaši najvišu kategoriju u cjeniku (trenutno <span id="dodatakTezinaMaxKgLabel">3000</span> kg) — korisnik ga ne može ručno uključiti/isključiti. Postotak se automatski preuzima iz učitanog cjenika (redak "Dodatak na težinu"), inače zadano 10%.</span>
-          <input type="number" id="dodatakTezinaPct" min="0" step="0.01" value="10" style="margin-top:8px; max-width:120px;">
+          <input type="number" id="dodatakTezinaPct" min="0" step="0.01" value="10" style="margin-top:8px; max-width:120px;" disabled>
           <div class="live-fee-box" id="dodatakTezinaFeeBox">
             <span class="live-fee-label">Iznos dodatka:</span>
             <span class="live-fee-value" id="dodatakTezinaFeeValue">—</span>
           </div>
-          <div class="note" id="dodatakTezinaLockNote" style="display:none; margin-top:6px; color:#c0392b; font-weight:700;"></div>
         </div>
       </div>
 
@@ -2197,7 +2195,6 @@ document.getElementById('cjenikFile').addEventListener('change', function(e){
       updateSezonskiPctBox();
       const maxKoletaLock = parseMaxKoletaFromRows(rows);
       applyMaxKoletaLock(maxKoletaLock);
-      applyRucniDodaciLock(true);
       const maxKoletaNapomena = maxKoletaLock === null ? '' : (maxKoletaLock.limited ? `, max. broj koleta: ${maxKoletaLock.value}` : ', max. broj koleta: neograničen');
       const ostaleNapomeneDijelovi = [];
       if(cjenikPreuzimanjeCijena !== null) ostaleNapomeneDijelovi.push(`preuzimanje ${fmt(cjenikPreuzimanjeCijena)}`);
@@ -2253,7 +2250,6 @@ function resetCjenik(){
   cjenikSezonskiPct = null;
   updateSezonskiPctBox();
   applyMaxKoletaLock(null);
-  applyRucniDodaciLock(false);
   const status = document.getElementById('cjenikStatus');
   status.textContent = 'Učitan zadani In Time cjenik (33 kategorije težine × 3 zone).';
   status.style.color = '';
@@ -2703,28 +2699,12 @@ function parseMaxKoletaFromRows(rows){
   return {limited: false};
 }
 
-// Zaključavanje "Dodatak za gorivo" i "Dodatak na težinu" kad je učitan cjenik klijenta (18.9.2026.,
-// Sašin izričit zahtjev): oba polja postaju disabled čim je bilo koji cjenik učitan, neovisno o tome je li
-// u tom cjeniku prepoznat redak "Dodatak na težinu" (za gorivo trenutno NE postoji redak/izvor u cjeniku —
-// odakle se ta vrijednost povlači za pojedinog klijenta dogovara se naknadno u administraciji; do tada je
-// polje samo zaključano da ga korisnik ne može ručno mijenjati kad je cjenik učitan). "Vrati zadani cjenik"
-// (resetCjenik()) ih ponovno otključava.
-function applyRucniDodaciLock(locked){
-  const gorivoInput = document.getElementById('dodatakGorivoPct');
-  const tezinaInput = document.getElementById('dodatakTezinaPct');
-  const gorivoNote = document.getElementById('dodatakGorivoLockNote');
-  const tezinaNote = document.getElementById('dodatakTezinaLockNote');
-  gorivoInput.disabled = locked;
-  tezinaInput.disabled = locked;
-  if(gorivoNote){
-    gorivoNote.style.display = locked ? 'block' : 'none';
-    gorivoNote.textContent = locked ? 'Zaključano jer je učitan cjenik klijenta — izvor ove vrijednosti za pojedinog klijenta još nije definiran, dogovara se naknadno u administraciji.' : '';
-  }
-  if(tezinaNote){
-    tezinaNote.style.display = locked ? 'block' : 'none';
-    tezinaNote.textContent = locked ? 'Zaključano jer je učitan cjenik klijenta — vrijednost se preuzima iz cjenika (ili zadano 10% ako cjenik ne sadrži taj redak).' : '';
-  }
-}
+// "Dodatak za gorivo" i "Dodatak na težinu" su TRAJNO zaključani (disabled u samom HTML-u), neovisno o
+// tome je li cjenik učitan ili ne (18.9.2026., Sašin izričit zahtjev — ranija verzija zaključavala ih je
+// samo dok je cjenik učitan, sad je zaključano po defaultu, korisnik ih nikad ne može ručno mijenjati).
+// Vrijednost "Dodatak na težinu" se i dalje automatski preuzima iz učitanog cjenika kad postoji (vidi
+// parseDodatakTezinaPctFromRows niže) — disabled ne sprječava JS da programatski postavi .value, samo
+// sprječava korisnika da je ručno promijeni.
 
 function applyMaxKoletaLock(lock){
   const rowEl = document.getElementById('brojKoletaRow');
