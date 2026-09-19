@@ -688,6 +688,38 @@
     cursor:pointer;
   }
   .form-submit:hover{background:var(--purple-dark);}
+  /* NOVO (19.9.2026., Sašin izričit zahtjev) — SAMO glavni gumb za slanje
+     upitnika (#panel-interes), puno veći, da se jače istakne na dnu forme,
+     s dodanom zahvalom. Namjerno ZASEBNA klasa (ne mijenja se dijeljeni
+     .form-submit) da gumb "Pošalji odgovor" u Odbijenici ostane
+     nepromijenjen. Boja gumba promijenjena iz narančaste u crvenu, sa
+     suptilnim pulsirajućim sjajem (Sašin izričit naknadni zahtjev) — tekst
+     na gumbu je ostao/vraćen na bijelu boju.*/
+  .form-submit-glavni{
+    margin-top:20px;
+    background:linear-gradient(135deg,#e63838,#b30f0f);
+    color:#fff;
+    border:none;
+    border-radius:12px;
+    padding:26px 48px;
+    font-size:14.5px;
+    font-weight:600;
+    cursor:pointer;
+    display:block;
+    width:100%;
+    max-width:560px;
+    box-shadow:0 6px 18px rgba(179,15,15,0.4), 0 0 14px 2px rgba(230,56,56,0.3);
+    transition:transform .15s ease, box-shadow .15s ease, background .15s ease;
+    animation:form-submit-glow 2.6s ease-in-out infinite;
+  }
+  .form-submit-glavni:hover{background:linear-gradient(135deg,#d42a2a,#970c0c);box-shadow:0 8px 22px rgba(179,15,15,0.5), 0 0 22px 6px rgba(230,56,56,0.5);transform:translateY(-1px);animation-play-state:paused;}
+  /* Blagi crveni "sjaj" oko gumba — Sašin izričit zahtjev, suptilan puls, ne prejak */
+  @keyframes form-submit-glow{
+    0%,100%{box-shadow:0 6px 18px rgba(179,15,15,0.4), 0 0 14px 2px rgba(230,56,56,0.28);}
+    50%{box-shadow:0 6px 18px rgba(179,15,15,0.4), 0 0 26px 8px rgba(230,56,56,0.5);}
+  }
+  .form-submit-thanks{display:block;font-size:14px;font-weight:500;opacity:.95;margin-bottom:8px;}
+  .form-submit-main{display:block;font-size:29px;font-weight:900;letter-spacing:.4px;color:#fff;}
   .form-note{font-size:12px;color:var(--grey);margin-top:10px;}
   /* Upozorenje da upitnik nije moguće dovršiti/poslati (npr. kad u 12. poglavlju
      nijedna od tri glavne usluge nije odabrana u 9. poglavlju) — istaknuta kutija,
@@ -2009,32 +2041,37 @@
 
           <!-- NOVO (19.9.2026., Sašin izričit zahtjev) — dva dodatna, OPCIONALNA
                pitanja, uvijek vidljiva (nisu reveal-ovisna o odabiru službi
-               iznad). Namjerno BEZ data-required-group jer nisu obavezna. -->
+               iznad). Namjerno BEZ "required" jer nisu obavezna. Widget
+               naknadno promijenjen iz radio-gumba u padajući izbornik
+               (<select>), isti obrazac kao ostala <select> polja u upitniku
+               (npr. "Oblik poslovnog subjekta" u 2. poglavlju). -->
           <label style="margin-top:14px;">Koliko Vaša tvrtka ukupno godišnje izdvaja za usluge transporta i logistike?</label>
-          <div class="choice-group choice-group-1col">
-            <label><input type="radio" name="godisnji_iznos_logistika" value="Do 1.000 €"> Do 1.000 €</label>
-            <label><input type="radio" name="godisnji_iznos_logistika" value="Od 1.001 do 2.500 €"> Od 1.001 do 2.500 €</label>
-            <label><input type="radio" name="godisnji_iznos_logistika" value="Od 2.501 do 5.000 €"> Od 2.501 do 5.000 €</label>
-            <label><input type="radio" name="godisnji_iznos_logistika" value="Od 5.001 do 10.000 €"> Od 5.001 do 10.000 €</label>
-            <label><input type="radio" name="godisnji_iznos_logistika" value="Od 10.001 do 15.000 €"> Od 10.001 do 15.000 €</label>
-            <label><input type="radio" name="godisnji_iznos_logistika" value="Od 15.001 do 20.000 €"> Od 15.001 do 20.000 €</label>
-            <label><input type="radio" name="godisnji_iznos_logistika" value="Od 20.001 do 30.000 €"> Od 20.001 do 30.000 €</label>
-            <label><input type="radio" name="godisnji_iznos_logistika" value="Od 30.001 do 50.000 €"> Od 30.001 do 50.000 €</label>
-            <label><input type="radio" name="godisnji_iznos_logistika" value="Više od 50.000 €"> Više od 50.000 €</label>
-          </div>
+          <select name="godisnji_iznos_logistika">
+            <option value="">— odaberite —</option>
+            <option value="Do 1.000 €">Do 1.000 €</option>
+            <option value="Od 1.001 do 2.500 €">Od 1.001 do 2.500 €</option>
+            <option value="Od 2.501 do 5.000 €">Od 2.501 do 5.000 €</option>
+            <option value="Od 5.001 do 10.000 €">Od 5.001 do 10.000 €</option>
+            <option value="Od 10.001 do 15.000 €">Od 10.001 do 15.000 €</option>
+            <option value="Od 15.001 do 20.000 €">Od 15.001 do 20.000 €</option>
+            <option value="Od 20.001 do 30.000 €">Od 20.001 do 30.000 €</option>
+            <option value="Od 30.001 do 50.000 €">Od 30.001 do 50.000 €</option>
+            <option value="Više od 50.000 €">Više od 50.000 €</option>
+          </select>
 
           <label style="margin-top:14px;">Koliki mjesečni iznos izdvajate za logističke usluge za koje razmatrate angažiranje tvrtke IN TIME?</label>
-          <div class="choice-group choice-group-1col">
-            <label><input type="radio" name="mjesecni_iznos_za_intime" value="Do 1.000 €"> Do 1.000 €</label>
-            <label><input type="radio" name="mjesecni_iznos_za_intime" value="Od 1.001 do 2.500 €"> Od 1.001 do 2.500 €</label>
-            <label><input type="radio" name="mjesecni_iznos_za_intime" value="Od 2.501 do 5.000 €"> Od 2.501 do 5.000 €</label>
-            <label><input type="radio" name="mjesecni_iznos_za_intime" value="Od 5.001 do 10.000 €"> Od 5.001 do 10.000 €</label>
-            <label><input type="radio" name="mjesecni_iznos_za_intime" value="Od 10.001 do 15.000 €"> Od 10.001 do 15.000 €</label>
-            <label><input type="radio" name="mjesecni_iznos_za_intime" value="Od 15.001 do 20.000 €"> Od 15.001 do 20.000 €</label>
-            <label><input type="radio" name="mjesecni_iznos_za_intime" value="Od 20.001 do 30.000 €"> Od 20.001 do 30.000 €</label>
-            <label><input type="radio" name="mjesecni_iznos_za_intime" value="Od 30.001 do 50.000 €"> Od 30.001 do 50.000 €</label>
-            <label><input type="radio" name="mjesecni_iznos_za_intime" value="Više od 50.000 €"> Više od 50.000 €</label>
-          </div>
+          <select name="mjesecni_iznos_za_intime">
+            <option value="">— odaberite —</option>
+            <option value="Do 1.000 €">Do 1.000 €</option>
+            <option value="Od 1.001 do 2.500 €">Od 1.001 do 2.500 €</option>
+            <option value="Od 2.501 do 5.000 €">Od 2.501 do 5.000 €</option>
+            <option value="Od 5.001 do 10.000 €">Od 5.001 do 10.000 €</option>
+            <option value="Od 10.001 do 15.000 €">Od 10.001 do 15.000 €</option>
+            <option value="Od 15.001 do 20.000 €">Od 15.001 do 20.000 €</option>
+            <option value="Od 20.001 do 30.000 €">Od 20.001 do 30.000 €</option>
+            <option value="Od 30.001 do 50.000 €">Od 30.001 do 50.000 €</option>
+            <option value="Više od 50.000 €">Više od 50.000 €</option>
+          </select>
         </div>
 
         <div class="form-section">
@@ -2461,7 +2498,7 @@
         <datalist id="grad-suggestions"></datalist>
         <datalist id="postanski-broj-suggestions"></datalist>
 
-        <button type="submit" class="form-submit">Pošalji upitnik</button>
+        <button type="submit" class="form-submit-glavni"><span class="form-submit-thanks">Hvala Vam na Vašem vremenu i trudu uloženom u popunjavanje ovog upitnika — veselimo se budućoj suradnji!</span><span class="form-submit-main">Pošalji upitnik</span></button>
         <div class="form-note">Podaci se koriste isključivo za pripremu ponude i ugovora o suradnji te se ne dijele s trećim stranama.</div>
       </form>
 

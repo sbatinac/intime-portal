@@ -621,6 +621,14 @@
         Ocjena kvalitete <span id="broj-stanje-anketa" class="broj-stanje-badge"></span>
       </label>
       <button type="button" class="stat-reset-btn" onclick="openPodesiBrojeveModal()" title="Ručno podesi sljedeći broj za bilo koju vrstu (zaštićeno lozinkom + potvrdom riječju)">⚙ Podesi numeraciju</button>
+      <!-- NOVO (19.9.2026., Sašin izričit zahtjev) — "master reset" SVIH TRI
+           numeracije odjednom (Upitnik/Odbijenica/Ocjena kvalitete → natrag
+           na 0001), za slučaj puno testiranja umjesto pojedinačnog resetiranja
+           svake vrste kroz "Podesi numeraciju". NAJVIŠA razina zaštite u
+           cijelom adminu, Sašin izričit redoslijed: (1) "jesi siguran" #1 →
+           (2) potvrda riječju → (3) "jesi siguran" #2 → (4) admin lozinka —
+           vidi openMasterResetBrojevaModal() niže. -->
+      <button type="button" class="btn-danger" style="padding:6px 12px;font-size:12px;border-radius:6px;" onclick="openMasterResetBrojevaModal()" title="Vraća SVE tri numeracije (Upitnik/Odbijenica/Ocjena kvalitete) natrag na 0001 za tekuću godinu">⟲ Master reset SVE numeracije</button>
       <span id="broj-panel-status" class="broj-toggle-label-test" hidden>Testni način uključen — novi unosi dobivaju fiksni testni broj, pravi brojač se ne diže.</span>
     </div>
 
@@ -1220,6 +1228,50 @@
       });
     }
     next(0);
+  }
+
+  // ==== "MASTER RESET SVE NUMERACIJE" — resetira SVE TRI vrste odjednom
+  // (Upitnik/Odbijenica/Ocjena kvalitete natrag na 0001, tekuća godina) u
+  // JEDNOM koraku, umjesto ručnog resetiranja svake vrste zasebno kroz
+  // "Podesi numeraciju". NAJVIŠA razina zaštite u cijelom adminu — Sašin
+  // izričit zahtjev, TOČNO ovim redoslijedom (obrnuto/dodatno u odnosu na
+  // "Podesi numeraciju", koja ide lozinka pa riječ, jednom svaka):
+  //   1) native confirm() — "jesi siguran?" #1
+  //   2) potvrda upisom nasumične riječi (isti sustav kao svugdje u adminu)
+  //   3) native confirm() — "jesi siguran?" #2
+  //   4) admin lozinka (openAdminPasswordConfirmModal)
+  // Tek nakon SVA četiri koraka poziva se backend. ====
+  function openMasterResetBrojevaModal() {
+    if (!confirm('Ovime se SVE TRI numeracije (Upitnik, Odbijenica, Ocjena kvalitete) vraćaju natrag na 0001 za ' + new Date().getFullYear() + '. Već poslani upiti/ponude zadržavaju svoje brojeve — mijenja se samo SLJEDEĆI broj koji će biti dodijeljen. Jeste li sigurni da želite nastaviti?')) {
+      return;
+    }
+    openSuperheroWordConfirmModal(
+      'Master reset numeracije',
+      'Za potvrdu upišite riječ ispod. Sve tri numeracije (Upitnik, Odbijenica, Ocjena kvalitete) bit će vraćene na 0001.',
+      function() {
+        if (!confirm('Zadnja provjera — potpuno sigurni da resetiramo SVE TRI numeracije na 0001?')) {
+          return;
+        }
+        openAdminPasswordConfirmModal(
+          'Master reset numeracije',
+          'Unesite admin lozinku za konačnu potvrdu. Sve tri numeracije bit će vraćene na 0001.',
+          function() { izvrsiMasterResetBrojeve_(); }
+        );
+      }
+    );
+  }
+  function izvrsiMasterResetBrojeve_() {
+    gasCall({ action: 'adminMasterResetBrojace', token: adminToken }).then(function(res) {
+      if (handleAuthError(res)) { return; }
+      if (res.status === 'ok') {
+        loadBrojStatus_();
+        alert('Sve tri numeracije su vraćene na 0001.');
+      } else {
+        alert(res.message || 'Master reset nije uspio.');
+      }
+    }).catch(function() {
+      alert('Greška u komunikaciji s poslužiteljem.');
+    });
   }
 
   // ---- Generički modal: potvrda nasumičnom riječju (superjunak), NEOVISNO
