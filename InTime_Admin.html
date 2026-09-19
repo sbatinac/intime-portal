@@ -627,6 +627,13 @@
     <div class="tabs">
       <button type="button" class="tab-btn active" id="tab-btn-interes" onclick="switchTab('Interes')">Zainteresirani (<span id="tab-count-interes">0</span>)</button>
       <button type="button" class="tab-btn" id="tab-btn-ponude" onclick="switchTab('Ponude')">Ponude (<span id="tab-count-ponude">0</span>)</button>
+      <!-- Sašin izričit zahtjev (19.9.2026., osmi krug): "Arhiva klijenata" —
+           mjesto gdje idu klijenti od kojih se odustalo (umjesto starog
+           "Vrati u Zainteresirani" iz "Ponude", koji je uklonjen). Za sada
+           samo kartica + gumb "Prebaci u arhivu" (isti dvostruki obrazac
+           zaštite kao Zainteresirani → Ponude) — što se dalje radi s
+           arhiviranim klijentom nije još definirano (vidi jeArhiva() niže). -->
+      <button type="button" class="tab-btn" id="tab-btn-arhiva" onclick="switchTab('Arhiva')">Arhiva (<span id="tab-count-arhiva">0</span>)</button>
       <button type="button" class="tab-btn" id="tab-btn-odbijenica" onclick="switchTab('Odbijenica')">Nisu zainteresirani (<span id="tab-count-odbijenica">0</span>)</button>
       <button type="button" class="tab-btn" id="tab-btn-ankete" onclick="switchTab('Ankete')">Ankete kvalitete (<span id="tab-count-ankete">0</span>)</button>
       <button type="button" class="tab-btn" id="tab-btn-novi-klijenti" onclick="switchTab('NoviKlijenti')">Novi klijenti (<span id="tab-count-novi-klijenti">0</span>)</button>
@@ -1344,15 +1351,29 @@
     return !!fieldVal(entry, 'Datum prebacivanja u ponude (admin)');
   }
 
+  // "Arhiva" — nova kartica (Sašin izričit zahtjev, 19.9.2026., osmi krug):
+  // mjesto gdje idu klijenti od kojih se odustalo. Zamjenjuje staru
+  // "Vrati u Zainteresirani" povratnu vezu iz "Ponude" (ta je uklonjena —
+  // vidi buildAdminFieldsBlock() niže) — gumb "Prebaci u arhivu" sad radi
+  // to mjesto. Isti princip kao jePonuda()/jeOtvorenKlijent() gore, zaseban
+  // admin-only stupac. ZA SADA samo kartica + premještanje — što se dalje
+  // radi s arhiviranim klijentom (npr. trajno brisanje, ponovno otvaranje)
+  // nije još definirano od Saše.
+  function jeArhiva(entry) {
+    return !!fieldVal(entry, 'Datum prebacivanja u arhivu (admin)');
+  }
+
   function renderTabCounts() {
-    var interesCount = allEntries.filter(function(e){ return e.status === 'Interes' && !jeOtvorenKlijent(e) && !jePonuda(e); }).length;
+    var interesCount = allEntries.filter(function(e){ return e.status === 'Interes' && !jeOtvorenKlijent(e) && !jePonuda(e) && !jeArhiva(e); }).length;
     var odbijenicaCount = allEntries.filter(function(e){ return e.status === 'Odbijenica'; }).length;
     var noviKlijentiCount = allEntries.filter(function(e){ return e.status === 'Interes' && jeOtvorenKlijent(e); }).length;
-    var ponudeCount = allEntries.filter(function(e){ return e.status === 'Interes' && jePonuda(e) && !jeOtvorenKlijent(e); }).length;
+    var ponudeCount = allEntries.filter(function(e){ return e.status === 'Interes' && jePonuda(e) && !jeOtvorenKlijent(e) && !jeArhiva(e); }).length;
+    var arhivaCount = allEntries.filter(function(e){ return e.status === 'Interes' && jeArhiva(e) && !jeOtvorenKlijent(e); }).length;
     document.getElementById('tab-count-interes').textContent = interesCount;
     document.getElementById('tab-count-odbijenica').textContent = odbijenicaCount;
     document.getElementById('tab-count-novi-klijenti').textContent = noviKlijentiCount;
     document.getElementById('tab-count-ponude').textContent = ponudeCount;
+    document.getElementById('tab-count-arhiva').textContent = arhivaCount;
     // Glavni dashboard counter — ukupan broj klijenata u bazi (isti brojevi
     // kao kartica "Novi klijenti", samo istaknuto na vrhu među ostalim
     // brojačima da Saša odmah vidi koliko je zapisa ukupno prebačeno).
@@ -1364,6 +1385,7 @@
     activeTab = tab;
     document.getElementById('tab-btn-interes').classList.toggle('active', tab === 'Interes');
     document.getElementById('tab-btn-ponude').classList.toggle('active', tab === 'Ponude');
+    document.getElementById('tab-btn-arhiva').classList.toggle('active', tab === 'Arhiva');
     document.getElementById('tab-btn-odbijenica').classList.toggle('active', tab === 'Odbijenica');
     document.getElementById('tab-btn-ankete').classList.toggle('active', tab === 'Ankete');
     document.getElementById('tab-btn-novi-klijenti').classList.toggle('active', tab === 'NoviKlijenti');
@@ -1474,9 +1496,11 @@
     if (activeTab === 'NoviKlijenti') {
       list = allEntries.filter(function(e){ return e.status === 'Interes' && jeOtvorenKlijent(e); });
     } else if (activeTab === 'Ponude') {
-      list = allEntries.filter(function(e){ return e.status === 'Interes' && jePonuda(e) && !jeOtvorenKlijent(e); });
+      list = allEntries.filter(function(e){ return e.status === 'Interes' && jePonuda(e) && !jeOtvorenKlijent(e) && !jeArhiva(e); });
+    } else if (activeTab === 'Arhiva') {
+      list = allEntries.filter(function(e){ return e.status === 'Interes' && jeArhiva(e) && !jeOtvorenKlijent(e); });
     } else if (activeTab === 'Interes') {
-      list = allEntries.filter(function(e){ return e.status === 'Interes' && !jeOtvorenKlijent(e) && !jePonuda(e); });
+      list = allEntries.filter(function(e){ return e.status === 'Interes' && !jeOtvorenKlijent(e) && !jePonuda(e) && !jeArhiva(e); });
     } else {
       list = allEntries.filter(function(e){ return e.status === activeTab; });
     }
@@ -1490,6 +1514,8 @@
         ? 'Trenutno nema klijenata prebačenih u ovu karticu.'
         : activeTab === 'Ponude'
         ? 'Trenutno nema klijenata prebačenih u ponude.'
+        : activeTab === 'Arhiva'
+        ? 'Trenutno nema klijenata u arhivi.'
         : 'Trenutno nema pristiglih odbijenica.';
       container.appendChild(hint);
       return;
@@ -2048,12 +2074,13 @@
     delBtn.textContent = 'Obriši upit';
     delBtn.addEventListener('click', function(ev) {
       ev.stopPropagation();
-      if (jeOtvorenKlijent(entry) || jePonuda(entry)) {
-        // Već otvoreni klijent ("Novi klijenti") ili klijent u tijeku ponude
-        // ("Ponude") — i ovaj (pojedinačni, iz otvorene kartice) put
-        // brisanja traži lozinku umjesto upisa riječi "BRISATI", isto kao i
-        // masovno brisanje checkboxom za ove tabove.
-        var karticaNaziv = jeOtvorenKlijent(entry) ? 'Novi klijenti' : 'Ponude';
+      if (jeOtvorenKlijent(entry) || jePonuda(entry) || jeArhiva(entry)) {
+        // Već otvoreni klijent ("Novi klijenti"), klijent u tijeku ponude
+        // ("Ponude") ili arhiviran klijent ("Arhiva", osmi krug) — i ovaj
+        // (pojedinačni, iz otvorene kartice) put brisanja traži lozinku
+        // umjesto upisa riječi "BRISATI", isto kao i masovno brisanje
+        // checkboxom za ove tabove.
+        var karticaNaziv = jeOtvorenKlijent(entry) ? 'Novi klijenti' : (jeArhiva(entry) ? 'Arhiva' : 'Ponude');
         openAdminPasswordConfirmModal(
           'Brisanje klijenta',
           'Radi se o klijentu u kartici "' + karticaNaziv + '" — za trajno brisanje potrebno je ponovno unijeti admin lozinku. Ova radnja se ne može poništiti.',
@@ -2254,7 +2281,32 @@
     // isti obrazac kao "Odobrena poglavlja za ispravak (admin, brojevi
     // odvojeni zarezom)" koji već postoji u ovom kodu).
     var poslovniceOdabrane = (fieldVal(entry, 'Nadležna poslovnica (admin)') || '').split(',').map(function(s) { return s.trim(); }).filter(function(s) { return s; });
+    // Sašin izričit zahtjev (19.9.2026., treći krug — drugi val istog dana):
+    // dok je zapis još u "Zainteresirani" (nije ni u "Ponude" ni već otvoren
+    // klijent u "Novi klijenti"), CIJELI ovaj blok polja ("Podaci koje
+    // popunjava In Time") se NE prikazuje — vidi se SAMO gumb "Export
+    // podataka" i "Prebaci u ponude" (i status-traka ispod njih). Tek kad je
+    // zapis stvarno u "Ponude" (ili je legacy već otvoren klijent), prikazuje
+    // se puni blok s poljima i gumbom "Spremi". Isti "hide, ne makni"
+    // pristup kao kod ostalih polja — sam grid/naslov/Spremi ostaju u
+    // DOM-u, samo skriveni, da im JS reference (saveBtn payload i sl.) ne
+    // puknu.
+    // Sašin izričit zahtjev (19.9.2026., osmi krug): arhivirani klijent
+    // ("Arhiva") i dalje prikazuje puni blok (povijest podataka ostaje
+    // vidljiva/uredljiva), isto kao "Ponude"/"Novi klijenti".
+    var prikaziPuniBlok = jePonuda(entry) || jeOtvorenKlijent(entry) || jeArhiva(entry);
+    // Gumb "Prebaci..." — naziv ovisi o trenutnom stanju zapisa:
+    // Zainteresirani → "Prebaci u ponude", Ponude → "Prebaci u arhivu"
+    // (osmi krug — zamijenilo staru "Vrati u Zainteresirani" povratnu vezu,
+    // Sašin izričit zahtjev "makni tu povratnu vezu prema zainteresirani"),
+    // već otvoren klijent (legacy "Novi klijenti") → "Vrati u Zainteresirani"
+    // (nepromijenjeno). Za već arhivirani zapis gumb se u potpunosti skriva
+    // niže (nema još definirane radnje iz Arhive).
+    var prebaciLabel = jeOtvorenKlijent(entry)
+      ? 'Vrati u Zainteresirani'
+      : (jePonuda(entry) ? 'Prebaci u arhivu' : 'Prebaci u ponude');
     wrap.innerHTML =
+      '<div class="af-puni-blok"' + (prikaziPuniBlok ? '' : ' style="display:none"') + '>' +
       '<h3>Podaci koje popunjava In Time (nakon otvaranja klijenta)</h3>' +
       '<div class="admin-fields-grid">' +
         '<div><label>Šifra prodajnog upitnika</label>' +
@@ -2370,11 +2422,12 @@
         '<div class="af-napomena-wrap"><label>Interna napomena (samo za tebe, ne šalje se klijentu)</label>' +
           '<textarea class="af-napomena" placeholder="Slobodne bilješke o ovom klijentu...">' + esc(fieldVal(entry, 'Interna napomena (admin)')) + '</textarea></div>' +
       '</div>' +
+      '</div>' +
       '<div class="admin-fields-actions">' +
         '<span class="save-status"></span>' +
         '<button type="button" class="btn btn-small btn-export">Export podataka</button>' +
-        '<button type="button" class="btn btn-small btn-prebaci">' + ((jeOtvorenKlijent(entry) || jePonuda(entry)) ? 'Vrati u Zainteresirani' : 'Prebaci u ponude') + '</button>' +
-        '<button type="button" class="btn btn-small">Spremi</button>' +
+        '<button type="button" class="btn btn-small btn-prebaci"' + (jeArhiva(entry) ? ' style="display:none"' : '') + '>' + prebaciLabel + '</button>' +
+        '<button type="button" class="btn btn-small"' + (prikaziPuniBlok ? '' : ' style="display:none"') + '>Spremi</button>' +
       '</div>';
 
     var statusEl = wrap.querySelector('.save-status');
@@ -2542,30 +2595,40 @@
       }
 
       if (vecUPonudi) {
-        // Zapis je u "Ponude" — gumb služi za vraćanje natrag u
-        // "Zainteresirani" (briše zabilježeni datum prebacivanja u ponude).
-        openAdminPasswordConfirmModal(
-          'Vraćanje u Zainteresirani',
-          'Klijent će biti vraćen natrag u karticu "Zainteresirani", a zabilježeni datum prebacivanja u ponude bit će obrisan. Za potvrdu unesite admin lozinku.',
+        // Sašin izričit zahtjev (19.9.2026., osmi krug): "makni tu povratnu
+        // vezu prema zainteresirani" — stara "Vrati u Zainteresirani" iz
+        // "Ponude" je UKLONJENA. Umjesto toga: ako se odustane od klijenta,
+        // premješta se u novu karticu "Arhiva" (vidi jeArhiva() gore) —
+        // ISTA dvostruka zaštita (riječ pa lozinka) kao Zainteresirani →
+        // Ponude, po Sašinom izričitom zahtjevu.
+        openSuperheroWordConfirmModal(
+          'Prebacivanje u arhivu',
+          'Klijent će biti prebačen u karticu "Arhiva". Za potvrdu upišite riječ ispod — nakon toga tražit će se i admin lozinka.',
           function() {
-            wrap.querySelector('.af-datum-ponude').value = '';
-            statusEl.textContent = 'Vraćanje…';
-            statusEl.classList.remove('error');
-            gasCall({ action: 'adminUpdateFields', token: adminToken, rowIndex: entry.rowIndex, fields: { datum_prebacivanja_ponude: '' } }).then(function(res) {
-              if (handleAuthError(res)) { return; }
-              if (res.status === 'ok') {
-                statusEl.textContent = 'Vraćeno u Zainteresirani.';
+            openAdminPasswordConfirmModal(
+              'Prebacivanje u arhivu',
+              'Klijent će biti prebačen u karticu "Arhiva". Zabilježit će se točan datum i vrijeme prebacivanja. Za potvrdu unesite admin lozinku.',
+              function() {
+                var formatiranArhiva = formatirajDatumOtvaranjaKlijenta_(new Date());
+                statusEl.textContent = 'Prebacivanje u arhivu…';
                 statusEl.classList.remove('error');
-                entry.fields['Datum prebacivanja u ponude (admin)'] = '';
-                loadAll();
-              } else {
-                statusEl.textContent = res.message || 'Greška pri vraćanju.';
-                statusEl.classList.add('error');
+                gasCall({ action: 'adminUpdateFields', token: adminToken, rowIndex: entry.rowIndex, fields: { datum_prebacivanja_arhiva: formatiranArhiva } }).then(function(res) {
+                  if (handleAuthError(res)) { return; }
+                  if (res.status === 'ok') {
+                    statusEl.textContent = 'Prebačeno u arhivu ' + formatiranArhiva + '.';
+                    statusEl.classList.remove('error');
+                    entry.fields['Datum prebacivanja u arhivu (admin)'] = formatiranArhiva;
+                    loadAll();
+                  } else {
+                    statusEl.textContent = res.message || 'Greška pri prebacivanju.';
+                    statusEl.classList.add('error');
+                  }
+                }).catch(function() {
+                  statusEl.textContent = 'Greška u komunikaciji s poslužiteljem.';
+                  statusEl.classList.add('error');
+                });
               }
-            }).catch(function() {
-              statusEl.textContent = 'Greška u komunikaciji s poslužiteljem.';
-              statusEl.classList.add('error');
-            });
+            );
           }
         );
         return;
@@ -2574,30 +2637,43 @@
       // Zapis je u "Zainteresirani" — prebacuje se u "Ponude". ZABILJEŽI SE
       // TOČAN trenutak klika (datum + sat + minuta + sekunda) u polje "Datum
       // prebacivanja u ponude", i time se zapis automatski premješta u
-      // karticu "Ponude" (vidi jePonuda() gore).
-      openAdminPasswordConfirmModal(
+      // karticu "Ponude" (vidi jePonuda() gore). Sašin izričit zahtjev
+      // (19.9.2026., treći krug — drugi val istog dana): DVOSTRUKA zaštita
+      // za baš ovaj korak (samo za smjer Zainteresirani → Ponude, ne za
+      // "Vrati u Zainteresirani" iznad) — PRVO potvrda nasumičnom riječju
+      // (isti "superjunak" generički modal kao kod "Podesi numeraciju"),
+      // TEK ONDA admin lozinka. Obrnut redoslijed koraka u odnosu na
+      // "Podesi numeraciju" (ondje prvo lozinka pa riječ) — ovdje je Saša
+      // izričito tražio riječ prvo.
+      openSuperheroWordConfirmModal(
         'Prebacivanje u ponude',
-        'Klijent će biti prebačen u karticu "Ponude". Zabilježit će se točan datum i vrijeme prebacivanja. Za potvrdu unesite admin lozinku.',
+        'Klijent će biti prebačen u karticu "Ponude". Za potvrdu upišite riječ ispod — nakon toga tražit će se i admin lozinka.',
         function() {
-          var formatiran = formatirajDatumOtvaranjaKlijenta_(new Date());
-          wrap.querySelector('.af-datum-ponude').value = formatiran;
-          statusEl.textContent = 'Prebacivanje…';
-          statusEl.classList.remove('error');
-          gasCall({ action: 'adminUpdateFields', token: adminToken, rowIndex: entry.rowIndex, fields: { datum_prebacivanja_ponude: formatiran } }).then(function(res) {
-            if (handleAuthError(res)) { return; }
-            if (res.status === 'ok') {
-              statusEl.textContent = 'Prebačeno u ponude ' + formatiran + '.';
+          openAdminPasswordConfirmModal(
+            'Prebacivanje u ponude',
+            'Klijent će biti prebačen u karticu "Ponude". Zabilježit će se točan datum i vrijeme prebacivanja. Za potvrdu unesite admin lozinku.',
+            function() {
+              var formatiran = formatirajDatumOtvaranjaKlijenta_(new Date());
+              wrap.querySelector('.af-datum-ponude').value = formatiran;
+              statusEl.textContent = 'Prebacivanje…';
               statusEl.classList.remove('error');
-              entry.fields['Datum prebacivanja u ponude (admin)'] = formatiran;
-              loadAll();
-            } else {
-              statusEl.textContent = res.message || 'Greška pri prebacivanju.';
-              statusEl.classList.add('error');
+              gasCall({ action: 'adminUpdateFields', token: adminToken, rowIndex: entry.rowIndex, fields: { datum_prebacivanja_ponude: formatiran } }).then(function(res) {
+                if (handleAuthError(res)) { return; }
+                if (res.status === 'ok') {
+                  statusEl.textContent = 'Prebačeno u ponude ' + formatiran + '.';
+                  statusEl.classList.remove('error');
+                  entry.fields['Datum prebacivanja u ponude (admin)'] = formatiran;
+                  loadAll();
+                } else {
+                  statusEl.textContent = res.message || 'Greška pri prebacivanju.';
+                  statusEl.classList.add('error');
+                }
+              }).catch(function() {
+                statusEl.textContent = 'Greška u komunikaciji s poslužiteljem.';
+                statusEl.classList.add('error');
+              });
             }
-          }).catch(function() {
-            statusEl.textContent = 'Greška u komunikaciji s poslužiteljem.';
-            statusEl.classList.add('error');
-          });
+          );
         }
       );
     });
@@ -2882,9 +2958,9 @@
     var rowIndexes = Object.keys(selectedRowIndexes);
     if (rowIndexes.length === 0) { return; }
 
-    if (activeTab === 'NoviKlijenti' || activeTab === 'Ponude') {
+    if (activeTab === 'NoviKlijenti' || activeTab === 'Ponude' || activeTab === 'Arhiva') {
       // Najviša razina opreza — uvijek lozinka, bez obzira na broj odabranih.
-      var karticaNazivBulk = activeTab === 'NoviKlijenti' ? 'Novi klijenti' : 'Ponude';
+      var karticaNazivBulk = activeTab === 'NoviKlijenti' ? 'Novi klijenti' : (activeTab === 'Arhiva' ? 'Arhiva' : 'Ponude');
       openAdminPasswordConfirmModal(
         rowIndexes.length > 1 ? 'Brisanje klijenata (' + rowIndexes.length + ')' : 'Brisanje klijenta',
         'Radi se o klijentu u kartici "' + karticaNazivBulk + '" — za trajno brisanje ' +
