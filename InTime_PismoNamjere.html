@@ -1890,22 +1890,115 @@
               <span class="msdrop-count"></span>
             </button>
             <div class="msdrop-panel">
-              <label><input type="checkbox" name="logisticke_sluzbe" value="GLS" onchange="updateMsDrop(this)"> GLS</label>
-              <label><input type="checkbox" name="logisticke_sluzbe" value="DPD" onchange="updateMsDrop(this)"> DPD</label>
-              <label><input type="checkbox" name="logisticke_sluzbe" value="Overseas Express" onchange="updateMsDrop(this)"> Overseas Express</label>
-              <label><input type="checkbox" name="logisticke_sluzbe" value="HP Express (Hrvatska pošta)" onchange="updateMsDrop(this)"> HP Express (Hrvatska pošta)</label>
-              <label><input type="checkbox" name="logisticke_sluzbe" value="Gebrüder Weiss" onchange="updateMsDrop(this)"> Gebrüder Weiss</label>
-              <label><input type="checkbox" name="logisticke_sluzbe" value="DB Schenker" onchange="updateMsDrop(this)"> DB Schenker</label>
-              <label><input type="checkbox" name="logisticke_sluzbe" value="Intereuropa" onchange="updateMsDrop(this)"> Intereuropa</label>
-              <label><input type="checkbox" name="logisticke_sluzbe" value="DHL" onchange="updateMsDrop(this)"> DHL</label>
-              <label><input type="checkbox" name="logisticke_sluzbe" value="UPS" onchange="updateMsDrop(this)"> UPS</label>
-              <label><input type="checkbox" name="logisticke_sluzbe" value="Cargo Partner" onchange="updateMsDrop(this)"> Cargo Partner</label>
-              <label><input type="checkbox" name="logisticke_sluzbe" value="Rhenus Logistics" onchange="updateMsDrop(this)"> Rhenus Logistics</label>
-              <label><input type="checkbox" name="logisticke_sluzbe" value="TISAK Paket" onchange="updateMsDrop(this)"> TISAK Paket</label>
-              <label><input type="checkbox" name="logisticke_sluzbe" value="Lokalne ili manje poznate dostavne službe" onchange="updateMsDrop(this)"> Lokalne ili manje poznate dostavne službe</label>
-              <label><input type="checkbox" name="logisticke_sluzbe" value="Nismo do sada imali potrebe za uslugom dostave" onchange="updateMsDrop(this)"> Nismo do sada imali potrebe za uslugom dostave</label>
-              <label><input type="checkbox" name="logisticke_sluzbe" value="Ostalo" onchange="updateMsDrop(this)"> Ostalo – nije navedeno</label>
-              <div class="ostalo-line ostalo-hidden"><input type="text" name="logisticke_sluzbe_ostalo" placeholder="Upišite ako ste odabrali Ostalo"></div>
+              <label><input type="checkbox" name="logisticke_sluzbe" value="GLS" onchange="updateMsDrop(this); updateLogistikaIznosVisibility();"> GLS</label>
+              <label><input type="checkbox" name="logisticke_sluzbe" value="DPD" onchange="updateMsDrop(this); updateLogistikaIznosVisibility();"> DPD</label>
+              <label><input type="checkbox" name="logisticke_sluzbe" value="Overseas Express" onchange="updateMsDrop(this); updateLogistikaIznosVisibility();"> Overseas Express</label>
+              <label><input type="checkbox" name="logisticke_sluzbe" value="HP Express (Hrvatska pošta)" onchange="updateMsDrop(this); updateLogistikaIznosVisibility();"> HP Express (Hrvatska pošta)</label>
+              <label><input type="checkbox" name="logisticke_sluzbe" value="Gebrüder Weiss" onchange="updateMsDrop(this); updateLogistikaIznosVisibility();"> Gebrüder Weiss</label>
+              <label><input type="checkbox" name="logisticke_sluzbe" value="DB Schenker" onchange="updateMsDrop(this); updateLogistikaIznosVisibility();"> DB Schenker</label>
+              <label><input type="checkbox" name="logisticke_sluzbe" value="Intereuropa" onchange="updateMsDrop(this); updateLogistikaIznosVisibility();"> Intereuropa</label>
+              <label><input type="checkbox" name="logisticke_sluzbe" value="DHL" onchange="updateMsDrop(this); updateLogistikaIznosVisibility();"> DHL</label>
+              <label><input type="checkbox" name="logisticke_sluzbe" value="UPS" onchange="updateMsDrop(this); updateLogistikaIznosVisibility();"> UPS</label>
+              <label><input type="checkbox" name="logisticke_sluzbe" value="Cargo Partner" onchange="updateMsDrop(this); updateLogistikaIznosVisibility();"> Cargo Partner</label>
+              <label><input type="checkbox" name="logisticke_sluzbe" value="Rhenus Logistics" onchange="updateMsDrop(this); updateLogistikaIznosVisibility();"> Rhenus Logistics</label>
+              <label><input type="checkbox" name="logisticke_sluzbe" value="TISAK Paket" onchange="updateMsDrop(this); updateLogistikaIznosVisibility();"> TISAK Paket</label>
+              <label><input type="checkbox" name="logisticke_sluzbe" value="Lokalne ili manje poznate dostavne službe" onchange="updateMsDrop(this); updateLogistikaIznosVisibility();"> Lokalne ili manje poznate dostavne službe</label>
+              <label><input type="checkbox" name="logisticke_sluzbe" value="Nismo do sada imali potrebe za uslugom dostave" onchange="updateMsDrop(this); updateLogistikaIznosVisibility();"> Nismo do sada imali potrebe za uslugom dostave</label>
+              <label><input type="checkbox" name="logisticke_sluzbe" value="Ostalo" onchange="updateMsDrop(this); updateLogistikaIznosVisibility();"> Ostalo – nije navedeno</label>
+              <div class="ostalo-line ostalo-hidden"><input type="text" name="logisticke_sluzbe_ostalo" placeholder="Upišite ako ste odabrali Ostalo" oninput="updateLogistikaRacuniVisibility()"></div>
+            </div>
+          </div>
+
+          <!-- NOVO (19.9.2026., Sašin izričit zahtjev) — pojavljuje se tek kad
+               klijent označi barem jednu logističku službu iznad (reveal, vidi
+               updateLogistikaIznosVisibility() niže). Obavezno dok je vidljivo
+               (data-required-group), isti generički mehanizam kao svi ostali
+               choice-group/msdrop required-blokovi u ovom upitniku. -->
+          <div id="logistika-iznos-wrap" class="ostalo-hidden" style="margin-top:14px;">
+            <label>Možete li nam navesti približan ukupan mjesečni iznos koji izdvajate za logističke usluge kod svih dostavnih i logističkih partnera? *</label>
+            <div class="choice-group choice-group-1col" data-required-group="Mjesečni iznos za logističke usluge">
+              <label><input type="radio" name="mjesecni_iznos_logistika" value="Do 500 €"> Do 500 €</label>
+              <label><input type="radio" name="mjesecni_iznos_logistika" value="Od 501 do 1.000 €"> Od 501 do 1.000 €</label>
+              <label><input type="radio" name="mjesecni_iznos_logistika" value="Od 1.001 do 2.500 €"> Od 1.001 do 2.500 €</label>
+              <label><input type="radio" name="mjesecni_iznos_logistika" value="Od 2.501 do 5.000 €"> Od 2.501 do 5.000 €</label>
+              <label><input type="radio" name="mjesecni_iznos_logistika" value="Od 5.001 do 10.000 €"> Od 5.001 do 10.000 €</label>
+              <label><input type="radio" name="mjesecni_iznos_logistika" value="Od 10.001 do 15.000 €"> Od 10.001 do 15.000 €</label>
+              <label><input type="radio" name="mjesecni_iznos_logistika" value="Od 15.001 do 20.000 €"> Od 15.001 do 20.000 €</label>
+              <label><input type="radio" name="mjesecni_iznos_logistika" value="Od 20.001 do 30.000 €"> Od 20.001 do 30.000 €</label>
+              <label><input type="radio" name="mjesecni_iznos_logistika" value="Od 30.001 do 50.000 €"> Od 30.001 do 50.000 €</label>
+              <label><input type="radio" name="mjesecni_iznos_logistika" value="Više od 50.000 €"> Više od 50.000 €</label>
+            </div>
+          </div>
+
+          <!-- NOVO (19.9.2026., Sašin izričit zahtjev) — za SVAKU pojedinu
+               označenu logističku službu automatski se otvara zasebno pitanje
+               o zadnjem mjesečnom računu te službe. Mjesec u pitanju je UVIJEK
+               "prethodni mjesec" računajući od trenutnog datuma (izračunato
+               JS-om, postaviNazivPrethodnogMjeseca_() niže) — npr. ako klijent
+               popunjava upitnik u rujnu, pitanje traži račun za kolovoz.
+               Redovi su unaprijed izgrađeni (14 mogućih službi), samo se
+               pokazuju/skrivaju ovisno o odabiru gore (isti "hide, ne makni"
+               obrazac kao svugdje u ovom upitniku) — nisu obavezna polja
+               (klijent možda nema iznos pri ruci za svaku službu), za razliku
+               od pitanja o ukupnom mjesečnom iznosu iznad. -->
+          <div id="logistika-racuni-wrap" class="ostalo-hidden" style="margin-top:14px;">
+            <p class="sec-hint" style="margin-bottom:8px;">Ako imate pri ruci, za svaku označenu službu navedite i iznos posljednjeg mjesečnog računa (nije obavezno):</p>
+
+            <div id="logistika-racun-gls" class="ostalo-hidden">
+              <label>Molimo Vas, navedite iznos posljednjeg mjesečnog računa za <span class="logistika-mjesec-naziv"></span> koji ste zaprimili od službe GLS za usluge transporta i logistike.</label>
+              <input type="text" name="racun_logistika_gls" placeholder="npr. 850 €">
+            </div>
+            <div id="logistika-racun-dpd" class="ostalo-hidden">
+              <label>Molimo Vas, navedite iznos posljednjeg mjesečnog računa za <span class="logistika-mjesec-naziv"></span> koji ste zaprimili od službe DPD za usluge transporta i logistike.</label>
+              <input type="text" name="racun_logistika_dpd" placeholder="npr. 850 €">
+            </div>
+            <div id="logistika-racun-overseas-express" class="ostalo-hidden">
+              <label>Molimo Vas, navedite iznos posljednjeg mjesečnog računa za <span class="logistika-mjesec-naziv"></span> koji ste zaprimili od službe Overseas Express za usluge transporta i logistike.</label>
+              <input type="text" name="racun_logistika_overseas_express" placeholder="npr. 850 €">
+            </div>
+            <div id="logistika-racun-hp-express" class="ostalo-hidden">
+              <label>Molimo Vas, navedite iznos posljednjeg mjesečnog računa za <span class="logistika-mjesec-naziv"></span> koji ste zaprimili od službe HP Express (Hrvatska pošta) za usluge transporta i logistike.</label>
+              <input type="text" name="racun_logistika_hp_express" placeholder="npr. 850 €">
+            </div>
+            <div id="logistika-racun-gebruder-weiss" class="ostalo-hidden">
+              <label>Molimo Vas, navedite iznos posljednjeg mjesečnog računa za <span class="logistika-mjesec-naziv"></span> koji ste zaprimili od službe Gebrüder Weiss za usluge transporta i logistike.</label>
+              <input type="text" name="racun_logistika_gebruder_weiss" placeholder="npr. 850 €">
+            </div>
+            <div id="logistika-racun-db-schenker" class="ostalo-hidden">
+              <label>Molimo Vas, navedite iznos posljednjeg mjesečnog računa za <span class="logistika-mjesec-naziv"></span> koji ste zaprimili od službe DB Schenker za usluge transporta i logistike.</label>
+              <input type="text" name="racun_logistika_db_schenker" placeholder="npr. 850 €">
+            </div>
+            <div id="logistika-racun-intereuropa" class="ostalo-hidden">
+              <label>Molimo Vas, navedite iznos posljednjeg mjesečnog računa za <span class="logistika-mjesec-naziv"></span> koji ste zaprimili od službe Intereuropa za usluge transporta i logistike.</label>
+              <input type="text" name="racun_logistika_intereuropa" placeholder="npr. 850 €">
+            </div>
+            <div id="logistika-racun-dhl" class="ostalo-hidden">
+              <label>Molimo Vas, navedite iznos posljednjeg mjesečnog računa za <span class="logistika-mjesec-naziv"></span> koji ste zaprimili od službe DHL za usluge transporta i logistike.</label>
+              <input type="text" name="racun_logistika_dhl" placeholder="npr. 850 €">
+            </div>
+            <div id="logistika-racun-ups" class="ostalo-hidden">
+              <label>Molimo Vas, navedite iznos posljednjeg mjesečnog računa za <span class="logistika-mjesec-naziv"></span> koji ste zaprimili od službe UPS za usluge transporta i logistike.</label>
+              <input type="text" name="racun_logistika_ups" placeholder="npr. 850 €">
+            </div>
+            <div id="logistika-racun-cargo-partner" class="ostalo-hidden">
+              <label>Molimo Vas, navedite iznos posljednjeg mjesečnog računa za <span class="logistika-mjesec-naziv"></span> koji ste zaprimili od službe Cargo Partner za usluge transporta i logistike.</label>
+              <input type="text" name="racun_logistika_cargo_partner" placeholder="npr. 850 €">
+            </div>
+            <div id="logistika-racun-rhenus" class="ostalo-hidden">
+              <label>Molimo Vas, navedite iznos posljednjeg mjesečnog računa za <span class="logistika-mjesec-naziv"></span> koji ste zaprimili od službe Rhenus Logistics za usluge transporta i logistike.</label>
+              <input type="text" name="racun_logistika_rhenus" placeholder="npr. 850 €">
+            </div>
+            <div id="logistika-racun-tisak-paket" class="ostalo-hidden">
+              <label>Molimo Vas, navedite iznos posljednjeg mjesečnog računa za <span class="logistika-mjesec-naziv"></span> koji ste zaprimili od službe TISAK Paket za usluge transporta i logistike.</label>
+              <input type="text" name="racun_logistika_tisak_paket" placeholder="npr. 850 €">
+            </div>
+            <div id="logistika-racun-lokalne" class="ostalo-hidden">
+              <label>Molimo Vas, navedite iznos posljednjeg mjesečnog računa za <span class="logistika-mjesec-naziv"></span> koji ste zaprimili od lokalne ili manje poznate dostavne službe za usluge transporta i logistike.</label>
+              <input type="text" name="racun_logistika_lokalne" placeholder="npr. 850 €">
+            </div>
+            <div id="logistika-racun-ostalo" class="ostalo-hidden">
+              <label>Molimo Vas, navedite iznos posljednjeg mjesečnog računa za <span class="logistika-mjesec-naziv"></span> koji ste zaprimili od službe <span id="logistika-racun-ostalo-naziv">navedene službe</span> za usluge transporta i logistike.</label>
+              <input type="text" name="racun_logistika_ostalo" placeholder="npr. 850 €">
             </div>
           </div>
 
@@ -3210,6 +3303,111 @@
       }
     }
   }
+
+  // NOVO (19.9.2026.) — pokazuje/skriva pitanje o mjesečnom iznosu za
+  // logističke usluge (7. poglavlje), ovisno o tome je li klijent označio
+  // barem jednu logističku službu. Kad se sakrije, briše prethodno odabrani
+  // raspon (isti "reset kad se sakrije" obrazac kao kod ostalih reveal-
+  // pitanja u ovom upitniku), da se ne pošalje zastarjela vrijednost.
+  function updateLogistikaIznosVisibility(){
+    var wrap = document.getElementById('logistika-iznos-wrap');
+    if (wrap) {
+      var oznaceno = document.querySelectorAll('#panel-interes input[name="logisticke_sluzbe"]:checked').length > 0;
+      if (oznaceno) {
+        wrap.classList.remove('ostalo-hidden');
+      } else {
+        wrap.classList.add('ostalo-hidden');
+        document.querySelectorAll('input[name="mjesecni_iznos_logistika"]:checked').forEach(function(r){ r.checked = false; });
+      }
+    }
+    updateLogistikaRacuniVisibility();
+  }
+
+  // NOVO (19.9.2026.) — mapa naziva logističke službe (vrijednost checkboxa u
+  // 7. poglavlju) → ID unaprijed izgrađenog (skrivenog) retka s pitanjem o
+  // zadnjem mjesečnom računu te službe. "Nismo do sada imali potrebe za
+  // uslugom dostave" NAMJERNO nije u mapi (nema smisla pitati za račun
+  // službe koju klijent ne koristi) — "Ostalo" se obrađuje posebno niže jer
+  // njegov naziv dolazi iz teksta koji klijent upiše.
+  var LOGISTIKA_RACUN_MAP = {
+    'GLS': 'logistika-racun-gls',
+    'DPD': 'logistika-racun-dpd',
+    'Overseas Express': 'logistika-racun-overseas-express',
+    'HP Express (Hrvatska pošta)': 'logistika-racun-hp-express',
+    'Gebrüder Weiss': 'logistika-racun-gebruder-weiss',
+    'DB Schenker': 'logistika-racun-db-schenker',
+    'Intereuropa': 'logistika-racun-intereuropa',
+    'DHL': 'logistika-racun-dhl',
+    'UPS': 'logistika-racun-ups',
+    'Cargo Partner': 'logistika-racun-cargo-partner',
+    'Rhenus Logistics': 'logistika-racun-rhenus',
+    'TISAK Paket': 'logistika-racun-tisak-paket',
+    'Lokalne ili manje poznate dostavne službe': 'logistika-racun-lokalne'
+  };
+
+  // Pokazuje/skriva pojedinačna pitanja "iznos zadnjeg mjesečnog računa" za
+  // svaku OZNAČENU logističku službu (jedno po jedno, ne cijeli blok
+  // odjednom) — kad se neka služba odznači, njeno polje se skriva i briše.
+  // "Ostalo" ima poseban tok: red se pokazuje samo dok je checkbox "Ostalo"
+  // označen I dok je upisan naziv u pripadajuće tekstualno polje, a naziv se
+  // uživo prepisuje u pitanje.
+  function updateLogistikaRacuniVisibility(){
+    var outerWrap = document.getElementById('logistika-racuni-wrap');
+    if (!outerWrap) { return; }
+    var nekiVidljiv = false;
+
+    document.querySelectorAll('#panel-interes input[name="logisticke_sluzbe"]').forEach(function(cb){
+      var rowId = LOGISTIKA_RACUN_MAP[cb.value];
+      if (!rowId) { return; }
+      var row = document.getElementById(rowId);
+      if (!row) { return; }
+      if (cb.checked) {
+        row.classList.remove('ostalo-hidden');
+        nekiVidljiv = true;
+      } else {
+        row.classList.add('ostalo-hidden');
+        var input = row.querySelector('input');
+        if (input) { input.value = ''; }
+      }
+    });
+
+    var ostaloCb = document.querySelector('#panel-interes input[name="logisticke_sluzbe"][value="Ostalo"]');
+    var ostaloTekst = document.querySelector('#panel-interes input[name="logisticke_sluzbe_ostalo"]');
+    var ostaloRow = document.getElementById('logistika-racun-ostalo');
+    if (ostaloRow) {
+      var ostaloNaziv = ostaloTekst ? ostaloTekst.value.trim() : '';
+      var prikaziOstalo = !!(ostaloCb && ostaloCb.checked && ostaloNaziv);
+      var ostaloNazivSpan = document.getElementById('logistika-racun-ostalo-naziv');
+      if (ostaloNazivSpan) { ostaloNazivSpan.textContent = ostaloNaziv || 'navedene službe'; }
+      if (prikaziOstalo) {
+        ostaloRow.classList.remove('ostalo-hidden');
+        nekiVidljiv = true;
+      } else {
+        ostaloRow.classList.add('ostalo-hidden');
+        var oInput = ostaloRow.querySelector('input[name="racun_logistika_ostalo"]');
+        if (oInput) { oInput.value = ''; }
+      }
+    }
+
+    outerWrap.classList.toggle('ostalo-hidden', !nekiVidljiv);
+    postaviNazivPrethodnogMjeseca_();
+  }
+
+  // Upisuje "prethodni mjesec" (računajući od trenutnog datuma) u sve
+  // <span class="logistika-mjesec-naziv"> placeholdere — npr. ako je danas
+  // bilo koji dan u rujnu, ispisuje "kolovoz 2026.". Akuzativni oblik (nakon
+  // "za") jer je tako gramatički ispravno na hrvatskom ("za kolovoz",
+  // "za veljaču").
+  function postaviNazivPrethodnogMjeseca_(){
+    var HR_MJESECI_AKUZATIV = ['siječanj','veljaču','ožujak','travanj','svibanj','lipanj','srpanj','kolovoz','rujan','listopad','studeni','prosinac'];
+    var d = new Date();
+    var mjesecIdx = d.getMonth() - 1;
+    var godina = d.getFullYear();
+    if (mjesecIdx < 0) { mjesecIdx = 11; godina -= 1; }
+    var naziv = HR_MJESECI_AKUZATIV[mjesecIdx] + ' ' + godina + '.';
+    document.querySelectorAll('.logistika-mjesec-naziv').forEach(function(el){ el.textContent = naziv; });
+  }
+  postaviNazivPrethodnogMjeseca_();
 
   // Poveznica 8. poglavlja (osnovne_usluge: Domaća/Međunarodna/FedEx) i 11.
   // poglavlja — umjesto JEDNOG općeg pitanja "Koje kategorije težine
