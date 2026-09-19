@@ -333,6 +333,36 @@
      u JEDNU grid-ćeliju koja ih iznutra slaže okomito, jedno ispod drugoga,
      umjesto da se (kao ostala polja) prelijevaju kroz 2-stupčanu mrežu. */
   .admin-fields-grid .af-stack{display:flex;flex-direction:column;gap:10px;}
+  /* Padajući izbornik s checkboxovima za "Nadležna poslovnica" (Sašin
+     izričit zahtjev, 19.9.2026., "checkboxom da mogu označiti i 2 centra i
+     više") — jednostavan, bez apsolutnog pozicioniranja/z-indexa, panel se
+     samo otvara/zatvara unutar normalnog toka (isti minimalistički stil kao
+     ostatak admin-fields bloka). */
+  .poslovnica-dd{position:relative;}
+  .poslovnica-dd-toggle{
+    width:100%;
+    text-align:left;
+    padding:8px 10px;
+    border:1px solid var(--line);
+    border-radius:6px;
+    font-size:13px;
+    background:#fff;
+    cursor:pointer;
+    color:var(--graphite);
+  }
+  .poslovnica-dd-panel{
+    margin-top:6px;
+    border:1px solid var(--line);
+    border-radius:6px;
+    padding:8px 10px;
+    max-height:260px;
+    overflow-y:auto;
+    background:#fff;
+  }
+  .poslovnica-dd-item{display:flex;align-items:center;gap:6px;padding:3px 0;font-size:13px;}
+  .poslovnica-dd-item input{width:auto;}
+  .poslovnica-dd-star{color:#c9971f;}
+  .poslovnica-dd-divider{border-top:1px solid var(--line);margin:6px 0;}
   .admin-fields textarea{
     width:100%;
     padding:8px 10px;
@@ -791,18 +821,25 @@
   ];
 
   // Popis nadležnih poslovnica/distribucijskih centara (Sašin izričit
-  // zahtjev, 19.9.2026.) — za padajući izbornik "Nadležna poslovnica" u
-  // buildAdminFieldsBlock() niže. Samo imena poslovnica ovdje (za select);
-  // puni kontakt podaci (voditelj/operativac/telefon/mail/adresa) su
-  // spremljeni u InTime_Code.gs kao DISTRIBUCIJSKI_CENTRI — trebat će za
-  // automatski mail poslovnici kod otvaranja klijenta (Faza 4, plan u
-  // Projectu). Redoslijed nema posebnog značenja (isti redoslijed kao
-  // Sašina poruka).
+  // zahtjev, 19.9.2026.) — za padajući izbornik (checkbox, VIŠESTRUKI odabir)
+  // "Nadležna poslovnica" u buildAdminFieldsBlock() niže. Samo imena
+  // poslovnica ovdje; puni kontakt podaci (voditelj/operativac/telefon/mail/
+  // adresa) su spremljeni u InTime_Code.gs kao DISTRIBUCIJSKI_CENTRI —
+  // trebat će za automatski mail poslovnici kod otvaranja klijenta (Faza 4,
+  // plan u Projectu).
+  // Sašin izričit zahtjev (19.9.2026., isti dan, drugi zahtjev): 4 poslovnice
+  // (Osijek, Bjelovar, Varaždin, Slavonski Brod) istaknute na VRHU popisa,
+  // odvojene crtom od ostalih — POSLOVNICE_ISTAKNUTE niže. Ostale poslovnice
+  // idu ispod crte, istim redoslijedom kao prije.
+  var POSLOVNICE_ISTAKNUTE = ['Osijek', 'Bjelovar', 'Varaždin', 'Slavonski Brod'];
   var POSLOVNICE_LISTA = [
     'Bjelovar', 'Dubrovnik', 'Gospić', 'Krapina', 'Opuzen', 'Osijek', 'Pazin',
     'Rijeka', 'Sisak', 'Slavonski Brod', 'Split', 'Šibenik', 'Varaždin',
     'Zagrebačka distribucija'
   ];
+  var POSLOVNICE_OSTALE = POSLOVNICE_LISTA.filter(function(p) {
+    return POSLOVNICE_ISTAKNUTE.indexOf(p) === -1;
+  });
 
   var adminToken = null;
   var allEntries = [];
@@ -2210,6 +2247,13 @@
     var zadnjeVrijemeUnosaIzracunato = pomakniVrijeme_(vrijemePrikupaKlijent, -30);
     var zadnjeVrijemeUnosaPrikaz = zadnjeVrijemeUnosaAdmin || zadnjeVrijemeUnosaIzracunato;
     var zadnjeVrijemeUnosaLabel = 'Zadnji termin za unos naloga' + ((!zadnjeVrijemeUnosaAdmin && zadnjeVrijemeUnosaIzracunato) ? ' (izračunato iz odabira klijenta — može se urediti)' : (!zadnjeVrijemeUnosaAdmin ? '' : ' (ručno uređeno)'));
+    // Sašin izričit zahtjev (19.9.2026., drugi krug): "Nadležna poslovnica"
+    // više nije single-select nego multi-select (klijent može pripadati 2+
+    // poslovnice) — postojeća vrijednost je zato zapisana kao popis imena
+    // odvojenih zarezom u ISTOM polju/stupcu kao i prije (bez izmjene sheme,
+    // isti obrazac kao "Odobrena poglavlja za ispravak (admin, brojevi
+    // odvojeni zarezom)" koji već postoji u ovom kodu).
+    var poslovniceOdabrane = (fieldVal(entry, 'Nadležna poslovnica (admin)') || '').split(',').map(function(s) { return s.trim(); }).filter(function(s) { return s; });
     wrap.innerHTML =
       '<h3>Podaci koje popunjava In Time (nakon otvaranja klijenta)</h3>' +
       '<div class="admin-fields-grid">' +
@@ -2231,15 +2275,33 @@
         // Novo polje (Sašin izričit zahtjev, 19.9.2026.): dodjela klijenta
         // nadležnoj poslovnici/distribucijskom centru — treba za automatski
         // mail centru kod otvaranja klijenta (Faza 4, mail vrsta #3, vidi
-        // plan u Projectu). Popis poslovnica iz POSLOVNICE_LISTA niže.
-        '<div><label>Nadležna poslovnica</label>' +
-          '<select class="af-poslovnica">' +
-            '<option value="">— odaberi —</option>' +
-            POSLOVNICE_LISTA.map(function(p) {
-              var sel = (fieldVal(entry, 'Nadležna poslovnica (admin)') === p) ? ' selected' : '';
-              return '<option value="' + esc(p) + '"' + sel + '>' + esc(p) + '</option>';
-            }).join('') +
-          '</select></div>' +
+        // plan u Projectu). Sašin izričit zahtjev (19.9.2026., drugi krug):
+        // (a) prikazuje se TEK kad je klijent u "Ponude" (prije toga skriveno
+        // — vidi jePonuda() niže), (b) Osijek/Bjelovar/Varaždin/Slavonski
+        // Brod istaknuti pri vrhu (★, POSLOVNICE_ISTAKNUTE), odvojeni crtom
+        // od ostalih poslovnica (POSLOVNICE_OSTALE), (c) "Svi centri" —
+        // kvačica koja odjednom označi baš sve poslovnice, (d) checkbox
+        // padajući izbornik umjesto starog <select>, jer klijent može imati
+        // 2+ nadležne poslovnice odjednom.
+        '<div class="af-poslovnica-wrap"' + (jePonuda(entry) ? '' : ' style="display:none"') + '>' +
+          '<label>Nadležna poslovnica</label>' +
+          '<div class="poslovnica-dd">' +
+            '<button type="button" class="poslovnica-dd-toggle"></button>' +
+            '<div class="poslovnica-dd-panel" style="display:none">' +
+              '<label class="poslovnica-dd-item"><input type="checkbox" class="poslovnica-cb-svi"> <strong>Svi centri</strong></label>' +
+              '<div class="poslovnica-dd-divider"></div>' +
+              POSLOVNICE_ISTAKNUTE.map(function(p) {
+                var checked = (poslovniceOdabrane.indexOf(p) !== -1) ? ' checked' : '';
+                return '<label class="poslovnica-dd-item"><input type="checkbox" class="poslovnica-cb" value="' + esc(p) + '"' + checked + '> <span class="poslovnica-dd-star">★</span> ' + esc(p) + '</label>';
+              }).join('') +
+              '<div class="poslovnica-dd-divider"></div>' +
+              POSLOVNICE_OSTALE.map(function(p) {
+                var checked = (poslovniceOdabrane.indexOf(p) !== -1) ? ' checked' : '';
+                return '<label class="poslovnica-dd-item"><input type="checkbox" class="poslovnica-cb" value="' + esc(p) + '"' + checked + '> ' + esc(p) + '</label>';
+              }).join('') +
+            '</div>' +
+          '</div>' +
+        '</div>' +
         // Sašin izričit zahtjev (19.9.2026., "makni ga"): ovo staro polje se
         // MAKNE S EKRANA — otkad gumb "Prebaci u ponude" više ne postavlja
         // "Datum otvaranja klijenta" (vidi Faza 1b/1d u planu), polje nije
@@ -2365,6 +2427,39 @@
       if (pomjereno) { afVrijemePrikupa.value = pomjereno; }
     });
 
+    // "Nadležna poslovnica" — checkbox padajući izbornik (vidi napomenu uz
+    // HTML gore). Toggle gumb otvara/zatvara panel; "Svi centri" masovno
+    // (od)označi sve; svaka promjena osvježi sažetak na samom gumbu i
+    // automatski (od)označi "Svi centri" kad su/nisu baš sve poslovnice
+    // odabrane. wrap već ima globalni click stopPropagation (linija niže u
+    // funkciji), pa klik po panelu ne zatvara karticu.
+    var poslovnicaToggle = wrap.querySelector('.poslovnica-dd-toggle');
+    var poslovnicaPanel = wrap.querySelector('.poslovnica-dd-panel');
+    var poslovnicaCbSvi = wrap.querySelector('.poslovnica-cb-svi');
+    var poslovnicaCbs = Array.prototype.slice.call(wrap.querySelectorAll('.poslovnica-cb'));
+    function osvjeziPoslovnicaSazetak_() {
+      var odabrane = poslovnicaCbs.filter(function(cb) { return cb.checked; }).map(function(cb) { return cb.value; });
+      if (odabrane.length === 0) {
+        poslovnicaToggle.textContent = '— odaberi —';
+      } else if (odabrane.length === poslovnicaCbs.length) {
+        poslovnicaToggle.textContent = 'Svi centri (' + odabrane.length + ')';
+      } else {
+        poslovnicaToggle.textContent = odabrane.join(', ');
+      }
+      poslovnicaCbSvi.checked = (odabrane.length === poslovnicaCbs.length);
+    }
+    osvjeziPoslovnicaSazetak_();
+    poslovnicaToggle.addEventListener('click', function() {
+      poslovnicaPanel.style.display = (poslovnicaPanel.style.display === 'none') ? 'block' : 'none';
+    });
+    poslovnicaCbSvi.addEventListener('change', function() {
+      poslovnicaCbs.forEach(function(cb) { cb.checked = poslovnicaCbSvi.checked; });
+      osvjeziPoslovnicaSazetak_();
+    });
+    poslovnicaCbs.forEach(function(cb) {
+      cb.addEventListener('change', osvjeziPoslovnicaSazetak_);
+    });
+
     saveBtn.addEventListener('click', function(ev) {
       ev.stopPropagation();
       statusEl.textContent = 'Spremanje…';
@@ -2374,7 +2469,7 @@
         ob_password: wrap.querySelector('.af-password').value,
         datum_otvaranja: wrap.querySelector('.af-datum').value,
         datum_prebacivanja_ponude: wrap.querySelector('.af-datum-ponude').value,
-        nadlezna_poslovnica: wrap.querySelector('.af-poslovnica').value,
+        nadlezna_poslovnica: poslovnicaCbs.filter(function(cb) { return cb.checked; }).map(function(cb) { return cb.value; }).join(','),
         zadnje_vrijeme_unosa: wrap.querySelector('.af-vrijeme').value,
         interna_napomena: wrap.querySelector('.af-napomena').value,
         sifra_ponude: wrap.querySelector('.af-sifra-ponude').value,
