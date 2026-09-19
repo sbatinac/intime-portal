@@ -2117,6 +2117,16 @@
       body.appendChild(buildNazivOibBlock(entry));
       var ispravakBlok = buildIspravakBlock(entry);
       if (ispravakBlok) { body.appendChild(ispravakBlok); }
+    } else {
+      // NOVO (19.9.2026., Sašin izričit zahtjev — "napravi mi export
+      // odbijenice...isto kao i ovo sto smo napravili...u posebnim
+      // direktorijima, po logici označavanja kao i za upitnik"): Odbijenica
+      // dosad NIJE imala gumb "Export podataka" (buildAdminFieldsBlock, koji
+      // taj gumb sadrži, poziva se samo za entry.status === 'Interes' —
+      // vidi granu iznad). Ovdje isti gumb, ali minimalan (bez cijelog
+      // admin-fields bloka s ponudama/TM/OB poljima, koja se na Odbijenicu ne
+      // odnose) — šalje se u zaseban Drive poddirektorij "ODBIJENICE".
+      body.appendChild(buildOdbijenicaExportBlock(entry));
     }
 
     var actions = document.createElement('div');
@@ -2147,6 +2157,84 @@
 
     card.appendChild(body);
     return card;
+  }
+
+  // NOVO (19.9.2026., Sašin izričit zahtjev) — "Export podataka" za
+  // Odbijenicu, isti UX obrazac kao istoimeni gumb u buildAdminFieldsBlock()
+  // (za Interes), ali minimalan: samo status-tekst + gumb, bez cijelog
+  // admin-fields grida (Odbijenica nema TM/OB/ponuda polja). Backend akcija
+  // 'adminExportOdbijenica' sprema Google dokument u Drive poddirektorij
+  // "ODBIJENICE" (zaseban od "POTENCIJALNI KLIJENTI" koji koristi Upitnik).
+  function buildOdbijenicaExportBlock(entry) {
+    var wrap = document.createElement('div');
+    wrap.className = 'admin-fields-actions';
+    wrap.innerHTML =
+      '<span class="save-status"></span>' +
+      '<button type="button" class="btn btn-small btn-export">Export podataka</button>';
+    wrap.addEventListener('click', function(ev) { ev.stopPropagation(); });
+
+    var statusEl = wrap.querySelector('.save-status');
+    var exportBtn = wrap.querySelector('.btn-export');
+    exportBtn.addEventListener('click', function() {
+      statusEl.textContent = 'Izvoz u tijeku…';
+      statusEl.classList.remove('error');
+      exportBtn.disabled = true;
+      gasCall({ action: 'adminExportOdbijenica', token: adminToken, rowIndex: entry.rowIndex }).then(function(res) {
+        exportBtn.disabled = false;
+        if (handleAuthError(res)) { return; }
+        if (res.status === 'ok') {
+          statusEl.innerHTML = 'Izvezeno → <a href="' + esc(res.folderUrl) + '" target="_blank" rel="noopener">otvori folder na Driveu</a>';
+          statusEl.classList.remove('error');
+        } else {
+          statusEl.textContent = res.message || 'Greška pri exportu.';
+          statusEl.classList.add('error');
+        }
+      }).catch(function() {
+        exportBtn.disabled = false;
+        statusEl.textContent = 'Greška u komunikaciji s poslužiteljem.';
+        statusEl.classList.add('error');
+      });
+    });
+
+    return wrap;
+  }
+
+  // NOVO (19.9.2026., isti zahtjev) — "Export podataka" za Anketu o kvaliteti
+  // usluge, identičan obrazac kao buildOdbijenicaExportBlock() iznad, samo s
+  // backend akcijom 'adminExportAnketa' (sprema u Drive poddirektorij
+  // "OCJENE KVALITETE").
+  function buildAnketaExportBlock(entry) {
+    var wrap = document.createElement('div');
+    wrap.className = 'admin-fields-actions';
+    wrap.innerHTML =
+      '<span class="save-status"></span>' +
+      '<button type="button" class="btn btn-small btn-export">Export podataka</button>';
+    wrap.addEventListener('click', function(ev) { ev.stopPropagation(); });
+
+    var statusEl = wrap.querySelector('.save-status');
+    var exportBtn = wrap.querySelector('.btn-export');
+    exportBtn.addEventListener('click', function() {
+      statusEl.textContent = 'Izvoz u tijeku…';
+      statusEl.classList.remove('error');
+      exportBtn.disabled = true;
+      gasCall({ action: 'adminExportAnketa', token: adminToken, rowIndex: entry.rowIndex }).then(function(res) {
+        exportBtn.disabled = false;
+        if (handleAuthError(res)) { return; }
+        if (res.status === 'ok') {
+          statusEl.innerHTML = 'Izvezeno → <a href="' + esc(res.folderUrl) + '" target="_blank" rel="noopener">otvori folder na Driveu</a>';
+          statusEl.classList.remove('error');
+        } else {
+          statusEl.textContent = res.message || 'Greška pri exportu.';
+          statusEl.classList.add('error');
+        }
+      }).catch(function() {
+        exportBtn.disabled = false;
+        statusEl.textContent = 'Greška u komunikaciji s poslužiteljem.';
+        statusEl.classList.add('error');
+      });
+    });
+
+    return wrap;
   }
 
   // ---- Anketa o kvaliteti usluge (treći tab) ----
@@ -2254,6 +2342,7 @@
       table.appendChild(tr);
     });
     body.appendChild(table);
+    body.appendChild(buildAnketaExportBlock(entry));
 
     var actions = document.createElement('div');
     actions.className = 'entry-card-actions';
