@@ -375,26 +375,46 @@
   }
   .admin-fields h3{font-size:13px;margin:0 0 10px;color:var(--purple-dark);}
   .admin-fields h3.af-sekcija2-naslov{margin-top:18px;padding-top:16px;border-top:1px dashed var(--line);}
+  /* Blok "Mail adrese za ponudu" (checkbox popis — vidi buildAdminFieldsBlock()
+     u <script> niže za punu napomenu). */
+  .af-mail-blok{grid-column:1 / -1;margin-top:4px;}
+  .af-mail-blok > label{display:block;font-size:14px;font-weight:800;letter-spacing:.03em;text-transform:uppercase;color:var(--purple-dark);margin-bottom:7px;}
+  .af-mail-okvir{border:2px solid #bcdedb;border-radius:14px;padding:10px;background:#eefaf8;}
+  .af-mail-lista{display:flex;flex-direction:column;gap:5px;}
+  .af-mail-stavka{display:flex;align-items:flex-start;gap:7px;padding:5px 8px;border:1px solid var(--line);border-radius:6px;background:#fff;font-size:12.5px;cursor:pointer;}
+  .af-mail-stavka:hover{border-color:var(--purple);}
+  .af-mail-stavka input{margin-top:2px;flex-shrink:0;}
+  .af-mail-adresa{font-weight:700;color:var(--graphite);}
+  .af-mail-tko{color:var(--grey);}
+  .af-mail-status{font-size:11px;color:var(--grey);margin-top:6px;min-height:14px;}
+  .af-mail-status.error{color:var(--red);}
+  .af-mail-prazno{font-size:11.5px;color:var(--grey);font-style:italic;padding:2px;}
   /* Okvir "Dokumenti za ponudu" (dva okvira, drag&drop između njih — vidi
      buildAdminFieldsBlock() u <script> niže za punu napomenu). */
   .af-dok-blok{grid-column:1 / -1;margin-top:4px;}
-  .af-dok-blok > label{display:block;font-size:11px;color:var(--grey);margin-bottom:5px;}
+  .af-dok-blok > label{display:block;font-size:14px;font-weight:800;letter-spacing:.03em;text-transform:uppercase;color:var(--purple-dark);margin-bottom:7px;}
   .af-dok-okviri{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
   @media(max-width:520px){.af-dok-okviri{grid-template-columns:1fr;}}
-  .af-dok-okvir{border:1px solid var(--line);border-radius:8px;padding:9px;background:#fff;display:flex;flex-direction:column;}
-  .af-dok-okvir-naslov{font-size:11.5px;font-weight:700;color:var(--purple-dark);display:flex;align-items:center;justify-content:space-between;margin-bottom:7px;gap:6px;}
-  .af-dok-osvjezi{background:none;border:1px solid var(--line);border-radius:6px;cursor:pointer;font-size:11px;color:var(--purple);padding:2px 7px;line-height:1.6;}
+  .af-dok-okvir{border:2px solid var(--line);border-radius:14px;padding:10px;background:#fff;display:flex;flex-direction:column;}
+  /* Lijevo — "Osnovna dokumentacija" (izvor, samo za čitanje): svijetlozelena
+     pozadina. Desno — "Dokumenti za ponudu" (cilj, gradi se za ovu ponudu):
+     toplija, crvenkasta pozadina — vizualno razdvaja "sef s dokumentima" od
+     "radnog stola ponude" (Sašin izričit zahtjev, 20.9.2026.). */
+  .af-dok-izvor{background:#eaf8ee;border-color:#bfe6c9;}
+  .af-dok-cilj{background:#fdeeec;border-color:#f3c7c0;}
+  .af-dok-okvir-naslov{font-size:13px;font-weight:800;letter-spacing:.02em;text-transform:uppercase;color:var(--purple-dark);display:flex;align-items:center;justify-content:space-between;margin-bottom:7px;gap:6px;}
+  .af-dok-osvjezi{background:none;border:1px solid var(--line);border-radius:6px;cursor:pointer;font-size:11px;text-transform:none;letter-spacing:normal;font-weight:600;color:var(--purple);padding:2px 7px;line-height:1.6;}
   .af-dok-osvjezi:hover{color:#fff;background:var(--purple);border-color:var(--purple);}
   .af-dok-lista{display:flex;flex-direction:column;gap:4px;min-height:40px;}
-  .af-dok-stavka{display:flex;align-items:center;gap:6px;padding:5px 8px;border:1px solid var(--line);border-radius:6px;background:#f7fafb;font-size:12px;cursor:grab;}
+  .af-dok-stavka{display:flex;align-items:center;gap:6px;padding:5px 8px;border:1px solid var(--line);border-radius:6px;background:#fff;font-size:12px;cursor:grab;}
   .af-dok-stavka:hover{border-color:var(--purple);background:#f0fbfa;}
   .af-dok-stavka:active{cursor:grabbing;}
   .af-dok-naziv{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-  .af-dok-cilj-stavka{display:flex;align-items:center;gap:6px;padding:5px 8px;border:1px solid var(--purple);border-radius:6px;background:#eefaf8;font-size:12px;}
+  .af-dok-cilj-stavka{display:flex;align-items:center;gap:6px;padding:5px 8px;border:1px solid var(--purple);border-radius:6px;background:#fff;font-size:12px;}
   .af-dok-ukloni{background:none;border:none;color:var(--red);cursor:pointer;font-size:13px;font-weight:700;padding:0 2px;line-height:1;}
   .af-dok-ukloni:hover{color:var(--red-dark);}
   .af-dok-cilj{min-height:100px;}
-  .af-dok-cilj.af-dok-drag-over{border-color:var(--purple);background:#f0fbfa;box-shadow:0 0 0 2px rgba(34,152,145,.18);}
+  .af-dok-cilj.af-dok-drag-over{border-color:var(--purple);background:#f7e4e0;box-shadow:0 0 0 2px rgba(34,152,145,.18);}
   .af-dok-cilj-hint{font-size:10.5px;color:var(--grey);margin-top:7px;line-height:1.4;}
   .af-dok-prazno{font-size:11.5px;color:var(--grey);font-style:italic;padding:4px 2px;}
   .af-dok-status{font-size:11px;color:var(--grey);margin-top:5px;min-height:14px;}
@@ -953,6 +973,28 @@
   var POSLOVNICE_OSTALE = POSLOVNICE_LISTA.filter(function(p) {
     return POSLOVNICE_ISTAKNUTE.indexOf(p) === -1;
   });
+
+  // Blok "Mail adrese za ponudu" (buildAdminFieldsBlock, Dio 1) — Sašin
+  // izričit zahtjev (20.9.2026., dvadeseti krug): checkbox popis SVIH e-mail
+  // adresa koje klijent ima BILO GDJE u upitniku, uz ime osobe iza svake
+  // adrese ("odmah napiši tko je iza tih mailova"). ISTIH 9 izvora kao
+  // klijentovo 13. poglavlje "Potvrda adrese za slanje ponude"
+  // (PONUDA_EMAIL_IZVORI u InTime_PismoNamjere.html) — namjerno mirror, da
+  // se admin popis i klijentov popis uvijek slažu — samo ovdje uz svaku
+  // adresu dolazi i STVARNO IME osobe (imeLabel), kad postoji, umjesto
+  // samog generičkog opisa uloge. Labeli su TOČNI nazivi stupaca iz
+  // UPIT_FIELDS (InTime_Code.gs) — fieldVal(entry, label) ih čita izravno.
+  var PONUDA_EMAIL_IZVORI_ADMIN_ = [
+    { emailLabel: 'Email osobe koja unosi podatke', imeLabel: 'Ime i prezime osobe koja unosi podatke', uloga: 'osoba koja je unijela upitnik' },
+    { emailLabel: 'Glavna e-mail adresa tvrtke', imeLabel: null, uloga: 'glavna adresa tvrtke' },
+    { emailLabel: 'Email za e-račune', imeLabel: null, uloga: 'e-računi' },
+    { emailLabel: 'Email za specifikacije uplata otkupnina', imeLabel: null, uloga: 'specifikacije uplata otkupnina' },
+    { emailLabel: 'Kontakt osoba u računovodstvu – mail', imeLabel: 'Kontakt osoba u računovodstvu – ime i prezime', uloga: 'računovodstvo' },
+    { emailLabel: 'Mail adresa odgovorne osobe', imeLabel: 'Ime i prezime', uloga: 'odgovorna osoba (na koga se naslovljava ponuda)' },
+    { emailLabel: 'Email kontakt osobe', imeLabel: 'Kontakt osoba', uloga: 'kontakt osoba' },
+    { emailLabel: 'Osoba za organizaciju slanja/primanja pošiljaka – email', imeLabel: 'Osoba za organizaciju slanja/primanja pošiljaka – ime i prezime', uloga: 'osoba zadužena za logistiku' },
+    { emailLabel: 'Preferirana e-mail adresa za prijavu u Online Booking (OB)', imeLabel: null, uloga: 'Online Booking pristup' }
+  ];
 
   var adminToken = null;
   var allEntries = [];
@@ -3144,6 +3186,44 @@
     // glavni gumb prikazuje "Prebaci u arhivu"). Za sada BEZUVJETNO
     // prebacivanje — Saša će kasnije javiti uvjete koji se onda dodaju ovdje.
     var prikaziPrebaciUKlijenteGumb = !vecOtvorenSad && vecUPonudiSad && !jeArhiva(entry);
+    // Blok "Mail adrese za ponudu" (Sašin izričit zahtjev, 20.9.2026.,
+    // dvadeseti krug) — vidi punu napomenu uz PONUDA_EMAIL_IZVORI_ADMIN_
+    // gore i uz ADMIN_ONLY_FIELDS.mail_adrese_ponude u InTime_Code.gs.
+    // Sastavi jedinstveni popis {email, ime, uloge[]} iz svih 9 izvora (isti
+    // spajaj-po-adresi obrazac kao klijentovo azurirajPonudaEmailOpcije() u
+    // InTime_PismoNamjere.html — ista adresa upisana na dva mjesta dobiva
+    // spojen popis uloga, npr. "kontakt osoba, odgovorna osoba").
+    var mailPoAdresi = {};
+    var mailPoredak = [];
+    PONUDA_EMAIL_IZVORI_ADMIN_.forEach(function(izvor) {
+      var email = (fieldVal(entry, izvor.emailLabel) || '').trim();
+      if (!email) { return; }
+      var kljuc = email.toLowerCase();
+      if (!mailPoAdresi[kljuc]) {
+        mailPoAdresi[kljuc] = { email: email, ime: '', uloge: [] };
+        mailPoredak.push(kljuc);
+      }
+      var stavkaMail = mailPoAdresi[kljuc];
+      var ime = izvor.imeLabel ? (fieldVal(entry, izvor.imeLabel) || '').trim() : '';
+      if (ime && !stavkaMail.ime) { stavkaMail.ime = ime; }
+      if (stavkaMail.uloge.indexOf(izvor.uloga) === -1) { stavkaMail.uloge.push(izvor.uloga); }
+    });
+    var mailAdreseZaPonudu = mailPoredak.map(function(kljuc) { return mailPoAdresi[kljuc]; });
+    // Default označeno stanje: ako je Saša već ranije nešto odabrao za OVU
+    // ponudu (mail_adrese_ponude), to ima prednost; inače, ako je klijent
+    // sam nešto označio u 13. poglavlju upitnika (ponuda_email_adrese),
+    // koristi se to; inače su SVE adrese označene (da Saša slučajno ne
+    // preskoči nekoga, lakše je ručno odznačiti nego se sjetiti dodati).
+    var mailOznaceneSirovo = fieldVal(entry, 'Mail adrese za slanje ponude (admin)');
+    var mailOznaceneIzvor = mailOznaceneSirovo || fieldVal(entry, 'Potvrđena adresa/e za slanje ponude');
+    var mailOznaceneSet = null;
+    if (mailOznaceneIzvor) {
+      mailOznaceneSet = {};
+      mailOznaceneIzvor.split(',').forEach(function(a) {
+        a = a.trim();
+        if (a) { mailOznaceneSet[a.toLowerCase()] = true; }
+      });
+    }
     // Okvir "Dokumenti za ponudu" (Sašin izričit zahtjev, 20.9.2026.,
     // devetnaesti krug — "okvir u kojem ću moći klikati i dodavati u ponudu
     // mail koji ćemo slati, dokumenti koji idu u svaku ponudu... 2 okvira u
@@ -3274,6 +3354,23 @@
         '</div>' +
         '<div><label>Datum prihvaćanja ponude</label>' +
           '<input type="text" class="af-datum-prihvacanja" placeholder="npr. 25.09.2026" value="' + esc(fieldVal(entry, 'Datum prihvaćanja ponude (admin)')) + '"></div>' +
+        '<div class="af-mail-blok">' +
+          '<label>Mail adrese za ponudu</label>' +
+          '<div class="af-mail-okvir">' +
+            (mailAdreseZaPonudu.length
+              ? '<div class="af-mail-lista">' +
+                mailAdreseZaPonudu.map(function(m) {
+                  var kljuc = m.email.toLowerCase();
+                  var oznaceno = mailOznaceneSet ? !!mailOznaceneSet[kljuc] : true;
+                  var tko = m.ime ? (esc(m.ime) + ' (' + esc(m.uloge.join(', ')) + ')') : ('(' + esc(m.uloge.join(', ')) + ')');
+                  return '<label class="af-mail-stavka"><input type="checkbox" class="af-mail-cb" value="' + esc(m.email) + '"' + (oznaceno ? ' checked' : '') + '>' +
+                    '<span><span class="af-mail-adresa">' + esc(m.email) + '</span> <span class="af-mail-tko">— ' + tko + '</span></span></label>';
+                }).join('') +
+                '</div>'
+              : '<div class="af-mail-prazno">Klijent još nije upisao nijednu e-mail adresu u upitnik.</div>') +
+            '<div class="af-mail-status"></div>' +
+          '</div>' +
+        '</div>' +
         '<div class="af-dok-blok">' +
           '<label>Dokumenti za ponudu</label>' +
           '<div class="af-dok-okviri">' +
@@ -3616,6 +3713,38 @@
           }
         );
       });
+    }
+
+    // Blok "Mail adrese za ponudu" — checkboxovi sprema odmah pri svakoj
+    // promjeni (isti obrazac trenutnog spremanja kao "Dokumenti za ponudu"
+    // niže), bez čekanja na glavni "Spremi". Samo dok je Dio 1 vidljiv.
+    if (prikaziPuniBlok) {
+      var mailCbListe = Array.prototype.slice.call(wrap.querySelectorAll('.af-mail-cb'));
+      var mailStatus = wrap.querySelector('.af-mail-status');
+      if (mailCbListe.length && mailStatus) {
+        mailCbListe.forEach(function(cb) {
+          cb.addEventListener('change', function(ev) {
+            ev.stopPropagation();
+            var odabrane = mailCbListe.filter(function(c) { return c.checked; }).map(function(c) { return c.value; });
+            mailStatus.textContent = 'Spremanje…';
+            mailStatus.classList.remove('error');
+            gasCall({ action: 'adminUpdateFields', token: adminToken, rowIndex: entry.rowIndex, fields: { mail_adrese_ponude: odabrane.join(', ') } }).then(function(res) {
+              if (handleAuthError(res)) { return; }
+              if (res.status === 'ok') {
+                mailStatus.textContent = 'Spremljeno.';
+                mailStatus.classList.remove('error');
+                entry.fields['Mail adrese za slanje ponude (admin)'] = odabrane.join(', ');
+              } else {
+                mailStatus.textContent = res.message || 'Greška pri spremanju.';
+                mailStatus.classList.add('error');
+              }
+            }).catch(function() {
+              mailStatus.textContent = 'Greška u komunikaciji s poslužiteljem.';
+              mailStatus.classList.add('error');
+            });
+          });
+        });
+      }
     }
 
     // Okvir "Dokumenti za ponudu" — vidi napomenu uz dokumentiPonude gore i
