@@ -71,6 +71,18 @@
   .btn-small{padding:6px 11px;font-size:12px;}
   .btn-prebaci{background:var(--green);border-color:var(--green);}
   .btn-prebaci:hover{background:#166638;border-color:#166638;}
+  /* NOVO (18. krug, 20.9.2026., Sašin izričit zahtjev) — kad gumb "Prebaci..."
+     prikazuje BAŠ "Prebaci u arhivu" (odustajanje od klijenta), boja je
+     CRVENA umjesto uobičajene zelene. */
+  .btn-prebaci-arhiva{background:var(--red);border-color:var(--red);}
+  .btn-prebaci-arhiva:hover{background:var(--red-dark);border-color:var(--red-dark);}
+  /* NOVO — "Prebaci u nove klijente": zelen, duplo veći od malih gumba pored
+     njega (Sašin izričit zahtjev, "zeleni gumb duplo veći"). */
+  .btn-klijent{
+    background:var(--green);border-color:var(--green);
+    padding:12px 26px;font-size:14px;font-weight:800;
+  }
+  .btn-klijent:hover{background:#166638;border-color:#166638;}
 
   /* ---- LOGIN ---- */
   #login-screen{
@@ -362,6 +374,7 @@
     margin-top:14px;
   }
   .admin-fields h3{font-size:13px;margin:0 0 10px;color:var(--purple-dark);}
+  .admin-fields h3.af-sekcija2-naslov{margin-top:18px;padding-top:16px;border-top:1px dashed var(--line);}
   .admin-fields-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px 14px;}
   @media(max-width:520px){.admin-fields-grid{grid-template-columns:1fr;}}
   .admin-fields label{display:block;font-size:11px;color:var(--grey);margin-bottom:3px;}
@@ -1014,6 +1027,7 @@
     Ponude: { q: '', raspon: null },
     Odbijenica: { q: '', raspon: null },
     Arhiva: { q: '', raspon: null },
+    NoviKlijenti: { q: '', raspon: null },
     Ankete: { q: '', raspon: null },
     Imenik: { q: '', raspon: null }
   };
@@ -3056,12 +3070,37 @@
     // već otvoren klijent (legacy "Novi klijenti") → "Vrati u Zainteresirani"
     // (nepromijenjeno). Za već arhivirani zapis gumb se u potpunosti skriva
     // niže (nema još definirane radnje iz Arhive).
-    var prebaciLabel = jeOtvorenKlijent(entry)
-      ? 'Vrati u Zainteresirani'
-      : (jePonuda(entry) ? 'Prebaci u arhivu' : 'Prebaci u ponude');
+    // PROŠIRENO (18. krug, 20.9.2026., Sašin izričit zahtjev) — veza Ponude
+    // ⇄ Novi klijenti: kad je zapis već u "Novi klijenti" I stigao je tamo
+    // preko "Ponude" (dakle ima zabilježen "Datum prebacivanja u ponude"),
+    // gumb sad vraća u "Ponude" (ne skroz u Zainteresirani) — jer je odande i
+    // došao. Stari legacy slučaj (klijent otvoren ranije, izravno, BEZ
+    // ikad prolaska kroz "Ponude") i dalje se vraća u Zainteresirani,
+    // nepromijenjeno.
+    var vecOtvorenSad = jeOtvorenKlijent(entry);
+    var vecUPonudiSad = jePonuda(entry);
+    var prebaciLabel = vecOtvorenSad
+      ? (vecUPonudiSad ? 'Vrati u ponude' : 'Vrati u Zainteresirani')
+      : (vecUPonudiSad ? 'Prebaci u arhivu' : 'Prebaci u ponude');
+    // "Prebaci u nove klijente" — NOVI zaseban gumb (zelen, dvostruke
+    // veličine), vidljiv SAMO dok je zapis u "Ponude" (isti uvjet kao kad
+    // glavni gumb prikazuje "Prebaci u arhivu"). Za sada BEZUVJETNO
+    // prebacivanje — Saša će kasnije javiti uvjete koji se onda dodaju ovdje.
+    var prikaziPrebaciUKlijenteGumb = !vecOtvorenSad && vecUPonudiSad && !jeArhiva(entry);
+    // Sašin izričit zahtjev (20.9.2026., devetnaesti krug): blok "Podaci koje
+    // popunjava In Time" razdvojen na DVIJE vizualne cjeline na ISTOJ kartici
+    // — "fizički samo napravi novi dio na kartici ovdje ispod". Prvi dio =
+    // podaci vezani za SASTAVLJANJE PONUDE (šifra upitnika, datumi, INTRIX
+    // šifra ponude, datumi slanja/prihvaćanja ponude). Drugi dio = podaci
+    // vezani za KLIJENTA nakon što PRIHVATI ponudu (TM broj, Online Booking
+    // korisničko ime/lozinka/datum otvaranja, zadnji termin za unos naloga,
+    // najraniji dolazak vozila na prikup) — polja SAMO fizički premještena
+    // niže na kartici i pod zasebnim naslovom, ključevi/stupci/spremanje
+    // (saveBtn niže) potpuno nepromijenjeni. "Interna napomena" ostaje
+    // opća bilješka, prikazana na dnu obje cjeline nepromijenjeno.
     wrap.innerHTML =
       '<div class="af-puni-blok"' + (prikaziPuniBlok ? '' : ' style="display:none"') + '>' +
-      '<h3>Podaci koje popunjava In Time (nakon otvaranja klijenta)</h3>' +
+      '<h3>Podaci koje popunjava In Time — sastavljanje ponude</h3>' +
       '<div class="admin-fields-grid">' +
         '<div><label>Šifra prodajnog upitnika</label>' +
           '<input type="text" class="af-sifra-upitnika" value="' + esc(fieldVal(entry, 'Broj')) + '" readonly></div>' +
@@ -3151,8 +3190,6 @@
         // grid-ćelija koja iznutra slaže polja okomito, jedno ispod drugoga,
         // umjesto da se (kao dosad) prelijevaju izmiješano kroz 2-stupčanu
         // mrežu.
-        '<div><label>Identifikacijski TM broj klijenta</label>' +
-          '<input type="text" class="af-tm-broj" placeholder="npr. TM broj klijenta" value="' + esc(fieldVal(entry, 'Identifikacijski TM broj klijenta (admin)')) + '"></div>' +
         '<div class="af-stack">' +
           '<div><label>Datum slanja ponude 1</label>' +
             '<input type="text" class="af-datum-ponude-1" placeholder="npr. 25.09.2026" value="' + esc(fieldVal(entry, 'Datum slanja ponude 1 (admin)')) + '"></div>' +
@@ -3163,6 +3200,11 @@
         '</div>' +
         '<div><label>Datum prihvaćanja ponude</label>' +
           '<input type="text" class="af-datum-prihvacanja" placeholder="npr. 25.09.2026" value="' + esc(fieldVal(entry, 'Datum prihvaćanja ponude (admin)')) + '"></div>' +
+      '</div>' +
+      '<h3 class="af-sekcija2-naslov">Podaci vezani za klijenta — nakon prihvaćanja ponude</h3>' +
+      '<div class="admin-fields-grid">' +
+        '<div><label>Identifikacijski TM broj klijenta</label>' +
+          '<input type="text" class="af-tm-broj" placeholder="npr. TM broj klijenta" value="' + esc(fieldVal(entry, 'Identifikacijski TM broj klijenta (admin)')) + '"></div>' +
         '<div><label>Datum otvaranja Online Bookinga</label>' +
           '<input type="text" class="af-datum-ob" placeholder="npr. 25.09.2026" value="' + esc(fieldVal(entry, 'Datum otvaranja Online Bookinga (admin)')) + '"></div>' +
         '<div><label>Online Booking — korisničko ime</label>' +
@@ -3180,14 +3222,16 @@
       '<div class="admin-fields-actions">' +
         '<span class="save-status"></span>' +
         '<button type="button" class="btn btn-small btn-export">Export podataka</button>' +
-        '<button type="button" class="btn btn-small btn-prebaci"' + (jeArhiva(entry) ? ' style="display:none"' : '') + '>' + prebaciLabel + '</button>' +
+        (prikaziPrebaciUKlijenteGumb ? '<button type="button" class="btn btn-klijent btn-prebaci-klijent">Prebaci u nove klijente</button>' : '') +
+        '<button type="button" class="btn btn-small btn-prebaci' + (prebaciLabel === 'Prebaci u arhivu' ? ' btn-prebaci-arhiva' : '') + '"' + (jeArhiva(entry) ? ' style="display:none"' : '') + '>' + prebaciLabel + '</button>' +
         '<button type="button" class="btn btn-small"' + (prikaziPuniBlok ? '' : ' style="display:none"') + '>Spremi</button>' +
       '</div>';
 
     var statusEl = wrap.querySelector('.save-status');
-    var saveBtn = wrap.querySelector('.admin-fields-actions .btn:not(.btn-prebaci):not(.btn-export)');
+    var saveBtn = wrap.querySelector('.admin-fields-actions .btn:not(.btn-prebaci):not(.btn-export):not(.btn-klijent)');
     var prebaciBtn = wrap.querySelector('.btn-prebaci');
     var exportBtn = wrap.querySelector('.btn-export');
+    var prebaciKlijentBtn = wrap.querySelector('.btn-prebaci-klijent');
 
     // "Export podataka" — admin kao kontrolni centar, Faza 1 (19.9.2026., vidi
     // claude/admin-kontrolni-centar-plan.md u Projectu). Šalje SVE trenutno
@@ -3318,12 +3362,20 @@
       var vecUPonudi = jePonuda(entry);
 
       if (vecOtvoren) {
-        // Zapis je već (od ranije) otvoreni klijent u "Novi klijenti" — gumb
-        // služi za vraćanje natrag u "Zainteresirani" (briše zabilježeni
-        // datum otvaranja). Nepromijenjeno ponašanje.
+        // PROŠIRENO (18. krug, 20.9.2026., Sašin izričit zahtjev — veza
+        // Ponude ⇄ Novi klijenti): ako je zapis stigao u "Novi klijenti"
+        // preko "Ponude" (ima zabilježen "Datum prebacivanja u ponude"),
+        // gumb vraća natrag u "Ponude" (samo briše datum otvaranja, "Datum
+        // prebacivanja u ponude" ostaje netaknut). Stari legacy slučaj
+        // (klijent otvoren izravno, nikad nije prošao kroz "Ponude") i dalje
+        // se vraća skroz u Zainteresirani — nepromijenjeno ponašanje.
+        var naslovVracanja = vecUPonudi ? 'Vraćanje u ponude' : 'Vraćanje u Zainteresirani';
+        var opisVracanja = vecUPonudi
+          ? 'Klijent će biti vraćen natrag u karticu "Ponude", a zabilježeni datum otvaranja klijenta bit će obrisan. Za potvrdu unesite admin lozinku.'
+          : 'Klijent će biti vraćen natrag u karticu "Zainteresirani", a zabilježeni datum otvaranja klijenta bit će obrisan. Za potvrdu unesite admin lozinku.';
         openAdminPasswordConfirmModal(
-          'Vraćanje u Zainteresirani',
-          'Klijent će biti vraćen natrag u karticu "Zainteresirani", a zabilježeni datum otvaranja klijenta bit će obrisan. Za potvrdu unesite admin lozinku.',
+          naslovVracanja,
+          opisVracanja,
           function() {
             wrap.querySelector('.af-datum').value = '';
             statusEl.textContent = 'Vraćanje…';
@@ -3331,7 +3383,7 @@
             gasCall({ action: 'adminUpdateFields', token: adminToken, rowIndex: entry.rowIndex, fields: { datum_otvaranja: '' } }).then(function(res) {
               if (handleAuthError(res)) { return; }
               if (res.status === 'ok') {
-                statusEl.textContent = 'Vraćeno u Zainteresirani.';
+                statusEl.textContent = vecUPonudi ? 'Vraćeno u ponude.' : 'Vraćeno u Zainteresirani.';
                 statusEl.classList.remove('error');
                 entry.fields['Datum otvaranja klijenta u sustavu (admin)'] = '';
                 loadAll();
@@ -3431,6 +3483,50 @@
         }
       );
     });
+
+    // "Prebaci u nove klijente" (18. krug, 20.9.2026., Sašin izričit zahtjev)
+    // — ručno prebacivanje klijenta iz "Ponude" izravno u "Novi klijenti",
+    // BEZ ikakvih uvjeta zasad (Saša će naknadno javiti uvjete, dodat će se
+    // tad). ISTA dvostruka zaštita (riječ pa admin lozinka) kao Zainteresirani
+    // → Ponude gore, po Sašinom izričitom zahtjevu. Postavlja isto polje
+    // ("Datum otvaranja klijenta") koje koristi i stari/legacy mehanizam —
+    // otud jeOtvorenKlijent() odmah prepoznaje ovaj zapis kao pravog klijenta.
+    if (prebaciKlijentBtn) {
+      prebaciKlijentBtn.addEventListener('click', function(ev) {
+        ev.stopPropagation();
+        openSuperheroWordConfirmModal(
+          'Prebacivanje u nove klijente',
+          'Klijent će biti prebačen u karticu "Novi klijenti". Za potvrdu upišite riječ ispod — nakon toga tražit će se i admin lozinka.',
+          function() {
+            openAdminPasswordConfirmModal(
+              'Prebacivanje u nove klijente',
+              'Klijent će biti prebačen u karticu "Novi klijenti". Zabilježit će se točan datum i vrijeme prebacivanja. Za potvrdu unesite admin lozinku.',
+              function() {
+                var formatiranKlijent = formatirajDatumOtvaranjaKlijenta_(new Date());
+                wrap.querySelector('.af-datum').value = formatiranKlijent;
+                statusEl.textContent = 'Prebacivanje među klijente…';
+                statusEl.classList.remove('error');
+                gasCall({ action: 'adminUpdateFields', token: adminToken, rowIndex: entry.rowIndex, fields: { datum_otvaranja: formatiranKlijent } }).then(function(res) {
+                  if (handleAuthError(res)) { return; }
+                  if (res.status === 'ok') {
+                    statusEl.textContent = 'Prebačeno u nove klijente ' + formatiranKlijent + '.';
+                    statusEl.classList.remove('error');
+                    entry.fields['Datum otvaranja klijenta u sustavu (admin)'] = formatiranKlijent;
+                    loadAll();
+                  } else {
+                    statusEl.textContent = res.message || 'Greška pri prebacivanju.';
+                    statusEl.classList.add('error');
+                  }
+                }).catch(function() {
+                  statusEl.textContent = 'Greška u komunikaciji s poslužiteljem.';
+                  statusEl.classList.add('error');
+                });
+              }
+            );
+          }
+        );
+      });
+    }
 
     wrap.addEventListener('click', function(ev){ ev.stopPropagation(); });
 
