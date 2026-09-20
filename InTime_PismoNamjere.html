@@ -5545,12 +5545,14 @@
     // Provjera duplikata (OIB, ili naziv+oblik poslovnog subjekta) — za
     // 'interes' I 'odbijenica' (oba imaju OIB/naziv tvrtke; Anketa je zaseban
     // file, vidi InTime_Anketa.html). Pravilo je RAZLIČITO po tipu (Sašin
-    // izričit zahtjev 20.9.2026., vidi provjeriDuplikatKlijenta() u .gs):
+    // izričit zahtjev 20.9.2026., ISPRAVLJENO isti dan za Odbijenicu — vidi
+    // provjeriDuplikatKlijenta()/provjeriDuplikatOdbijenica_() u .gs):
     // - 'interes': trajna blokada ako OIB (ili naziv+oblik) već postoji među
     //   postojećim Interes-upitnicima. Prethodna Odbijenica NE blokira —
     //   klijent koji je nekad odbio ponudu i dalje može poslati upitnik.
-    // - 'odbijenica': trajna blokada ako OIB već postoji među postojećim
-    //   Odbijenicama (neovisno o Interesu).
+    // - 'odbijenica': NIJE trajna blokada — isti OIB smije ponovno poslati
+    //   Odbijenicu čim prođe 30 dana od zadnjeg unosa (isti cooldown princip
+    //   kao Anketa).
     // Za razliku od finalnog POST-a niže (koji je namjerno "fire-and-forget"
     // s mode:'no-cors', jer ne trebamo čitati odgovor), ovdje MORAMO pričekati
     // i pročitati stvarni JSON odgovor s backend-a pa se NE koristi no-cors —
@@ -5587,11 +5589,17 @@
       }
       if (_submitBtn) { _submitBtn.disabled = false; _submitBtn.textContent = _submitBtnPrijasnjiTekst; }
       if (_dupProvjera && _dupProvjera.duplicate) {
-        var _dupMsg = _dupProvjera.reason === 'oib'
-          ? 'Tvrtka s unesenim OIB-om već postoji u našem sustavu. Ako želite ispraviti postojeće podatke ili smatrate da je ovo greška, molimo kontaktirajte našeg administratora na sbatinac.intime@gmail.com.'
-          : 'Tvrtka s unesenim nazivom i oblikom poslovnog subjekta već postoji u našem sustavu. Ako želite ispraviti postojeće podatke ili smatrate da je ovo greška, molimo kontaktirajte našeg administratora na sbatinac.intime@gmail.com.';
+        var _dupMsg;
+        if (_dupProvjera.reason === 'odbijenica_cooldown') {
+          var _dupPreostalo = _dupProvjera.preostaloDana || 30;
+          _dupMsg = 'Obrazac za tvrtku s unesenim OIB-om već je poslan u zadnjih 30 dana. Ponovno slanje bit će moguće za otprilike ' + _dupPreostalo + ' dan(a).';
+        } else if (_dupProvjera.reason === 'oib') {
+          _dupMsg = 'Tvrtka s unesenim OIB-om već postoji u našem sustavu. Ako želite ispraviti postojeće podatke ili smatrate da je ovo greška, molimo kontaktirajte našeg administratora na sbatinac.intime@gmail.com.';
+        } else {
+          _dupMsg = 'Tvrtka s unesenim nazivom i oblikom poslovnog subjekta već postoji u našem sustavu. Ako želite ispraviti postojeće podatke ili smatrate da je ovo greška, molimo kontaktirajte našeg administratora na sbatinac.intime@gmail.com.';
+        }
         alert(_dupMsg);
-        var _dupFokusEl = (_dupProvjera.reason === 'oib' && _oibEl) ? _oibEl : _nazivEl;
+        var _dupFokusEl = ((_dupProvjera.reason === 'oib' || _dupProvjera.reason === 'odbijenica_cooldown') && _oibEl) ? _oibEl : _nazivEl;
         if (_dupFokusEl) {
           _dupFokusEl.scrollIntoView({behavior:'smooth', block:'center'});
           _dupFokusEl.focus();

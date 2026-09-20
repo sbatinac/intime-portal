@@ -408,6 +408,14 @@
   .save-status{font-size:12px;color:var(--green);}
   .save-status.error{color:var(--red);}
 
+  /* "Napomena KAM-a" (20.9.2026.) — namjerno vizualno odvojena od skrivenog
+     admin-fields bloka ispod: uvijek vidljiva (i kod "Zainteresirani"),
+     jantar/amber ton signalizira "napomena za dijeliti" (uključena u export). */
+  .napomena-kam-block{background:#fff8ec;border:1px solid #f0c869;border-radius:10px;padding:12px 14px;margin-top:14px;}
+  .napomena-kam-label{font-size:13px;font-weight:700;color:var(--graphite);display:block;margin-bottom:3px;}
+  .napomena-kam-hint{font-size:11.5px;color:var(--grey);margin-bottom:8px;}
+  .napomena-kam-input{width:100%;min-height:70px;border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-family:inherit;font-size:13px;resize:vertical;box-sizing:border-box;}
+
   .ispravak-block{
     background:#fff8e1;
     border:1px solid #f0d98c;
@@ -979,6 +987,11 @@
   // InTime_Imenik Sheet na backendu (adminListImenik), isti obrazac kao
   // allAnketaEntries/loadAnkete() iznad.
   var allImenikEntries = [];
+  // NOVO 20.9.2026. (17. krug, Sašin izričit zahtjev) — tekst pretrage za
+  // Imenik, pretražuje: Ime, Prezime (naziv tvrtke), OIB, Grad, Telefoni,
+  // Emailovi, Funkcije. Čuva se dok je admin na tabu Imenik (ne resetira se
+  // pri svakom loadImenik() osvježavanju).
+  var imenikSearchTerm = '';
   function loadImenik() {
     gasCall({ action: 'adminListImenik', token: adminToken }).then(function(res) {
       if (handleAuthError(res)) { return; }
@@ -1616,8 +1629,17 @@
         container.appendChild(hintI);
         return;
       }
+      container.appendChild(buildImenikSearchBox_());
+      var prikazImenik = filtrirajImenik_(allImenikEntries, imenikSearchTerm);
+      if (prikazImenik.length === 0) {
+        var hintNema = document.createElement('div');
+        hintNema.className = 'empty-hint';
+        hintNema.textContent = 'Nema kontakata koji odgovaraju pretrazi "' + imenikSearchTerm + '".';
+        container.appendChild(hintNema);
+        return;
+      }
       document.getElementById('select-all-row').hidden = false;
-      allImenikEntries.forEach(function(entry) {
+      prikazImenik.forEach(function(entry) {
         container.appendChild(buildImenikEntryCard_(entry));
       });
       return;
@@ -2192,6 +2214,7 @@
     }
 
     if (entry.status === 'Interes') {
+      body.appendChild(buildNapomenaKamBlock(entry));
       body.appendChild(buildAdminFieldsBlock(entry));
       body.appendChild(buildNazivOibBlock(entry));
       var ispravakBlok = buildIspravakBlock(entry);
@@ -2205,6 +2228,10 @@
       // vidi granu iznad). Ovdje isti gumb, ali minimalan (bez cijelog
       // admin-fields bloka s ponudama/TM/OB poljima, koja se na Odbijenicu ne
       // odnose) — šalje se u zaseban Drive poddirektorij "ODBIJENICE".
+      // "Napomena KAM-a" (20.9.2026., drugi val) — isti blok kao kod
+      // Interesa, radi bez izmjene jer Odbijenica dijeli "InTime_Upiti"
+      // Sheet s Upitnikom (default akcija 'adminUpdateFields' je ispravna).
+      body.appendChild(buildNapomenaKamBlock(entry));
       body.appendChild(buildOdbijenicaExportBlock(entry));
     }
 
@@ -2398,6 +2425,10 @@
     table.className = 'field-table';
     Object.keys(entry.fields).forEach(function(label) {
       if (label === 'Timestamp' || label === 'Broj') { return; } // Broj je već prikazan u naslovu kartice
+      // "Napomena KAM-a" (20.9.2026., drugi val) ima svoj zaseban, uredljiv
+      // blok ispod (buildNapomenaKamBlock) — izostavlja se iz ove generičke,
+      // isključivo-za-čitanje tablice da se ne prikazuje dvaput.
+      if (label === 'Napomena KAM-a (admin)') { return; }
       // NAPOMENA 15.9.2026. (Sašin izričit zahtjev): "Naziv poslovnog subjekta"
       // se VIŠE ne izostavlja ovdje — ranije je bio isključen jer je već
       // prikazan (skraćeno) u naslovu kartice, ali Saša želi da se puni naziv
@@ -2421,6 +2452,10 @@
       table.appendChild(tr);
     });
     body.appendChild(table);
+    // "Napomena KAM-a" (20.9.2026., drugi val) — Anketa živi u vlastitom
+    // Sheetu, pa se ovdje šalje druga backend akcija ('adminUpdateAnketaFields',
+    // vidi InTime_Code.gs) — sam blok/UI je identičan Upitniku/Odbijenici.
+    body.appendChild(buildNapomenaKamBlock(entry, 'adminUpdateAnketaFields'));
     body.appendChild(buildAnketaExportBlock(entry));
 
     var actions = document.createElement('div');
@@ -2450,6 +2485,48 @@
 
   function imenikTagKlasa_(tag) {
     return 'imenik-tag-' + String(tag).trim().replace(/\s+/g, '-');
+  }
+
+  // NOVO 20.9.2026. (17. krug, Sašin izričit zahtjev) — pretraga po Imeniku.
+  // Jedno polje pretražuje odjednom: Ime, Prezime (naziv tvrtke), OIB, Grad,
+  // Telefoni, Emailovi, Funkcije. Case-insensitive, "sadrži" pretraga (ne
+  // mora biti točan podudarak), radi lokalno nad već učitanim allImenikEntries
+  // (bez novog poziva na backend).
+  function buildImenikSearchBox_() {
+    var wrap = document.createElement('div');
+    wrap.style.margin = '0 0 14px';
+    var input = document.createElement('input');
+    input.type = 'text';
+    input.id = 'imenik-search-input';
+    input.placeholder = 'Pretraži po imenu, tvrtki, OIB-u, gradu, telefonu, mailu ili funkciji…';
+    input.value = imenikSearchTerm;
+    input.style.cssText = 'width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:13.5px;font-family:inherit;';
+    input.addEventListener('input', function() {
+      imenikSearchTerm = input.value;
+      renderEntries();
+      // Fokus i pozicija kursora se gube na svaki renderEntries() (kartice se
+      // grade iznova), pa ih vraćamo ručno na upravo dodani input.
+      var noviInput = document.getElementById('imenik-search-input');
+      if (noviInput) {
+        var pos = input.selectionStart;
+        noviInput.focus();
+        try { noviInput.setSelectionRange(pos, pos); } catch (e) {}
+      }
+    });
+    wrap.appendChild(input);
+    return wrap;
+  }
+
+  function filtrirajImenik_(entries, term) {
+    term = String(term || '').trim().toLowerCase();
+    if (!term) { return entries; }
+    return entries.filter(function(e) {
+      var polja = [e.ime, e.prezime, e.oib, e.grad, e.telefoni, e.emailovi, e.funkcije];
+      for (var i = 0; i < polja.length; i++) {
+        if (String(polja[i] || '').toLowerCase().indexOf(term) !== -1) { return true; }
+      }
+      return false;
+    });
   }
 
   function buildImenikAutoSyncPanel_() {
@@ -2571,9 +2648,11 @@
 
     var subParts = [];
     if (entry.oib) { subParts.push('OIB: ' + esc(entry.oib)); }
+    if (entry.grad) { subParts.push('Grad: ' + esc(entry.grad)); }
     if (entry.telefoni) { subParts.push('Telefon: ' + esc(entry.telefoni)); }
     if (entry.emailovi) { subParts.push('Mail: ' + esc(entry.emailovi)); }
     if (entry.funkcije) { subParts.push('Funkcija: ' + esc(entry.funkcije)); }
+    if (entry.napomena) { subParts.push('<span style="color:var(--purple);font-weight:600;">Napomena: ' + esc(entry.napomena) + '</span>'); }
     if (entry.datumUnosa) { subParts.push('Datum unosa: ' + esc(entry.datumUnosa)); }
     var brojevi = [];
     if (entry.brojUpitnika) { brojevi.push('Upitnik ' + entry.brojUpitnika); }
@@ -2718,6 +2797,59 @@
     ukupnoMin = ((ukupnoMin % (24 * 60)) + 24 * 60) % (24 * 60);
     function dv(n) { return (n < 10 ? '0' : '') + n; }
     return dv(Math.floor(ukupnoMin / 60)) + ':' + dv(ukupnoMin % 60);
+  }
+
+  // "Napomena KAM-a" (20.9.2026., Sašin izričit zahtjev) — POSVE ODVOJENA
+  // od buildAdminFieldsBlock() niže: ta je cijela skrivena dok klijent nije
+  // u "Ponude" (Faza 1g), a ovo polje mora biti vidljivo/uredljivo ODMAH kod
+  // "Zainteresirani" i ostati vidljivo dok klijent putuje kroz Ponude/
+  // Arhivu/Novi klijenti — pa ima svoj zaseban blok, pozvan PRIJE
+  // buildAdminFieldsBlock u buildEntryCard(). Sprema se kroz ISTU generičku
+  // adminUpdateFields() akciju (ključ 'napomena_kam', vidi ADMIN_ONLY_FIELDS
+  // u InTime_Code.gs) — nije trebala nova backend akcija. Namjena: slobodna
+  // napomena koju Saša ručno upisuje, zamišljena da se DIJELI s drugima —
+  // zato se, za razliku od "Interna napomena" u skrivenom bloku, UVIJEK
+  // uključuje u "Export podataka" (vidi buildKlijentExportDoc_() u .gs).
+  // Sašin izričit zahtjev (20.9.2026., drugi val — "stavi napomenu KAM-a i
+  // za odbijenicu i za anketu"): isti blok, sad pozvan i za Odbijenicu
+  // (buildEntryCard, else-grana — dijeli "InTime_Upiti" Sheet s Upitnikom pa
+  // je default akcija 'adminUpdateFields' ispravna bez izmjene) i za Anketu
+  // (buildAnketaEntryCard — Anketa živi u VLASTITOM Sheetu, pa se ovdje mora
+  // proslijediti druga backend akcija, 'adminUpdateAnketaFields' — vidi
+  // adminUpdateAnketaFields() u InTime_Code.gs). Drugi parametar je zato
+  // opcionalan naziv gas akcije, zadano 'adminUpdateFields'.
+  function buildNapomenaKamBlock(entry, actionName) {
+    var wrap = document.createElement('div');
+    wrap.className = 'napomena-kam-block';
+    wrap.addEventListener('click', function(ev) { ev.stopPropagation(); });
+    var trenutno = fieldVal(entry, 'Napomena KAM-a (admin)');
+    wrap.innerHTML =
+      '<label class="napomena-kam-label">Napomena KAM-a</label>' +
+      '<div class="napomena-kam-hint">Slobodna napomena — uvijek se uključuje u "Export podataka", za dijeljenje.</div>' +
+      '<textarea class="napomena-kam-input">' + esc(trenutno) + '</textarea>' +
+      '<div class="admin-fields-actions"><span class="save-status"></span><button type="button" class="btn btn-small">Spremi napomenu</button></div>';
+    var textarea = wrap.querySelector('.napomena-kam-input');
+    var statusEl = wrap.querySelector('.save-status');
+    var saveBtn = wrap.querySelector('.btn');
+    saveBtn.addEventListener('click', function() {
+      statusEl.textContent = 'Spremanje…';
+      statusEl.classList.remove('error');
+      gasCall({ action: actionName || 'adminUpdateFields', token: adminToken, rowIndex: entry.rowIndex, fields: { napomena_kam: textarea.value } }).then(function(res) {
+        if (handleAuthError(res)) { return; }
+        if (res.status === 'ok') {
+          statusEl.textContent = 'Spremljeno.';
+          statusEl.classList.remove('error');
+          loadAll();
+        } else {
+          statusEl.textContent = res.message || 'Greška pri spremanju.';
+          statusEl.classList.add('error');
+        }
+      }).catch(function() {
+        statusEl.textContent = 'Greška u komunikaciji s poslužiteljem.';
+        statusEl.classList.add('error');
+      });
+    });
+    return wrap;
   }
 
   function buildAdminFieldsBlock(entry) {
