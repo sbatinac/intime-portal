@@ -261,6 +261,10 @@
   .imenik-autosync-status.on{color:var(--green);font-weight:700;}
   .imenik-autosync-status.off{color:var(--grey);}
 
+  .imenik-linkovi-panel{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;}
+  .imenik-linkovi-panel .btn{text-decoration:none;display:inline-flex;align-items:center;}
+  .imenik-linkovi-panel .btn.disabled{opacity:.5;pointer-events:none;}
+
   .imenik-povuci-panel{
     background:#f7fafb;border:1px solid var(--line);border-radius:10px;
     padding:14px 16px;margin-bottom:16px;
@@ -493,6 +497,7 @@
   .af-rok-stavka-ttd{display:inline-block;margin-top:5px;background:#eef6f5;color:var(--purple-dark);border:1px solid #bcdedb;border-radius:6px;padding:2px 8px;font-size:10.5px;font-weight:700;}
   .af-rok-stavka-ttd-info{color:var(--grey);font-weight:400;font-style:italic;}
   .af-sifra-hint{font-size:11px;color:var(--red-dark);background:#fbeceb;border:1px dashed #e2b4af;border-radius:6px;padding:6px 9px;margin:6px 0 0;line-height:1.4;}
+  .af-sifra-hint-info{color:var(--grey);background:#f2f2f2;border:1px dashed #cfcfcf;}
   /* Blok "Predložak za slanje ponude" — vidi buildAdminFieldsBlock() u
      <script> niže za punu napomenu. */
   .af-predlozak-blok{grid-column:1 / -1;margin-top:4px;}
@@ -1086,7 +1091,7 @@
     <input type="text" id="mp-naziv" placeholder="Naziv predloška (samo za tebe, klijent ga ne vidi)">
     <input type="text" id="mp-predmet" placeholder="Predmet maila (npr. Ponuda In Time d.o.o. za {{IME_FIRME}})">
     <textarea id="mp-sadrzaj" placeholder="Tekst maila..."></textarea>
-    <p class="mp-tagovi-hint">Dostupni tagovi — zamjenjuju se stvarnim podacima klijenta kad odabereš predložak na kartici: <code>{{IME_FIRME}}</code> <code>{{IME_OSOBE}}</code> <code>{{USLUGE}}</code> <code>{{BROJ_PONUDE}}</code> <code>{{GRAD}}</code> <code>{{LINK_POTVRDE}}</code> (poveznica za klik-potvrdu ponude, OIB + ime/funkcija) <code>{{ROK_VAZENJA}}</code> (datum isteka ponude — postavlja se u bloku "Rok važenja ponude")</p>
+    <p class="mp-tagovi-hint">Dostupni tagovi — zamjenjuju se stvarnim podacima klijenta kad odabereš predložak na kartici: <code>{{IME_FIRME}}</code> <code>{{IME_OSOBE}}</code> <code>{{USLUGE}}</code> <code>{{BROJ_PONUDE}}</code> (INTRIX šifra ponude — automatski uključuje oznaku verzije, npr. "-P1", "-P2"…) <code>{{BROJ_UPITNIKA}}</code> (šifra prodajnog upitnika, polje "Broj") <code>{{GRAD}}</code> <code>{{LINK_POTVRDE}}</code> (poveznica za klik-potvrdu ponude, OIB + ime/funkcija) <code>{{ROK_VAZENJA}}</code> (datum isteka ponude — postavlja se u bloku "Rok važenja ponude")</p>
     <label class="mp-zadani-red"><input type="checkbox" id="mp-zadani"> Postavi kao zadani predložak (učitava se automatski)</label>
     <div id="mp-brisi-potvrda" hidden>
       <p class="warn">Ova radnja se ne može poništiti. Za potvrdu upišite riječ <strong>BRISATI</strong> u polje ispod.</p>
@@ -1416,11 +1421,15 @@
   // InTime_Imenik Sheet na backendu (adminListImenik), isti obrazac kao
   // allAnketaEntries/loadAnkete() iznad.
   var allImenikEntries = [];
+  // Drive direktorij "IMENIK" — link stiže s backenda (adminListImenik),
+  // vidi buildImenikLinkoviPanel_() niže (dvadeset i deveti krug).
+  var imenikDriveFolderUrl = '';
   function loadImenik() {
     gasCall({ action: 'adminListImenik', token: adminToken }).then(function(res) {
       if (handleAuthError(res)) { return; }
       if (res.status !== 'ok') { return; }
       allImenikEntries = res.entries || [];
+      imenikDriveFolderUrl = res.imenikDriveFolderUrl || '';
       document.getElementById('tab-count-imenik').textContent = allImenikEntries.length;
       if (activeTab === 'Imenik') { renderEntries(); }
     }).catch(function() {});
@@ -1688,10 +1697,36 @@
     'Carinsko posredovanje – UVOZ/IZVOZ': 'Carinsko posredovanje (uvoz/izvoz)',
     'Skladištenje i fulfillment usluge': 'Skladištenje i fulfillment usluge'
   };
+  // Više odabranih usluga spaja se u polje "Osnovne usluge" zarezom (vidi
+  // spojiVrijednostiZaSpremanje_ u InTime_Code.gs), ALI jedna od samih
+  // usluga — "Međunarodna InTime distribucija (Slo, BiH, Srb, CG, Sj.
+  // Mak.) – UVOZ/IZVOZ" — SAMA sadrži zareze unutar zagrade. Naivan
+  // split(',') bi tu JEDNU uslugu razbio u pet redaka (Sašin izričit nalaz,
+  // 20.9.2026., trideseti krug: "treba biti sve u jednom redu"). Rješenje:
+  // dijeli na zarezima samo IZVAN zagrada, ostavljajući sadržaj zagrade
+  // netaknut.
+  function razdvojiPoZarezuIzvanZagrada_(tekst) {
+    var rezultat = [];
+    var trenutno = '';
+    var dubina = 0;
+    for (var i = 0; i < tekst.length; i++) {
+      var ch = tekst.charAt(i);
+      if (ch === '(') { dubina++; }
+      else if (ch === ')') { dubina = Math.max(0, dubina - 1); }
+      if (ch === ',' && dubina === 0) {
+        rezultat.push(trenutno.trim());
+        trenutno = '';
+      } else {
+        trenutno += ch;
+      }
+    }
+    if (trenutno.trim()) { rezultat.push(trenutno.trim()); }
+    return rezultat;
+  }
   function izracunajUslugeBullet_(entry) {
     var sirovo = (fieldVal(entry, 'Osnovne usluge') || '').trim();
     if (!sirovo) { return ''; }
-    var stavke = sirovo.split(',').map(function(s) { return s.trim(); }).filter(function(s) { return s; });
+    var stavke = razdvojiPoZarezuIzvanZagrada_(sirovo).filter(function(s) { return s; });
     if (!stavke.length) { return ''; }
     return stavke.map(function(v) { return '* ' + (OSNOVNE_USLUGE_PRIKAZ_[v] || v); }).join('\n');
   }
@@ -1728,7 +1763,17 @@
   function renderMailTekst_(tekst, entry) {
     var imeFirme = fieldVal(entry, 'Naziv tvrtke') || '[naziv tvrtke]';
     var imeOsobe = fieldVal(entry, 'Ime i prezime') || fieldVal(entry, 'Kontakt osoba') || '[ime osobe]';
-    var brojPonude = fieldVal(entry, 'Šifra ponude (admin)') || '[INTRIX šifra ponude]';
+    // {{BROJ_PONUDE}} — automatski dodaje "-P{N}" oznaku verzije na kraj
+    // ručno upisane INTRIX šifre, gdje je N = "Redni broj slanja ponude"
+    // (Sašin izričit zahtjev, 20.9.2026.: prva ponuda ide bez dodatka od
+    // Saše ručno, a svaka sljedeća generirana ponuda ("Generiraj novu
+    // ponudu") automatski dobiva -P2, -P3 itd. — zamjenjuje dosadašnju
+    // ručnu "-IZMJENA" napomenu). Dodatak se ne lijepi na placeholder
+    // tekst kad šifra još nije upisana.
+    var brojPonudeSirovo = fieldVal(entry, 'Šifra ponude (admin)');
+    var verzijaPonude = parseInt(fieldVal(entry, 'Redni broj slanja ponude (admin)'), 10) || 1;
+    var brojPonude = brojPonudeSirovo ? (brojPonudeSirovo + '-P' + verzijaPonude) : '[INTRIX šifra ponude]';
+    var brojUpitnika = fieldVal(entry, 'Broj') || '[šifra upitnika]';
     var grad = fieldVal(entry, 'Mjesto') || '';
     var uslugeBullet = izracunajUslugeBullet_(entry) || '[klijent nije označio nijednu uslugu u upitniku]';
     // {{LINK_POTVRDE}} — poveznica na InTime_PotvrdaPonude.html, kojom
@@ -1753,6 +1798,7 @@
       .replace(/\{\{IME_FIRME\}\}/g, imeFirme)
       .replace(/\{\{IME_OSOBE\}\}/g, imeOsobe)
       .replace(/\{\{BROJ_PONUDE\}\}/g, brojPonude)
+      .replace(/\{\{BROJ_UPITNIKA\}\}/g, brojUpitnika)
       .replace(/\{\{USLUGE\}\}/g, uslugeBullet)
       .replace(/\{\{GRAD\}\}/g, grad)
       .replace(/\{\{LINK_POTVRDE\}\}/g, linkPotvrde)
@@ -2231,20 +2277,6 @@
     return (v === undefined || v === null) ? '' : v;
   }
 
-  // Provjerava je li klijentu IKAD (trenutna aktivna verzija ILI bilo koja
-  // u JSON povijesti) ponuda poništena NAKON prihvaćanja — koristi se za
-  // kontekstualnu "-IZMJENA" napomenu uz "Šifra ponude (admin)" polje
-  // (buildAdminFieldsBlock() niže, dvadeset i sedmi krug).
-  function imaPonistenuNakonPrihvataUPovijesti_(entry) {
-    if (fieldVal(entry, 'Datum poništenja prihvaćene ponude (admin)')) { return true; }
-    var povijestSirovo = fieldVal(entry, 'Povijest prijašnjih slanja ponude (admin, JSON)');
-    if (!povijestSirovo) { return false; }
-    try {
-      var povijest = JSON.parse(povijestSirovo);
-      return povijest.some(function(p) { return p.status === 'ponistena_nakon_prihvata'; });
-    } catch (e) { return false; }
-  }
-
   // "Opseg pošiljaka" (12., ZADNJE poglavlje u obrascu) i "Pakiranje i
   // sezonalnost" (11. poglavlje, dolazi PRIJE opsega) su u UPIT_FIELDS
   // (InTime_Code.gs) — a time i u redoslijedu stupaca Google Sheeta —
@@ -2343,6 +2375,7 @@
     }
 
     if (activeTab === 'Imenik') {
+      container.appendChild(buildImenikLinkoviPanel_());
       container.appendChild(buildImenikAutoSyncPanel_());
       container.appendChild(buildImenikPovuciSvePanel_());
       if (allImenikEntries.length === 0) {
@@ -3254,6 +3287,25 @@
     });
   }
 
+  // Sašin izričit zahtjev (20.9.2026., dvadeset i deveti krug): "napravi mu
+  // u kontaktima link direktno na google kontakte i direktno na google
+  // drive direktorij gdije su kontakti" — dva gumba-linka na vrhu taba
+  // Imenik. Google Contacts nema jedinstven "grupa"/oznaku po klijentima
+  // (kontakti se taguju po IZVORU — Upitnik/Odbijenica/Ocjena kvalitete,
+  // vidi getOrCreateContactGroupResourceName_ u InTime_Code.gs), pa link
+  // vodi na opći popis (https://contacts.google.com/) — Saša je to
+  // potvrdio kao poveznicu koju želi. Drive link je dinamičan (stiže s
+  // backenda, vidi loadImenik()) jer nosi stvarni ID direktorija "IMENIK".
+  function buildImenikLinkoviPanel_() {
+    var wrap = document.createElement('div');
+    wrap.className = 'imenik-linkovi-panel';
+    var driveHref = imenikDriveFolderUrl || '#';
+    wrap.innerHTML =
+      '<a class="btn btn-outline btn-small" href="https://contacts.google.com/" target="_blank" rel="noopener">📇 Otvori Google kontakte</a>' +
+      '<a class="btn btn-outline btn-small' + (imenikDriveFolderUrl ? '' : ' disabled') + '" href="' + esc(driveHref) + '" target="_blank" rel="noopener">📁 Otvori Drive direktorij (IMENIK)</a>';
+    return wrap;
+  }
+
   function buildImenikAutoSyncPanel_() {
     var panel = document.createElement('div');
     panel.className = 'imenik-autosync-panel';
@@ -3899,17 +3951,14 @@
         // zabune s "Brojem" upitnika/ponude iz ovog sustava.
         '<div><label>Interna In Time šifra ponude (INTRIX)</label>' +
           '<input type="text" class="af-sifra-ponude" placeholder="npr. šifra ponude iz INTRIX-a" value="' + esc(fieldVal(entry, 'Šifra ponude (admin)')) + '">' +
-          // Sašin izričit zahtjev (20.9.2026., dvadeset i sedmi krug):
-          // "kad saljem sljedecu ponudu broj ponude mora dobiti jos jedan
-          // dodatak - izmjena i onda broj". Šifra ponude je i dalje ČISTO
-          // ručno polje (nema automatskog generiranja/provjere, Saša je sam
-          // upisuje pri svakom slanju) — ovo je samo podsjetnik uz polje, ne
-          // validacija, prikazuje se SAMO kad je prijašnja verzija ponude
-          // poništena NAKON prihvaćanja (jedini slučaj gdje mu je Saša
-          // eksplicitno tražio dodatak "-IZMJENA").
-          (imaPonistenuNakonPrihvataUPovijesti_(entry)
-            ? '<p class="af-sifra-hint">Prijašnja ponuda ovom klijentu bila je prihvaćena pa naknadno poništena — pri idućem slanju dodajte "-IZMJENA" u šifru (npr. "1234-25-SB-IZMJENA").</p>'
-            : '') +
+          // Sašin izričit zahtjev (20.9.2026., dvadeset i osmi krug): ručni
+          // "-IZMJENA" podsjetnik (dvadeset i sedmi krug) zamijenjen
+          // automatskim dodatkom "-P{N}" u predmetu/tekstu maila (vidi
+          // renderMailTekst_() — {{BROJ_PONUDE}} sam računa verziju iz
+          // "Redni broj slanja ponude"), pa ovaj podsjetnik više nije
+          // potreban — upisuje se samo osnovna INTRIX šifra, bez ikakvog
+          // ručnog dodatka.
+          '<p class="af-sifra-hint af-sifra-hint-info">Verzija ("-P1", "-P2"…) dodaje se automatski u predmet/tekst maila — ovdje upiši samo osnovnu šifru.</p>' +
         '</div>' +
         // Sašin izričit zahtjev (15.9.2026., "na polje Datum slanja ponude 1,
         // na to mjesto stavi polje koje ću ručno unijeti, zove se

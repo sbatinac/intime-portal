@@ -2039,9 +2039,21 @@
             </div>
           </div>
 
-          <p class="sec-hint" style="margin-top:14px;">Ovo potvrdite ako do sada niste surađivali s niti jednom od navedenih logističkih službi.</p>
-          <div class="choice-group" style="grid-template-columns:1fr;">
-            <label><input type="checkbox" name="nova_tvrtka_bez_logistike" value="Da"> Potvrđujem da smo novoosnovani poslovni subjekt te da do sada nismo koristili usluge logističkih službi, ali smo zainteresirani informirati se o mogućnostima suradnje i uslugama koje nudite.</label>
+          <!-- NOVO (20.9.2026., Sašin izričit zahtjev, dvadeset i osmi krug)
+               — ranije UVIJEK vidljivo, sad reveal: pojavljuje se ISKLJUČIVO
+               dok u padajućem popisu "logisticke_sluzbe" iznad NIJE označena
+               baš niti jedna stavka (uključujući "Nismo do sada imali
+               potrebe..." i "Ostalo" — cijeli popis mora biti prazan). Vidi
+               updateLogistikaIznosVisibility() niže, isti "reset kad se
+               sakrije" obrazac kao ostala reveal-pitanja u ovom poglavlju
+               (kvačica se automatski odznači kad se blok sakrije, da se ne
+               pošalje proturječna kombinacija "odabrao sam partnera" +
+               "nemam partnera"). -->
+          <div id="nova-tvrtka-bez-logistike-wrap" style="margin-top:14px;">
+            <p class="sec-hint">Ovo potvrdite ako do sada niste surađivali s niti jednom od navedenih logističkih službi.</p>
+            <div class="choice-group" style="grid-template-columns:1fr;">
+              <label><input type="checkbox" name="nova_tvrtka_bez_logistike" value="Da"> Potvrđujem da smo novoosnovani poslovni subjekt te da do sada nismo koristili usluge logističkih službi, ali smo zainteresirani informirati se o mogućnostima suradnje i uslugama koje nudite.</label>
+            </div>
           </div>
 
           <!-- NOVO (19.9.2026., Sašin izričit zahtjev) — dva dodatna, OPCIONALNA
@@ -3381,14 +3393,28 @@
   // raspon (isti "reset kad se sakrije" obrazac kao kod ostalih reveal-
   // pitanja u ovom upitniku), da se ne pošalje zastarjela vrijednost.
   function updateLogistikaIznosVisibility(){
+    var oznaceno = document.querySelectorAll('#panel-interes input[name="logisticke_sluzbe"]:checked').length > 0;
     var wrap = document.getElementById('logistika-iznos-wrap');
     if (wrap) {
-      var oznaceno = document.querySelectorAll('#panel-interes input[name="logisticke_sluzbe"]:checked').length > 0;
       if (oznaceno) {
         wrap.classList.remove('ostalo-hidden');
       } else {
         wrap.classList.add('ostalo-hidden');
         document.querySelectorAll('input[name="mjesecni_iznos_logistika"]:checked').forEach(function(r){ r.checked = false; });
+      }
+    }
+    // NOVO (20.9.2026., dvadeset i osmi krug) — obrnuta logika od bloka
+    // iznad: kvačica "novoosnovani poslovni subjekt bez logistike" ima
+    // smisla SAMO dok popis logističkih službi NIJE ništa odabrao (vidi
+    // opširnu napomenu uz #nova-tvrtka-bez-logistike-wrap u HTML-u iznad).
+    var novaTvrtkaWrap = document.getElementById('nova-tvrtka-bez-logistike-wrap');
+    if (novaTvrtkaWrap) {
+      if (oznaceno) {
+        novaTvrtkaWrap.classList.add('ostalo-hidden');
+        var novaTvrtkaCb = document.querySelector('input[name="nova_tvrtka_bez_logistike"]');
+        if (novaTvrtkaCb) { novaTvrtkaCb.checked = false; }
+      } else {
+        novaTvrtkaWrap.classList.remove('ostalo-hidden');
       }
     }
     updateLogistikaRacuniVisibility();
