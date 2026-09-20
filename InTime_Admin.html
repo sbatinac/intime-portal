@@ -375,6 +375,30 @@
   }
   .admin-fields h3{font-size:13px;margin:0 0 10px;color:var(--purple-dark);}
   .admin-fields h3.af-sekcija2-naslov{margin-top:18px;padding-top:16px;border-top:1px dashed var(--line);}
+  /* Okvir "Dokumenti za ponudu" (dva okvira, drag&drop između njih — vidi
+     buildAdminFieldsBlock() u <script> niže za punu napomenu). */
+  .af-dok-blok{grid-column:1 / -1;margin-top:4px;}
+  .af-dok-blok > label{display:block;font-size:11px;color:var(--grey);margin-bottom:5px;}
+  .af-dok-okviri{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  @media(max-width:520px){.af-dok-okviri{grid-template-columns:1fr;}}
+  .af-dok-okvir{border:1px solid var(--line);border-radius:8px;padding:9px;background:#fff;display:flex;flex-direction:column;}
+  .af-dok-okvir-naslov{font-size:11.5px;font-weight:700;color:var(--purple-dark);display:flex;align-items:center;justify-content:space-between;margin-bottom:7px;gap:6px;}
+  .af-dok-osvjezi{background:none;border:1px solid var(--line);border-radius:6px;cursor:pointer;font-size:11px;color:var(--purple);padding:2px 7px;line-height:1.6;}
+  .af-dok-osvjezi:hover{color:#fff;background:var(--purple);border-color:var(--purple);}
+  .af-dok-lista{display:flex;flex-direction:column;gap:4px;min-height:40px;}
+  .af-dok-stavka{display:flex;align-items:center;gap:6px;padding:5px 8px;border:1px solid var(--line);border-radius:6px;background:#f7fafb;font-size:12px;cursor:grab;}
+  .af-dok-stavka:hover{border-color:var(--purple);background:#f0fbfa;}
+  .af-dok-stavka:active{cursor:grabbing;}
+  .af-dok-naziv{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .af-dok-cilj-stavka{display:flex;align-items:center;gap:6px;padding:5px 8px;border:1px solid var(--purple);border-radius:6px;background:#eefaf8;font-size:12px;}
+  .af-dok-ukloni{background:none;border:none;color:var(--red);cursor:pointer;font-size:13px;font-weight:700;padding:0 2px;line-height:1;}
+  .af-dok-ukloni:hover{color:var(--red-dark);}
+  .af-dok-cilj{min-height:100px;}
+  .af-dok-cilj.af-dok-drag-over{border-color:var(--purple);background:#f0fbfa;box-shadow:0 0 0 2px rgba(34,152,145,.18);}
+  .af-dok-cilj-hint{font-size:10.5px;color:var(--grey);margin-top:7px;line-height:1.4;}
+  .af-dok-prazno{font-size:11.5px;color:var(--grey);font-style:italic;padding:4px 2px;}
+  .af-dok-status{font-size:11px;color:var(--grey);margin-top:5px;min-height:14px;}
+  .af-dok-status.error{color:var(--red);}
   .admin-fields-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px 14px;}
   @media(max-width:520px){.admin-fields-grid{grid-template-columns:1fr;}}
   .admin-fields label{display:block;font-size:11px;color:var(--grey);margin-bottom:3px;}
@@ -1334,6 +1358,39 @@
       return true;
     }
     return false;
+  }
+
+  // Okvir "Dokumenti za ponudu" (buildAdminFieldsBlock, Dio 1) — Sašin izričit
+  // zahtjev (20.9.2026., devetnaesti krug). Lijevi okvir prikazuje ŽIVI popis
+  // datoteka iz Drive foldera "Osnovna dokumentacija"; taj popis je ISTI za
+  // sve kartice na ekranu, pa se ovdje drži u jednom dijeljenom cacheu
+  // umjesto da svaka kartica (buildAdminFieldsBlock se gradi za SVAKI
+  // vidljivi unos, čak i skrivene, vidi napomenu gore) radi svoj poziv na
+  // server — prvi otvoreni okvir dohvati popis, svi ostali ga ponovno
+  // koriste. Gumb "Osvježi" na kartici prisilno zaobilazi cache
+  // (forsirajOsvjezavanje=true) jer Saša folder mijenja ručno na Driveu.
+  var osnovnaDokumentacijaCache = null;
+  var osnovnaDokumentacijaPromise = null;
+  function ucitajOsnovnuDokumentaciju_(forsirajOsvjezavanje) {
+    if (osnovnaDokumentacijaCache && !forsirajOsvjezavanje) {
+      return Promise.resolve(osnovnaDokumentacijaCache);
+    }
+    if (osnovnaDokumentacijaPromise && !forsirajOsvjezavanje) {
+      return osnovnaDokumentacijaPromise;
+    }
+    osnovnaDokumentacijaPromise = gasCall({ action: 'adminListOsnovnaDokumentacija', token: adminToken }).then(function(res) {
+      osnovnaDokumentacijaPromise = null;
+      if (handleAuthError(res)) { throw new Error('Sesija je istekla.'); }
+      if (res.status === 'ok') {
+        osnovnaDokumentacijaCache = res.files || [];
+        return osnovnaDokumentacijaCache;
+      }
+      throw new Error(res.message || 'Dohvaćanje popisa nije uspjelo.');
+    }).catch(function(err) {
+      osnovnaDokumentacijaPromise = null;
+      throw err;
+    });
+    return osnovnaDokumentacijaPromise;
   }
 
   function loadCounters() {
@@ -3087,6 +3144,23 @@
     // glavni gumb prikazuje "Prebaci u arhivu"). Za sada BEZUVJETNO
     // prebacivanje — Saša će kasnije javiti uvjete koji se onda dodaju ovdje.
     var prikaziPrebaciUKlijenteGumb = !vecOtvorenSad && vecUPonudiSad && !jeArhiva(entry);
+    // Okvir "Dokumenti za ponudu" (Sašin izričit zahtjev, 20.9.2026.,
+    // devetnaesti krug — "okvir u kojem ću moći klikati i dodavati u ponudu
+    // mail koji ćemo slati, dokumenti koji idu u svaku ponudu... 2 okvira u
+    // jednom, u jednom se nalaze osnovni dokumenti a drugi predstavlja
+    // konkretnu ponudu"): trenutno spremljeni odabir za OVU ponudu, JSON
+    // popis {source:'osnovna'|'upload', id, name, url} — vidi punu napomenu
+    // uz ADMIN_ONLY_FIELDS.dokumenti_ponude u InTime_Code.gs. Parsira se
+    // ovdje (prije wrap.innerHTML) da inicijalni prikaz desnog okvira ne
+    // treperi prazan pa se popuni.
+    var dokumentiPonude = [];
+    try {
+      var sirovoDokumentiPonude = fieldVal(entry, 'Dokumenti za ponudu (admin, JSON)');
+      if (sirovoDokumentiPonude) {
+        var parsiranoDokumentiPonude = JSON.parse(sirovoDokumentiPonude);
+        if (Array.isArray(parsiranoDokumentiPonude)) { dokumentiPonude = parsiranoDokumentiPonude; }
+      }
+    } catch (errDokumentiPonude) { dokumentiPonude = []; }
     // Sašin izričit zahtjev (20.9.2026., devetnaesti krug): blok "Podaci koje
     // popunjava In Time" razdvojen na DVIJE vizualne cjeline na ISTOJ kartici
     // — "fizički samo napravi novi dio na kartici ovdje ispod". Prvi dio =
@@ -3200,6 +3274,22 @@
         '</div>' +
         '<div><label>Datum prihvaćanja ponude</label>' +
           '<input type="text" class="af-datum-prihvacanja" placeholder="npr. 25.09.2026" value="' + esc(fieldVal(entry, 'Datum prihvaćanja ponude (admin)')) + '"></div>' +
+        '<div class="af-dok-blok">' +
+          '<label>Dokumenti za ponudu</label>' +
+          '<div class="af-dok-okviri">' +
+            '<div class="af-dok-okvir af-dok-izvor">' +
+              '<div class="af-dok-okvir-naslov"><span>📁 Osnovna dokumentacija</span>' +
+                '<button type="button" class="af-dok-osvjezi" title="Ponovno učitaj popis s Drivea">⟳ Osvježi</button></div>' +
+              '<div class="af-dok-lista af-dok-izvor-lista"><div class="af-dok-prazno">Učitavanje…</div></div>' +
+            '</div>' +
+            '<div class="af-dok-okvir af-dok-cilj">' +
+              '<div class="af-dok-okvir-naslov"><span>📎 Dokumenti za ovu ponudu</span></div>' +
+              '<div class="af-dok-lista af-dok-cilj-lista"></div>' +
+              '<div class="af-dok-cilj-hint">Klikni ili povuci dokument iz lijevog okvira — ili dovuci datoteku izravno s računala.</div>' +
+              '<div class="af-dok-status"></div>' +
+            '</div>' +
+          '</div>' +
+        '</div>' +
       '</div>' +
       '<h3 class="af-sekcija2-naslov">Podaci vezani za klijenta — nakon prihvaćanja ponude</h3>' +
       '<div class="admin-fields-grid">' +
@@ -3525,6 +3615,153 @@
             );
           }
         );
+      });
+    }
+
+    // Okvir "Dokumenti za ponudu" — vidi napomenu uz dokumentiPonude gore i
+    // uz ADMIN_ONLY_FIELDS.dokumenti_ponude u InTime_Code.gs. Samo dok je
+    // Dio 1 kartice uopće vidljiv (prikaziPuniBlok) — inače nema smisla
+    // dohvaćati/prikazivati (i Zainteresirani zapis bi inače nepotrebno
+    // pokrenuo dohvat s Drivea pri svakom renderiranju liste).
+    if (prikaziPuniBlok) {
+      var dokIzvorLista = wrap.querySelector('.af-dok-izvor-lista');
+      var dokCiljLista = wrap.querySelector('.af-dok-cilj-lista');
+      var dokStatus = wrap.querySelector('.af-dok-status');
+      var dokOsvjeziBtn = wrap.querySelector('.af-dok-osvjezi');
+      var dokCiljOkvir = wrap.querySelector('.af-dok-cilj');
+
+      var renderDokCiljListu_ = function() {
+        if (!dokumentiPonude.length) {
+          dokCiljLista.innerHTML = '<div class="af-dok-prazno">Još ništa nije dodano.</div>';
+          return;
+        }
+        dokCiljLista.innerHTML = dokumentiPonude.map(function(d, i) {
+          var ikona = (d.source === 'upload') ? '📎' : '📁';
+          return '<div class="af-dok-cilj-stavka">' +
+            '<span>' + ikona + '</span>' +
+            '<span class="af-dok-naziv" title="' + esc(d.name) + '">' + esc(d.name) + '</span>' +
+            '<button type="button" class="af-dok-ukloni" data-i="' + i + '" title="Ukloni iz ponude">✕</button>' +
+          '</div>';
+        }).join('');
+        Array.prototype.slice.call(dokCiljLista.querySelectorAll('.af-dok-ukloni')).forEach(function(btn) {
+          btn.addEventListener('click', function(ev) {
+            ev.stopPropagation();
+            var i = parseInt(btn.getAttribute('data-i'), 10);
+            dokumentiPonude.splice(i, 1);
+            renderDokCiljListu_();
+            spremiDokumenteZaPonudu_();
+          });
+        });
+      };
+
+      var spremiDokumenteZaPonudu_ = function() {
+        dokStatus.textContent = 'Spremanje…';
+        dokStatus.classList.remove('error');
+        gasCall({ action: 'adminUpdateFields', token: adminToken, rowIndex: entry.rowIndex, fields: { dokumenti_ponude: JSON.stringify(dokumentiPonude) } }).then(function(res) {
+          if (handleAuthError(res)) { return; }
+          if (res.status === 'ok') {
+            dokStatus.textContent = 'Spremljeno.';
+            dokStatus.classList.remove('error');
+            entry.fields['Dokumenti za ponudu (admin, JSON)'] = JSON.stringify(dokumentiPonude);
+          } else {
+            dokStatus.textContent = res.message || 'Greška pri spremanju.';
+            dokStatus.classList.add('error');
+          }
+        }).catch(function() {
+          dokStatus.textContent = 'Greška u komunikaciji s poslužiteljem.';
+          dokStatus.classList.add('error');
+        });
+      };
+
+      var dodajDokumentUPonudu_ = function(stavka) {
+        if (dokumentiPonude.some(function(d) { return d.id === stavka.id; })) { return; }
+        dokumentiPonude.push(stavka);
+        renderDokCiljListu_();
+        spremiDokumenteZaPonudu_();
+      };
+
+      var renderDokIzvorListu_ = function(files) {
+        if (!files || !files.length) {
+          dokIzvorLista.innerHTML = '<div class="af-dok-prazno">Folder "Osnovna dokumentacija" je prazan.</div>';
+          return;
+        }
+        dokIzvorLista.innerHTML = files.map(function(f) {
+          return '<div class="af-dok-stavka" draggable="true" data-id="' + esc(f.id) + '" data-name="' + esc(f.name) + '" data-url="' + esc(f.url) + '">' +
+            '<span>📄</span><span class="af-dok-naziv">' + esc(f.name) + '</span>' +
+          '</div>';
+        }).join('');
+        Array.prototype.slice.call(dokIzvorLista.querySelectorAll('.af-dok-stavka')).forEach(function(el) {
+          var stavka = { source: 'osnovna', id: el.getAttribute('data-id'), name: el.getAttribute('data-name'), url: el.getAttribute('data-url') };
+          el.addEventListener('click', function(ev) { ev.stopPropagation(); dodajDokumentUPonudu_(stavka); });
+          el.addEventListener('dragstart', function(ev) {
+            ev.dataTransfer.setData('text/plain', JSON.stringify(stavka));
+            ev.dataTransfer.effectAllowed = 'copy';
+          });
+        });
+      };
+
+      var ucitajIzvorListu_ = function(forsirajOsvjezavanje) {
+        dokIzvorLista.innerHTML = '<div class="af-dok-prazno">Učitavanje…</div>';
+        ucitajOsnovnuDokumentaciju_(forsirajOsvjezavanje).then(renderDokIzvorListu_).catch(function(err) {
+          dokIzvorLista.innerHTML = '<div class="af-dok-prazno">Greška: ' + esc((err && err.message) || 'nepoznata greška') + '</div>';
+        });
+      };
+
+      renderDokCiljListu_();
+      ucitajIzvorListu_(false);
+
+      dokOsvjeziBtn.addEventListener('click', function(ev) { ev.stopPropagation(); ucitajIzvorListu_(true); });
+
+      dokCiljOkvir.addEventListener('dragover', function(ev) {
+        ev.preventDefault();
+        dokCiljOkvir.classList.add('af-dok-drag-over');
+      });
+      dokCiljOkvir.addEventListener('dragleave', function() {
+        dokCiljOkvir.classList.remove('af-dok-drag-over');
+      });
+      // Sašin izričit zahtjev ("mogu li napraviti drag and drop izvan
+      // preglednika, da uhvatim na desktopu i prebacim tu?") — isti drop
+      // handler prihvaća DVIJE potpuno različite stvari: (a) prave datoteke
+      // dovučene izravno s računala (ev.dataTransfer.files, tad se svaka
+      // šalje na adminUploadPonudaDokument, vidi InTime_Code.gs), i (b)
+      // interni "premještaj" iz lijevog okvira (ev.dataTransfer.files je tad
+      // prazan, umjesto toga se čita JSON iz text/plain — isti podaci koje
+      // je dragstart gore upisao).
+      dokCiljOkvir.addEventListener('drop', function(ev) {
+        ev.preventDefault();
+        ev.stopPropagation();
+        dokCiljOkvir.classList.remove('af-dok-drag-over');
+        var datoteke = ev.dataTransfer.files;
+        if (datoteke && datoteke.length) {
+          Array.prototype.slice.call(datoteke).forEach(function(file) {
+            dokStatus.textContent = 'Slanje datoteke "' + file.name + '"…';
+            dokStatus.classList.remove('error');
+            var reader = new FileReader();
+            reader.onload = function() {
+              var base64 = String(reader.result).split(',')[1] || '';
+              gasCall({ action: 'adminUploadPonudaDokument', token: adminToken, rowIndex: entry.rowIndex, base64Data: base64, mimeType: file.type || 'application/octet-stream', filename: file.name }).then(function(res) {
+                if (handleAuthError(res)) { return; }
+                if (res.status === 'ok') {
+                  dodajDokumentUPonudu_({ source: 'upload', id: res.id, name: res.name, url: res.url });
+                } else {
+                  dokStatus.textContent = res.message || 'Greška pri slanju datoteke.';
+                  dokStatus.classList.add('error');
+                }
+              }).catch(function() {
+                dokStatus.textContent = 'Greška u komunikaciji s poslužiteljem.';
+                dokStatus.classList.add('error');
+              });
+            };
+            reader.readAsDataURL(file);
+          });
+          return;
+        }
+        var sirovoInterno = ev.dataTransfer.getData('text/plain');
+        if (!sirovoInterno) { return; }
+        try {
+          var internaStavka = JSON.parse(sirovoInterno);
+          if (internaStavka && internaStavka.source === 'osnovna' && internaStavka.id) { dodajDokumentUPonudu_(internaStavka); }
+        } catch (errInternaStavka) { /* nevaljan drop, tiho ignoriraj */ }
       });
     }
 
