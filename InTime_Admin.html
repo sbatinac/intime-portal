@@ -208,6 +208,36 @@
     background:rgba(192,57,43,.12);border-color:var(--red);
   }
 
+  /* ---- IMENIK (13. krug, 19.9.2026.) — kartice kontakata, tag-značke po
+     izvoru (Upitnik/Odbijenica/Ocjena kvalitete), status prijenosa u Google
+     Contacts, i panel za auto-prijenos (prekidač + kriteriji). ---- */
+  .tab-phone-icon{display:inline-block;vertical-align:-2px;margin-right:4px;}
+  .imenik-tag-badge{
+    display:inline-block;font-size:10.5px;font-weight:700;color:#fff;
+    border-radius:4px;padding:2px 7px;margin:0 4px 4px 0;letter-spacing:.2px;
+  }
+  .imenik-tag-Upitnik{background:var(--purple);}
+  .imenik-tag-Odbijenica{background:var(--red);}
+  .imenik-tag-Ocjena-kvalitete{background:#c9971f;}
+  .imenik-sync-badge{
+    display:inline-block;font-size:11px;font-weight:700;border-radius:5px;
+    padding:2px 8px;margin-left:8px;vertical-align:middle;
+  }
+  .imenik-sync-badge.da{background:rgba(30,132,73,.12);color:var(--green);border:1px solid var(--green);}
+  .imenik-sync-badge.ne{background:#f3f4f6;color:var(--grey);border:1px solid var(--line);}
+  .imenik-autosync-panel{
+    background:#f7fafb;border:1px solid var(--line);border-radius:10px;
+    padding:14px 16px;margin-bottom:16px;
+  }
+  .imenik-autosync-head{display:flex;align-items:center;gap:10px;justify-content:space-between;flex-wrap:wrap;}
+  .imenik-autosync-title{font-size:13.5px;font-weight:700;color:var(--graphite);}
+  .imenik-autosync-desc{font-size:12px;color:var(--grey);margin-top:4px;max-width:560px;}
+  .imenik-autosync-criteria{display:flex;gap:16px;flex-wrap:wrap;margin-top:12px;font-size:12.5px;color:var(--graphite);}
+  .imenik-autosync-criteria label{display:flex;align-items:center;gap:6px;}
+  .imenik-autosync-status{font-size:12px;margin-top:8px;}
+  .imenik-autosync-status.on{color:var(--green);font-weight:700;}
+  .imenik-autosync-status.off{color:var(--grey);}
+
   .tabs{display:flex;gap:8px;margin-bottom:16px;border-bottom:2px solid var(--line);}
   .tab-btn{
     padding:10px 16px;
@@ -647,6 +677,10 @@
       <button type="button" class="tab-btn" id="tab-btn-novi-klijenti" onclick="switchTab('NoviKlijenti')">Novi klijenti (<span id="tab-count-novi-klijenti">0</span>)</button>
       <button type="button" class="tab-btn" id="tab-btn-faq" onclick="switchTab('FAQ')">Česta pitanja (<span id="tab-count-faq">0</span>)</button>
       <button type="button" class="tab-btn" id="tab-btn-zone" onclick="switchTab('Zone')">Zone dostave (<span id="tab-count-zone">0</span>)</button>
+      <!-- NOVO (19.9.2026., trinaesti krug, Sašin izričit zahtjev): "Imenik" —
+           objedinjeni kontakti iz sva tri obrasca (Upitnik/Odbijenica/Ocjena
+           kvalitete), s malom ikonom telefona uz naziv kartice. -->
+      <button type="button" class="tab-btn" id="tab-btn-imenik" onclick="switchTab('Imenik')"><svg class="tab-phone-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>Imenik (<span id="tab-count-imenik">0</span>)</button>
     </div>
 
     <div id="select-all-row" class="select-all-row" hidden>
@@ -658,6 +692,8 @@
       <span><strong id="bulk-actions-count">0</strong> odabrano</span>
       <div class="bulk-actions-buttons">
         <button type="button" class="btn btn-outline btn-small" onclick="clearSelection()">Poništi odabir</button>
+        <!-- NOVO (13. krug) — samo na tabu "Imenik" (vidi updateBulkActionsBar()) -->
+        <button type="button" class="btn btn-prebaci btn-small" id="bulk-transfer-imenik-btn" onclick="startTransferSelectedImenik()" hidden>Prebaci u Google Contacts</button>
         <button type="button" class="btn btn-danger btn-small" onclick="startBulkDelete()">Obriši odabrano</button>
       </div>
     </div>
@@ -935,6 +971,32 @@
     loadZoneStatus();
     loadZoneArhiva_();
     loadBrojStatus_();
+    loadImenik();
+    loadImenikAutoSync_();
+  }
+
+  // ---- IMENIK (13. krug) — zaseban popis (allImenikEntries), zaseban
+  // InTime_Imenik Sheet na backendu (adminListImenik), isti obrazac kao
+  // allAnketaEntries/loadAnkete() iznad.
+  var allImenikEntries = [];
+  function loadImenik() {
+    gasCall({ action: 'adminListImenik', token: adminToken }).then(function(res) {
+      if (handleAuthError(res)) { return; }
+      if (res.status !== 'ok') { return; }
+      allImenikEntries = res.entries || [];
+      document.getElementById('tab-count-imenik').textContent = allImenikEntries.length;
+      if (activeTab === 'Imenik') { renderEntries(); }
+    }).catch(function() {});
+  }
+
+  var imenikAutoSync = { enabled: false, odbijenice: false, ocjeneKvalitete: false, noviUpitnici: false };
+  function loadImenikAutoSync_() {
+    gasCall({ action: 'adminGetImenikAutoSync', token: adminToken }).then(function(res) {
+      if (handleAuthError(res)) { return; }
+      if (res.status !== 'ok') { return; }
+      imenikAutoSync = res;
+      if (activeTab === 'Imenik') { renderEntries(); }
+    }).catch(function() {});
   }
 
   // Numeracija — testni način (3 zasebna prekidača). Učita trenutno stanje
@@ -1443,6 +1505,7 @@
     document.getElementById('tab-btn-novi-klijenti').classList.toggle('active', tab === 'NoviKlijenti');
     document.getElementById('tab-btn-faq').classList.toggle('active', tab === 'FAQ');
     document.getElementById('tab-btn-zone').classList.toggle('active', tab === 'Zone');
+    document.getElementById('tab-btn-imenik').classList.toggle('active', tab === 'Imenik');
     var statPanel = document.getElementById('anketa-statistika-panel');
     if (statPanel) { statPanel.hidden = (tab !== 'Ankete') || !statPanel.innerHTML; }
     renderEntries();
@@ -1541,6 +1604,22 @@
       container.appendChild(buildZonePanel_());
       renderZoneStatusLine_();
       renderZoneArhivaList_();
+      return;
+    }
+
+    if (activeTab === 'Imenik') {
+      container.appendChild(buildImenikAutoSyncPanel_());
+      if (allImenikEntries.length === 0) {
+        var hintI = document.createElement('div');
+        hintI.className = 'empty-hint';
+        hintI.textContent = 'Imenik je još prazan — kontakti se sami dodaju čim netko pošalje upitnik, odbijenicu ili anketu.';
+        container.appendChild(hintI);
+        return;
+      }
+      document.getElementById('select-all-row').hidden = false;
+      allImenikEntries.forEach(function(entry) {
+        container.appendChild(buildImenikEntryCard_(entry));
+      });
       return;
     }
 
@@ -2360,6 +2439,243 @@
     return card;
   }
 
+  // ============================================================
+  // IMENIK (13. krug, 19.9.2026., Sašin izričit zahtjev) — objedinjeni
+  // kontakti iz sva tri obrasca. Panel s auto-prijenosom (prekidač + tri
+  // kriterija) ide na vrh liste, pa kartice kontakata (checkbox za odabir —
+  // dijeli isti selectedRowIndexes/bulk-actions-bar mehanizam kao ostali
+  // tabovi, samo s kind:'imenik', vidi toggleRowSelection/executeBulkDelete
+  // gore — i gumb "Prebaci u Google Contacts" u traci masovnih akcija).
+  // ============================================================
+
+  function imenikTagKlasa_(tag) {
+    return 'imenik-tag-' + String(tag).trim().replace(/\s+/g, '-');
+  }
+
+  function buildImenikAutoSyncPanel_() {
+    var panel = document.createElement('div');
+    panel.className = 'imenik-autosync-panel';
+    var uklj = imenikAutoSync.enabled;
+    panel.innerHTML =
+      '<div class="imenik-autosync-head">' +
+        '<div>' +
+          '<div class="imenik-autosync-title">Automatski prijenos u Google Contacts (sbatinac.intime@gmail.com)</div>' +
+          '<div class="imenik-autosync-desc">Kad je uključeno, novi kontakti iz označenih vrsta obrazaca odmah se šalju u Google Contacts, bez čekanja na ručni odabir ispod. Uključivanje traži admin lozinku i potvrdu riječju.</div>' +
+        '</div>' +
+        '<span class="broj-toggle-switch"><input type="checkbox" id="imenik-autosync-toggle"' + (uklj ? ' checked' : '') + '><span class="broj-toggle-slider"></span></span>' +
+      '</div>' +
+      '<div class="imenik-autosync-criteria">' +
+        '<label><input type="checkbox" id="imenik-crit-upitnici"' + (imenikAutoSync.noviUpitnici ? ' checked' : '') + '> Samo novi upitnici (Interes)</label>' +
+        '<label><input type="checkbox" id="imenik-crit-odbijenice"' + (imenikAutoSync.odbijenice ? ' checked' : '') + '> Samo odbijenice</label>' +
+        '<label><input type="checkbox" id="imenik-crit-ankete"' + (imenikAutoSync.ocjeneKvalitete ? ' checked' : '') + '> Samo ocjene kvalitete</label>' +
+      '</div>' +
+      '<div class="imenik-autosync-status ' + (uklj ? 'on' : 'off') + '">' +
+        (uklj ? 'Uključeno — ' + imenikAutoSyncOpis_() : 'Isključeno — kontakti se prebacuju samo ručno, odabirom ispod.') +
+      '</div>';
+    var toggle = panel.querySelector('#imenik-autosync-toggle');
+    toggle.addEventListener('change', function() { onImenikAutoSyncToggle_(toggle.checked); });
+    ['imenik-crit-upitnici', 'imenik-crit-odbijenice', 'imenik-crit-ankete'].forEach(function(id) {
+      panel.querySelector('#' + id).addEventListener('change', onImenikCriteriaChange_);
+    });
+    return panel;
+  }
+
+  function imenikAutoSyncOpis_() {
+    var dijelovi = [];
+    if (imenikAutoSync.noviUpitnici) { dijelovi.push('novi upitnici'); }
+    if (imenikAutoSync.odbijenice) { dijelovi.push('odbijenice'); }
+    if (imenikAutoSync.ocjeneKvalitete) { dijelovi.push('ocjene kvalitete'); }
+    return dijelovi.length ? dijelovi.join(', ') : 'nijedan kriterij nije označen, ništa se ne prebacuje automatski';
+  }
+
+  function trenutneImenikKriterije_() {
+    return {
+      noviUpitnici: !!document.getElementById('imenik-crit-upitnici').checked,
+      odbijenice: !!document.getElementById('imenik-crit-odbijenice').checked,
+      ocjeneKvalitete: !!document.getElementById('imenik-crit-ankete').checked
+    };
+  }
+
+  // Promjena kriterija DOK je prekidač već uključen ne traži ponovnu lozinku
+  // (samo samo UKLJUČIVANJE prekidača traži lozinku+riječ — Sašin izričit
+  // zahtjev) — spremi odmah.
+  function onImenikCriteriaChange_() {
+    if (!imenikAutoSync.enabled) { return; }
+    var kriteriji = trenutneImenikKriterije_();
+    gasCall({ action: 'adminSetImenikAutoSync', token: adminToken, settings: { enabled: true, noviUpitnici: kriteriji.noviUpitnici, odbijenice: kriteriji.odbijenice, ocjeneKvalitete: kriteriji.ocjeneKvalitete } }).then(function(res) {
+      if (handleAuthError(res)) { return; }
+      if (res.status === 'ok') { imenikAutoSync = res; renderEntries(); }
+      else { alert(res.message || 'Promjena nije uspjela.'); loadImenikAutoSync_(); }
+    }).catch(function() { loadImenikAutoSync_(); });
+  }
+
+  // Isključivanje je jedan klik (bez dodatne potvrde — uvijek je "sigurnije"
+  // ugasiti automatiku). Uključivanje ide kroz DVOSTRUKU potvrdu, isti obrazac
+  // kao "Podesi numeraciju": lozinka → pa potvrda riječju (superjunak).
+  function onImenikAutoSyncToggle_(ukljuceno) {
+    if (!ukljuceno) {
+      // Šalje i trenutne kriterije (ne samo enabled:false) da se ne izgube
+      // označene kvačice kad se auto-prijenos idući put ponovno uključi.
+      var kriterijiIskljuci = trenutneImenikKriterije_();
+      gasCall({ action: 'adminSetImenikAutoSync', token: adminToken, settings: { enabled: false, noviUpitnici: kriterijiIskljuci.noviUpitnici, odbijenice: kriterijiIskljuci.odbijenice, ocjeneKvalitete: kriterijiIskljuci.ocjeneKvalitete } }).then(function(res) {
+        if (handleAuthError(res)) { return; }
+        if (res.status === 'ok') { imenikAutoSync = res; }
+        renderEntries();
+      }).catch(function() { loadImenikAutoSync_(); });
+      return;
+    }
+    var kriteriji = trenutneImenikKriterije_();
+    openAdminPasswordConfirmModal(
+      'Uključivanje automatskog prijenosa',
+      'Od sad će se novi kontakti iz označenih vrsta obrazaca ODMAH i AUTOMATSKI prebacivati u Google Contacts, bez ručnog pregleda. Za potvrdu ponovno unesi admin lozinku.',
+      function() {
+        openSuperheroWordConfirmModal(
+          'Potvrda uključivanja',
+          'Posljednja potvrda prije uključivanja automatskog prijenosa u Google Contacts.',
+          function() { submitImenikAutoSyncOn_(kriteriji); }
+        );
+      }
+    );
+    // Vrati prekidač na "isključeno" dok se potvrda ne dovrši — stvarno stanje
+    // (uklj/isklj) uvijek dolazi iz backend odgovora, ne iz same kvačice.
+    renderEntries();
+  }
+
+  function submitImenikAutoSyncOn_(kriteriji) {
+    // Lozinka je već jednom potvrđena kroz openAdminPasswordConfirmModal
+    // (poziva adminLogin da je provjeri) — ovdje je samo prosljeđujemo dalje
+    // adminSetImenikAutoSync, koja NEOVISNO i sama ponovno provjerava tu
+    // lozinku na backendu prije nego uključi auto-prijenos (dvostruka
+    // zaštita: frontend potvrda + backend provjera, ni jedna se ne oslanja
+    // isključivo na drugu).
+    var lozinkaZaSlanje = lastConfirmedAdminPassword_;
+    lastConfirmedAdminPassword_ = null;
+    gasCall({ action: 'adminSetImenikAutoSync', token: adminToken, adminPassword: lozinkaZaSlanje, settings: { enabled: true, noviUpitnici: kriteriji.noviUpitnici, odbijenice: kriteriji.odbijenice, ocjeneKvalitete: kriteriji.ocjeneKvalitete } }).then(function(res) {
+      if (handleAuthError(res)) { return; }
+      if (res.status === 'ok') { imenikAutoSync = res; }
+      else { alert(res.message || 'Uključivanje nije uspjelo.'); }
+      renderEntries();
+    }).catch(function() {
+      alert('Greška u komunikaciji s poslužiteljem.');
+      renderEntries();
+    });
+  }
+
+  function buildImenikEntryCard_(entry) {
+    var card = document.createElement('div');
+    card.className = 'entry-card';
+    card.dataset.rowIndex = entry.rowIndex;
+
+    var tagovi = String(entry.tagovi || '').split(',').map(function(s){ return s.trim(); }).filter(function(s){ return s; });
+    var tagoviHtml = tagovi.map(function(t) { return '<span class="imenik-tag-badge ' + imenikTagKlasa_(t) + '">' + esc(t) + '</span>'; }).join('');
+
+    var subParts = [];
+    if (entry.oib) { subParts.push('OIB: ' + esc(entry.oib)); }
+    if (entry.telefoni) { subParts.push('Telefon: ' + esc(entry.telefoni)); }
+    if (entry.emailovi) { subParts.push('Mail: ' + esc(entry.emailovi)); }
+    if (entry.funkcije) { subParts.push('Funkcija: ' + esc(entry.funkcije)); }
+    if (entry.datumUnosa) { subParts.push('Datum unosa: ' + esc(entry.datumUnosa)); }
+    var brojevi = [];
+    if (entry.brojUpitnika) { brojevi.push('Upitnik ' + entry.brojUpitnika); }
+    if (entry.brojOdbijenice) { brojevi.push('Odbijenica ' + entry.brojOdbijenice); }
+    if (entry.brojOcjene) { brojevi.push('Ocjena kvalitete ' + entry.brojOcjene); }
+    if (brojevi.length) { subParts.push('Brojevi: ' + esc(brojevi.join(', '))); }
+
+    var syncBadge = '<span class="imenik-sync-badge ' + (entry.prebaceno ? 'da' : 'ne') + '">' +
+      (entry.prebaceno ? 'Prebačeno u Google' + (entry.datumPrebacivanja ? ' (' + esc(entry.datumPrebacivanja) + ')' : '') : 'Nije prebačeno') +
+      '</span>';
+
+    var head = document.createElement('div');
+    head.className = 'entry-card-head';
+    head.innerHTML =
+      '<label class="entry-select-wrap"><input type="checkbox" class="entry-select-cb"></label>' +
+      '<div>' +
+        '<div class="entry-card-title">' + esc(entry.ime || '(bez imena)') + (entry.prezime ? ' <span style="font-weight:400;color:var(--grey);">— ' + esc(entry.prezime) + '</span>' : '') + syncBadge + '</div>' +
+        '<div style="margin-top:4px;">' + tagoviHtml + '</div>' +
+        '<div class="entry-card-sub">' +
+          subParts.map(function(p){ return '<span>' + p + '</span>'; }).join('') +
+        '</div>' +
+      '</div>' +
+      '<div class="chevron">▾</div>';
+    var selectCb = head.querySelector('.entry-select-cb');
+    selectCb.addEventListener('click', function(ev){ ev.stopPropagation(); });
+    selectCb.addEventListener('change', function(){ toggleRowSelection(entry.rowIndex, 'imenik', selectCb.checked); });
+    head.addEventListener('click', function() { card.classList.toggle('expanded'); });
+    card.appendChild(head);
+
+    var body = document.createElement('div');
+    body.className = 'entry-card-body';
+
+    var actions = document.createElement('div');
+    actions.className = 'entry-card-actions';
+    var transferBtn = document.createElement('button');
+    transferBtn.className = 'btn btn-prebaci btn-small';
+    transferBtn.textContent = entry.prebaceno ? 'Ponovno prebaci u Google Contacts' : 'Prebaci u Google Contacts';
+    transferBtn.addEventListener('click', function(ev) {
+      ev.stopPropagation();
+      transferBtn.disabled = true;
+      transferBtn.textContent = 'Prebacivanje…';
+      gasCall({ action: 'adminTransferImenikKontakte', token: adminToken, rowIndexes: [entry.rowIndex] }).then(function(res) {
+        transferBtn.disabled = false;
+        if (handleAuthError(res)) { return; }
+        if (res.status === 'ok' && res.uspjeh > 0) {
+          loadImenik();
+        } else {
+          alert((res.greske && res.greske[0]) || 'Prijenos nije uspio.');
+          transferBtn.textContent = entry.prebaceno ? 'Ponovno prebaci u Google Contacts' : 'Prebaci u Google Contacts';
+        }
+      }).catch(function() {
+        transferBtn.disabled = false;
+        transferBtn.textContent = 'Greška — pokušaj ponovno';
+      });
+    });
+    actions.appendChild(transferBtn);
+
+    var delBtn = document.createElement('button');
+    delBtn.className = 'btn btn-danger btn-small';
+    delBtn.textContent = 'Obriši kontakt';
+    delBtn.addEventListener('click', function(ev) {
+      ev.stopPropagation();
+      openDeleteModal(entry.rowIndex, entry.ime || '(bez imena)', 'adminDeleteImenikKontakt');
+    });
+    actions.appendChild(delBtn);
+    body.appendChild(actions);
+
+    card.appendChild(body);
+    return card;
+  }
+
+  // Masovni prijenos OZNAČENIH kontakata (checkbox + traka masovnih akcija) —
+  // isti rowIndexes izvor kao startBulkDelete/executeBulkDelete gore, samo
+  // šalje adminTransferImenikKontakte umjesto brisanja. Ne traži dodatnu
+  // potvrdu (za razliku od brisanja) jer je radnja bezopasna/reverzibilna —
+  // kontakt se samo ponovno šalje, ništa se ne briše.
+  function startTransferSelectedImenik() {
+    var rowIndexes = Object.keys(selectedRowIndexes).map(function(s){ return parseInt(s, 10); });
+    if (rowIndexes.length === 0) { return; }
+    var btn = document.getElementById('bulk-transfer-imenik-btn');
+    btn.disabled = true;
+    btn.textContent = 'Prebacivanje…';
+    gasCall({ action: 'adminTransferImenikKontakte', token: adminToken, rowIndexes: rowIndexes }).then(function(res) {
+      btn.disabled = false;
+      btn.textContent = 'Prebaci u Google Contacts';
+      if (handleAuthError(res)) { return; }
+      if (res.status === 'ok') {
+        clearSelection();
+        loadImenik();
+        if (res.greske && res.greske.length) {
+          alert('Prebačeno: ' + res.uspjeh + '. Nije uspjelo: ' + res.greske.length + '.\n\n' + res.greske[0]);
+        }
+      } else {
+        alert(res.message || 'Prijenos nije uspio.');
+      }
+    }).catch(function() {
+      btn.disabled = false;
+      btn.textContent = 'Prebaci u Google Contacts';
+      alert('Greška u komunikaciji s poslužiteljem.');
+    });
+  }
+
   // Redoslijed i sadržaj ove kartice je Sašin izričit zahtjev (15.9.2026.,
   // "znaci demo redom ti opnda podesi..."): 1) šifra upitnika (samo za
   // prikaz, čita se iz stupca "Broj" — nije dio adminUpdateFields payloada),
@@ -3069,6 +3385,8 @@
     if (!bar) { return; }
     bar.hidden = (count === 0);
     document.getElementById('bulk-actions-count').textContent = count;
+    var transferBtn = document.getElementById('bulk-transfer-imenik-btn');
+    if (transferBtn) { transferBtn.hidden = (activeTab !== 'Imenik'); }
   }
 
   // ---- Baza od 30 kratkih imena superjunaka za riječ-potvrdu kod masovnog
@@ -3140,7 +3458,7 @@
       }
       var rowIndex = sorted[i];
       var kind = selectedRowIndexes[rowIndex] || 'upit';
-      var action = kind === 'anketa' ? 'adminDeleteAnketaEntry' : 'adminDeleteEntry';
+      var action = kind === 'anketa' ? 'adminDeleteAnketaEntry' : (kind === 'imenik' ? 'adminDeleteImenikKontakt' : 'adminDeleteEntry');
       gasCall({ action: action, token: adminToken, rowIndex: rowIndex, confirmWord: 'BRISATI' }).then(function(res) {
         if (res.status !== 'ok') { greske++; }
         next(i + 1);
@@ -3181,8 +3499,14 @@
   }
 
   // ---- Modal: potvrda lozinkom (opći, dijeli ga brisanje iz "Novi klijenti"
-  // i "Vrati u Zainteresirani") ----
+  // i "Vrati u Zainteresirani", i uključivanje auto-prijenosa u Imeniku) ----
   var pendingPasswordConfirmCallback = null;
+  // Zadnja USPJEŠNO potvrđena lozinka kroz ovaj modal — treba je npr.
+  // adminSetImenikAutoSync (koja i sama, neovisno, ponovno provjerava
+  // lozinku na backendu) da ne mora tražiti unos lozinke DVA puta u istom
+  // toku (jednom ovdje za potvrdu, pa opet za sam poziv). Briše se odmah
+  // nakon korištenja/zatvaranja modala — ne ostaje u memoriji.
+  var lastConfirmedAdminPassword_ = null;
   function openAdminPasswordConfirmModal(title, desc, onConfirm) {
     pendingPasswordConfirmCallback = onConfirm;
     document.getElementById('admin-password-confirm-title').textContent = title;
@@ -3213,6 +3537,7 @@
         return;
       }
       var callback = pendingPasswordConfirmCallback;
+      lastConfirmedAdminPassword_ = pass;
       closeAdminPasswordConfirmModal();
       if (callback) { callback(); }
     }).catch(function() {

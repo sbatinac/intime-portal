@@ -701,13 +701,13 @@
     color:#fff;
     border:none;
     border-radius:12px;
-    padding:26px 48px;
+    padding:30px 48px;
     font-size:14.5px;
     font-weight:600;
     cursor:pointer;
     display:block;
     width:100%;
-    max-width:560px;
+    text-align:center;
     box-shadow:0 6px 18px rgba(179,15,15,0.4), 0 0 14px 2px rgba(230,56,56,0.3);
     transition:transform .15s ease, box-shadow .15s ease, background .15s ease;
     animation:form-submit-glow 2.6s ease-in-out infinite;
@@ -718,9 +718,14 @@
     0%,100%{box-shadow:0 6px 18px rgba(179,15,15,0.4), 0 0 14px 2px rgba(230,56,56,0.28);}
     50%{box-shadow:0 6px 18px rgba(179,15,15,0.4), 0 0 26px 8px rgba(230,56,56,0.5);}
   }
-  .form-submit-thanks{display:block;font-size:14px;font-weight:500;opacity:.95;margin-bottom:8px;}
-  .form-submit-main{display:block;font-size:29px;font-weight:900;letter-spacing:.4px;color:#fff;}
-  .form-note{font-size:12px;color:var(--grey);margin-top:10px;}
+  /* Sašin izričit zahtjev (19.9.2026.): gumb preko CIJELE širine središnje
+     trake (max-width:560px ranije ga je ograničavao — uklonjeno), tekst još
+     veći i centriran (i dalje bio centriran, sad eksplicitno na .form-submit-glavni
+     radi sigurnosti), i sitna napomena ispod gumba (.form-note) sad također
+     centrirana da vizualno prati širi gumb. */
+  .form-submit-thanks{display:block;font-size:15px;font-weight:500;opacity:.95;margin-bottom:9px;}
+  .form-submit-main{display:block;font-size:34px;font-weight:900;letter-spacing:.4px;color:#fff;}
+  .form-note{font-size:12px;color:var(--grey);margin-top:10px;text-align:center;}
   /* Upozorenje da upitnik nije moguće dovršiti/poslati (npr. kad u 12. poglavlju
      nijedna od tri glavne usluge nije odabrana u 9. poglavlju) — istaknuta kutija,
      jasno drukčija od standardnog sivog .sec-hint teksta. */
@@ -5537,8 +5542,15 @@
       }
     }
 
-    // Provjera duplikata (OIB, ili naziv+oblik poslovnog subjekta) — SAMO za
-    // glavni upitnik ('interes'), jer jedino on sadrži OIB/naziv tvrtke.
+    // Provjera duplikata (OIB, ili naziv+oblik poslovnog subjekta) — za
+    // 'interes' I 'odbijenica' (oba imaju OIB/naziv tvrtke; Anketa je zaseban
+    // file, vidi InTime_Anketa.html). Pravilo je RAZLIČITO po tipu (Sašin
+    // izričit zahtjev 20.9.2026., vidi provjeriDuplikatKlijenta() u .gs):
+    // - 'interes': trajna blokada ako OIB (ili naziv+oblik) već postoji među
+    //   postojećim Interes-upitnicima. Prethodna Odbijenica NE blokira —
+    //   klijent koji je nekad odbio ponudu i dalje može poslati upitnik.
+    // - 'odbijenica': trajna blokada ako OIB već postoji među postojećim
+    //   Odbijenicama (neovisno o Interesu).
     // Za razliku od finalnog POST-a niže (koji je namjerno "fire-and-forget"
     // s mode:'no-cors', jer ne trebamo čitati odgovor), ovdje MORAMO pričekati
     // i pročitati stvarni JSON odgovor s backend-a pa se NE koristi no-cors —
@@ -5547,9 +5559,9 @@
     // "Fail-open": ako sam mrežni poziv za provjeru duplikata ne uspije (npr.
     // korisnik nema internet u tom trenutku, ili je Apps Script privremeno
     // nedostupan), NE blokiramo slanje — ne želimo da infrastrukturni problem
-    // spriječi legitimnog novog klijenta da pošalje upitnik. Blokira se
-    // ISKLJUČIVO kad backend eksplicitno vrati { duplicate: true }.
-    if (which === 'interes') {
+    // spriječi legitimnog novog klijenta da pošalje. Blokira se ISKLJUČIVO
+    // kad backend eksplicitno vrati { duplicate: true }.
+    if (which === 'interes' || which === 'odbijenica') {
       var _submitBtn = form.querySelector('button[type="submit"]');
       var _submitBtnPrijasnjiTekst = _submitBtn ? _submitBtn.textContent : '';
       if (_submitBtn) { _submitBtn.disabled = true; _submitBtn.textContent = 'Provjera podataka...'; }
@@ -5565,7 +5577,8 @@
             action: 'provjeriKlijenta',
             oib: _oibEl ? _oibEl.value.trim() : '',
             naziv: _nazivEl ? _nazivEl.value.trim() : '',
-            oblik: _oblikEl ? _oblikEl.value.trim() : ''
+            oblik: _oblikEl ? _oblikEl.value.trim() : '',
+            tip: which
           })
         });
         _dupProvjera = await _dupResp.json();

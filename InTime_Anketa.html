@@ -590,6 +590,43 @@
       return false;
     }
 
+    // Provjera duplikata (cooldown) — ista tvrtka (OIB) smije ispuniti
+    // anketu kvalitete najviše 1x svakih 30 dana (Sašin izričit zahtjev
+    // 20.9.2026., vidi provjeriDuplikatAnkete_() u InTime_Code.gs) — za
+    // razliku od Interesa/Odbijenice ovo NIJE trajna blokada. Provjeravamo
+    // odmah nakon OIB-validacije (prije 25+2 pitanja) da korisnik ne mora
+    // popuniti cijelu anketu da bi tek na kraju saznao da mora pričekati.
+    // "Fail-open": mrežni problem ne blokira slanje (isti obrazac kao u
+    // InTime_PismoNamjere.html).
+    {
+      var _submitBtnDup = form.querySelector('button[type=submit]');
+      var _submitBtnDupTekst = _submitBtnDup ? _submitBtnDup.textContent : '';
+      if (_submitBtnDup) { _submitBtnDup.disabled = true; _submitBtnDup.textContent = 'Provjera podataka...'; }
+      var _dupProvjera = { duplicate: false };
+      try {
+        var _dupResp = await fetch(GAS_WEB_APP_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({
+            action: 'provjeriKlijenta',
+            oib: _oibProvjeraEl ? _oibProvjeraEl.value.trim() : '',
+            tip: 'anketa'
+          })
+        });
+        _dupProvjera = await _dupResp.json();
+      } catch (dupErr) {
+        _dupProvjera = { duplicate: false };
+      }
+      if (_submitBtnDup) { _submitBtnDup.disabled = false; _submitBtnDup.textContent = _submitBtnDupTekst; }
+      if (_dupProvjera && _dupProvjera.duplicate) {
+        var _preostalo = _dupProvjera.preostaloDana || 30;
+        alert('Anketu o kvaliteti za ovu tvrtku (OIB) već ste ispunili u zadnjih 30 dana. Novu anketu moći ćete ispuniti za otprilike ' + _preostalo + ' dan(a).');
+        _oibProvjeraEl.scrollIntoView({behavior:'smooth', block:'center'});
+        _oibProvjeraEl.focus();
+        return false;
+      }
+    }
+
     // Sva pitanja (25 + 2 NPS) moraju imati eksplicitan odgovor — ili
     // pomaknut klizač (data-dotaknuto="true") ili označeno "Ne mogu
     // procijeniti" (gdje ta opcija postoji, tj. Q1-23, ne Q24/Q25).
