@@ -12,10 +12,12 @@
         InTime_PismoNamjere.html, InTime_Admin.html i InTime_Ispravak.html —
         GAS_WEB_APP_URL niže MORA biti identičan .../exec URL.
      2) HOSTING: ovu datoteku TREBA POSTAVITI NA ISTO JAVNO MJESTO KAO
-        "InTime_PotvrdaPonude_banner.jpg" (slika koju referencira
-        <img class="card-banner">) — obje datoteke idu u ISTI folder na
-        istom hostingu kao InTime_Ispravak.html (npr. GitHub Pages), inače se
-        slika neće prikazati. Tek TADA u InTime_Code.gs i InTime_Admin.html
+        "InTime_PotvrdaPonude_banner.jpg" I "InTime_PotvrdaPonude_banner_zahvala.jpg"
+        (slike koje referencira <img class="card-banner"> na raznim ekranima —
+        potonja SAMO na ekranu "Hvala, ponuda je potvrđena!") — sve tri
+        datoteke idu u ISTI folder na istom hostingu kao InTime_Ispravak.html
+        (npr. GitHub Pages), inače se odgovarajuća slika neće prikazati. Tek TADA
+        u InTime_Code.gs i InTime_Admin.html
         treba zamijeniti POTVRDA_PONUDE_STRANICA_URL placeholder stvarnim
         URL-om te stranice (mail predložak koji Saša šalje klijentu sadrži
         poveznicu sastavljenu od tog URL-a + ?token=...).
@@ -241,6 +243,10 @@
     <div class="status-icon ok">✓</div>
     <h1>Ponuda je već potvrđena</h1>
     <p class="hint">Tvrtka <strong id="already-naziv"></strong> je već potvrdila prihvaćanje ove ponude, <strong id="already-datum"></strong>. Nije potrebna nikakva dodatna radnja.</p>
+    <div class="company-box" id="already-tko-box" hidden>
+      Potvrdio/la: <strong id="already-tko-ime"></strong><span id="already-tko-funkcija"></span><br>
+      <span id="already-tko-ip-wrap" hidden>IP adresa prilikom potvrde: <span id="already-tko-ip"></span></span>
+    </div>
     <p class="hint" style="margin-top:14px;">Za sva pitanja javite nam se na <a href="mailto:sbatinac.intime@gmail.com">sbatinac.intime@gmail.com</a>.</p>
   </div>
 </div>
@@ -321,7 +327,7 @@
 
 <div id="success-screen" class="screen" hidden>
   <div class="card">
-    <img class="card-banner" src="InTime_PotvrdaPonude_banner.jpg" alt="In Time Express">
+    <img class="card-banner" src="InTime_PotvrdaPonude_banner_zahvala.jpg" alt="In Time Express">
     <div class="status-icon ok">✓</div>
     <h1>Hvala, ponuda je potvrđena!</h1>
     <p class="hint">Zabilježili smo Vašu potvrdu prihvaćanja ponude, <strong id="success-datum"></strong>. In Time d.o.o. tim uskoro Vas kontaktira s idućim koracima.</p>
@@ -530,6 +536,20 @@
       if (res.vecPotvrdjeno) {
         document.getElementById('already-naziv').textContent = res.nazivTvrtke || '';
         document.getElementById('already-datum').textContent = res.datumPotvrde || '';
+        // Sašin izričit zahtjev (20.9.2026., dvadeset i četvrti krug): ponuda
+        // se može poslati na više mail adresa iste tvrtke — ako netko DRUGI
+        // otvori poveznicu nakon što je već netko potvrdio, neka odmah vidi
+        // TKO je i s koje IP adrese potvrdio (ime/prezime, funkcija, IP),
+        // da se izbjegne zabuna ili dvostruko rješavanje.
+        if (res.potvrdioIme) {
+          document.getElementById('already-tko-ime').textContent = res.potvrdioIme;
+          document.getElementById('already-tko-funkcija').textContent = res.potvrdioFunkcija ? (' (' + res.potvrdioFunkcija + ')') : '';
+          if (res.potvrdioIp) {
+            document.getElementById('already-tko-ip').textContent = res.potvrdioIp;
+            document.getElementById('already-tko-ip-wrap').hidden = false;
+          }
+          document.getElementById('already-tko-box').hidden = false;
+        }
         showScreen('already-screen');
         return;
       }

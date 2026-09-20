@@ -250,6 +250,15 @@
   .imenik-autosync-status.on{color:var(--green);font-weight:700;}
   .imenik-autosync-status.off{color:var(--grey);}
 
+  .imenik-povuci-panel{
+    background:#f7fafb;border:1px solid var(--line);border-radius:10px;
+    padding:14px 16px;margin-bottom:16px;
+  }
+  .imenik-povuci-desc{font-size:12px;color:var(--grey);max-width:640px;margin-bottom:10px;}
+  .imenik-povuci-status{font-size:12px;margin-top:10px;}
+  .imenik-povuci-status.ok{color:var(--green);font-weight:700;}
+  .imenik-povuci-status.err{color:var(--red);font-weight:700;}
+
   /* ---- PRETRAGA + DATUMSKI FILTER (18. krug, 20.9.2026., Sašin izričit
      zahtjev) — zajednička traka na Zainteresirani/Ponude/Nisu zainteresirani/
      Arhiva/Ankete kvalitete/Imenik: tekst pretrage + brzi datumski filteri
@@ -381,11 +390,18 @@
   .af-mail-blok > label{display:block;font-size:14px;font-weight:800;letter-spacing:.03em;text-transform:uppercase;color:var(--purple-dark);margin-bottom:7px;}
   .af-mail-okvir{border:2px solid #bcdedb;border-radius:14px;padding:10px;background:#eefaf8;}
   .af-mail-lista{display:flex;flex-direction:column;gap:5px;}
-  .af-mail-stavka{display:flex;align-items:flex-start;gap:7px;padding:5px 8px;border:1px solid var(--line);border-radius:6px;background:#fff;font-size:12.5px;cursor:pointer;}
+  .af-mail-stavka{display:flex;align-items:flex-start;gap:7px;padding:5px 8px;border:1px solid var(--line);border-radius:6px;background:#fff;font-size:12.5px;}
   .af-mail-stavka:hover{border-color:var(--purple);}
+  .af-mail-stavka label{display:flex;align-items:flex-start;gap:7px;flex:1;cursor:pointer;min-width:0;}
   .af-mail-stavka input{margin-top:2px;flex-shrink:0;}
   .af-mail-adresa{font-weight:700;color:var(--graphite);}
   .af-mail-tko{color:var(--grey);}
+  .af-mail-stavka-rucno{background:#fff8ec;border-color:#e9d5a8;}
+  .af-mail-ukloni{flex-shrink:0;border:none;background:transparent;color:var(--grey);cursor:pointer;font-size:13px;line-height:1;padding:2px 4px;border-radius:4px;}
+  .af-mail-ukloni:hover{color:var(--red);background:#fdeaea;}
+  .af-mail-dodaj{display:flex;gap:7px;margin-top:8px;}
+  .af-mail-dodaj-input{flex:1;min-width:0;border:1px solid var(--line);border-radius:6px;padding:6px 8px;font-size:12.5px;font-family:inherit;}
+  .af-mail-dodaj-input.error{border-color:var(--red);}
   .af-mail-status{font-size:11px;color:var(--grey);margin-top:6px;min-height:14px;}
   .af-mail-status.error{color:var(--red);}
   .af-mail-prazno{font-size:11.5px;color:var(--grey);font-style:italic;padding:2px;}
@@ -455,6 +471,29 @@
   .af-predlozak-prazno{font-size:11.5px;color:var(--grey);font-style:italic;padding:2px;}
   .af-predlozak-status{font-size:11px;color:var(--grey);margin-top:6px;min-height:14px;}
   .af-predlozak-status.error{color:var(--red);}
+  /* Blok "Slanje ponude mailom" — stvarno automatsko slanje (test + pravo
+     slanje), vidi napomenu uz adminPosaljiPonudaMail/adminPosaljiPonudaTest u
+     InTime_Code.gs. Namjerno vizualno "ispod" predloška — Saša prvo bira/
+     provjerava predložak gore, pa tek onda šalje. */
+  .af-slanje-blok{grid-column:1 / -1;margin-top:4px;}
+  .af-slanje-blok > label{display:block;font-size:14px;font-weight:800;letter-spacing:.03em;text-transform:uppercase;color:var(--purple-dark);margin-bottom:7px;}
+  .af-slanje-okvir{border:2px solid #d8e8d3;border-radius:14px;padding:10px;background:#f6faf4;}
+  .af-slanje-desc{font-size:11.5px;color:var(--grey);margin-bottom:9px;}
+  .af-slanje-test-red{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:9px;}
+  .af-slanje-test-input{flex:1;min-width:180px;padding:6px 8px;border:1px solid var(--line);border-radius:6px;font-size:12.5px;font-family:inherit;background:#fff;}
+  .af-slanje-test-input.error{border-color:var(--red);}
+  .af-slanje-kopija-red{display:flex;align-items:center;gap:7px;font-size:12.5px;margin-bottom:10px;cursor:pointer;}
+  .af-slanje-btn{padding:7px 12px;border-radius:6px;border:1px solid var(--purple);background:#fff;color:var(--purple);font-size:12.5px;font-weight:700;cursor:pointer;white-space:nowrap;}
+  .af-slanje-btn:hover{background:var(--purple);color:#fff;}
+  .af-slanje-btn:disabled{opacity:.55;cursor:default;}
+  .af-slanje-btn:disabled:hover{background:#fff;color:var(--purple);}
+  .af-slanje-btn.uspjeh{border-color:var(--green);color:var(--green);}
+  .af-slanje-btn.uspjeh:hover{background:var(--green);color:#fff;}
+  .af-slanje-btn.uspjeh:disabled:hover{background:#fff;color:var(--green);}
+  .af-slanje-posalji-btn{display:block;width:100%;}
+  .af-slanje-status{font-size:11px;color:var(--grey);margin-top:8px;min-height:14px;}
+  .af-slanje-status.error{color:var(--red);}
+  .af-slanje-status.ok{color:var(--green);font-weight:700;}
   /* Modal uređivanja predložaka — vidi mail-predlozak-modal u HTML-u niže. */
   #mail-predlozak-modal .modal-box{max-width:640px;width:92vw;}
   #mail-predlozak-modal textarea{width:100%;box-sizing:border-box;min-height:260px;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:13px;font-family:inherit;line-height:1.5;resize:vertical;}
@@ -1571,6 +1610,29 @@
     return mailPredlosciPromise;
   }
 
+  // Zapamćena test-adresa za probno slanje ponude (adminGetTestMail/
+  // adminPosaljiPonudaTest u InTime_Code.gs) — GLOBALNA (ne po klijentu,
+  // Sašin izričit zahtjev), isti dijeljeni-cache obrazac kao predlošci gore.
+  var testMailCache = null;
+  var testMailPromise = null;
+  function ucitajTestMail_() {
+    if (testMailCache !== null) { return Promise.resolve(testMailCache); }
+    if (testMailPromise) { return testMailPromise; }
+    testMailPromise = gasCall({ action: 'adminGetTestMail', token: adminToken }).then(function(res) {
+      testMailPromise = null;
+      if (handleAuthError(res)) { throw new Error('Sesija je istekla.'); }
+      if (res.status === 'ok') {
+        testMailCache = res.testMail || '';
+        return testMailCache;
+      }
+      throw new Error(res.message || 'Dohvaćanje test adrese nije uspjelo.');
+    }).catch(function(err) {
+      testMailPromise = null;
+      throw err;
+    });
+    return testMailPromise;
+  }
+
   // Prikazni (čitljiviji) nazivi za vrijednosti checkboxova "Osnovne usluge"
   // (9. poglavlje upitnika, InTime_PismoNamjere.html) — koriste se SAMO za
   // popis usluga u {{USLUGE}} tagu predloška maila, sirova vrijednost ostaje
@@ -2228,6 +2290,7 @@
 
     if (activeTab === 'Imenik') {
       container.appendChild(buildImenikAutoSyncPanel_());
+      container.appendChild(buildImenikPovuciSvePanel_());
       if (allImenikEntries.length === 0) {
         var hintI = document.createElement('div');
         hintI.className = 'empty-hint';
@@ -3139,7 +3202,7 @@
           '<div class="imenik-autosync-title">Automatski prijenos u Google Contacts (sbatinac.intime@gmail.com)</div>' +
           '<div class="imenik-autosync-desc">Kad je uključeno, novi kontakti iz označenih vrsta obrazaca odmah se šalju u Google Contacts, bez čekanja na ručni odabir ispod. Uključivanje traži admin lozinku i potvrdu riječju.</div>' +
         '</div>' +
-        '<span class="broj-toggle-switch"><input type="checkbox" id="imenik-autosync-toggle"' + (uklj ? ' checked' : '') + '><span class="broj-toggle-slider"></span></span>' +
+        '<label class="broj-toggle-switch"><input type="checkbox" id="imenik-autosync-toggle"' + (uklj ? ' checked' : '') + '><span class="broj-toggle-slider"></span></label>' +
       '</div>' +
       '<div class="imenik-autosync-criteria">' +
         '<label><input type="checkbox" id="imenik-crit-upitnici"' + (imenikAutoSync.noviUpitnici ? ' checked' : '') + '> Samo novi upitnici (Interes)</label>' +
@@ -3155,6 +3218,52 @@
       panel.querySelector('#' + id).addEventListener('change', onImenikCriteriaChange_);
     });
     return panel;
+  }
+
+  // Sašin izričit zahtjev (20.9.2026.): gumb koji prođe kroz SVE dosadašnje
+  // upite/odbijenice/ankete i dopuni Imenik kontaktima koji tu još nisu
+  // (stariji zapisi od prije uvođenja Imenika, ili bilo što što je slučajno
+  // promašeno) — sigurno ga je pokrenuti VIŠE PUTA, ne duplicira postojeće
+  // (isti spoji-po-OIB-u+imenu mehanizam kao i za nove upise). Ne šalje ništa
+  // automatski u Google Contacts (vidi napomenu uz adminPovuciSveKontakte u
+  // InTime_Code.gs) — samo dopunjava popis u Imeniku.
+  function buildImenikPovuciSvePanel_() {
+    var wrap = document.createElement('div');
+    wrap.className = 'imenik-povuci-panel';
+    wrap.innerHTML =
+      '<div class="imenik-povuci-desc">Prođi kroz SVE dosadašnje upite, odbijenice i ankete i dodaj u Imenik kontakte koji tu još nisu (npr. stariji zapisi od prije uvođenja Imenika). Postojeći kontakti se ne dupliciraju — sigurno je pokrenuti i više puta, i kasnije po potrebi.</div>' +
+      '<button type="button" class="btn btn-outline btn-small imenik-povuci-btn">↻ Povuci sve kontakte iz starih upisa</button>' +
+      '<div class="imenik-povuci-status" hidden></div>';
+    var btn = wrap.querySelector('.imenik-povuci-btn');
+    var statusEl = wrap.querySelector('.imenik-povuci-status');
+    btn.addEventListener('click', function() {
+      if (!confirm('Proći kroz sve dosadašnje upite, odbijenice i ankete i dopuniti Imenik kontaktima koji tu još nisu? (Postojeći kontakti se neće duplicirati.)')) { return; }
+      btn.disabled = true;
+      var stariTekst = btn.textContent;
+      btn.textContent = 'Radi… (može potrajati)';
+      statusEl.hidden = true;
+      gasCall({ action: 'adminPovuciSveKontakte', token: adminToken }).then(function(res) {
+        if (handleAuthError(res)) { return; }
+        btn.disabled = false;
+        btn.textContent = stariTekst;
+        statusEl.hidden = false;
+        if (res.status === 'ok') {
+          statusEl.className = 'imenik-povuci-status ok';
+          statusEl.textContent = 'Gotovo — pregledano ' + res.obradjenoUpitnika + ' upita, ' + res.obradjenoOdbijenica + ' odbijenica, ' + res.obradjenoAnketa + ' anketa. U Imeniku upisano/ažurirano ' + res.upisanoKontakata + ' kontakata.' + (res.greske ? (' (' + res.greske + ' redaka preskočeno zbog greške.)') : '');
+          loadImenik();
+        } else {
+          statusEl.className = 'imenik-povuci-status err';
+          statusEl.textContent = res.message || 'Nešto nije uspjelo.';
+        }
+      }).catch(function() {
+        btn.disabled = false;
+        btn.textContent = stariTekst;
+        statusEl.hidden = false;
+        statusEl.className = 'imenik-povuci-status err';
+        statusEl.textContent = 'Greška u komunikaciji s poslužiteljem.';
+      });
+    });
+    return wrap;
   }
 
   function imenikAutoSyncOpis_() {
@@ -3538,6 +3647,26 @@
     // preskoči nekoga, lakše je ručno odznačiti nego se sjetiti dodati).
     var mailOznaceneSirovo = fieldVal(entry, 'Mail adrese za slanje ponude (admin)');
     var mailOznaceneIzvor = mailOznaceneSirovo || fieldVal(entry, 'Potvrđena adresa/e za slanje ponude');
+    // Sašin izričit zahtjev (20.9.2026., dvadeset i četvrti krug): "želim
+    // mogućnost kod ponuda da dodam dodatne mail adrese, uz ove koje imamo
+    // preporučene" — bilo koja adresa koju je Saša ranije RUČNO dodao (a nije
+    // među 9 izvora iz samog upitnika) živi ISKLJUČIVO u mailOznaceneSirovo
+    // (mail_adrese_ponude), pa se ovdje dodaje u prikazani popis kao zaseban,
+    // uklonjiv unos — inače bi kod idućeg renderiranja kartice nestala iz
+    // popisa (bila bi i dalje "označena" u polju, ali korisnik je ne bi
+    // vidio ni mogao odznačiti/ukloniti).
+    if (mailOznaceneSirovo) {
+      mailOznaceneSirovo.split(',').forEach(function(a) {
+        a = a.trim();
+        if (!a) { return; }
+        var kljucRucno = a.toLowerCase();
+        if (!mailPoAdresi[kljucRucno]) {
+          var stavkaRucno = { email: a, ime: '', uloge: ['ručno dodano'], rucno: true };
+          mailPoAdresi[kljucRucno] = stavkaRucno;
+          mailAdreseZaPonudu.push(stavkaRucno);
+        }
+      });
+    }
     var mailOznaceneSet = null;
     if (mailOznaceneIzvor) {
       mailOznaceneSet = {};
@@ -3686,11 +3815,26 @@
                   var kljuc = m.email.toLowerCase();
                   var oznaceno = mailOznaceneSet ? !!mailOznaceneSet[kljuc] : true;
                   var tko = m.ime ? (esc(m.ime) + ' (' + esc(m.uloge.join(', ')) + ')') : ('(' + esc(m.uloge.join(', ')) + ')');
-                  return '<label class="af-mail-stavka"><input type="checkbox" class="af-mail-cb" value="' + esc(m.email) + '"' + (oznaceno ? ' checked' : '') + '>' +
-                    '<span><span class="af-mail-adresa">' + esc(m.email) + '</span> <span class="af-mail-tko">— ' + tko + '</span></span></label>';
+                  // Ručno dodane adrese (item A, Sašin zahtjev 20.9.2026.) nemaju
+                  // "izvor" u upitniku pa dobivaju "✕" gumb za uklanjanje. Gumb je
+                  // NAMJERNO izvan <label> elementa (a ne unutra) — <label>
+                  // prosljeđuje klik svome checkboxu (isti mehanizam koji je
+                  // uzrokovao bug s Google Contacts prekidačem, vidi
+                  // buildImenikAutoSyncPanel_), pa bi klik na "✕" unutar labela
+                  // ujedno (ne)označio checkbox i pokrenuo dvostruku/proturječnu
+                  // akciju.
+                  return '<div class="af-mail-stavka' + (m.rucno ? ' af-mail-stavka-rucno' : '') + '">' +
+                    '<label><input type="checkbox" class="af-mail-cb" value="' + esc(m.email) + '"' + (oznaceno ? ' checked' : '') + '>' +
+                    '<span><span class="af-mail-adresa">' + esc(m.email) + '</span> <span class="af-mail-tko">— ' + tko + '</span></span></label>' +
+                    (m.rucno ? '<button type="button" class="af-mail-ukloni" data-email="' + esc(m.email) + '" title="Ukloni ručno dodanu adresu">✕</button>' : '') +
+                    '</div>';
                 }).join('') +
                 '</div>'
               : '<div class="af-mail-prazno">Klijent još nije upisao nijednu e-mail adresu u upitnik.</div>') +
+            '<div class="af-mail-dodaj">' +
+              '<input type="email" class="af-mail-dodaj-input" placeholder="dodaj@primjer.hr">' +
+              '<button type="button" class="af-mail-dodaj-btn btn btn-outline btn-small">+ Dodaj primatelja</button>' +
+            '</div>' +
             '<div class="af-mail-status"></div>' +
           '</div>' +
         '</div>' +
@@ -3746,6 +3890,19 @@
             '</div>' +
             '<div class="af-predlozak-pregled"><div class="af-predlozak-prazno">Učitavanje predložaka…</div></div>' +
             '<div class="af-predlozak-status"></div>' +
+          '</div>' +
+        '</div>' +
+        '<div class="af-slanje-blok">' +
+          '<label>Slanje ponude mailom</label>' +
+          '<div class="af-slanje-okvir">' +
+            '<div class="af-slanje-desc">Šalje se TOČNO tekst iz pregleda predloška iznad (uključujući trenutno odabrani predložak) i prilozi iz bloka "Dokumenti za ponudu".</div>' +
+            '<div class="af-slanje-test-red">' +
+              '<input type="email" class="af-slanje-test-input" placeholder="test adresa za probno slanje">' +
+              '<button type="button" class="af-slanje-btn af-slanje-test-btn">✉ Pošalji test</button>' +
+            '</div>' +
+            '<label class="af-slanje-kopija-red"><input type="checkbox" class="af-slanje-kopija-cb"> Pošalji i meni kopiju (sbatinac.intime@gmail.com)</label>' +
+            '<button type="button" class="af-slanje-btn af-slanje-posalji-btn uspjeh">📧 Pošalji ponudu označenim primateljima</button>' +
+            '<div class="af-slanje-status"></div>' +
           '</div>' +
         '</div>' +
       '</div>' +
@@ -4079,32 +4236,124 @@
     // Blok "Mail adrese za ponudu" — checkboxovi sprema odmah pri svakoj
     // promjeni (isti obrazac trenutnog spremanja kao "Dokumenti za ponudu"
     // niže), bez čekanja na glavni "Spremi". Samo dok je Dio 1 vidljiv.
+    // Sašin zahtjev (20.9.2026., dvadeset i četvrti krug): mogućnost ručnog
+    // dodavanja dodatnih primatelja uz ovih 9 preporučenih izvora, te
+    // uklanjanja tako ručno dodanih adresa. Polje "Mail adrese za slanje
+    // ponude (admin)" (mail_adrese_ponude) služi DVOSTRUKO — i kao popis
+    // trenutno označenih primatelja, i (u buildAdminFieldsBlock gore) kao
+    // izvor za prepoznavanje "ručno dodanih" adresa — pa je dovoljno uvijek
+    // spremiti točan popis trenutno označenih checkboxova: ručno dodana
+    // adresa koja se odznači/ukloni time se ujedno i trajno briše (nema
+    // drugog izvora iz kojeg bi se ponovno pojavila, za razliku od adresa iz
+    // upitnika koje uvijek ostaju ponuđene kao opcija).
+    //
+    // Ožičavanje ide preko delegacije na razini .af-mail-okvir (umjesto
+    // hvatanja svakog checkboxa/gumba zasebno) — tako novo dodana adresa
+    // (umetnuta izravno u DOM nakon uspješnog spremanja, bez punog
+    // re-rendera) odmah radi bez potrebe za ponovnim ožičavanjem.
     if (prikaziPuniBlok) {
-      var mailCbListe = Array.prototype.slice.call(wrap.querySelectorAll('.af-mail-cb'));
+      var mailOkvirEl = wrap.querySelector('.af-mail-okvir');
       var mailStatus = wrap.querySelector('.af-mail-status');
-      if (mailCbListe.length && mailStatus) {
-        mailCbListe.forEach(function(cb) {
-          cb.addEventListener('change', function(ev) {
-            ev.stopPropagation();
-            var odabrane = mailCbListe.filter(function(c) { return c.checked; }).map(function(c) { return c.value; });
-            mailStatus.textContent = 'Spremanje…';
-            mailStatus.classList.remove('error');
-            gasCall({ action: 'adminUpdateFields', token: adminToken, rowIndex: entry.rowIndex, fields: { mail_adrese_ponude: odabrane.join(', ') } }).then(function(res) {
-              if (handleAuthError(res)) { return; }
-              if (res.status === 'ok') {
-                mailStatus.textContent = 'Spremljeno.';
-                mailStatus.classList.remove('error');
-                entry.fields['Mail adrese za slanje ponude (admin)'] = odabrane.join(', ');
-              } else {
-                mailStatus.textContent = res.message || 'Greška pri spremanju.';
-                mailStatus.classList.add('error');
-              }
-            }).catch(function() {
-              mailStatus.textContent = 'Greška u komunikaciji s poslužiteljem.';
+      var mailDodajInput = wrap.querySelector('.af-mail-dodaj-input');
+      var mailDodajBtn = wrap.querySelector('.af-mail-dodaj-btn');
+
+      if (mailOkvirEl && mailStatus) {
+        var trenutneOznaceneEmail_ = function() {
+          return Array.prototype.slice.call(mailOkvirEl.querySelectorAll('.af-mail-cb'))
+            .filter(function(c) { return c.checked; })
+            .map(function(c) { return c.value; });
+        };
+
+        var spremiMailOdabir_ = function(odabrane, onOk) {
+          mailStatus.textContent = 'Spremanje…';
+          mailStatus.classList.remove('error');
+          gasCall({ action: 'adminUpdateFields', token: adminToken, rowIndex: entry.rowIndex, fields: { mail_adrese_ponude: odabrane.join(', ') } }).then(function(res) {
+            if (handleAuthError(res)) { return; }
+            if (res.status === 'ok') {
+              mailStatus.textContent = 'Spremljeno.';
+              mailStatus.classList.remove('error');
+              entry.fields['Mail adrese za slanje ponude (admin)'] = odabrane.join(', ');
+              if (onOk) { onOk(); }
+            } else {
+              mailStatus.textContent = res.message || 'Greška pri spremanju.';
               mailStatus.classList.add('error');
-            });
+            }
+          }).catch(function() {
+            mailStatus.textContent = 'Greška u komunikaciji s poslužiteljem.';
+            mailStatus.classList.add('error');
+          });
+        };
+
+        mailOkvirEl.addEventListener('change', function(ev) {
+          var cb = ev.target.closest('.af-mail-cb');
+          if (!cb) { return; }
+          ev.stopPropagation();
+          spremiMailOdabir_(trenutneOznaceneEmail_());
+        });
+
+        mailOkvirEl.addEventListener('click', function(ev) {
+          var btn = ev.target.closest('.af-mail-ukloni');
+          if (!btn) { return; }
+          ev.stopPropagation();
+          var email = btn.getAttribute('data-email') || '';
+          var odabrane = trenutneOznaceneEmail_().filter(function(e) { return e.toLowerCase() !== email.toLowerCase(); });
+          spremiMailOdabir_(odabrane, function() {
+            var red = btn.closest('.af-mail-stavka');
+            if (red && red.parentNode) { red.parentNode.removeChild(red); }
+            var lista = mailOkvirEl.querySelector('.af-mail-lista');
+            if (lista && !lista.querySelector('.af-mail-stavka')) {
+              lista.outerHTML = '<div class="af-mail-prazno">Klijent još nije upisao nijednu e-mail adresu u upitnik.</div>';
+            }
           });
         });
+
+        if (mailDodajInput && mailDodajBtn) {
+          var dodajPrimatelja_ = function() {
+            var email = (mailDodajInput.value || '').trim();
+            mailDodajInput.classList.remove('error');
+            if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+              mailDodajInput.classList.add('error');
+              mailStatus.textContent = 'Upiši ispravnu e-mail adresu.';
+              mailStatus.classList.add('error');
+              return;
+            }
+            var postojece = trenutneOznaceneEmail_();
+            var vecPostoji = postojece.some(function(e) { return e.toLowerCase() === email.toLowerCase(); });
+            if (vecPostoji) { mailDodajInput.value = ''; return; }
+            spremiMailOdabir_(postojece.concat([email]), function() {
+              mailDodajInput.value = '';
+              var novi = '<div class="af-mail-stavka af-mail-stavka-rucno"><label><input type="checkbox" class="af-mail-cb" value="' + esc(email) + '" checked>' +
+                '<span><span class="af-mail-adresa">' + esc(email) + '</span> <span class="af-mail-tko">— (ručno dodano)</span></span></label>' +
+                '<button type="button" class="af-mail-ukloni" data-email="' + esc(email) + '" title="Ukloni ručno dodanu adresu">✕</button></div>';
+              var lista = mailOkvirEl.querySelector('.af-mail-lista');
+              var prazno = mailOkvirEl.querySelector('.af-mail-prazno');
+              if (!lista) {
+                var wrapLista = document.createElement('div');
+                wrapLista.className = 'af-mail-lista';
+                wrapLista.innerHTML = novi;
+                if (prazno && prazno.parentNode) {
+                  prazno.parentNode.replaceChild(wrapLista, prazno);
+                } else {
+                  mailOkvirEl.insertBefore(wrapLista, wrap.querySelector('.af-mail-dodaj'));
+                }
+              } else {
+                lista.insertAdjacentHTML('beforeend', novi);
+              }
+            });
+          };
+          mailDodajBtn.addEventListener('click', function(ev) {
+            ev.stopPropagation();
+            dodajPrimatelja_();
+          });
+          mailDodajInput.addEventListener('keydown', function(ev) {
+            if (ev.key === 'Enter') {
+              ev.preventDefault();
+              ev.stopPropagation();
+              dodajPrimatelja_();
+            }
+          });
+          mailDodajInput.addEventListener('click', function(ev) { ev.stopPropagation(); });
+        }
       }
     }
 
@@ -4337,6 +4586,119 @@
           predlozakStatus.classList.add('error');
         }
       });
+    }
+
+    // Blok "Slanje ponude mailom" — vidi opširnu napomenu uz
+    // adminPosaljiPonudaTest/adminPosaljiPonudaMail u InTime_Code.gs. Tekst
+    // koji se šalje je UVIJEK ono što trenutno piše u pregledu predloška
+    // iznad (.af-predlozak-tijelo/.af-predlozak-predmet — isti tekst koji
+    // "📋 Kopiraj tekst" kopira), tako da je "što vidiš to i šalješ"
+    // zajamčeno bez posebne, razdvojene pripreme teksta za slanje.
+    // Namjerno POSTAVLJEN NAKON predlozak bloka gore u ovoj funkciji, isti
+    // razlog kao i "Rok važenja ponude" ispod — čita already-rendered DOM.
+    if (prikaziPuniBlok) {
+      var slanjeTestInput = wrap.querySelector('.af-slanje-test-input');
+      var slanjeTestBtn = wrap.querySelector('.af-slanje-test-btn');
+      var slanjeKopijaCb = wrap.querySelector('.af-slanje-kopija-cb');
+      var slanjePosaljiBtn = wrap.querySelector('.af-slanje-posalji-btn');
+      var slanjeStatus = wrap.querySelector('.af-slanje-status');
+
+      if (slanjeTestInput && slanjeTestBtn && slanjePosaljiBtn && slanjeStatus) {
+        ucitajTestMail_().then(function(mail) {
+          if (mail && !slanjeTestInput.value) { slanjeTestInput.value = mail; }
+        }).catch(function() { /* tiho — nije kritično ako se test adresa ne pretpopuni */ });
+
+        var slanjePostaviStatus_ = function(tekst, vrsta) {
+          slanjeStatus.textContent = tekst;
+          slanjeStatus.classList.remove('error', 'ok');
+          if (vrsta) { slanjeStatus.classList.add(vrsta); }
+        };
+
+        var dohvatiTekstZaSlanje_ = function() {
+          var tijeloEl = wrap.querySelector('.af-predlozak-tijelo');
+          var predmetEl = wrap.querySelector('.af-predlozak-predmet');
+          return {
+            predmet: predmetEl ? predmetEl.textContent.replace(/^Predmet:\s*/, '') : '',
+            tijelo: tijeloEl ? tijeloEl.textContent : ''
+          };
+        };
+
+        var dohvatiOznaceneMailoveZaSlanje_ = function() {
+          return Array.prototype.slice.call(wrap.querySelectorAll('.af-mail-cb'))
+            .filter(function(c) { return c.checked; })
+            .map(function(c) { return c.value; });
+        };
+
+        slanjeTestInput.addEventListener('click', function(ev) { ev.stopPropagation(); });
+        slanjeTestInput.addEventListener('keydown', function(ev) { ev.stopPropagation(); });
+
+        slanjeTestBtn.addEventListener('click', function(ev) {
+          ev.stopPropagation();
+          var testMail = (slanjeTestInput.value || '').trim();
+          slanjeTestInput.classList.remove('error');
+          if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(testMail)) {
+            slanjeTestInput.classList.add('error');
+            slanjePostaviStatus_('Upišite ispravnu test adresu.', 'error');
+            return;
+          }
+          var tekst = dohvatiTekstZaSlanje_();
+          if (!tekst.tijelo.trim()) {
+            slanjePostaviStatus_('Nema teksta za slanje — odaberi predložak iznad.', 'error');
+            return;
+          }
+          slanjeTestBtn.disabled = true;
+          slanjePosaljiBtn.disabled = true;
+          slanjePostaviStatus_('Šaljem testni mail…', null);
+          gasCall({ action: 'adminPosaljiPonudaTest', token: adminToken, rowIndex: entry.rowIndex, testMail: testMail, predmet: tekst.predmet, tijelo: tekst.tijelo }).then(function(res) {
+            if (handleAuthError(res)) { return; }
+            slanjeTestBtn.disabled = false;
+            slanjePosaljiBtn.disabled = false;
+            if (res.status === 'ok') {
+              slanjePostaviStatus_('Testni mail poslan na ' + testMail + '.', 'ok');
+              testMailCache = testMail;
+            } else {
+              slanjePostaviStatus_(res.message || 'Slanje testnog maila nije uspjelo.', 'error');
+            }
+          }).catch(function() {
+            slanjeTestBtn.disabled = false;
+            slanjePosaljiBtn.disabled = false;
+            slanjePostaviStatus_('Greška u komunikaciji s poslužiteljem.', 'error');
+          });
+        });
+
+        slanjePosaljiBtn.addEventListener('click', function(ev) {
+          ev.stopPropagation();
+          var primatelji = dohvatiOznaceneMailoveZaSlanje_();
+          if (!primatelji.length) {
+            slanjePostaviStatus_('Nijedna adresa nije označena u popisu "Mail adrese za ponudu" iznad.', 'error');
+            return;
+          }
+          var tekst = dohvatiTekstZaSlanje_();
+          if (!tekst.tijelo.trim()) {
+            slanjePostaviStatus_('Nema teksta za slanje — odaberi predložak iznad.', 'error');
+            return;
+          }
+          var kopijaSebi = !!(slanjeKopijaCb && slanjeKopijaCb.checked);
+          if (!confirm('Poslati ponudu na ' + primatelji.length + ' adresa' + (primatelji.length === 1 ? 'u' : 'e') + '?\n\n' + primatelji.join('\n') + (kopijaSebi ? '\n\n(+ kopija tebi na sbatinac.intime@gmail.com)' : ''))) { return; }
+          slanjeTestBtn.disabled = true;
+          slanjePosaljiBtn.disabled = true;
+          slanjePostaviStatus_('Šaljem ponudu…', null);
+          gasCall({ action: 'adminPosaljiPonudaMail', token: adminToken, rowIndex: entry.rowIndex, primatelji: primatelji, predmet: tekst.predmet, tijelo: tekst.tijelo, kopijaSebi: kopijaSebi }).then(function(res) {
+            if (handleAuthError(res)) { return; }
+            slanjeTestBtn.disabled = false;
+            slanjePosaljiBtn.disabled = false;
+            if (res.status === 'ok') {
+              slanjePostaviStatus_('Ponuda poslana na: ' + primatelji.join(', ') + (kopijaSebi ? ' (+ kopija tebi).' : '.'), 'ok');
+            } else {
+              slanjePostaviStatus_(res.message || 'Slanje ponude nije uspjelo.', 'error');
+            }
+          }).catch(function() {
+            slanjeTestBtn.disabled = false;
+            slanjePosaljiBtn.disabled = false;
+            slanjePostaviStatus_('Greška u komunikaciji s poslužiteljem.', 'error');
+          });
+        });
+      }
     }
 
     // Blok "Rok važenja ponude" (Sašin izričit zahtjev, 20.9.2026., dvadeset
