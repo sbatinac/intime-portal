@@ -314,6 +314,8 @@
       <button type="button" class="link-btn" id="show-reject-btn">Ne prihvaćate ponudu? Odbijte je ovdje.</button>
     </div>
     <div id="reject-panel" hidden>
+      <label for="pp-razlog-ime">Ime i prezime (nije obavezno)</label>
+      <input type="text" id="pp-razlog-ime" placeholder="npr. Ivan Ivić" autocomplete="off">
       <label for="pp-razlog">Razlog odbijanja (nije obavezno)</label>
       <textarea id="pp-razlog" rows="3" placeholder="Ako želite, ukratko navedite razlog…"></textarea>
       <p class="form-error" id="reject-error" hidden></p>
@@ -479,7 +481,11 @@
   // Odbijanje ponude — Sašin izričit zahtjev (20.9.2026., dvadeset i treći
   // krug: "možemo li staviti dugme za odbijanje ponude"). Namjerno NE traži
   // OIB/ime/funkciju kao potvrda — odbijanje je niže-rizična radnja, cilj je
-  // da bude jednostavno zabilježiti da klijent ne prihvaća.
+  // da bude jednostavno zabilježiti da klijent ne prihvaća. NADOGRAĐENO
+  // (dvadeset i sedmi krug — "ako odbiju neka piše odbijeno IP adresa i tko
+  // je odbio"): ime i dalje NIJE obavezno (polje ostaje opcionalno, isti
+  // princip niskog trenja), ali se sada, ako se upiše, šalje — i IP adresa
+  // se dohvaća automatski (dohvatiIP_(), isti mehanizam kao kod potvrde).
   document.getElementById('show-reject-btn').addEventListener('click', function() {
     document.getElementById('reject-panel').hidden = false;
     this.hidden = true;
@@ -491,11 +497,14 @@
   document.getElementById('reject-confirm-btn').addEventListener('click', function() {
     var btn = this;
     var razlog = document.getElementById('pp-razlog').value.trim();
+    var imeOdbio = document.getElementById('pp-razlog-ime').value.trim();
     var errEl = document.getElementById('reject-error');
     errEl.hidden = true;
     btn.disabled = true;
     btn.textContent = 'Slanje…';
-    gasCall({ action: 'odbijPonudu', token: trenutniToken, razlog: razlog }).then(function(res) {
+    dohvatiIP_().then(function(ip) {
+      return gasCall({ action: 'odbijPonudu', token: trenutniToken, razlog: razlog, imeOsobe: imeOdbio, ipAdresa: ip });
+    }).then(function(res) {
       if (res.status !== 'ok') {
         btn.disabled = false;
         btn.textContent = 'Da, odbijam ponudu';
