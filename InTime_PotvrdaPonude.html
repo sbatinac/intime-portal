@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="hr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>In Time d.o.o. — Potvrda ponude</title>
+<style>
+
+  /* ============================================================
+     NAPOMENA ZA SAŠU — što treba prije nego što ovo stane u pogon:
+     1) BACKEND: ova stranica govori s ISTIM Apps Script Web Appom kao
+        InTime_PismoNamjere.html, InTime_Admin.html i InTime_Ispravak.html —
+        GAS_WEB_APP_URL niže MORA biti identičan .../exec URL.
+     2) HOSTING: ovu datoteku treba postaviti na ISTO javno dostupno mjesto
+        kao InTime_Ispravak.html (npr. GitHub Pages) — tek TADA u
+        InTime_Code.gs i InTime_Admin.html treba zamijeniti
+        POTVRDA_PONUDE_STRANICA_URL placeholder stvarnim URL-om te stranice
+        (mail predložak koji Saša šalje klijentu sadrži poveznicu sastavljenu
+        od tog URL-a + ?token=...).
+     3) TOK: klijent otvori ovu stranicu s ?token=... u adresi → stranica
+        odmah (bez prijave/lozinke) zove potvrdaPonudeInfo() da provjeri je
+        li poveznica ispravna i je li ponuda već potvrđena → ako nije, klijent
+        unese OIB tvrtke + ime/prezime + funkciju, potvrdi kvačicu ovlaštenja
+        i klikne "Potvrđujem ponudu" → stranica zove potvrdiPonudu(), koja na
+        SERVERU provjerava odgovara li uneseni OIB stvarnom OIB-u tvrtke iz
+        te ponude. Nakon uspješne potvrde poveznica se zaključava — ponovno
+        otvaranje samo prikazuje da je ponuda već potvrđena, s datumom.
+     4) IP ADRESA: dohvaća se OVDJE, u klijentovom pregledniku, preko
+        besplatnog javnog servisa (api.ipify.org) — Apps Script backend nema
+        izravan pristup IP adresi pošiljatelja. Ako dohvat IP adrese ne
+        uspije (npr. servis nedostupan, ili ga preglednik/mrežna politika
+        blokira), potvrda se SVEJEDNO šalje dalje — IP adresa je dodatni
+        trag, ne uvjet za potvrdu.
+     ============================================================ */
+
+  :root{
+    --purple:#229891;
+    --purple-dark:#135450;
+    --graphite:#131313;
+    --grey:#6b6b6b;
+    --line:#e2e6ea;
+    --bg:#f7fafb;
+    --red:#c0392b;
+    --green:#1e8449;
+    --amber:#8a6d00;
+  }
+
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:'Segoe UI', Arial, sans-serif;
+    color:var(--graphite);
+    background:var(--bg);
+    line-height:1.5;
+  }
+  [hidden]{display:none !important;}
+
+  .screen{
+    min-height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:24px;
+  }
+  .card{
+    max-width:460px;
+    width:100%;
+    background:#fff;
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:32px;
+    box-shadow:0 8px 24px rgba(0,0,0,.06);
+  }
+  .card h1{font-size:21px;margin:0 0 6px;color:var(--purple-dark);}
+  .card p.hint{font-size:13.5px;color:var(--grey);margin:6px 0 18px;line-height:1.55;}
+  .card p.hint strong{color:var(--graphite);}
+
+  label{
+    display:block;
+    font-size:13px;
+    font-weight:700;
+    color:var(--graphite);
+    margin:14px 0 5px;
+  }
+  input[type=text]{
+    width:100%;
+    padding:11px 12px;
+    border:1px solid var(--line);
+    border-radius:6px;
+    font-size:14px;
+    font-family:inherit;
+    color:var(--graphite);
+  }
+  .checkbox-row{
+    display:flex;
+    align-items:flex-start;
+    gap:9px;
+    margin:16px 0 4px;
+    font-size:13px;
+    color:var(--graphite);
+    line-height:1.5;
+  }
+  .checkbox-row input[type=checkbox]{margin-top:3px;flex-shrink:0;}
+
+  button{font-family:inherit;cursor:pointer;}
+  .btn{
+    width:100%;
+    padding:12px 22px;
+    border-radius:6px;
+    border:1px solid var(--purple);
+    background:var(--purple);
+    color:#fff;
+    font-size:14.5px;
+    font-weight:700;
+    margin-top:18px;
+  }
+  .btn:hover{background:var(--purple-dark);border-color:var(--purple-dark);}
+  .btn:disabled{background:#a9c9c7;border-color:#a9c9c7;cursor:not-allowed;}
+
+  .form-error{color:var(--red);font-size:13px;margin:10px 0 0;}
+  .form-ok{color:var(--green);font-size:13px;margin:10px 0 0;}
+
+  .status-icon{font-size:34px;line-height:1;margin-bottom:10px;}
+  .status-icon.ok{color:var(--green);}
+  .status-icon.info{color:var(--purple);}
+  .status-icon.err{color:var(--red);}
+
+  .company-box{
+    background:#eef7f6;
+    border:1px solid #bfe3e0;
+    border-left:4px solid var(--purple);
+    border-radius:8px;
+    padding:12px 14px;
+    font-size:14px;
+    color:#0f4d49;
+    margin:0 0 6px;
+  }
+  .company-box strong{display:block;font-size:15.5px;margin-bottom:2px;}
+
+  .site-footer{
+    max-width:900px;
+    margin:0 auto;
+    padding:0 24px 30px;
+    text-align:center;
+    font-size:12px;
+    color:var(--grey);
+    line-height:1.6;
+  }
+
+</style>
+</head>
+<body>
+
+<div id="loading-screen" class="screen">
+  <div class="card" style="text-align:center;">
+    <p class="hint" style="margin:0;">Učitavanje…</p>
+  </div>
+</div>
+
+<div id="no-token-screen" class="screen" hidden>
+  <div class="card">
+    <div class="status-icon err">⚠</div>
+    <h1>Poveznica nije ispravna</h1>
+    <p class="hint" id="no-token-message">Ova poveznica nije ispravna ili je nepotpuna. Provjerite jeste li poveznicu u cijelosti kopirali iz e-maila, ili nas kontaktirajte na <a href="mailto:sbatinac.intime@gmail.com">sbatinac.intime@gmail.com</a>.</p>
+  </div>
+</div>
+
+<div id="already-screen" class="screen" hidden>
+  <div class="card">
+    <div class="status-icon ok">✓</div>
+    <h1>Ponuda je već potvrđena</h1>
+    <p class="hint">Tvrtka <strong id="already-naziv"></strong> je već potvrdila prihvaćanje ove ponude, <strong id="already-datum"></strong>. Nije potrebna nikakva dodatna radnja.</p>
+    <p class="hint" style="margin-top:14px;">Za sva pitanja javite nam se na <a href="mailto:sbatinac.intime@gmail.com">sbatinac.intime@gmail.com</a>.</p>
+  </div>
+</div>
+
+<div id="form-screen" class="screen" hidden>
+  <div class="card">
+    <h1>Potvrda prihvaćanja ponude</h1>
+    <div class="company-box">
+      <strong id="form-naziv"></strong>
+      Za potvrdu prihvaćanja ponude In Time d.o.o. unesite podatke ispod.
+    </div>
+    <p class="hint">OIB tvrtke potvrđuje da je BAŠ ova tvrtka ta koja prihvaća ponudu; ime, prezime i funkcija bilježe se kao trag o tome tko je konkretno potvrdio.</p>
+
+    <form id="potvrda-form" onsubmit="return handleSubmit(event)">
+      <label for="pp-oib">OIB tvrtke</label>
+      <input type="text" id="pp-oib" inputmode="numeric" maxlength="11" placeholder="11 znamenki" autocomplete="off" required>
+
+      <label for="pp-ime">Ime i prezime osobe koja potvrđuje</label>
+      <input type="text" id="pp-ime" placeholder="npr. Ivan Ivić" autocomplete="off" required>
+
+      <label for="pp-funkcija">Funkcija / pozicija</label>
+      <input type="text" id="pp-funkcija" placeholder="npr. direktor, opunomoćenik" autocomplete="off" required>
+
+      <label class="checkbox-row" for="pp-ovlasten">
+        <input type="checkbox" id="pp-ovlasten" required>
+        <span>Potvrđujem da sam ovlašten/a prihvatiti ovu ponudu u ime gore navedene tvrtke.</span>
+      </label>
+
+      <p class="form-error" id="form-error" hidden></p>
+      <button type="submit" class="btn" id="submit-btn">Potvrđujem ponudu</button>
+    </form>
+  </div>
+</div>
+
+<div id="success-screen" class="screen" hidden>
+  <div class="card">
+    <div class="status-icon ok">✓</div>
+    <h1>Hvala, ponuda je potvrđena!</h1>
+    <p class="hint">Zabilježili smo Vašu potvrdu prihvaćanja ponude, <strong id="success-datum"></strong>. In Time d.o.o. tim uskoro Vas kontaktira s idućim koracima.</p>
+    <p class="hint" style="margin-top:14px;">Za sva pitanja javite nam se na <a href="mailto:sbatinac.intime@gmail.com">sbatinac.intime@gmail.com</a>.</p>
+  </div>
+</div>
+
+<footer class="site-footer">
+  <div>Izradio Saša Batinac. Sva prava pridržana.</div>
+  <div>Saša Batinac univ. spec. oec. — voditelj ključnih klijenata — In Time d.o.o. — regija istok</div>
+</footer>
+
+<script>
+  // Isti Apps Script Web App URL kao u InTime_PismoNamjere.html,
+  // InTime_Admin.html i InTime_Ispravak.html — MORA biti identičan .../exec
+  // link (InTime_Code.gs doPost() rutira po `action`).
+  var GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbz73zkx72GhrDZ-t3CamF5wuz-9V7Uxe5z9IkFxHA8F5FBlrIlc7zMUd4_EHTILD9FTAw/exec";
+
+  function gasCall(payload) {
+    return fetch(GAS_WEB_APP_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(payload)
+    }).then(function(res) { return res.json(); });
+  }
+
+  function showScreen(id) {
+    ['loading-screen', 'no-token-screen', 'already-screen', 'form-screen', 'success-screen'].forEach(function(s) {
+      document.getElementById(s).hidden = (s !== id);
+    });
+  }
+
+  // Dohvat javne IP adrese klijentovog preglednika — ČISTO informativno,
+  // nikad ne blokira samu potvrdu ako ne uspije (vidi napomenu na vrhu
+  // datoteke). Kratak timeout da spor/nedostupan servis ne zadrži klijenta.
+  function dohvatiIP_() {
+    var kontroler = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+    var timeoutId = kontroler ? setTimeout(function() { kontroler.abort(); }, 3000) : null;
+    return fetch('https://api.ipify.org?format=json', kontroler ? { signal: kontroler.signal } : {})
+      .then(function(res) { return res.json(); })
+      .then(function(data) { return (data && data.ip) ? String(data.ip) : ''; })
+      .catch(function() { return ''; })
+      .finally(function() { if (timeoutId) { clearTimeout(timeoutId); } });
+  }
+
+  var trenutniToken = null;
+
+  function handleSubmit(ev) {
+    ev.preventDefault();
+    var oib = document.getElementById('pp-oib').value.trim();
+    var ime = document.getElementById('pp-ime').value.trim();
+    var funkcija = document.getElementById('pp-funkcija').value.trim();
+    var errEl = document.getElementById('form-error');
+    errEl.hidden = true;
+
+    if (!oib || !ime || !funkcija) {
+      errEl.textContent = 'Molimo popunite sva polja.';
+      errEl.hidden = false;
+      return false;
+    }
+
+    var btn = document.getElementById('submit-btn');
+    btn.disabled = true;
+    btn.textContent = 'Slanje…';
+
+    dohvatiIP_().then(function(ip) {
+      return gasCall({
+        action: 'potvrdiPonudu',
+        token: trenutniToken,
+        oib: oib,
+        imeOsobe: ime,
+        funkcijaOsobe: funkcija,
+        ipAdresa: ip
+      });
+    }).then(function(res) {
+      if (res.status !== 'ok') {
+        btn.disabled = false;
+        btn.textContent = 'Potvrđujem ponudu';
+        errEl.textContent = res.message || 'Potvrda nije uspjela. Provjerite unesene podatke i pokušajte ponovno.';
+        errEl.hidden = false;
+        if (res.vecPotvrdjeno) {
+          document.getElementById('already-naziv').textContent = document.getElementById('form-naziv').textContent;
+          document.getElementById('already-datum').textContent = res.datumPotvrde || '';
+          showScreen('already-screen');
+        }
+        return;
+      }
+      document.getElementById('success-datum').textContent = res.datumPotvrde || '';
+      showScreen('success-screen');
+    }).catch(function() {
+      btn.disabled = false;
+      btn.textContent = 'Potvrđujem ponudu';
+      errEl.textContent = 'Greška u komunikaciji s poslužiteljem. Provjerite internetsku vezu i pokušajte ponovno.';
+      errEl.hidden = false;
+    });
+
+    return false;
+  }
+
+  (function init() {
+    var params = new URLSearchParams(window.location.search);
+    var token = params.get('token');
+    if (!token) {
+      showScreen('no-token-screen');
+      return;
+    }
+    trenutniToken = token;
+    gasCall({ action: 'potvrdaPonudeInfo', token: token }).then(function(res) {
+      if (res.status !== 'ok') {
+        document.getElementById('no-token-message').textContent = res.message || 'Ova poveznica nije ispravna ili je istekla.';
+        showScreen('no-token-screen');
+        return;
+      }
+      if (res.vecPotvrdjeno) {
+        document.getElementById('already-naziv').textContent = res.nazivTvrtke || '';
+        document.getElementById('already-datum').textContent = res.datumPotvrde || '';
+        showScreen('already-screen');
+        return;
+      }
+      document.getElementById('form-naziv').textContent = res.nazivTvrtke || '';
+      showScreen('form-screen');
+    }).catch(function() {
+      document.getElementById('no-token-message').textContent = 'Greška u komunikaciji s poslužiteljem. Provjerite internetsku vezu i pokušajte ponovno otvoriti poveznicu.';
+      showScreen('no-token-screen');
+    });
+  })();
+</script>
+
+</body>
+</html>

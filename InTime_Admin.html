@@ -389,6 +389,39 @@
   .af-mail-status{font-size:11px;color:var(--grey);margin-top:6px;min-height:14px;}
   .af-mail-status.error{color:var(--red);}
   .af-mail-prazno{font-size:11.5px;color:var(--grey);font-style:italic;padding:2px;}
+  /* Blok "Potvrda klijenta" — čisto-za-čitanje prikaz kad je klijent SAM
+     potvrdio ponudu klikom na {{LINK_POTVRDE}} (vidi buildPotvrdaInfoBlok_()
+     i "POTVRDA PONUDE" blok funkcija u InTime_Code.gs). Zelena boja jer je
+     riječ o pozitivnoj, već završenoj radnji — za razliku od "Mail adrese"/
+     "Dokumenti" blokova koji su uredljivi, ovaj je isključivo prikaz. */
+  .af-potvrda-blok{grid-column:1 / -1;margin-top:4px;}
+  .af-potvrda-blok > label{display:block;font-size:14px;font-weight:800;letter-spacing:.03em;text-transform:uppercase;color:var(--green);margin-bottom:7px;}
+  .af-potvrda-okvir{border:2px solid #bfe3c9;border-radius:14px;padding:12px 14px;background:#eefbf1;font-size:13px;color:#0f5c2e;}
+  .af-potvrda-okvir div{margin-bottom:4px;}
+  .af-potvrda-okvir div:last-child{margin-bottom:0;}
+  .af-potvrda-okvir a{color:var(--purple-dark);font-weight:600;}
+  /* Blok "Predložak za slanje ponude" — vidi buildAdminFieldsBlock() u
+     <script> niže za punu napomenu. */
+  .af-predlozak-blok{grid-column:1 / -1;margin-top:4px;}
+  .af-predlozak-blok > label{display:block;font-size:14px;font-weight:800;letter-spacing:.03em;text-transform:uppercase;color:var(--purple-dark);margin-bottom:7px;}
+  .af-predlozak-okvir{border:2px solid #d8d3ec;border-radius:14px;padding:10px;background:#f5f3fb;}
+  .af-predlozak-alati{display:flex;flex-wrap:wrap;align-items:center;gap:7px;margin-bottom:9px;}
+  .af-predlozak-select{flex:1;min-width:160px;padding:6px 8px;border:1px solid var(--line);border-radius:6px;font-size:12.5px;font-family:inherit;background:#fff;}
+  .af-predlozak-btn{background:none;border:1px solid var(--line);border-radius:6px;cursor:pointer;font-size:11px;font-weight:600;color:var(--purple);padding:5px 9px;white-space:nowrap;}
+  .af-predlozak-btn:hover{color:#fff;background:var(--purple);border-color:var(--purple);}
+  .af-predlozak-pregled{background:#fff;border:1px solid var(--line);border-radius:8px;padding:12px 14px;max-height:340px;overflow-y:auto;}
+  .af-predlozak-predmet{font-size:12.5px;font-weight:700;color:var(--graphite);margin-bottom:8px;padding-bottom:8px;border-bottom:1px dashed var(--line);}
+  .af-predlozak-tijelo{font-size:12.5px;line-height:1.55;color:var(--graphite);white-space:pre-wrap;word-break:break-word;}
+  .af-predlozak-prazno{font-size:11.5px;color:var(--grey);font-style:italic;padding:2px;}
+  .af-predlozak-status{font-size:11px;color:var(--grey);margin-top:6px;min-height:14px;}
+  .af-predlozak-status.error{color:var(--red);}
+  /* Modal uređivanja predložaka — vidi mail-predlozak-modal u HTML-u niže. */
+  #mail-predlozak-modal .modal-box{max-width:640px;width:92vw;}
+  #mail-predlozak-modal textarea{width:100%;box-sizing:border-box;min-height:260px;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:13px;font-family:inherit;line-height:1.5;resize:vertical;}
+  #mail-predlozak-modal input[type=text]{width:100%;box-sizing:border-box;padding:9px 11px;border:1px solid var(--line);border-radius:8px;font-size:13.5px;font-family:inherit;margin-bottom:10px;}
+  .mp-tagovi-hint{font-size:11.5px;color:var(--grey);margin:-4px 0 10px;line-height:1.5;}
+  .mp-tagovi-hint code{background:#f3f4f6;border-radius:4px;padding:1px 5px;font-size:11px;}
+  .mp-zadani-red{display:flex;align-items:center;gap:7px;margin:10px 0;font-size:12.5px;}
   /* Okvir "Dokumenti za ponudu" (dva okvira, drag&drop između njih — vidi
      buildAdminFieldsBlock() u <script> niže za punu napomenu). */
   .af-dok-blok{grid-column:1 / -1;margin-top:4px;}
@@ -922,6 +955,33 @@
   </div>
 </div>
 
+<!-- Modal: uređivanje predloška maila za ponudu (Sašin izričit zahtjev,
+     20.9.2026., dvadeseti krug) — jedan zajednički modal za "+ Novi
+     predložak" i "✎ Uredi" na svakoj kartici (vidi buildAdminFieldsBlock() u
+     <script> niže). "Obriši predložak" (samo kod uređivanja postojećeg)
+     otkriva inline BRISATI-potvrdu unutar ISTOG modala, isti obrazac kao
+     #delete-modal — bez trećeg ugniježđenog modala. -->
+<div class="modal-overlay" id="mail-predlozak-modal" hidden>
+  <div class="modal-box">
+    <h2 id="mail-predlozak-modal-naslov">Novi predložak</h2>
+    <input type="text" id="mp-naziv" placeholder="Naziv predloška (samo za tebe, klijent ga ne vidi)">
+    <input type="text" id="mp-predmet" placeholder="Predmet maila (npr. Ponuda In Time d.o.o. za {{IME_FIRME}})">
+    <textarea id="mp-sadrzaj" placeholder="Tekst maila..."></textarea>
+    <p class="mp-tagovi-hint">Dostupni tagovi — zamjenjuju se stvarnim podacima klijenta kad odabereš predložak na kartici: <code>{{IME_FIRME}}</code> <code>{{IME_OSOBE}}</code> <code>{{USLUGE}}</code> <code>{{BROJ_PONUDE}}</code> <code>{{GRAD}}</code> <code>{{LINK_POTVRDE}}</code> (poveznica za klik-potvrdu ponude, OIB + ime/funkcija)</p>
+    <label class="mp-zadani-red"><input type="checkbox" id="mp-zadani"> Postavi kao zadani predložak (učitava se automatski)</label>
+    <div id="mp-brisi-potvrda" hidden>
+      <p class="warn">Ova radnja se ne može poništiti. Za potvrdu upišite riječ <strong>BRISATI</strong> u polje ispod.</p>
+      <input type="text" id="mp-brisi-input" placeholder="Upišite BRISATI" autocomplete="off">
+    </div>
+    <p class="form-error" id="mail-predlozak-modal-error" hidden></p>
+    <div class="modal-actions">
+      <button class="btn btn-outline btn-small" id="mp-obrisi-btn" onclick="mpZatraziBrisanje()" hidden>Obriši predložak</button>
+      <button class="btn btn-outline btn-small" onclick="closeMailPredlozakModal()">Odustani</button>
+      <button class="btn btn-small" onclick="submitMailPredlozak()">Spremi</button>
+    </div>
+  </div>
+</div>
+
 <script>
   // Isti Apps Script Web App URL kao u InTime_PismoNamjere.html — MORA biti
   // identičan .../exec link (InTime_Code.gs doPost() rutira po `action`).
@@ -933,6 +993,12 @@
   // poveznicu koju je klijent dobio u mailu (ista poveznica se sastavlja
   // i u InTime_Code.gs prilikom slanja maila).
   var ISPRAVAK_STRANICA_URL = 'https://sbatinac.github.io/intime-portal/InTime_Ispravak.html';
+
+  // Isti princip kao ISPRAVAK_STRANICA_URL iznad, samo za NOVU stranicu
+  // InTime_PotvrdaPonude.html — koristi se u renderMailTekst_() niže za
+  // {{LINK_POTVRDE}} tag u mail predlošku. MORA ostati identičan
+  // POTVRDA_PONUDE_STRANICA_URL u InTime_Code.gs.
+  var POTVRDA_PONUDE_STRANICA_URL = 'https://sbatinac.github.io/intime-portal/InTime_PotvrdaPonude.html';
 
   // Popis poglavlja (broj + naslov) za prikaz checkboxova odobrenja ispravka
   // — brojevi i naslovi MORAJU odgovarati POGLAVLJA_ISPRAVAK mapi u
@@ -1435,6 +1501,113 @@
     return osnovnaDokumentacijaPromise;
   }
 
+  // Blok "Predložak za slanje ponude" (buildAdminFieldsBlock, Dio 1, ODMAH
+  // NAKON bloka "Dokumenti za ponudu" — Sašin izričit zahtjev, 20.9.2026.,
+  // dvadeseti krug: "to treba staviti nakon odabira dokumentacije koja ide u
+  // ponudu, onda se odabire template za slanje... koji povlači podatke iz
+  // upitnika"). Isti dijeljeni-cache obrazac kao osnovnaDokumentacijaCache
+  // iznad — popis predložaka je isti za sve kartice, dohvaća se jednom.
+  var mailPredlosciCache = null;
+  var mailPredlosciPromise = null;
+  function ucitajMailPredloske_(forsirajOsvjezavanje) {
+    if (mailPredlosciCache && !forsirajOsvjezavanje) {
+      return Promise.resolve(mailPredlosciCache);
+    }
+    if (mailPredlosciPromise && !forsirajOsvjezavanje) {
+      return mailPredlosciPromise;
+    }
+    mailPredlosciPromise = gasCall({ action: 'adminMailPredlosciList', token: adminToken }).then(function(res) {
+      mailPredlosciPromise = null;
+      if (handleAuthError(res)) { throw new Error('Sesija je istekla.'); }
+      if (res.status === 'ok') {
+        mailPredlosciCache = res.predlosci || [];
+        return mailPredlosciCache;
+      }
+      throw new Error(res.message || 'Dohvaćanje predložaka nije uspjelo.');
+    }).catch(function(err) {
+      mailPredlosciPromise = null;
+      throw err;
+    });
+    return mailPredlosciPromise;
+  }
+
+  // Prikazni (čitljiviji) nazivi za vrijednosti checkboxova "Osnovne usluge"
+  // (9. poglavlje upitnika, InTime_PismoNamjere.html) — koriste se SAMO za
+  // popis usluga u {{USLUGE}} tagu predloška maila, sirova vrijednost ostaje
+  // netaknuta u samom upitniku/Sheetu. Ako se ikad doda nova usluga u
+  // upitnik a ovdje se zaboravi dodati prikazni naziv, izracunajUslugeBullet_
+  // niže sigurno pada natrag na sirovu vrijednost (nikad ne izostavlja
+  // uslugu samo zato što joj nema ljepšeg naziva ovdje).
+  var OSNOVNE_USLUGE_PRIKAZ_ = {
+    'In Time d.o.o. – DOMAĆA INTIME DISTRIBUCIJA': 'Domaća distribucija (unutar Hrvatske)',
+    'Međunarodna InTime distribucija (Slo, BiH, Srb, CG, Sj. Mak.) – UVOZ/IZVOZ': 'Međunarodna distribucija (Slovenija, BiH, Srbija, Crna Gora, Sj. Makedonija) – uvoz/izvoz',
+    'Međunarodna distribucija – FedEx EXPRESS – UVOZ/IZVOZ': 'Međunarodna distribucija – FedEx EXPRESS (uvoz/izvoz)',
+    'Međunarodna distribucija – FedEx ECONOMY – UVOZ/IZVOZ': 'Međunarodna distribucija – FedEx ECONOMY (uvoz/izvoz)',
+    'Carinsko posredovanje – UVOZ/IZVOZ': 'Carinsko posredovanje (uvoz/izvoz)',
+    'Skladištenje i fulfillment usluge': 'Skladištenje i fulfillment usluge'
+  };
+  function izracunajUslugeBullet_(entry) {
+    var sirovo = (fieldVal(entry, 'Osnovne usluge') || '').trim();
+    if (!sirovo) { return ''; }
+    var stavke = sirovo.split(',').map(function(s) { return s.trim(); }).filter(function(s) { return s; });
+    if (!stavke.length) { return ''; }
+    return stavke.map(function(v) { return '* ' + (OSNOVNE_USLUGE_PRIKAZ_[v] || v); }).join('\n');
+  }
+
+  // Prikaz (čisto za čitanje) kad je klijent SAM potvrdio ponudu klikom na
+  // {{LINK_POTVRDE}} poveznicu (vidi "POTVRDA PONUDE" blok funkcija u
+  // InTime_Code.gs) — Sašin izričit zahtjev za "boljim dokazom" tko je
+  // potvrdio, ne samo OIB. Vraća prazan string ako klijent (još) nije sam
+  // potvrdio (npr. ako je Saša ručno upisao "Datum prihvaćanja ponude" bez
+  // da je klijent prošao kroz poveznicu) — tad ovaj blok jednostavno izostaje.
+  function buildPotvrdaInfoBlok_(entry) {
+    var ime = fieldVal(entry, 'Ime i prezime osobe koja je potvrdila ponudu (admin)');
+    if (!ime) { return ''; }
+    var funkcija = fieldVal(entry, 'Funkcija osobe koja je potvrdila ponudu (admin)');
+    var ip = fieldVal(entry, 'IP adresa prilikom potvrde ponude (admin)');
+    var dokUrl = fieldVal(entry, 'Poveznica na dokument potvrde ponude (admin)');
+    return '<div class="af-potvrda-blok">' +
+      '<label>Potvrda klijenta (automatski, klikom na poveznicu)</label>' +
+      '<div class="af-potvrda-okvir">' +
+        '<div>Potvrdio/la: <strong>' + esc(ime) + '</strong>' + (funkcija ? (' (' + esc(funkcija) + ')') : '') + '</div>' +
+        (ip ? ('<div>IP adresa prilikom potvrde: ' + esc(ip) + '</div>') : '') +
+        (dokUrl ? ('<div><a href="' + esc(dokUrl) + '" target="_blank" rel="noopener">📄 Otvori dokument potvrde na Driveu</a></div>') : '') +
+      '</div>' +
+    '</div>';
+  }
+
+  // Zamjena {{TAG}} placeholdera u tekstu predloška stvarnim podacima OVOG
+  // klijenta — čisto client-side (predložak se samo prikazuje/kopira za
+  // ručno slanje, ne šalje se iz sustava, vidi napomenu uz
+  // MAIL_PREDLOSCI_SHEET_NAME u InTime_Code.gs). Kad neki podatak još nije
+  // upisan, ubacuje se kratka placeholder-napomena u UGLATIM zagradama (a
+  // ne prazan string) — da Saša odmah vidi da tu još treba nešto ručno
+  // dopuniti prije slanja, umjesto da mu ostane praznina koju lako previdi.
+  function renderMailTekst_(tekst, entry) {
+    var imeFirme = fieldVal(entry, 'Naziv tvrtke') || '[naziv tvrtke]';
+    var imeOsobe = fieldVal(entry, 'Ime i prezime') || fieldVal(entry, 'Kontakt osoba') || '[ime osobe]';
+    var brojPonude = fieldVal(entry, 'Šifra ponude (admin)') || '[INTRIX šifra ponude]';
+    var grad = fieldVal(entry, 'Mjesto') || '';
+    var uslugeBullet = izracunajUslugeBullet_(entry) || '[klijent nije označio nijednu uslugu u upitniku]';
+    // {{LINK_POTVRDE}} — poveznica na InTime_PotvrdaPonude.html, kojom
+    // klijent OIB-om + imenom/funkcijom potvrđuje prihvaćanje ponude bez
+    // čekanja povratnog maila (Sašin izričit zahtjev, 20.9.2026.). Token se
+    // generira AUTOMATSKI čim zapis uđe u "Ponude" (vidi adminListEntries()
+    // u InTime_Code.gs) — u pravilu je već ovdje prisutan; placeholder ispod
+    // pokriva jedino rubni slučaj prikaza prije prvog osvježavanja popisa.
+    var potvrdaToken = fieldVal(entry, 'Token za potvrdu ponude (admin)');
+    var linkPotvrde = potvrdaToken
+      ? (POTVRDA_PONUDE_STRANICA_URL + '?token=' + encodeURIComponent(potvrdaToken))
+      : '[poveznica za potvrdu ponude — osvježi stranicu ako se ne prikaže]';
+    return String(tekst || '')
+      .replace(/\{\{IME_FIRME\}\}/g, imeFirme)
+      .replace(/\{\{IME_OSOBE\}\}/g, imeOsobe)
+      .replace(/\{\{BROJ_PONUDE\}\}/g, brojPonude)
+      .replace(/\{\{USLUGE\}\}/g, uslugeBullet)
+      .replace(/\{\{GRAD\}\}/g, grad)
+      .replace(/\{\{LINK_POTVRDE\}\}/g, linkPotvrde);
+  }
+
   function loadCounters() {
     gasCall({ action: 'adminGetCounters', token: adminToken }).then(function(res) {
       if (handleAuthError(res)) { return; }
@@ -1482,6 +1655,106 @@
       }
     }).catch(function() {
       var errEl = document.getElementById('reset-modal-error');
+      errEl.textContent = 'Greška u komunikaciji s poslužiteljem.';
+      errEl.hidden = false;
+    });
+  }
+
+  // ==== Modal "Predložak za slanje ponude" — vidi #mail-predlozak-modal u
+  // HTML-u iznad i buildAdminFieldsBlock() niže (gumbi "+ Novi predložak" i
+  // "✎ Uredi" pozivaju openMailPredlozakModal). mpTrenutniRowIndex prati
+  // uređuje li se postojeći predložak (broj) ili se stvara nov (null).
+  var mpTrenutniRowIndex = null;
+  function openMailPredlozakModal(predlozak) {
+    mpTrenutniRowIndex = predlozak ? predlozak.rowIndex : null;
+    document.getElementById('mail-predlozak-modal-naslov').textContent = predlozak ? 'Uredi predložak' : 'Novi predložak';
+    document.getElementById('mp-naziv').value = predlozak ? predlozak.naziv : '';
+    document.getElementById('mp-predmet').value = predlozak ? predlozak.predmet : '';
+    document.getElementById('mp-sadrzaj').value = predlozak ? predlozak.sadrzaj : MAIL_PREDLOZAK_PRAZAN_SADRZAJ_;
+    document.getElementById('mp-zadani').checked = !!(predlozak && predlozak.zadani);
+    document.getElementById('mp-brisi-potvrda').hidden = true;
+    document.getElementById('mp-brisi-input').value = '';
+    document.getElementById('mail-predlozak-modal-error').hidden = true;
+    document.getElementById('mp-obrisi-btn').hidden = !predlozak;
+    document.getElementById('mp-obrisi-btn').textContent = 'Obriši predložak';
+    document.getElementById('mail-predlozak-modal').hidden = false;
+  }
+  // Prazan predložak kreće s ista 4 taga kao zadani, da Saša odmah vidi
+  // obrazac umjesto potpuno praznog polja kad klikne "+ Novi predložak".
+  var MAIL_PREDLOZAK_PRAZAN_SADRZAJ_ = 'Poštovani {{IME_OSOBE}},\n\nŠaljemo Vam ponudu za tvrtku {{IME_FIRME}} za sljedeće usluge:\n\n{{USLUGE}}\n\n';
+  function closeMailPredlozakModal() {
+    document.getElementById('mail-predlozak-modal').hidden = true;
+    mpTrenutniRowIndex = null;
+  }
+  // Gumb "Obriši predložak" radi u dva klika: prvi otkriva BRISATI-potvrdu
+  // i mijenja natpis gumba, drugi (na "Potvrdi brisanje") stvarno šalje
+  // brisanje — bez trećeg ugniježđenog modala.
+  function mpZatraziBrisanje() {
+    var potvrdaDiv = document.getElementById('mp-brisi-potvrda');
+    if (potvrdaDiv.hidden) {
+      potvrdaDiv.hidden = false;
+      document.getElementById('mp-obrisi-btn').textContent = 'Potvrdi brisanje';
+      return;
+    }
+    submitMailPredlozakObrisi_();
+  }
+  // Poziva se nakon uspješnog spremanja/brisanja — obavezno OSVJEŽI cache
+  // (inače bi svaka kartica i dalje prikazivala stari popis) pa tek onda
+  // ponovno učita/renderira sve kartice, isti obrazac kao prebaciBtn-ovi
+  // niže (loadAll() nakon promjene koja utječe na cijeli admin, ne samo na
+  // jedan zapis).
+  function mpOsvjeziNakonPromjene_() {
+    mailPredlosciCache = null;
+    closeMailPredlozakModal();
+    loadAll();
+  }
+  function submitMailPredlozak() {
+    var naziv = document.getElementById('mp-naziv').value.trim();
+    var predmet = document.getElementById('mp-predmet').value.trim();
+    var sadrzaj = document.getElementById('mp-sadrzaj').value.trim();
+    var errEl = document.getElementById('mail-predlozak-modal-error');
+    if (!naziv || !sadrzaj) {
+      errEl.textContent = 'Naziv i sadržaj predloška su obavezni.';
+      errEl.hidden = false;
+      return;
+    }
+    var predlozak = {
+      rowIndex: mpTrenutniRowIndex,
+      naziv: naziv,
+      predmet: predmet,
+      sadrzaj: sadrzaj,
+      zadani: document.getElementById('mp-zadani').checked
+    };
+    gasCall({ action: 'adminMailPredlozakSpremi', token: adminToken, predlozak: predlozak }).then(function(res) {
+      if (handleAuthError(res)) { return; }
+      if (res.status === 'ok') {
+        mpOsvjeziNakonPromjene_();
+      } else {
+        errEl.textContent = res.message || 'Spremanje nije uspjelo.';
+        errEl.hidden = false;
+      }
+    }).catch(function() {
+      errEl.textContent = 'Greška u komunikaciji s poslužiteljem.';
+      errEl.hidden = false;
+    });
+  }
+  function submitMailPredlozakObrisi_() {
+    var errEl = document.getElementById('mail-predlozak-modal-error');
+    var rijec = document.getElementById('mp-brisi-input').value.trim();
+    if (rijec !== 'BRISATI' || !mpTrenutniRowIndex) {
+      errEl.textContent = 'Za potvrdu upišite točno riječ BRISATI.';
+      errEl.hidden = false;
+      return;
+    }
+    gasCall({ action: 'adminMailPredlozakObrisi', token: adminToken, rowIndex: mpTrenutniRowIndex, confirmWord: rijec }).then(function(res) {
+      if (handleAuthError(res)) { return; }
+      if (res.status === 'ok') {
+        mpOsvjeziNakonPromjene_();
+      } else {
+        errEl.textContent = res.message || 'Brisanje nije uspjelo.';
+        errEl.hidden = false;
+      }
+    }).catch(function() {
       errEl.textContent = 'Greška u komunikaciji s poslužiteljem.';
       errEl.hidden = false;
     });
@@ -3354,6 +3627,7 @@
         '</div>' +
         '<div><label>Datum prihvaćanja ponude</label>' +
           '<input type="text" class="af-datum-prihvacanja" placeholder="npr. 25.09.2026" value="' + esc(fieldVal(entry, 'Datum prihvaćanja ponude (admin)')) + '"></div>' +
+        buildPotvrdaInfoBlok_(entry) +
         '<div class="af-mail-blok">' +
           '<label>Mail adrese za ponudu</label>' +
           '<div class="af-mail-okvir">' +
@@ -3385,6 +3659,19 @@
               '<div class="af-dok-cilj-hint">Klikni ili povuci dokument iz lijevog okvira — ili dovuci datoteku izravno s računala.</div>' +
               '<div class="af-dok-status"></div>' +
             '</div>' +
+          '</div>' +
+        '</div>' +
+        '<div class="af-predlozak-blok">' +
+          '<label>Predložak za slanje ponude</label>' +
+          '<div class="af-predlozak-okvir">' +
+            '<div class="af-predlozak-alati">' +
+              '<select class="af-predlozak-select"><option value="">Učitavanje…</option></select>' +
+              '<button type="button" class="af-predlozak-btn af-predlozak-novi">+ Novi predložak</button>' +
+              '<button type="button" class="af-predlozak-btn af-predlozak-uredi">✎ Uredi</button>' +
+              '<button type="button" class="af-predlozak-btn af-predlozak-kopiraj">📋 Kopiraj tekst</button>' +
+            '</div>' +
+            '<div class="af-predlozak-pregled"><div class="af-predlozak-prazno">Učitavanje predložaka…</div></div>' +
+            '<div class="af-predlozak-status"></div>' +
           '</div>' +
         '</div>' +
       '</div>' +
@@ -3891,6 +4178,90 @@
           var internaStavka = JSON.parse(sirovoInterno);
           if (internaStavka && internaStavka.source === 'osnovna' && internaStavka.id) { dodajDokumentUPonudu_(internaStavka); }
         } catch (errInternaStavka) { /* nevaljan drop, tiho ignoriraj */ }
+      });
+    }
+
+    // Blok "Predložak za slanje ponude" — izbornik (select) učitava popis
+    // predložaka (dijeljeni cache, vidi ucitajMailPredloske_ gore), pregled
+    // dolje uvijek prikazuje IZABRANI predložak s tagovima već zamijenjenim
+    // stvarnim podacima OVOG klijenta (renderMailTekst_). "✎ Uredi"/"+ Novi
+    // predložak" otvaraju zajednički #mail-predlozak-modal; nakon spremanja/
+    // brisanja ondje cijeli admin se ponovno učita (mpOsvjeziNakonPromjene_),
+    // pa se izbornik ovdje sam iznova izgradi sa svježim popisom.
+    if (prikaziPuniBlok) {
+      var predlozakSelect = wrap.querySelector('.af-predlozak-select');
+      var predlozakPregled = wrap.querySelector('.af-predlozak-pregled');
+      var predlozakStatus = wrap.querySelector('.af-predlozak-status');
+      var predlozakNoviBtn = wrap.querySelector('.af-predlozak-novi');
+      var predlozakUrediBtn = wrap.querySelector('.af-predlozak-uredi');
+      var predlozakKopirajBtn = wrap.querySelector('.af-predlozak-kopiraj');
+      var predlosciLokalno = [];
+
+      var renderPregled_ = function() {
+        var odabraniId = parseInt(predlozakSelect.value, 10);
+        var odabrani = predlosciLokalno.filter(function(p) { return p.rowIndex === odabraniId; })[0];
+        if (!odabrani) {
+          predlozakPregled.innerHTML = '<div class="af-predlozak-prazno">Nema još nijednog predloška — klikni "+ Novi predložak".</div>';
+          predlozakUrediBtn.disabled = true;
+          predlozakKopirajBtn.disabled = true;
+          return;
+        }
+        predlozakUrediBtn.disabled = false;
+        predlozakKopirajBtn.disabled = false;
+        var predmetIzrenderiran = renderMailTekst_(odabrani.predmet, entry);
+        var tijeloIzrenderirano = renderMailTekst_(odabrani.sadrzaj, entry);
+        predlozakPregled.innerHTML =
+          (predmetIzrenderiran ? '<div class="af-predlozak-predmet">Predmet: ' + esc(predmetIzrenderiran) + '</div>' : '') +
+          '<div class="af-predlozak-tijelo">' + esc(tijeloIzrenderirano) + '</div>';
+      };
+
+      var popuniIzbornik_ = function(predlosci) {
+        predlosciLokalno = predlosci || [];
+        if (!predlosciLokalno.length) {
+          predlozakSelect.innerHTML = '<option value="">— nema predložaka —</option>';
+          renderPregled_();
+          return;
+        }
+        var zadaniId = (predlosciLokalno.filter(function(p) { return p.zadani; })[0] || predlosciLokalno[0]).rowIndex;
+        predlozakSelect.innerHTML = predlosciLokalno.map(function(p) {
+          return '<option value="' + p.rowIndex + '"' + (p.rowIndex === zadaniId ? ' selected' : '') + '>' + esc(p.naziv) + (p.zadani ? ' (zadani)' : '') + '</option>';
+        }).join('');
+        renderPregled_();
+      };
+
+      predlozakPregled.innerHTML = '<div class="af-predlozak-prazno">Učitavanje predložaka…</div>';
+      ucitajMailPredloske_(false).then(popuniIzbornik_).catch(function(err) {
+        predlozakPregled.innerHTML = '<div class="af-predlozak-prazno">Greška: ' + esc((err && err.message) || 'nepoznata greška') + '</div>';
+      });
+
+      predlozakSelect.addEventListener('change', function(ev) { ev.stopPropagation(); renderPregled_(); });
+      predlozakSelect.addEventListener('click', function(ev) { ev.stopPropagation(); });
+
+      predlozakNoviBtn.addEventListener('click', function(ev) { ev.stopPropagation(); openMailPredlozakModal(null); });
+      predlozakUrediBtn.addEventListener('click', function(ev) {
+        ev.stopPropagation();
+        var odabraniId = parseInt(predlozakSelect.value, 10);
+        var odabrani = predlosciLokalno.filter(function(p) { return p.rowIndex === odabraniId; })[0];
+        if (odabrani) { openMailPredlozakModal(odabrani); }
+      });
+      predlozakKopirajBtn.addEventListener('click', function(ev) {
+        ev.stopPropagation();
+        var tijelo = predlozakPregled.querySelector('.af-predlozak-tijelo');
+        var predmetEl = predlozakPregled.querySelector('.af-predlozak-predmet');
+        var tekstZaKopiranje = (predmetEl ? predmetEl.textContent + '\n\n' : '') + (tijelo ? tijelo.textContent : '');
+        if (!tekstZaKopiranje.trim()) { return; }
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(tekstZaKopiranje).then(function() {
+            predlozakStatus.textContent = 'Kopirano u međuspremnik.';
+            predlozakStatus.classList.remove('error');
+          }).catch(function() {
+            predlozakStatus.textContent = 'Kopiranje nije uspjelo — označi i kopiraj ručno.';
+            predlozakStatus.classList.add('error');
+          });
+        } else {
+          predlozakStatus.textContent = 'Kopiranje nije podržano u ovom pregledniku — označi i kopiraj ručno.';
+          predlozakStatus.classList.add('error');
+        }
       });
     }
 
