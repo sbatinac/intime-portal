@@ -400,6 +400,46 @@
   .af-potvrda-okvir div{margin-bottom:4px;}
   .af-potvrda-okvir div:last-child{margin-bottom:0;}
   .af-potvrda-okvir a{color:var(--purple-dark);font-weight:600;}
+  /* Blok "Ponuda — slanje i status" (do dvadeset i drugog kruga: "Rok
+     važenja ponude") — vidi buildAdminFieldsBlock() u <script> niže za punu
+     napomenu. Ista boja kao "Predložak" blok (ljubičasta), jer izravno hrani
+     {{ROK_VAZENJA}} tag u njemu. Dvadeset i treći krug dodao: barvni status
+     bedž, brojač do isteka (dan/sat/minuta/sekunda), okvir za kopiranje
+     poveznice, gumbe "Poništi ponudu"/"Generiraj novu ponudu" i povijest
+     prijašnjih slanja. */
+  .af-rok-blok{grid-column:1 / -1;margin-top:4px;}
+  .af-rok-blok > label{display:block;font-size:14px;font-weight:800;letter-spacing:.03em;text-transform:uppercase;color:var(--purple-dark);margin-bottom:7px;}
+  .af-rok-okvir{background:#f5f3fb;border:1px solid #d8d3ec;border-radius:10px;padding:12px 14px;}
+  .af-rok-status-badge{display:inline-block;padding:3px 11px;border-radius:20px;font-size:11px;font-weight:800;letter-spacing:.02em;text-transform:uppercase;margin-bottom:9px;}
+  .af-rok-status-badge.st-nije_poslano{background:#e6e6e6;color:#555;}
+  .af-rok-status-badge.st-na_cekanju{background:#fdf3d8;color:#8a6d00;}
+  .af-rok-status-badge.st-potvrdjena{background:#dff2e3;color:var(--green);}
+  .af-rok-status-badge.st-odbijena{background:#fbe3e0;color:var(--red);}
+  .af-rok-status-badge.st-ponistena{background:#eaeaea;color:#666;}
+  .af-rok-status-badge.st-istekla{background:#fde3c2;color:#a35b00;}
+  .af-rok-trenutno{font-size:13px;color:var(--graphite);margin-bottom:6px;line-height:1.6;}
+  .af-rok-trenutno strong{color:var(--purple-dark);}
+  .af-rok-brojac{font-size:12.5px;font-weight:700;color:var(--purple-dark);margin-bottom:10px;}
+  .af-rok-link-red{display:flex;gap:6px;margin-bottom:10px;}
+  .af-rok-link-red input{flex:1;min-width:0;padding:7px 9px;border:1px solid var(--line);border-radius:6px;font-size:12px;color:var(--graphite);background:#fff;}
+  .af-rok-izbor{display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
+  .af-rok-izbor select{padding:7px 10px;border:1px solid var(--line);border-radius:6px;font-size:13px;font-family:inherit;}
+  .af-rok-btn{padding:7px 12px;border-radius:6px;border:1px solid var(--purple);background:#fff;color:var(--purple);font-size:12.5px;font-weight:700;cursor:pointer;}
+  .af-rok-btn:hover{background:var(--purple);color:#fff;}
+  .af-rok-btn:disabled{opacity:.4;cursor:not-allowed;}
+  .af-rok-btn:disabled:hover{background:#fff;color:var(--purple);}
+  .af-rok-btn.danger{border-color:var(--red);color:var(--red);}
+  .af-rok-btn.danger:hover{background:var(--red);color:#fff;}
+  .af-rok-btn.danger:disabled:hover{background:#fff;color:var(--red);}
+  .af-rok-btn.uspjeh{border-color:var(--green);color:var(--green);}
+  .af-rok-btn.uspjeh:hover{background:var(--green);color:#fff;}
+  .af-rok-btn.uspjeh:disabled:hover{background:#fff;color:var(--green);}
+  .af-rok-status{font-size:11px;color:var(--grey);margin-top:6px;min-height:14px;}
+  .af-rok-status.error{color:var(--red);}
+  .af-rok-status.ok{color:var(--green);}
+  .af-rok-povijest{margin-top:10px;padding-top:8px;border-top:1px dashed #d8d3ec;font-size:11.5px;color:var(--grey);}
+  .af-rok-povijest-naslov{font-weight:700;color:var(--graphite);margin-bottom:4px;}
+  .af-rok-povijest-stavka{margin-bottom:3px;}
   /* Blok "Predložak za slanje ponude" — vidi buildAdminFieldsBlock() u
      <script> niže za punu napomenu. */
   .af-predlozak-blok{grid-column:1 / -1;margin-top:4px;}
@@ -967,7 +1007,7 @@
     <input type="text" id="mp-naziv" placeholder="Naziv predloška (samo za tebe, klijent ga ne vidi)">
     <input type="text" id="mp-predmet" placeholder="Predmet maila (npr. Ponuda In Time d.o.o. za {{IME_FIRME}})">
     <textarea id="mp-sadrzaj" placeholder="Tekst maila..."></textarea>
-    <p class="mp-tagovi-hint">Dostupni tagovi — zamjenjuju se stvarnim podacima klijenta kad odabereš predložak na kartici: <code>{{IME_FIRME}}</code> <code>{{IME_OSOBE}}</code> <code>{{USLUGE}}</code> <code>{{BROJ_PONUDE}}</code> <code>{{GRAD}}</code> <code>{{LINK_POTVRDE}}</code> (poveznica za klik-potvrdu ponude, OIB + ime/funkcija)</p>
+    <p class="mp-tagovi-hint">Dostupni tagovi — zamjenjuju se stvarnim podacima klijenta kad odabereš predložak na kartici: <code>{{IME_FIRME}}</code> <code>{{IME_OSOBE}}</code> <code>{{USLUGE}}</code> <code>{{BROJ_PONUDE}}</code> <code>{{GRAD}}</code> <code>{{LINK_POTVRDE}}</code> (poveznica za klik-potvrdu ponude, OIB + ime/funkcija) <code>{{ROK_VAZENJA}}</code> (datum isteka ponude — postavlja se u bloku "Rok važenja ponude")</p>
     <label class="mp-zadani-red"><input type="checkbox" id="mp-zadani"> Postavi kao zadani predložak (učitava se automatski)</label>
     <div id="mp-brisi-potvrda" hidden>
       <p class="warn">Ova radnja se ne može poništiti. Za potvrdu upišite riječ <strong>BRISATI</strong> u polje ispod.</p>
@@ -1599,13 +1639,22 @@
     var linkPotvrde = potvrdaToken
       ? (POTVRDA_PONUDE_STRANICA_URL + '?token=' + encodeURIComponent(potvrdaToken))
       : '[poveznica za potvrdu ponude — osvježi stranicu ako se ne prikaže]';
+    // {{ROK_VAZENJA}} — datum isteka ponude (Sašin izričit zahtjev, 20.9.2026.,
+    // dvadeset i drugi krug: izbornik 7/15/21/30 dana u istoimenom bloku
+    // "Rok važenja ponude" iznad). Polje je već formatirano kao
+    // "dd.MM.yyyy. HH:mm" (vidi adminListEntries u InTime_Code.gs, generičko
+    // formatiranje svih Date polja) — ovdje se vremenski dio (uvijek 23:59,
+    // vidi adminPostaviRokPonude_) odsijeca, tagu treba samo datum.
+    var rokSirovo = fieldVal(entry, 'Datum isteka ponude (admin)');
+    var rokPrikaz = rokSirovo ? String(rokSirovo).replace(/\s\d{2}:\d{2}$/, '') : '[rok važenja nije postavljen — odaberi u polju "Rok važenja ponude" iznad]';
     return String(tekst || '')
       .replace(/\{\{IME_FIRME\}\}/g, imeFirme)
       .replace(/\{\{IME_OSOBE\}\}/g, imeOsobe)
       .replace(/\{\{BROJ_PONUDE\}\}/g, brojPonude)
       .replace(/\{\{USLUGE\}\}/g, uslugeBullet)
       .replace(/\{\{GRAD\}\}/g, grad)
-      .replace(/\{\{LINK_POTVRDE\}\}/g, linkPotvrde);
+      .replace(/\{\{LINK_POTVRDE\}\}/g, linkPotvrde)
+      .replace(/\{\{ROK_VAZENJA\}\}/g, rokPrikaz);
   }
 
   function loadCounters() {
@@ -3661,6 +3710,31 @@
             '</div>' +
           '</div>' +
         '</div>' +
+        '<div class="af-rok-blok">' +
+          '<label>Ponuda — slanje i status</label>' +
+          '<div class="af-rok-okvir">' +
+            '<div class="af-rok-status-badge"></div>' +
+            '<div class="af-rok-trenutno"></div>' +
+            '<div class="af-rok-brojac" hidden></div>' +
+            '<div class="af-rok-link-red" hidden>' +
+              '<input type="text" class="af-rok-link-input" readonly>' +
+              '<button type="button" class="af-rok-btn af-rok-kopiraj">📋 Kopiraj link</button>' +
+            '</div>' +
+            '<div class="af-rok-izbor">' +
+              '<select class="af-rok-select">' +
+                '<option value="7">7 dana</option>' +
+                '<option value="15" selected>15 dana</option>' +
+                '<option value="21">21 dan</option>' +
+                '<option value="30">30 dana</option>' +
+              '</select>' +
+              '<button type="button" class="af-rok-btn af-rok-primijeni">Postavi rok</button>' +
+              '<button type="button" class="af-rok-btn danger af-rok-ponisti">⊘ Poništi ponudu</button>' +
+              '<button type="button" class="af-rok-btn uspjeh af-rok-generiraj">↻ Generiraj novu ponudu</button>' +
+            '</div>' +
+            '<div class="af-rok-status"></div>' +
+            '<div class="af-rok-povijest"></div>' +
+          '</div>' +
+        '</div>' +
         '<div class="af-predlozak-blok">' +
           '<label>Predložak za slanje ponude</label>' +
           '<div class="af-predlozak-okvir">' +
@@ -4262,6 +4336,275 @@
           predlozakStatus.textContent = 'Kopiranje nije podržano u ovom pregledniku — označi i kopiraj ručno.';
           predlozakStatus.classList.add('error');
         }
+      });
+    }
+
+    // Blok "Rok važenja ponude" (Sašin izričit zahtjev, 20.9.2026., dvadeset
+    // i drugi krug: izbornik 7/15/21/30 dana, isti gumb služi i za ručno
+    // produženje nakon isteka — vidi adminPostaviRokPonude() u
+    // InTime_Code.gs). Namjerno postavljen NAKON predlozak bloka gore u ovoj
+    // funkciji (redoslijed izvršavanja, ne prikaza — HTML je već postavljen
+    // ranije) tako da može pozvati postojeći renderPregled_() i odmah
+    // osvježiti {{ROK_VAZENJA}} u pregledu predloška, bez čekanja punog
+    // ponovnog učitavanja popisa.
+    // Blok "Ponuda — slanje i status" — Sašin izričit zahtjev (20.9.2026.,
+    // dvadeset i treći krug: "generiraj novu ponudu... da mogu ako odbiju
+    // ponudu poslati drugu... ručna opcija da ja poništim ponudu"). Status
+    // ('nije_poslano'/'na_cekanju'/'potvrdjena'/'odbijena'/'ponistena'/
+    // 'istekla') se ovdje računa IDENTIČNO kao izracunajStatusPonude_() u
+    // InTime_Code.gs (server ostaje pravi autoritet kod svake akcije — ovo
+    // je samo za UX, prikaz bedža/brojača/gumba bez dodatnog round-tripa).
+    if (prikaziPuniBlok) {
+      var rokBadge = wrap.querySelector('.af-rok-status-badge');
+      var rokTrenutno = wrap.querySelector('.af-rok-trenutno');
+      var rokBrojacEl = wrap.querySelector('.af-rok-brojac');
+      var rokLinkRed = wrap.querySelector('.af-rok-link-red');
+      var rokLinkInput = wrap.querySelector('.af-rok-link-input');
+      var rokKopirajBtn = wrap.querySelector('.af-rok-kopiraj');
+      var rokSelect = wrap.querySelector('.af-rok-select');
+      var rokBtn = wrap.querySelector('.af-rok-primijeni');
+      var rokPonistiBtn = wrap.querySelector('.af-rok-ponisti');
+      var rokGenerirajBtn = wrap.querySelector('.af-rok-generiraj');
+      var rokStatus = wrap.querySelector('.af-rok-status');
+      var rokPovijestEl = wrap.querySelector('.af-rok-povijest');
+      var rokTickInterval = null;
+
+      var STATUS_LABEL_PONUDE_ = { nije_poslano: 'Ponuda još nije poslana', na_cekanju: 'Na čekanju odgovora', potvrdjena: 'Prihvaćena', odbijena: 'Odbijena', ponistena: 'Poništena', istekla: 'Istekla' };
+
+      var izracunajIstekDatumObj_ = function() {
+        var istekSirovo = fieldVal(entry, 'Datum isteka ponude (admin)');
+        if (!istekSirovo) { return null; }
+        var datumSamo = String(istekSirovo).replace(/\s\d{2}:\d{2}$/, '');
+        var dijelovi = datumSamo.replace(/\.$/, '').split('.');
+        if (dijelovi.length !== 3) { return null; }
+        return new Date(parseInt(dijelovi[2], 10), parseInt(dijelovi[1], 10) - 1, parseInt(dijelovi[0], 10), 23, 59, 59, 999);
+      };
+
+      var izracunajStatusPonude_ = function() {
+        if (fieldVal(entry, 'Datum prihvaćanja ponude (admin)')) { return 'potvrdjena'; }
+        if (fieldVal(entry, 'Datum odbijanja ponude (admin)')) { return 'odbijena'; }
+        if (fieldVal(entry, 'Datum poništenja ponude (admin)')) { return 'ponistena'; }
+        if (!fieldVal(entry, 'Datum slanja aktivne ponude (admin)')) { return 'nije_poslano'; }
+        var istekObj = izracunajIstekDatumObj_();
+        if (istekObj && istekObj.getTime() < Date.now()) { return 'istekla'; }
+        return 'na_cekanju';
+      };
+
+      var formatirajIsoDatum_ = function(iso) {
+        if (!iso) { return '—'; }
+        var d = new Date(iso);
+        if (isNaN(d.getTime())) { return '—'; }
+        var dv = function(n) { return (n < 10 ? '0' : '') + n; };
+        return dv(d.getDate()) + '.' + dv(d.getMonth() + 1) + '.' + d.getFullYear() + '. ' + dv(d.getHours()) + ':' + dv(d.getMinutes());
+      };
+
+      var zaustaviBrojac_ = function() {
+        if (rokTickInterval) { clearInterval(rokTickInterval); rokTickInterval = null; }
+      };
+
+      // Otkucava svake sekunde dan/sat/minutu/sekundu do isteka roka — Sašin
+      // izričit zahtjev ("otkucava vrijeme do momenta kad ponuda ističe...
+      // dan sati minute sekunde"). Samostalno se zaustavlja ako je kartica
+      // u međuvremenu uklonjena iz DOM-a (osvježavanje popisa), da ne ostane
+      // interval koji nikom više ništa ne prikazuje.
+      var pokreniBrojac_ = function(istekObj) {
+        zaustaviBrojac_();
+        var azuriraj = function() {
+          if (!document.body.contains(wrap)) { zaustaviBrojac_(); return; }
+          var preostaloMs = istekObj.getTime() - Date.now();
+          if (preostaloMs <= 0) {
+            zaustaviBrojac_();
+            renderRokBlok_();
+            return;
+          }
+          var dana = Math.floor(preostaloMs / 86400000);
+          var sati = Math.floor((preostaloMs % 86400000) / 3600000);
+          var minute = Math.floor((preostaloMs % 3600000) / 60000);
+          var sekunde = Math.floor((preostaloMs % 60000) / 1000);
+          rokBrojacEl.textContent = 'Preostalo do isteka: ' + dana + ' d ' + sati + ' h ' + minute + ' min ' + sekunde + ' s';
+        };
+        azuriraj();
+        rokTickInterval = setInterval(azuriraj, 1000);
+      };
+
+      var renderRokBlok_ = function() {
+        var status = izracunajStatusPonude_();
+        rokBadge.textContent = STATUS_LABEL_PONUDE_[status];
+        rokBadge.className = 'af-rok-status-badge st-' + status;
+
+        var redovi = [];
+        var verzija = fieldVal(entry, 'Redni broj slanja ponude (admin)') || 1;
+        var slanje = fieldVal(entry, 'Datum slanja aktivne ponude (admin)');
+        if (slanje) { redovi.push('Poslano (' + esc(String(verzija)) + '. put): <strong>' + esc(slanje) + '</strong>'); }
+        var istek = fieldVal(entry, 'Datum isteka ponude (admin)');
+        if (istek) { redovi.push('Rok do: <strong>' + esc(String(istek).replace(/\s\d{2}:\d{2}$/, '')) + '</strong>'); }
+        if (status === 'odbijena') {
+          var odbDatum = fieldVal(entry, 'Datum odbijanja ponude (admin)');
+          var odbRazlog = fieldVal(entry, 'Razlog odbijanja ponude (admin)');
+          redovi.push('<span style="color:var(--red)">Odbijeno: <strong>' + esc(odbDatum) + '</strong>' + (odbRazlog ? (' — razlog: ' + esc(odbRazlog)) : '') + '</span>');
+        }
+        if (status === 'ponistena') {
+          redovi.push('<span style="color:var(--grey)">Poništeno: <strong>' + esc(fieldVal(entry, 'Datum poništenja ponude (admin)')) + '</strong></span>');
+        }
+        rokTrenutno.innerHTML = redovi.length ? redovi.join('<br>') : 'Odaberi rok i klikni "Pošalji ponudu" — poveznica za klijenta generira se automatski.';
+
+        zaustaviBrojac_();
+        if (status === 'na_cekanju') {
+          var istekObj = izracunajIstekDatumObj_();
+          if (istekObj) {
+            pokreniBrojac_(istekObj);
+            rokBrojacEl.hidden = false;
+          } else {
+            rokBrojacEl.hidden = true;
+          }
+        } else {
+          rokBrojacEl.hidden = true;
+          rokBrojacEl.textContent = '';
+        }
+
+        var tokenVrijednost = fieldVal(entry, 'Token za potvrdu ponude (admin)');
+        if (tokenVrijednost) {
+          rokLinkRed.hidden = false;
+          rokLinkInput.value = POTVRDA_PONUDE_STRANICA_URL + '?token=' + encodeURIComponent(tokenVrijednost);
+        } else {
+          rokLinkRed.hidden = true;
+        }
+
+        if (fieldVal(entry, 'Rok važenja ponude (dana, admin)')) {
+          rokSelect.value = String(fieldVal(entry, 'Rok važenja ponude (dana, admin)'));
+        }
+
+        var mozePostaviRok = (status === 'nije_poslano' || status === 'na_cekanju' || status === 'istekla');
+        rokSelect.disabled = !mozePostaviRok;
+        rokBtn.disabled = !mozePostaviRok;
+        rokBtn.textContent = status === 'nije_poslano' ? 'Pošalji ponudu' : (status === 'istekla' ? 'Produži rok' : 'Postavi rok');
+
+        rokPonistiBtn.hidden = !(status === 'na_cekanju' || status === 'istekla');
+        rokGenerirajBtn.hidden = !(status === 'odbijena' || status === 'ponistena' || status === 'istekla');
+
+        var povijestSirovo = fieldVal(entry, 'Povijest prijašnjih slanja ponude (admin, JSON)');
+        var povijest = [];
+        if (povijestSirovo) { try { povijest = JSON.parse(povijestSirovo); } catch (e) { povijest = []; } }
+        if (povijest.length) {
+          rokPovijestEl.innerHTML = '<div class="af-rok-povijest-naslov">Povijest prijašnjih slanja (' + povijest.length + ')</div>' +
+            povijest.map(function(p) {
+              var statusOpis = STATUS_LABEL_PONUDE_[p.status] || p.status;
+              return '<div class="af-rok-povijest-stavka">' + esc(String(p.verzija)) + '. slanje: ' + esc(formatirajIsoDatum_(p.datumSlanja)) + ' → rok do ' + esc(formatirajIsoDatum_(p.datumIsteka)) + ' — ' + esc(statusOpis) + (p.razlogOdbijanja ? (' (razlog: ' + esc(p.razlogOdbijanja) + ')') : '') + '</div>';
+            }).join('');
+        } else {
+          rokPovijestEl.innerHTML = '';
+        }
+      };
+      renderRokBlok_();
+
+      rokSelect.addEventListener('click', function(ev) { ev.stopPropagation(); });
+      rokSelect.addEventListener('change', function(ev) { ev.stopPropagation(); });
+
+      rokKopirajBtn.addEventListener('click', function(ev) {
+        ev.stopPropagation();
+        rokLinkInput.select();
+        var kopirano = false;
+        try {
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(rokLinkInput.value);
+            kopirano = true;
+          } else {
+            kopirano = document.execCommand('copy');
+          }
+        } catch (e) { kopirano = false; }
+        rokStatus.textContent = kopirano ? 'Poveznica kopirana.' : 'Automatsko kopiranje nije uspjelo — označi i kopiraj ručno.';
+        rokStatus.className = kopirano ? 'af-rok-status ok' : 'af-rok-status error';
+      });
+
+      rokBtn.addEventListener('click', function(ev) {
+        ev.stopPropagation();
+        rokBtn.disabled = true;
+        rokStatus.textContent = 'Spremanje…';
+        rokStatus.className = 'af-rok-status';
+        gasCall({ action: 'adminPostaviRokPonude', token: adminToken, rowIndex: entry.rowIndex, brojDana: rokSelect.value }).then(function(res) {
+          if (handleAuthError(res)) { return; }
+          if (res.status !== 'ok') {
+            rokBtn.disabled = false;
+            rokStatus.textContent = res.message || 'Spremanje nije uspjelo.';
+            rokStatus.className = 'af-rok-status error';
+            return;
+          }
+          entry.fields['Datum isteka ponude (admin)'] = res.datumIstekaPrikaz;
+          entry.fields['Rok važenja ponude (dana, admin)'] = rokSelect.value;
+          if (res.datumSlanjaPrikaz) {
+            entry.fields['Datum slanja aktivne ponude (admin)'] = res.datumSlanjaPrikaz;
+            entry.fields['Redni broj slanja ponude (admin)'] = res.verzija || 1;
+          }
+          renderRokBlok_();
+          rokBtn.disabled = false;
+          rokStatus.textContent = 'Rok postavljen do ' + res.datumIstekaPrikaz + '.';
+          rokStatus.className = 'af-rok-status ok';
+          if (typeof renderPregled_ === 'function') { renderPregled_(); }
+        }).catch(function() {
+          rokBtn.disabled = false;
+          rokStatus.textContent = 'Greška u komunikaciji s poslužiteljem.';
+          rokStatus.className = 'af-rok-status error';
+        });
+      });
+
+      rokPonistiBtn.addEventListener('click', function(ev) {
+        ev.stopPropagation();
+        if (!confirm('Poništiti ovu ponudu? Poveznica koju klijent ima više neće raditi, dok se ne generira nova ponuda.')) { return; }
+        rokPonistiBtn.disabled = true;
+        rokStatus.textContent = 'Poništavanje…';
+        rokStatus.className = 'af-rok-status';
+        gasCall({ action: 'adminPonistiPonudu', token: adminToken, rowIndex: entry.rowIndex }).then(function(res) {
+          rokPonistiBtn.disabled = false;
+          if (handleAuthError(res)) { return; }
+          if (res.status !== 'ok') {
+            rokStatus.textContent = res.message || 'Poništavanje nije uspjelo.';
+            rokStatus.className = 'af-rok-status error';
+            return;
+          }
+          entry.fields['Datum poništenja ponude (admin)'] = res.datumPonistenjaPrikaz;
+          renderRokBlok_();
+          rokStatus.textContent = 'Ponuda poništena.';
+          rokStatus.className = 'af-rok-status ok';
+          if (typeof renderPregled_ === 'function') { renderPregled_(); }
+        }).catch(function() {
+          rokPonistiBtn.disabled = false;
+          rokStatus.textContent = 'Greška u komunikaciji s poslužiteljem.';
+          rokStatus.className = 'af-rok-status error';
+        });
+      });
+
+      rokGenerirajBtn.addEventListener('click', function(ev) {
+        ev.stopPropagation();
+        if (!confirm('Generirati novu ponudu s novom poveznicom za ovog klijenta? Prijašnji pokušaj ostaje zabilježen u povijesti ispod.')) { return; }
+        rokGenerirajBtn.disabled = true;
+        rokStatus.textContent = 'Generiranje…';
+        rokStatus.className = 'af-rok-status';
+        gasCall({ action: 'adminGenerirajNovuPonudu', token: adminToken, rowIndex: entry.rowIndex, brojDana: rokSelect.value }).then(function(res) {
+          rokGenerirajBtn.disabled = false;
+          if (handleAuthError(res)) { return; }
+          if (res.status !== 'ok') {
+            rokStatus.textContent = res.message || 'Generiranje nije uspjelo.';
+            rokStatus.className = 'af-rok-status error';
+            return;
+          }
+          entry.fields['Token za potvrdu ponude (admin)'] = res.token;
+          entry.fields['Redni broj slanja ponude (admin)'] = res.verzija;
+          entry.fields['Datum slanja aktivne ponude (admin)'] = res.datumSlanjaPrikaz;
+          entry.fields['Datum isteka ponude (admin)'] = res.datumIstekaPrikaz;
+          entry.fields['Rok važenja ponude (dana, admin)'] = rokSelect.value;
+          entry.fields['Datum odbijanja ponude (admin)'] = '';
+          entry.fields['Razlog odbijanja ponude (admin)'] = '';
+          entry.fields['Datum poništenja ponude (admin)'] = '';
+          entry.fields['Datum prihvaćanja ponude (admin)'] = '';
+          renderRokBlok_();
+          rokStatus.textContent = res.verzija + '. ponuda generirana — nova poveznica je spremna za kopiranje iznad.';
+          rokStatus.className = 'af-rok-status ok';
+          if (typeof renderPregled_ === 'function') { renderPregled_(); }
+        }).catch(function() {
+          rokGenerirajBtn.disabled = false;
+          rokStatus.textContent = 'Greška u komunikaciji s poslužiteljem.';
+          rokStatus.className = 'af-rok-status error';
+        });
       });
     }
 

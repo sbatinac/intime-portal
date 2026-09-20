@@ -11,26 +11,35 @@
      1) BACKEND: ova stranica govori s ISTIM Apps Script Web Appom kao
         InTime_PismoNamjere.html, InTime_Admin.html i InTime_Ispravak.html —
         GAS_WEB_APP_URL niže MORA biti identičan .../exec URL.
-     2) HOSTING: ovu datoteku treba postaviti na ISTO javno dostupno mjesto
-        kao InTime_Ispravak.html (npr. GitHub Pages) — tek TADA u
-        InTime_Code.gs i InTime_Admin.html treba zamijeniti
-        POTVRDA_PONUDE_STRANICA_URL placeholder stvarnim URL-om te stranice
-        (mail predložak koji Saša šalje klijentu sadrži poveznicu sastavljenu
-        od tog URL-a + ?token=...).
+     2) HOSTING: ovu datoteku TREBA POSTAVITI NA ISTO JAVNO MJESTO KAO
+        "InTime_PotvrdaPonude_banner.jpg" (slika koju referencira
+        <img class="card-banner">) — obje datoteke idu u ISTI folder na
+        istom hostingu kao InTime_Ispravak.html (npr. GitHub Pages), inače se
+        slika neće prikazati. Tek TADA u InTime_Code.gs i InTime_Admin.html
+        treba zamijeniti POTVRDA_PONUDE_STRANICA_URL placeholder stvarnim
+        URL-om te stranice (mail predložak koji Saša šalje klijentu sadrži
+        poveznicu sastavljenu od tog URL-a + ?token=...).
      3) TOK: klijent otvori ovu stranicu s ?token=... u adresi → stranica
         odmah (bez prijave/lozinke) zove potvrdaPonudeInfo() da provjeri je
-        li poveznica ispravna i je li ponuda već potvrđena → ako nije, klijent
-        unese OIB tvrtke + ime/prezime + funkciju, potvrdi kvačicu ovlaštenja
-        i klikne "Potvrđujem ponudu" → stranica zove potvrdiPonudu(), koja na
-        SERVERU provjerava odgovara li uneseni OIB stvarnom OIB-u tvrtke iz
-        te ponude. Nakon uspješne potvrde poveznica se zaključava — ponovno
-        otvaranje samo prikazuje da je ponuda već potvrđena, s datumom.
+        li poveznica ispravna i je li ponuda već potvrđena/odbijena/poništena
+        → ako nije ništa od toga, klijent bira: (a) unese OIB tvrtke +
+        ime/prezime + funkciju, potvrdi kvačicu ovlaštenja i klikne
+        "Potvrđujem ponudu" → stranica zove potvrdiPonudu(), koja na SERVERU
+        provjerava odgovara li uneseni OIB stvarnom OIB-u tvrtke iz te
+        ponude; ili (b) klikne "Ne prihvaćate ponudu? Odbijte je ovdje." →
+        otvara se kratki obrazac (opcionalan razlog) → stranica zove
+        odbijPonudu(), koja ne traži nikakav dokaz identiteta (niže rizična
+        radnja od potvrde). Nakon uspješne potvrde ILI odbijanja poveznica se
+        zaključava — ponovno otvaranje samo prikazuje konačan ishod, s
+        datumom. Ako Saša ručno "poništi" ponudu u adminu, poveznica isto
+        prestaje raditi dok se ne generira nova (novi token/nova poveznica).
      4) IP ADRESA: dohvaća se OVDJE, u klijentovom pregledniku, preko
         besplatnog javnog servisa (api.ipify.org) — Apps Script backend nema
         izravan pristup IP adresi pošiljatelja. Ako dohvat IP adrese ne
         uspije (npr. servis nedostupan, ili ga preglednik/mrežna politika
         blokira), potvrda se SVEJEDNO šalje dalje — IP adresa je dodatni
-        trag, ne uvjet za potvrdu.
+        trag, ne uvjet za potvrdu. Odbijanje IP adresu uopće ne bilježi (nije
+        potrebna za nižerizičnu radnju).
      ============================================================ */
 
   :root{
@@ -137,6 +146,66 @@
   }
   .company-box strong{display:block;font-size:15.5px;margin-bottom:2px;}
 
+  /* Banner slika na vrhu kartice — Sašin izričit zahtjev (20.9.2026.,
+     dvadeset i treći krug: "ugraditi sliku gore"), poslana slika
+     "VERIFIKACIJA PONUDE" (In Time Express branding). Negativna margina
+     razvlači sliku preko cijele širine kartice (koja inače ima padding
+     32px), pa slika izlazi "do ruba" s istim zaobljenim gornjim uglovima
+     kao kartica sama. */
+  .card-banner{
+    display:block;
+    width:calc(100% + 64px);
+    margin:-32px -32px 20px -32px;
+    border-radius:12px 12px 0 0;
+  }
+
+  /* Odbijanje ponude — Sašin izričit zahtjev (20.9.2026., dvadeset i treći
+     krug: "možemo li staviti dugme za odbijanje ponude"). Gumb je namjerno
+     manje upadljiv od "Potvrđujem ponudu" (tekstualna poveznica, ne puni
+     gumb) dok se ne otvori — odbijanje treba biti moguće, ali ne jednako
+     "ponuđeno" kao prihvaćanje. */
+  .reject-row{margin-top:16px;text-align:center;}
+  .link-btn{
+    background:none;
+    border:none;
+    color:var(--grey);
+    font-size:13px;
+    text-decoration:underline;
+    padding:6px 4px;
+  }
+  .link-btn:hover{color:var(--red);}
+  textarea{
+    width:100%;
+    padding:11px 12px;
+    border:1px solid var(--line);
+    border-radius:6px;
+    font-size:14px;
+    font-family:inherit;
+    color:var(--graphite);
+    resize:vertical;
+  }
+  .reject-actions{display:flex;gap:10px;margin-top:14px;}
+  .btn-outline-red{
+    flex:1;
+    padding:11px 14px;
+    border-radius:6px;
+    border:1px solid var(--red);
+    background:#fff;
+    color:var(--red);
+    font-size:13.5px;
+    font-weight:700;
+  }
+  .btn-outline-red:hover{background:var(--red);color:#fff;}
+  .btn-outline-red:disabled{opacity:.5;cursor:not-allowed;}
+  .btn-text{
+    background:none;
+    border:none;
+    color:var(--grey);
+    font-size:13px;
+    text-decoration:underline;
+    padding:11px 8px;
+  }
+
   .site-footer{
     max-width:900px;
     margin:0 auto;
@@ -159,6 +228,7 @@
 
 <div id="no-token-screen" class="screen" hidden>
   <div class="card">
+    <img class="card-banner" src="InTime_PotvrdaPonude_banner.jpg" alt="In Time Express">
     <div class="status-icon err">⚠</div>
     <h1>Poveznica nije ispravna</h1>
     <p class="hint" id="no-token-message">Ova poveznica nije ispravna ili je nepotpuna. Provjerite jeste li poveznicu u cijelosti kopirali iz e-maila, ili nas kontaktirajte na <a href="mailto:sbatinac.intime@gmail.com">sbatinac.intime@gmail.com</a>.</p>
@@ -167,6 +237,7 @@
 
 <div id="already-screen" class="screen" hidden>
   <div class="card">
+    <img class="card-banner" src="InTime_PotvrdaPonude_banner.jpg" alt="In Time Express">
     <div class="status-icon ok">✓</div>
     <h1>Ponuda je već potvrđena</h1>
     <p class="hint">Tvrtka <strong id="already-naziv"></strong> je već potvrdila prihvaćanje ove ponude, <strong id="already-datum"></strong>. Nije potrebna nikakva dodatna radnja.</p>
@@ -174,13 +245,44 @@
   </div>
 </div>
 
+<div id="expired-screen" class="screen" hidden>
+  <div class="card">
+    <img class="card-banner" src="InTime_PotvrdaPonude_banner.jpg" alt="In Time Express">
+    <div class="status-icon err">⏱</div>
+    <h1>Ponuda je istekla</h1>
+    <p class="hint">Rok važenja ove ponude (tvrtka <strong id="expired-naziv"></strong>) istekao je <strong id="expired-datum"></strong>. Ponuda se više ne može potvrditi ovom poveznicom.</p>
+    <p class="hint" style="margin-top:14px;">Za produženje roka ili novu ponudu javite nam se na <a href="mailto:sbatinac.intime@gmail.com">sbatinac.intime@gmail.com</a>.</p>
+  </div>
+</div>
+
+<div id="rejected-screen" class="screen" hidden>
+  <div class="card">
+    <img class="card-banner" src="InTime_PotvrdaPonude_banner.jpg" alt="In Time Express">
+    <div class="status-icon err">✕</div>
+    <h1>Ponuda je odbijena</h1>
+    <p class="hint">Zabilježili smo da tvrtka <strong id="rejected-naziv"></strong> ne prihvaća ovu ponudu<span id="rejected-datum-wrap">, <strong id="rejected-datum"></strong></span>. Hvala Vam na povratnoj informaciji.</p>
+    <p class="hint" style="margin-top:14px;">Ako se predomislite ili želite razgovarati o novoj ponudi, javite nam se na <a href="mailto:sbatinac.intime@gmail.com">sbatinac.intime@gmail.com</a>.</p>
+  </div>
+</div>
+
+<div id="voided-screen" class="screen" hidden>
+  <div class="card">
+    <img class="card-banner" src="InTime_PotvrdaPonude_banner.jpg" alt="In Time Express">
+    <div class="status-icon info">ⓘ</div>
+    <h1>Ova poveznica više nije aktivna</h1>
+    <p class="hint">Ponuda za tvrtku <strong id="voided-naziv"></strong> je povučena s naše strane. Ako očekujete novu ponudu, javite nam se na <a href="mailto:sbatinac.intime@gmail.com">sbatinac.intime@gmail.com</a>.</p>
+  </div>
+</div>
+
 <div id="form-screen" class="screen" hidden>
   <div class="card">
+    <img class="card-banner" src="InTime_PotvrdaPonude_banner.jpg" alt="In Time Express">
     <h1>Potvrda prihvaćanja ponude</h1>
     <div class="company-box">
       <strong id="form-naziv"></strong>
       Za potvrdu prihvaćanja ponude In Time d.o.o. unesite podatke ispod.
     </div>
+    <p class="hint" id="form-rok-brojac" hidden></p>
     <p class="hint">OIB tvrtke potvrđuje da je BAŠ ova tvrtka ta koja prihvaća ponudu; ime, prezime i funkcija bilježe se kao trag o tome tko je konkretno potvrdio.</p>
 
     <form id="potvrda-form" onsubmit="return handleSubmit(event)">
@@ -201,11 +303,25 @@
       <p class="form-error" id="form-error" hidden></p>
       <button type="submit" class="btn" id="submit-btn">Potvrđujem ponudu</button>
     </form>
+
+    <div class="reject-row">
+      <button type="button" class="link-btn" id="show-reject-btn">Ne prihvaćate ponudu? Odbijte je ovdje.</button>
+    </div>
+    <div id="reject-panel" hidden>
+      <label for="pp-razlog">Razlog odbijanja (nije obavezno)</label>
+      <textarea id="pp-razlog" rows="3" placeholder="Ako želite, ukratko navedite razlog…"></textarea>
+      <p class="form-error" id="reject-error" hidden></p>
+      <div class="reject-actions">
+        <button type="button" class="btn-outline-red" id="reject-confirm-btn">Da, odbijam ponudu</button>
+        <button type="button" class="btn-text" id="reject-cancel-btn">Odustani</button>
+      </div>
+    </div>
   </div>
 </div>
 
 <div id="success-screen" class="screen" hidden>
   <div class="card">
+    <img class="card-banner" src="InTime_PotvrdaPonude_banner.jpg" alt="In Time Express">
     <div class="status-icon ok">✓</div>
     <h1>Hvala, ponuda je potvrđena!</h1>
     <p class="hint">Zabilježili smo Vašu potvrdu prihvaćanja ponude, <strong id="success-datum"></strong>. In Time d.o.o. tim uskoro Vas kontaktira s idućim koracima.</p>
@@ -233,9 +349,46 @@
   }
 
   function showScreen(id) {
-    ['loading-screen', 'no-token-screen', 'already-screen', 'form-screen', 'success-screen'].forEach(function(s) {
+    ['loading-screen', 'no-token-screen', 'already-screen', 'expired-screen', 'rejected-screen', 'voided-screen', 'form-screen', 'success-screen'].forEach(function(s) {
       document.getElementById(s).hidden = (s !== id);
     });
+  }
+
+  // Živi brojač "još X dana Y sati" do isteka ponude — čisto UX (server je
+  // uvijek stvarni autoritet, vidi potvrdiPonudu() u InTime_Code.gs, koja
+  // ODBIJA potvrdu nakon isteka bez obzira na ovo). Ažurira se svake minute;
+  // ako istekne dok je stranica otvorena, prebacuje na "istekla" ekran bez
+  // potrebe za ponovnim učitavanjem.
+  var rokBrojacInterval = null;
+  function pokreniRokBrojac_(istekIso, nazivTvrtke) {
+    var brojacEl = document.getElementById('form-rok-brojac');
+    var azuriraj = function() {
+      var preostaloMs = new Date(istekIso).getTime() - Date.now();
+      if (preostaloMs <= 0) {
+        if (rokBrojacInterval) { clearInterval(rokBrojacInterval); }
+        document.getElementById('expired-naziv').textContent = nazivTvrtke || '';
+        document.getElementById('expired-datum').textContent = formatirajDatum_(istekIso);
+        showScreen('expired-screen');
+        return;
+      }
+      var dana = Math.floor(preostaloMs / 86400000);
+      var sati = Math.floor((preostaloMs % 86400000) / 3600000);
+      var rijecDan = (dana % 10 === 1 && dana % 100 !== 11) ? 'dan' : 'dana';
+      var tekst = dana > 0
+        ? ('Ponuda vrijedi još ' + dana + ' ' + rijecDan + (sati > 0 ? (' i ' + sati + ' h') : '') + ' (do ' + formatirajDatum_(istekIso) + ').')
+        : ('Ponuda vrijedi još ' + sati + ' h (do ' + formatirajDatum_(istekIso) + ') — uskoro istječe.');
+      brojacEl.textContent = tekst;
+      brojacEl.hidden = false;
+    };
+    azuriraj();
+    if (rokBrojacInterval) { clearInterval(rokBrojacInterval); }
+    rokBrojacInterval = setInterval(azuriraj, 60000);
+  }
+
+  function formatirajDatum_(iso) {
+    var d = new Date(iso);
+    function dv(n) { return (n < 10 ? '0' : '') + n; }
+    return dv(d.getDate()) + '.' + dv(d.getMonth() + 1) + '.' + d.getFullYear() + '.';
   }
 
   // Dohvat javne IP adrese klijentovog preglednika — ČISTO informativno,
@@ -290,6 +443,18 @@
           document.getElementById('already-naziv').textContent = document.getElementById('form-naziv').textContent;
           document.getElementById('already-datum').textContent = res.datumPotvrde || '';
           showScreen('already-screen');
+        } else if (res.odbijena) {
+          // Netko je (ranije, na istoj poveznici) već kliknuo "Odbijam
+          // ponudu" — potvrda se više ne može poslati.
+          document.getElementById('rejected-naziv').textContent = document.getElementById('form-naziv').textContent;
+          document.getElementById('rejected-datum').textContent = '';
+          showScreen('rejected-screen');
+        } else if (res.istekla) {
+          // Rijedak slučaj — ponuda je istekla DOK je klijent popunjavao
+          // obrazac (brojač na ekranu je informativan, server je autoritet).
+          document.getElementById('expired-naziv').textContent = document.getElementById('form-naziv').textContent;
+          document.getElementById('expired-datum').textContent = '';
+          showScreen('expired-screen');
         }
         return;
       }
@@ -304,6 +469,49 @@
 
     return false;
   }
+
+  // Odbijanje ponude — Sašin izričit zahtjev (20.9.2026., dvadeset i treći
+  // krug: "možemo li staviti dugme za odbijanje ponude"). Namjerno NE traži
+  // OIB/ime/funkciju kao potvrda — odbijanje je niže-rizična radnja, cilj je
+  // da bude jednostavno zabilježiti da klijent ne prihvaća.
+  document.getElementById('show-reject-btn').addEventListener('click', function() {
+    document.getElementById('reject-panel').hidden = false;
+    this.hidden = true;
+  });
+  document.getElementById('reject-cancel-btn').addEventListener('click', function() {
+    document.getElementById('reject-panel').hidden = true;
+    document.getElementById('show-reject-btn').hidden = false;
+  });
+  document.getElementById('reject-confirm-btn').addEventListener('click', function() {
+    var btn = this;
+    var razlog = document.getElementById('pp-razlog').value.trim();
+    var errEl = document.getElementById('reject-error');
+    errEl.hidden = true;
+    btn.disabled = true;
+    btn.textContent = 'Slanje…';
+    gasCall({ action: 'odbijPonudu', token: trenutniToken, razlog: razlog }).then(function(res) {
+      if (res.status !== 'ok') {
+        btn.disabled = false;
+        btn.textContent = 'Da, odbijam ponudu';
+        errEl.textContent = res.message || 'Odbijanje nije uspjelo. Pokušajte ponovno.';
+        errEl.hidden = false;
+        if (res.vecPotvrdjeno) {
+          document.getElementById('already-naziv').textContent = document.getElementById('form-naziv').textContent;
+          document.getElementById('already-datum').textContent = res.datumPotvrde || '';
+          showScreen('already-screen');
+        }
+        return;
+      }
+      document.getElementById('rejected-naziv').textContent = document.getElementById('form-naziv').textContent;
+      document.getElementById('rejected-datum').textContent = res.datumOdbijanja || '';
+      showScreen('rejected-screen');
+    }).catch(function() {
+      btn.disabled = false;
+      btn.textContent = 'Da, odbijam ponudu';
+      errEl.textContent = 'Greška u komunikaciji s poslužiteljem. Provjerite internetsku vezu i pokušajte ponovno.';
+      errEl.hidden = false;
+    });
+  });
 
   (function init() {
     var params = new URLSearchParams(window.location.search);
@@ -325,8 +533,28 @@
         showScreen('already-screen');
         return;
       }
+      if (res.odbijena) {
+        document.getElementById('rejected-naziv').textContent = res.nazivTvrtke || '';
+        document.getElementById('rejected-datum').textContent = res.datumOdbijanja || '';
+        showScreen('rejected-screen');
+        return;
+      }
+      if (res.ponistena) {
+        document.getElementById('voided-naziv').textContent = res.nazivTvrtke || '';
+        showScreen('voided-screen');
+        return;
+      }
+      if (res.istekla) {
+        document.getElementById('expired-naziv').textContent = res.nazivTvrtke || '';
+        document.getElementById('expired-datum').textContent = res.istekPrikaz || '';
+        showScreen('expired-screen');
+        return;
+      }
       document.getElementById('form-naziv').textContent = res.nazivTvrtke || '';
       showScreen('form-screen');
+      if (res.istekIso) {
+        pokreniRokBrojac_(res.istekIso, res.nazivTvrtke || '');
+      }
     }).catch(function() {
       document.getElementById('no-token-message').textContent = 'Greška u komunikaciji s poslužiteljem. Provjerite internetsku vezu i pokušajte ponovno otvoriti poveznicu.';
       showScreen('no-token-screen');
