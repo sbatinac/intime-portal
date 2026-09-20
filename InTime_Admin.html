@@ -238,6 +238,23 @@
   .imenik-autosync-status.on{color:var(--green);font-weight:700;}
   .imenik-autosync-status.off{color:var(--grey);}
 
+  /* ---- PRETRAGA + DATUMSKI FILTER (18. krug, 20.9.2026., Sašin izričit
+     zahtjev) — zajednička traka na Zainteresirani/Ponude/Nisu zainteresirani/
+     Arhiva/Ankete kvalitete/Imenik: tekst pretrage + brzi datumski filteri
+     (gumbići, jedan aktivan odjednom). ---- */
+  .search-filter-bar{margin:0 0 14px;}
+  .search-filter-input{
+    width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid var(--line);
+    border-radius:8px;font-size:13.5px;font-family:inherit;margin-bottom:8px;
+  }
+  .search-filter-chips{display:flex;gap:6px;flex-wrap:wrap;}
+  .search-filter-chip{
+    padding:5px 12px;border-radius:999px;border:1px solid var(--line);
+    background:#fff;color:var(--graphite);font-size:12px;font-weight:600;
+  }
+  .search-filter-chip:hover{border-color:var(--purple);}
+  .search-filter-chip.active{background:var(--purple);border-color:var(--purple);color:#fff;}
+
   .tabs{display:flex;gap:8px;margin-bottom:16px;border-bottom:2px solid var(--line);}
   .tab-btn{
     padding:10px 16px;
@@ -983,15 +1000,157 @@
     loadImenikAutoSync_();
   }
 
+  // ============================================================
+  // PRETRAGA + DATUMSKI FILTER (18. krug, 20.9.2026., Sašin izričit zahtjev)
+  // — zajednički mehanizam za Zainteresirani/Ponude/Nisu zainteresirani/
+  // Arhiva/Ankete kvalitete/Imenik: tekstualna pretraga (pretražuje SVA
+  // polja unosa odjednom, ne treba birati "po čemu") + brzi datumski filteri
+  // (Ovaj/Prošli tjedan, Ovaj/Prošli mjesec, Ova/Prošla godina) — oba se
+  // mogu kombinirati. Stanje se čuva PO TABU (searchFilterState), tako da
+  // prijelaz na drugi tab ne resetira pretragu na prethodnom.
+  // ============================================================
+  var searchFilterState = {
+    Interes: { q: '', raspon: null },
+    Ponude: { q: '', raspon: null },
+    Odbijenica: { q: '', raspon: null },
+    Arhiva: { q: '', raspon: null },
+    Ankete: { q: '', raspon: null },
+    Imenik: { q: '', raspon: null }
+  };
+
+  var DATUMSKI_RASPONI_ = [
+    { key: null, label: 'Sve' },
+    { key: 'ovaj-tjedan', label: 'Ovaj tjedan' },
+    { key: 'prosli-tjedan', label: 'Prošli tjedan' },
+    { key: 'ovaj-mjesec', label: 'Ovaj mjesec' },
+    { key: 'prosli-mjesec', label: 'Prošli mjesec' },
+    { key: 'ova-godina', label: 'Ova godina' },
+    { key: 'prosla-godina', label: 'Prošla godina' }
+  ];
+
+  // Pretvara 'dd.MM.yyyy. HH:mm' (format koji backend šalje za polje
+  // "Timestamp"/entry.datumUnosa) natrag u pravi JS Date, radi usporedbe s
+  // odabranim rasponom.
+  function parsirajDatumUnosa_(str) {
+    if (!str) { return null; }
+    var m = String(str).match(/(\d{1,2})\.(\d{1,2})\.(\d{4})\.?\s*(?:(\d{1,2}):(\d{1,2}))?/);
+    if (!m) { return null; }
+    var dan = parseInt(m[1], 10), mj = parseInt(m[2], 10) - 1, god = parseInt(m[3], 10);
+    var sat = m[4] ? parseInt(m[4], 10) : 0, min = m[5] ? parseInt(m[5], 10) : 0;
+    var d = new Date(god, mj, dan, sat, min);
+    return isNaN(d.getTime()) ? null : d;
+  }
+
+  // Tjedan počinje ponedjeljkom. Vraća { od, do } (do je EKSKLUZIVNO — prvi
+  // trenutak SLJEDEĆEG razdoblja), ili null za "Sve" (bez filtera).
+  function izracunajDatumskiRaspon_(kljuc) {
+    if (!kljuc) { return null; }
+    var sada = new Date();
+    var danas = new Date(sada.getFullYear(), sada.getMonth(), sada.getDate());
+    var dan = danas.getDay();
+    var pomakDoPonedjeljka = (dan === 0) ? -6 : (1 - dan);
+    var ovajPonedjeljak = new Date(danas);
+    ovajPonedjeljak.setDate(danas.getDate() + pomakDoPonedjeljka);
+
+    if (kljuc === 'ovaj-tjedan') {
+      var doOvajTjedan = new Date(ovajPonedjeljak); doOvajTjedan.setDate(ovajPonedjeljak.getDate() + 7);
+      return { od: ovajPonedjeljak, do: doOvajTjedan };
+    }
+    if (kljuc === 'prosli-tjedan') {
+      var odPrTjedan = new Date(ovajPonedjeljak); odPrTjedan.setDate(ovajPonedjeljak.getDate() - 7);
+      return { od: odPrTjedan, do: ovajPonedjeljak };
+    }
+    if (kljuc === 'ovaj-mjesec') {
+      return { od: new Date(sada.getFullYear(), sada.getMonth(), 1), do: new Date(sada.getFullYear(), sada.getMonth() + 1, 1) };
+    }
+    if (kljuc === 'prosli-mjesec') {
+      return { od: new Date(sada.getFullYear(), sada.getMonth() - 1, 1), do: new Date(sada.getFullYear(), sada.getMonth(), 1) };
+    }
+    if (kljuc === 'ova-godina') {
+      return { od: new Date(sada.getFullYear(), 0, 1), do: new Date(sada.getFullYear() + 1, 0, 1) };
+    }
+    if (kljuc === 'prosla-godina') {
+      return { od: new Date(sada.getFullYear() - 1, 0, 1), do: new Date(sada.getFullYear(), 0, 1) };
+    }
+    return null;
+  }
+
+  // Generička traka (tekst pretrage + red gumbića za datumski raspon).
+  // `stanje` je REFERENCA na jedan od searchFilterState[...] objekata —
+  // mijenja se izravno pa se odmah zove renderEntries(). Fokus/pozicija
+  // kursora u polju za tekst se ručno vraćaju nakon svakog unosa jer
+  // renderEntries() cijeli popis (pa i ovu traku) gradi iznova.
+  function buildSearchFilterBar_(stanje, placeholder) {
+    var wrap = document.createElement('div');
+    wrap.className = 'search-filter-bar';
+
+    var input = document.createElement('input');
+    input.type = 'text';
+    input.id = 'search-filter-input';
+    input.className = 'search-filter-input';
+    input.placeholder = placeholder || 'Pretraži…';
+    input.value = stanje.q;
+    input.addEventListener('input', function() {
+      stanje.q = input.value;
+      var pos = input.selectionStart;
+      renderEntries();
+      var novi = document.getElementById('search-filter-input');
+      if (novi) {
+        novi.focus();
+        try { novi.setSelectionRange(pos, pos); } catch (e) {}
+      }
+    });
+
+    var chips = document.createElement('div');
+    chips.className = 'search-filter-chips';
+    DATUMSKI_RASPONI_.forEach(function(r) {
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'search-filter-chip' + (stanje.raspon === r.key ? ' active' : '');
+      btn.textContent = r.label;
+      btn.addEventListener('click', function() {
+        stanje.raspon = r.key;
+        renderEntries();
+      });
+      chips.appendChild(btn);
+    });
+
+    wrap.appendChild(input);
+    wrap.appendChild(chips);
+    return wrap;
+  }
+
+  // Pretraga preko SVIH polja unosa odjednom (entry.fields je objekt naziv
+  // stupca → vrijednost — isti oblik za Interes/Ponude/Odbijenica/Arhiva/
+  // Ankete), tako da nije potrebno posebno birati "pretraživa" polja po
+  // tipu obrasca.
+  function entryOdgovaraPretrazi_(entry, q) {
+    q = String(q || '').trim().toLowerCase();
+    if (!q) { return true; }
+    for (var key in entry.fields) {
+      if (String(entry.fields[key] || '').toLowerCase().indexOf(q) !== -1) { return true; }
+    }
+    return false;
+  }
+
+  function entryOdgovaraRasponu_(entry, raspon) {
+    if (!raspon) { return true; }
+    var d = parsirajDatumUnosa_(fieldVal(entry, 'Timestamp'));
+    if (!d) { return false; }
+    return d >= raspon.od && d < raspon.do;
+  }
+
+  function imenikOdgovaraRasponu_(entry, raspon) {
+    if (!raspon) { return true; }
+    var d = parsirajDatumUnosa_(entry.datumUnosa);
+    if (!d) { return false; }
+    return d >= raspon.od && d < raspon.do;
+  }
+
   // ---- IMENIK (13. krug) — zaseban popis (allImenikEntries), zaseban
   // InTime_Imenik Sheet na backendu (adminListImenik), isti obrazac kao
   // allAnketaEntries/loadAnkete() iznad.
   var allImenikEntries = [];
-  // NOVO 20.9.2026. (17. krug, Sašin izričit zahtjev) — tekst pretrage za
-  // Imenik, pretražuje: Ime, Prezime (naziv tvrtke), OIB, Grad, Telefoni,
-  // Emailovi, Funkcije. Čuva se dok je admin na tabu Imenik (ne resetira se
-  // pri svakom loadImenik() osvježavanju).
-  var imenikSearchTerm = '';
   function loadImenik() {
     gasCall({ action: 'adminListImenik', token: adminToken }).then(function(res) {
       if (handleAuthError(res)) { return; }
@@ -1591,8 +1750,20 @@
         container.appendChild(hintA);
         return;
       }
+      container.appendChild(buildSearchFilterBar_(searchFilterState.Ankete, 'Pretraži ankete…'));
+      var rasponAnkete = izracunajDatumskiRaspon_(searchFilterState.Ankete.raspon);
+      var prikazAnkete = allAnketaEntries.filter(function(e) {
+        return entryOdgovaraPretrazi_(e, searchFilterState.Ankete.q) && entryOdgovaraRasponu_(e, rasponAnkete);
+      });
+      if (prikazAnkete.length === 0) {
+        var hintAPrazno = document.createElement('div');
+        hintAPrazno.className = 'empty-hint';
+        hintAPrazno.textContent = 'Nema anketa koje odgovaraju pretrazi/filteru.';
+        container.appendChild(hintAPrazno);
+        return;
+      }
       document.getElementById('select-all-row').hidden = false;
-      allAnketaEntries.forEach(function(entry) {
+      prikazAnkete.forEach(function(entry) {
         container.appendChild(buildAnketaEntryCard(entry));
       });
       return;
@@ -1629,12 +1800,15 @@
         container.appendChild(hintI);
         return;
       }
-      container.appendChild(buildImenikSearchBox_());
-      var prikazImenik = filtrirajImenik_(allImenikEntries, imenikSearchTerm);
+      container.appendChild(buildSearchFilterBar_(searchFilterState.Imenik, 'Pretraži po imenu, tvrtki, OIB-u, gradu, telefonu, mailu ili funkciji…'));
+      var rasponImenik = izracunajDatumskiRaspon_(searchFilterState.Imenik.raspon);
+      var prikazImenik = filtrirajImenik_(allImenikEntries, searchFilterState.Imenik.q).filter(function(e) {
+        return imenikOdgovaraRasponu_(e, rasponImenik);
+      });
       if (prikazImenik.length === 0) {
         var hintNema = document.createElement('div');
         hintNema.className = 'empty-hint';
-        hintNema.textContent = 'Nema kontakata koji odgovaraju pretrazi "' + imenikSearchTerm + '".';
+        hintNema.textContent = 'Nema kontakata koji odgovaraju pretrazi/filteru.';
         container.appendChild(hintNema);
         return;
       }
@@ -1658,10 +1832,26 @@
       list = allEntries.filter(function(e){ return e.status === activeTab; });
     }
 
+    // Pretraga + datumski filter — samo na tabovima koji su navedeni u
+    // searchFilterState (Interes/Ponude/Odbijenica/Arhiva; "NoviKlijenti"
+    // namjerno izostavljen, Saša ga nije tražio).
+    var traziSeAktivno = false;
+    var stanjeTraga = searchFilterState[activeTab];
+    if (stanjeTraga) {
+      container.appendChild(buildSearchFilterBar_(stanjeTraga, 'Pretraži…'));
+      traziSeAktivno = !!(stanjeTraga.q || stanjeTraga.raspon);
+      var raspon = izracunajDatumskiRaspon_(stanjeTraga.raspon);
+      list = list.filter(function(e) {
+        return entryOdgovaraPretrazi_(e, stanjeTraga.q) && entryOdgovaraRasponu_(e, raspon);
+      });
+    }
+
     if (list.length === 0) {
       var hint = document.createElement('div');
       hint.className = 'empty-hint';
-      hint.textContent = activeTab === 'Interes'
+      hint.textContent = traziSeAktivno
+        ? 'Nema unosa koji odgovaraju pretrazi/filteru.'
+        : activeTab === 'Interes'
         ? 'Trenutno nema pristiglih zainteresiranih upita.'
         : activeTab === 'NoviKlijenti'
         ? 'Trenutno nema klijenata prebačenih u ovu karticu.'
@@ -2487,36 +2677,11 @@
     return 'imenik-tag-' + String(tag).trim().replace(/\s+/g, '-');
   }
 
-  // NOVO 20.9.2026. (17. krug, Sašin izričit zahtjev) — pretraga po Imeniku.
-  // Jedno polje pretražuje odjednom: Ime, Prezime (naziv tvrtke), OIB, Grad,
-  // Telefoni, Emailovi, Funkcije. Case-insensitive, "sadrži" pretraga (ne
-  // mora biti točan podudarak), radi lokalno nad već učitanim allImenikEntries
-  // (bez novog poziva na backend).
-  function buildImenikSearchBox_() {
-    var wrap = document.createElement('div');
-    wrap.style.margin = '0 0 14px';
-    var input = document.createElement('input');
-    input.type = 'text';
-    input.id = 'imenik-search-input';
-    input.placeholder = 'Pretraži po imenu, tvrtki, OIB-u, gradu, telefonu, mailu ili funkciji…';
-    input.value = imenikSearchTerm;
-    input.style.cssText = 'width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:13.5px;font-family:inherit;';
-    input.addEventListener('input', function() {
-      imenikSearchTerm = input.value;
-      renderEntries();
-      // Fokus i pozicija kursora se gube na svaki renderEntries() (kartice se
-      // grade iznova), pa ih vraćamo ručno na upravo dodani input.
-      var noviInput = document.getElementById('imenik-search-input');
-      if (noviInput) {
-        var pos = input.selectionStart;
-        noviInput.focus();
-        try { noviInput.setSelectionRange(pos, pos); } catch (e) {}
-      }
-    });
-    wrap.appendChild(input);
-    return wrap;
-  }
-
+  // Pretraga po Imeniku (tekstualni dio) — jedno polje pretražuje odjednom:
+  // Ime, Prezime (naziv tvrtke), OIB, Grad, Telefoni, Emailovi, Funkcije.
+  // Case-insensitive, "sadrži" pretraga (ne mora biti točan podudarak). Sad
+  // se poziva iz generičke trake (buildSearchFilterBar_, vidi gore) koja uz
+  // ovo dodaje i datumski filter (imenikOdgovaraRasponu_).
   function filtrirajImenik_(entries, term) {
     term = String(term || '').trim().toLowerCase();
     if (!term) { return entries; }
