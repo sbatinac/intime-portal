@@ -262,8 +262,6 @@
   .imenik-autosync-status.off{color:var(--grey);}
 
   .imenik-linkovi-panel{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;}
-  .imenik-linkovi-panel .btn{text-decoration:none;display:inline-flex;align-items:center;}
-  .imenik-linkovi-panel .btn.disabled{opacity:.5;pointer-events:none;}
 
   .imenik-povuci-panel{
     background:#f7fafb;border:1px solid var(--line);border-radius:10px;
@@ -456,6 +454,8 @@
   .af-rok-link-red input{flex:1;min-width:0;padding:7px 9px;border:1px solid var(--line);border-radius:6px;font-size:12px;color:var(--graphite);background:#fff;}
   .af-rok-izbor{display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
   .af-rok-izbor select{padding:7px 10px;border:1px solid var(--line);border-radius:6px;font-size:13px;font-family:inherit;}
+  .af-rok-prilagodjeno-red{display:flex;gap:6px;align-items:center;}
+  .af-rok-prilagodjeno-broj{width:64px;padding:7px 8px;border:1px solid var(--line);border-radius:6px;font-size:13px;font-family:inherit;}
   .af-rok-btn{padding:7px 12px;border-radius:6px;border:1px solid var(--purple);background:#fff;color:var(--purple);font-size:12.5px;font-weight:700;cursor:pointer;}
   .af-rok-btn:hover{background:var(--purple);color:#fff;}
   .af-rok-btn:disabled{opacity:.4;cursor:not-allowed;}
@@ -543,6 +543,10 @@
   .mp-tagovi-hint{font-size:11.5px;color:var(--grey);margin:-4px 0 10px;line-height:1.5;}
   .mp-tagovi-hint code{background:#f3f4f6;border-radius:4px;padding:1px 5px;font-size:11px;}
   .mp-zadani-red{display:flex;align-items:center;gap:7px;margin:10px 0;font-size:12.5px;}
+  .mp-html-alat-red{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:0 0 8px;}
+  .mp-html-alat-status{font-size:11.5px;color:var(--grey);}
+  .mp-html-alat-status.err{color:var(--red-dark);}
+  .mp-predlozak-html-pregled{width:100%;border:1px solid var(--line);border-radius:6px;min-height:120px;background:#fff;}
   /* Okvir "Dokumenti za ponudu" (dva okvira, drag&drop između njih — vidi
      buildAdminFieldsBlock() u <script> niže za punu napomenu). */
   .af-dok-blok{grid-column:1 / -1;margin-top:4px;}
@@ -1090,6 +1094,21 @@
     <h2 id="mail-predlozak-modal-naslov">Novi predložak</h2>
     <input type="text" id="mp-naziv" placeholder="Naziv predloška (samo za tebe, klijent ga ne vidi)">
     <input type="text" id="mp-predmet" placeholder="Predmet maila (npr. Ponuda In Time d.o.o. za {{IME_FIRME}})">
+    <!-- HTML predložak (trideset i prvi krug, 20.9.2026., Sašin izričit
+         zahtjev — "da li mogu tu unijeti predložak u html kodu... da povlači
+         slike"). Kad je "Ovo je HTML predložak" označeno, #mp-sadrzaj se
+         tretira kao izvorni HTML kod (šalje se kao htmlBody, prikazuje se
+         kao stvarni HTML u pregledu na kartici) umjesto čistog teksta — vidi
+         renderPregled_() i slanje niže. Zadano NEOZNAČENO — postojeći
+         (plain-tekst) predlošci rade potpuno nepromijenjeno. -->
+    <label class="mp-zadani-red"><input type="checkbox" id="mp-html"> Ovo je HTML predložak (podržava slike i formatiranje)</label>
+    <div class="mp-html-alat-red">
+      <button type="button" class="btn btn-outline btn-small" id="mp-ucitaj-html-btn">📁 Učitaj HTML datoteku</button>
+      <input type="file" id="mp-ucitaj-html-input" accept=".html,.htm,text/html" hidden>
+      <button type="button" class="btn btn-outline btn-small" id="mp-umetni-sliku-btn">🖼 Umetni sliku</button>
+      <input type="file" id="mp-umetni-sliku-input" accept="image/*" hidden>
+      <span class="mp-html-alat-status" id="mp-html-alat-status"></span>
+    </div>
     <textarea id="mp-sadrzaj" placeholder="Tekst maila..."></textarea>
     <p class="mp-tagovi-hint">Dostupni tagovi — zamjenjuju se stvarnim podacima klijenta kad odabereš predložak na kartici: <code>{{IME_FIRME}}</code> <code>{{IME_OSOBE}}</code> <code>{{USLUGE}}</code> <code>{{BROJ_PONUDE}}</code> (INTRIX šifra ponude — automatski uključuje oznaku verzije, npr. "-P1", "-P2"…) <code>{{BROJ_UPITNIKA}}</code> (šifra prodajnog upitnika, polje "Broj") <code>{{GRAD}}</code> <code>{{LINK_POTVRDE}}</code> (poveznica za klik-potvrdu ponude, OIB + ime/funkcija) <code>{{ROK_VAZENJA}}</code> (datum isteka ponude — postavlja se u bloku "Rok važenja ponude")</p>
     <label class="mp-zadani-red"><input type="checkbox" id="mp-zadani"> Postavi kao zadani predložak (učitava se automatski)</label>
@@ -1790,10 +1809,12 @@
     // dvadeset i drugi krug: izbornik 7/15/21/30 dana u istoimenom bloku
     // "Rok važenja ponude" iznad). Polje je već formatirano kao
     // "dd.MM.yyyy. HH:mm" (vidi adminListEntries u InTime_Code.gs, generičko
-    // formatiranje svih Date polja) — ovdje se vremenski dio (uvijek 23:59,
-    // vidi adminPostaviRokPonude_) odsijeca, tagu treba samo datum.
+    // formatiranje svih Date polja) — formatirajRokPrikaz_() (trideset i
+    // drugi krug) skida vrijeme SAMO kad je točno 23:59 (dnevni presetovi);
+    // prilagođeni (satni) rok zadržava puno vrijeme, inače bi klijent
+    // vidio samo datum i pomislio da rok traje do kraja tog dana.
     var rokSirovo = fieldVal(entry, 'Datum isteka ponude (admin)');
-    var rokPrikaz = rokSirovo ? String(rokSirovo).replace(/\s\d{2}:\d{2}$/, '') : '[rok važenja nije postavljen — odaberi u polju "Rok važenja ponude" iznad]';
+    var rokPrikaz = rokSirovo ? formatirajRokPrikaz_(rokSirovo) : '[rok važenja nije postavljen — odaberi u polju "Rok važenja ponude" iznad]';
     return String(tekst || '')
       .replace(/\{\{IME_FIRME\}\}/g, imeFirme)
       .replace(/\{\{IME_OSOBE\}\}/g, imeOsobe)
@@ -1869,6 +1890,9 @@
     document.getElementById('mp-predmet').value = predlozak ? predlozak.predmet : '';
     document.getElementById('mp-sadrzaj').value = predlozak ? predlozak.sadrzaj : MAIL_PREDLOZAK_PRAZAN_SADRZAJ_;
     document.getElementById('mp-zadani').checked = !!(predlozak && predlozak.zadani);
+    document.getElementById('mp-html').checked = !!(predlozak && predlozak.html);
+    document.getElementById('mp-html-alat-status').textContent = '';
+    document.getElementById('mp-html-alat-status').className = 'mp-html-alat-status';
     document.getElementById('mp-brisi-potvrda').hidden = true;
     document.getElementById('mp-brisi-input').value = '';
     document.getElementById('mail-predlozak-modal-error').hidden = true;
@@ -1876,6 +1900,80 @@
     document.getElementById('mp-obrisi-btn').textContent = 'Obriši predložak';
     document.getElementById('mail-predlozak-modal').hidden = false;
   }
+  // "📁 Učitaj HTML datoteku" — Sašin izričit zahtjev (trideset i prvi krug:
+  // "već imam pripremljen template u html... da samo iskopiram kod... hoće
+  // li povući to"). Čita LOKALNU .html datoteku klijentskim FileReader-om
+  // (nema uploada na server — sav sadržaj ide izravno u #mp-sadrzaj) i
+  // automatski uključuje "Ovo je HTML predložak", jer je svrha ovog gumba
+  // uvijek HTML sadržaj.
+  document.getElementById('mp-ucitaj-html-btn').addEventListener('click', function() {
+    document.getElementById('mp-ucitaj-html-input').click();
+  });
+  document.getElementById('mp-ucitaj-html-input').addEventListener('change', function(ev) {
+    var file = ev.target.files && ev.target.files[0];
+    ev.target.value = '';
+    if (!file) { return; }
+    var reader = new FileReader();
+    reader.onload = function() {
+      document.getElementById('mp-sadrzaj').value = String(reader.result || '');
+      document.getElementById('mp-html').checked = true;
+      var statusEl = document.getElementById('mp-html-alat-status');
+      statusEl.className = 'mp-html-alat-status';
+      statusEl.textContent = 'Učitano iz "' + file.name + '".';
+    };
+    reader.onerror = function() {
+      var statusEl = document.getElementById('mp-html-alat-status');
+      statusEl.className = 'mp-html-alat-status err';
+      statusEl.textContent = 'Datoteku nije bilo moguće pročitati.';
+    };
+    reader.readAsText(file, 'UTF-8');
+  });
+  // "🖼 Umetni sliku" — upload na Drive (adminUploadPredlozakSlika, vidi
+  // InTime_Code.gs), pa se dobiveni javni link umetne kao <img> na mjestu
+  // kursora u #mp-sadrzaj. Isto automatski uključuje "Ovo je HTML
+  // predložak" — <img> oznaka nema smisla u plain-tekst predlošku.
+  document.getElementById('mp-umetni-sliku-btn').addEventListener('click', function() {
+    document.getElementById('mp-umetni-sliku-input').click();
+  });
+  document.getElementById('mp-umetni-sliku-input').addEventListener('change', function(ev) {
+    var file = ev.target.files && ev.target.files[0];
+    ev.target.value = '';
+    if (!file) { return; }
+    var statusEl = document.getElementById('mp-html-alat-status');
+    statusEl.className = 'mp-html-alat-status';
+    statusEl.textContent = 'Slanje slike…';
+    var reader = new FileReader();
+    reader.onload = function() {
+      var base64 = String(reader.result || '').split(',')[1] || '';
+      gasCall({ action: 'adminUploadPredlozakSlika', token: adminToken, base64Data: base64, mimeType: file.type, filename: file.name }).then(function(res) {
+        if (handleAuthError(res)) { return; }
+        if (res.status !== 'ok') {
+          statusEl.className = 'mp-html-alat-status err';
+          statusEl.textContent = res.message || 'Upload slike nije uspio.';
+          return;
+        }
+        var textarea = document.getElementById('mp-sadrzaj');
+        var imgTag = '<img src="' + res.url + '" alt="" style="max-width:100%;">';
+        var pocetak = textarea.selectionStart, kraj = textarea.selectionEnd;
+        if (typeof pocetak === 'number' && typeof kraj === 'number') {
+          textarea.value = textarea.value.slice(0, pocetak) + imgTag + textarea.value.slice(kraj);
+        } else {
+          textarea.value += imgTag;
+        }
+        document.getElementById('mp-html').checked = true;
+        statusEl.className = 'mp-html-alat-status';
+        statusEl.textContent = 'Slika umetnuta.';
+      }).catch(function() {
+        statusEl.className = 'mp-html-alat-status err';
+        statusEl.textContent = 'Greška u komunikaciji s poslužiteljem.';
+      });
+    };
+    reader.onerror = function() {
+      statusEl.className = 'mp-html-alat-status err';
+      statusEl.textContent = 'Sliku nije bilo moguće pročitati.';
+    };
+    reader.readAsDataURL(file);
+  });
   // Prazan predložak kreće s ista 4 taga kao zadani, da Saša odmah vidi
   // obrazac umjesto potpuno praznog polja kad klikne "+ Novi predložak".
   var MAIL_PREDLOZAK_PRAZAN_SADRZAJ_ = 'Poštovani {{IME_OSOBE}},\n\nŠaljemo Vam ponudu za tvrtku {{IME_FIRME}} za sljedeće usluge:\n\n{{USLUGE}}\n\n';
@@ -1920,7 +2018,8 @@
       naziv: naziv,
       predmet: predmet,
       sadrzaj: sadrzaj,
-      zadani: document.getElementById('mp-zadani').checked
+      zadani: document.getElementById('mp-zadani').checked,
+      html: document.getElementById('mp-html').checked
     };
     gasCall({ action: 'adminMailPredlozakSpremi', token: adminToken, predlozak: predlozak }).then(function(res) {
       if (handleAuthError(res)) { return; }
@@ -2275,6 +2374,28 @@
   function fieldVal(entry, label) {
     var v = entry.fields[label];
     return (v === undefined || v === null) ? '' : v;
+  }
+
+  // Prikaz roka važenja ponude — datum isteka dolazi formatiran kao
+  // "dd.MM.yyyy. HH:mm" (vidi adminListEntries() u InTime_Code.gs). Dnevni
+  // presetovi (7/15/21/30 dana) UVIJEK istječu točno u 23:59 — za njih se
+  // vrijeme i dalje skriva (izgleda čišće: "do 15.10.2026." umjesto
+  // "do 15.10.2026. 23:59"), isto ponašanje kao prije. Ali prilagođeni
+  // (satni) rok (trideset i drugi krug) može isteći u BILO koje vrijeme
+  // dana — tu se vrijeme MORA prikazati, inače bi npr. rok od "2 sata"
+  // izgledao klijentu/Saši identično dnevnom roku, iako stvarno traje samo
+  // dio dana.
+  function formatirajRokPrikaz_(sirovo) {
+    var s = String(sirovo || '');
+    return s.replace(/\s23:59$/, '');
+  }
+
+  // Grubi plain-text fallback za HTML predloške (trideset i prvi krug) —
+  // klijentska inačica skiniHtmlTagoveZaFallback_() u InTime_Code.gs,
+  // koristi se za 'text/plain' dio bogatog kopiranja u međuspremnik
+  // (predlozakKopirajBtn niže).
+  function skiniHtmlTagoveZaPregled_(html) {
+    return String(html || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
   }
 
   // "Opseg pošiljaka" (12., ZADNJE poglavlje u obrascu) i "Pakiranje i
@@ -3296,13 +3417,28 @@
   // vodi na opći popis (https://contacts.google.com/) — Saša je to
   // potvrdio kao poveznicu koju želi. Drive link je dinamičan (stiže s
   // backenda, vidi loadImenik()) jer nosi stvarni ID direktorija "IMENIK".
+  // ISPRAVAK (trideset i prvi krug, 20.9.2026., Sašin izričit nalaz: "ovo ne
+  // radi") — dva razloga: (1) `adminListImenik()` je ranije, kad Imenik nema
+  // niti jedan kontakt, vraćala odgovor BEZ `imenikDriveFolderUrl` uopće
+  // (ispravljeno u InTime_Code.gs — sad ga vraća u oba slučaja), pa je
+  // Drive gumb ostajao trajno onemogućen; (2) obični `<a target="_blank">`
+  // unutar Google Apps Script web-appa zna biti nepouzdan (sandboxirani
+  // iframe konteksti, popup-blockeri) — zamijenjeno pravim `<button>` +
+  // eksplicitnim `window.open(...)` klikom, deterministički pouzdanije od
+  // pukog href-navigiranja.
   function buildImenikLinkoviPanel_() {
     var wrap = document.createElement('div');
     wrap.className = 'imenik-linkovi-panel';
-    var driveHref = imenikDriveFolderUrl || '#';
     wrap.innerHTML =
-      '<a class="btn btn-outline btn-small" href="https://contacts.google.com/" target="_blank" rel="noopener">📇 Otvori Google kontakte</a>' +
-      '<a class="btn btn-outline btn-small' + (imenikDriveFolderUrl ? '' : ' disabled') + '" href="' + esc(driveHref) + '" target="_blank" rel="noopener">📁 Otvori Drive direktorij (IMENIK)</a>';
+      '<button type="button" class="btn btn-outline btn-small imenik-link-kontakti">📇 Otvori Google kontakte</button>' +
+      '<button type="button" class="btn btn-outline btn-small imenik-link-drive"' + (imenikDriveFolderUrl ? '' : ' disabled') + '>📁 Otvori Drive direktorij (IMENIK)</button>';
+    wrap.querySelector('.imenik-link-kontakti').addEventListener('click', function() {
+      window.open('https://contacts.google.com/', '_blank', 'noopener');
+    });
+    wrap.querySelector('.imenik-link-drive').addEventListener('click', function() {
+      if (!imenikDriveFolderUrl) { return; }
+      window.open(imenikDriveFolderUrl, '_blank', 'noopener');
+    });
     return wrap;
   }
 
@@ -4087,7 +4223,21 @@
                 '<option value="15" selected>15 dana</option>' +
                 '<option value="21">21 dan</option>' +
                 '<option value="30">30 dana</option>' +
+                '<option value="prilagodjeno">Prilagođeno…</option>' +
               '</select>' +
+              // Prilagođeni rok (trideset i drugi krug, 20.9.2026., Sašin
+              // izričit zahtjev: "da mogu napraviti rok trajanja ponude
+              // koliko želim, 1h pa do 365 dana") — vidljivo SAMO kad je
+              // gore odabrano "Prilagođeno…" (vidi wiring niže). Min. 1,
+              // jedinica sati/dana, ukupno ograničeno na max 365 dana
+              // (provjerava se i na serveru, adminPostaviRokPonude()).
+              '<span class="af-rok-prilagodjeno-red" hidden>' +
+                '<input type="number" class="af-rok-prilagodjeno-broj" min="1" step="1" value="1">' +
+                '<select class="af-rok-prilagodjeno-jedinica">' +
+                  '<option value="sati">sati</option>' +
+                  '<option value="dana" selected>dana</option>' +
+                '</select>' +
+              '</span>' +
               '<button type="button" class="af-rok-btn af-rok-primijeni">Postavi rok</button>' +
               '<button type="button" class="af-rok-btn danger af-rok-ponisti">⊘ Poništi ponudu</button>' +
               '<button type="button" class="af-rok-btn uspjeh af-rok-generiraj">↻ Generiraj novu ponudu</button>' +
@@ -4239,6 +4389,33 @@
         if (res.status === 'ok') {
           statusEl.textContent = 'Spremljeno.';
           statusEl.classList.remove('error');
+          // ISPRAVAK (Sašin izričit nalaz, 20.9.2026.: "intrix šifru ponude
+          // ne kupi u subjektu maila i nigdje") — ovaj gumb je spremao polja
+          // na backend, ali NIKAD nije ažurirao lokalni `entry.fields`, pa je
+          // pregled predloška maila (renderPregled_(), koristi
+          // renderMailTekst_(..., entry)) i dalje čitao STARU (praznu)
+          // vrijednost šifre ponude sve dok se cijela stranica ručno ne
+          // ponovno učita. Isti obrazac kao kod "Postavi rok"/"Generiraj
+          // novu ponudu" gumba niže — nakon uspješnog spremanja odmah
+          // upisujemo spremljene vrijednosti u `entry.fields` (po ISTIM
+          // labelama koje `fieldVal`/`renderMailTekst_` čitaju) i, ako
+          // postoji, osvježavamo pregled predloška.
+          entry.fields['OB korisničko ime (admin)'] = fields.ob_username;
+          entry.fields['OB lozinka (admin)'] = fields.ob_password;
+          entry.fields['Datum otvaranja klijenta u sustavu (admin)'] = fields.datum_otvaranja;
+          entry.fields['Datum prebacivanja u ponude (admin)'] = fields.datum_prebacivanja_ponude;
+          entry.fields['Nadležna poslovnica (admin)'] = fields.nadlezna_poslovnica;
+          entry.fields['Zadnje vrijeme unosa naloga (admin)'] = fields.zadnje_vrijeme_unosa;
+          entry.fields['Interna napomena (admin)'] = fields.interna_napomena;
+          entry.fields['Šifra ponude (admin)'] = fields.sifra_ponude;
+          entry.fields['Identifikacijski TM broj klijenta (admin)'] = fields.identifikacijski_tm_broj;
+          entry.fields['Datum slanja ponude 1 (admin)'] = fields.datum_slanja_ponude_1;
+          entry.fields['Datum slanja ponude 2 (admin)'] = fields.datum_slanja_ponude_2;
+          entry.fields['Datum slanja ponude 3 (admin)'] = fields.datum_slanja_ponude_3;
+          entry.fields['Datum prihvaćanja ponude (admin)'] = fields.datum_prihvacanja_ponude;
+          entry.fields['Datum otvaranja Online Bookinga (admin)'] = fields.datum_otvaranja_ob;
+          entry.fields['Vrijeme prikupa — ručno uređeno (admin)'] = fields.admin_vrijeme_prikupa;
+          if (typeof renderPregled_ === 'function') { renderPregled_(); }
         } else {
           statusEl.textContent = res.message || 'Greška pri spremanju.';
           statusEl.classList.add('error');
@@ -4716,6 +4893,15 @@
       var predlozakUrediBtn = wrap.querySelector('.af-predlozak-uredi');
       var predlozakKopirajBtn = wrap.querySelector('.af-predlozak-kopiraj');
       var predlosciLokalno = [];
+      // Zadnji izrenderirani predmet/tijelo/HTML-zastavica (trideset i prvi
+      // krug) — dijeli se s "Kopiraj tekst" i blokom "Slanje ponude mailom"
+      // niže (ISTA closure funkcija cijele kartice), da oboje šalju TOČNO
+      // ono što je vidljivo u pregledu — nužno otkad pregled za HTML
+      // predloške više nema `.af-predlozak-tijelo` DOM čvor (renderiran je
+      // unutar sandboxiranog iframea, njegov textContent nije čitljiv izvan
+      // njega), pa se čitanje iz DOM-a više ne može koristiti kao jedini
+      // izvor istine.
+      var zadnjiPregled_ = { predmet: '', tijelo: '', html: false };
 
       var renderPregled_ = function() {
         var odabraniId = parseInt(predlozakSelect.value, 10);
@@ -4724,15 +4910,33 @@
           predlozakPregled.innerHTML = '<div class="af-predlozak-prazno">Nema još nijednog predloška — klikni "+ Novi predložak".</div>';
           predlozakUrediBtn.disabled = true;
           predlozakKopirajBtn.disabled = true;
+          zadnjiPregled_ = { predmet: '', tijelo: '', html: false };
           return;
         }
         predlozakUrediBtn.disabled = false;
         predlozakKopirajBtn.disabled = false;
         var predmetIzrenderiran = renderMailTekst_(odabrani.predmet, entry);
         var tijeloIzrenderirano = renderMailTekst_(odabrani.sadrzaj, entry);
-        predlozakPregled.innerHTML =
-          (predmetIzrenderiran ? '<div class="af-predlozak-predmet">Predmet: ' + esc(predmetIzrenderiran) + '</div>' : '') +
-          '<div class="af-predlozak-tijelo">' + esc(tijeloIzrenderirano) + '</div>';
+        zadnjiPregled_ = { predmet: predmetIzrenderiran, tijelo: tijeloIzrenderirano, html: !!odabrani.html };
+        var predmetHtml = predmetIzrenderiran ? '<div class="af-predlozak-predmet">Predmet: ' + esc(predmetIzrenderiran) + '</div>' : '';
+        if (odabrani.html) {
+          // HTML predložak (trideset i prvi krug) — pregled u SANDBOXIRANOM
+          // iframeu (srcdoc), a ne izravno u DOM-u kartice, da proizvoljan
+          // HTML/CSS koji Saša zalijepi ne može "procuriti" i pokvariti
+          // izgled ostatka admin stranice. `sandbox=""` bez ijedne dozvole —
+          // ovo je samo pregled, ne treba mu izvršavati skripte ni slati
+          // formove.
+          predlozakPregled.innerHTML = predmetHtml + '<iframe class="mp-predlozak-html-pregled" sandbox="" srcdoc="' + esc(tijeloIzrenderirano) + '"></iframe>';
+          var iframeEl = predlozakPregled.querySelector('iframe');
+          iframeEl.addEventListener('load', function() {
+            try {
+              var visina = iframeEl.contentWindow.document.body.scrollHeight;
+              if (visina > 0) { iframeEl.style.height = Math.min(visina + 16, 900) + 'px'; }
+            } catch (e) { /* cross-origin/sandbox — zadrži CSS min-height */ }
+          });
+        } else {
+          predlozakPregled.innerHTML = predmetHtml + '<div class="af-predlozak-tijelo">' + esc(tijeloIzrenderirano) + '</div>';
+        }
       };
 
       var popuniIzbornik_ = function(predlosci) {
@@ -4766,10 +4970,32 @@
       });
       predlozakKopirajBtn.addEventListener('click', function(ev) {
         ev.stopPropagation();
-        var tijelo = predlozakPregled.querySelector('.af-predlozak-tijelo');
-        var predmetEl = predlozakPregled.querySelector('.af-predlozak-predmet');
-        var tekstZaKopiranje = (predmetEl ? predmetEl.textContent + '\n\n' : '') + (tijelo ? tijelo.textContent : '');
-        if (!tekstZaKopiranje.trim()) { return; }
+        var predmet = zadnjiPregled_.predmet, tijelo = zadnjiPregled_.tijelo;
+        if (!tijelo.trim()) { return; }
+        // HTML predložak (trideset i prvi krug) — kopira se PRAVI HTML (kao
+        // 'text/html' u međuspremnik), da lijepljenje u Gmail sačuva
+        // formatiranje/slike umjesto da zalijepi izvorni <html> kod kao
+        // običan tekst. `navigator.clipboard.write` s više MIME tipova nije
+        // podržan posvuda (npr. stariji preglednici, ili ako stranica nema
+        // dozvolu za međuspremnik) — siguran pad natrag na obični
+        // writeText() ako rich-copy baci grešku ili ne postoji.
+        if (zadnjiPregled_.html && window.ClipboardItem && navigator.clipboard && navigator.clipboard.write) {
+          var htmlZaKopiranje = (predmet ? '<p><strong>Predmet: ' + esc(predmet) + '</strong></p>' : '') + tijelo;
+          var plainZaKopiranje = (predmet ? 'Predmet: ' + predmet + '\n\n' : '') + skiniHtmlTagoveZaPregled_(tijelo);
+          var stavka = new ClipboardItem({
+            'text/html': new Blob([htmlZaKopiranje], { type: 'text/html' }),
+            'text/plain': new Blob([plainZaKopiranje], { type: 'text/plain' })
+          });
+          navigator.clipboard.write([stavka]).then(function() {
+            predlozakStatus.textContent = 'Kopirano u međuspremnik (HTML formatirano — zalijepi u Gmail s Ctrl+V/Cmd+V).';
+            predlozakStatus.classList.remove('error');
+          }).catch(function() {
+            predlozakStatus.textContent = 'HTML kopiranje nije uspjelo — označi i kopiraj ručno iz pregleda.';
+            predlozakStatus.classList.add('error');
+          });
+          return;
+        }
+        var tekstZaKopiranje = (predmet ? predmet + '\n\n' : '') + tijelo;
         if (navigator.clipboard && navigator.clipboard.writeText) {
           navigator.clipboard.writeText(tekstZaKopiranje).then(function() {
             predlozakStatus.textContent = 'Kopirano u međuspremnik.';
@@ -4788,9 +5014,9 @@
     // Blok "Slanje ponude mailom" — vidi opširnu napomenu uz
     // adminPosaljiPonudaTest/adminPosaljiPonudaMail u InTime_Code.gs. Tekst
     // koji se šalje je UVIJEK ono što trenutno piše u pregledu predloška
-    // iznad (.af-predlozak-tijelo/.af-predlozak-predmet — isti tekst koji
-    // "📋 Kopiraj tekst" kopira), tako da je "što vidiš to i šalješ"
-    // zajamčeno bez posebne, razdvojene pripreme teksta za slanje.
+    // iznad (čita se iz `zadnjiPregled_`, isti izvor koji "📋 Kopiraj tekst"
+    // koristi — vidi napomenu uz taj gumb), tako da je "što vidiš to i
+    // šalješ" zajamčeno bez posebne, razdvojene pripreme teksta za slanje.
     // Namjerno POSTAVLJEN NAKON predlozak bloka gore u ovoj funkciji, isti
     // razlog kao i "Rok važenja ponude" ispod — čita already-rendered DOM.
     if (prikaziPuniBlok) {
@@ -4811,13 +5037,15 @@
           if (vrsta) { slanjeStatus.classList.add(vrsta); }
         };
 
+        // Čita iz `zadnjiPregled_` (postavlja ga renderPregled_() u
+        // predlozak-bloku iznad), NE iz DOM-a — od trideset i prvog kruga
+        // HTML predložak nema `.af-predlozak-tijelo` čvor (renderiran je u
+        // sandboxiranom iframeu), pa čitanje njegovog textContenta više nije
+        // pouzdano za sve slučajeve. "Što vidiš to i šalješ" i dalje vrijedi
+        // — samo izvor istine više nije DOM nego zadnje izračunata
+        // vrijednost.
         var dohvatiTekstZaSlanje_ = function() {
-          var tijeloEl = wrap.querySelector('.af-predlozak-tijelo');
-          var predmetEl = wrap.querySelector('.af-predlozak-predmet');
-          return {
-            predmet: predmetEl ? predmetEl.textContent.replace(/^Predmet:\s*/, '') : '',
-            tijelo: tijeloEl ? tijeloEl.textContent : ''
-          };
+          return { predmet: zadnjiPregled_.predmet || '', tijelo: zadnjiPregled_.tijelo || '', html: !!zadnjiPregled_.html };
         };
 
         var dohvatiOznaceneMailoveZaSlanje_ = function() {
@@ -4846,7 +5074,7 @@
           slanjeTestBtn.disabled = true;
           slanjePosaljiBtn.disabled = true;
           slanjePostaviStatus_('Šaljem testni mail…', null);
-          gasCall({ action: 'adminPosaljiPonudaTest', token: adminToken, rowIndex: entry.rowIndex, testMail: testMail, predmet: tekst.predmet, tijelo: tekst.tijelo }).then(function(res) {
+          gasCall({ action: 'adminPosaljiPonudaTest', token: adminToken, rowIndex: entry.rowIndex, testMail: testMail, predmet: tekst.predmet, tijelo: tekst.tijelo, jeHtml: tekst.html }).then(function(res) {
             if (handleAuthError(res)) { return; }
             slanjeTestBtn.disabled = false;
             slanjePosaljiBtn.disabled = false;
@@ -4880,7 +5108,7 @@
           slanjeTestBtn.disabled = true;
           slanjePosaljiBtn.disabled = true;
           slanjePostaviStatus_('Šaljem ponudu…', null);
-          gasCall({ action: 'adminPosaljiPonudaMail', token: adminToken, rowIndex: entry.rowIndex, primatelji: primatelji, predmet: tekst.predmet, tijelo: tekst.tijelo, kopijaSebi: kopijaSebi }).then(function(res) {
+          gasCall({ action: 'adminPosaljiPonudaMail', token: adminToken, rowIndex: entry.rowIndex, primatelji: primatelji, predmet: tekst.predmet, tijelo: tekst.tijelo, kopijaSebi: kopijaSebi, jeHtml: tekst.html }).then(function(res) {
             if (handleAuthError(res)) { return; }
             slanjeTestBtn.disabled = false;
             slanjePosaljiBtn.disabled = false;
@@ -4921,6 +5149,9 @@
       var rokLinkInput = wrap.querySelector('.af-rok-link-input');
       var rokKopirajBtn = wrap.querySelector('.af-rok-kopiraj');
       var rokSelect = wrap.querySelector('.af-rok-select');
+      var rokPrilagodjenoRed = wrap.querySelector('.af-rok-prilagodjeno-red');
+      var rokPrilagodjenoBroj = wrap.querySelector('.af-rok-prilagodjeno-broj');
+      var rokPrilagodjenoJedinica = wrap.querySelector('.af-rok-prilagodjeno-jedinica');
       var rokBtn = wrap.querySelector('.af-rok-primijeni');
       var rokPonistiBtn = wrap.querySelector('.af-rok-ponisti');
       var rokGenerirajBtn = wrap.querySelector('.af-rok-generiraj');
@@ -4931,13 +5162,18 @@
 
       var STATUS_LABEL_PONUDE_ = { nije_poslano: 'Ponuda još nije poslana', na_cekanju: 'Na čekanju odgovora', potvrdjena: 'Prihvaćena', odbijena: 'Odbijena', ponistena: 'Poništena', istekla: 'Istekla', ponistena_nakon_prihvata: 'Poništena nakon prihvaćanja' };
 
+      // ISPRAVAK (trideset i drugi krug, 20.9.2026.) — ranije je ova funkcija
+      // ODBACIVALA stvarno vrijeme isteka i UVIJEK rekonstruirala 23:59:59,
+      // pretpostavljajući da rok uvijek istječe krajem dana. To je vrijedilo
+      // dok su postojali samo dnevni presetovi (7/15/21/30 dana), ali lomi
+      // se za prilagođeni (satni) rok — npr. rok od 2 sata bi se ovdje
+      // pogrešno tumačio kao da traje do kraja tekućeg dana. Sad koristi
+      // parsirajHrvatskiDatum_() (definirano niže, dostupno preko closure-a
+      // do trenutka stvarnog poziva) da pročita PRAVO spremljeno vrijeme.
       var izracunajIstekDatumObj_ = function() {
         var istekSirovo = fieldVal(entry, 'Datum isteka ponude (admin)');
         if (!istekSirovo) { return null; }
-        var datumSamo = String(istekSirovo).replace(/\s\d{2}:\d{2}$/, '');
-        var dijelovi = datumSamo.replace(/\.$/, '').split('.');
-        if (dijelovi.length !== 3) { return null; }
-        return new Date(parseInt(dijelovi[2], 10), parseInt(dijelovi[1], 10) - 1, parseInt(dijelovi[0], 10), 23, 59, 59, 999);
+        return parsirajHrvatskiDatum_(istekSirovo);
       };
 
       var izracunajStatusPonude_ = function() {
@@ -5042,7 +5278,7 @@
         var slanje = fieldVal(entry, 'Datum slanja aktivne ponude (admin)');
         if (slanje) { redovi.push('Trenutno aktivna: <strong>' + esc(String(verzija)) + '. verzija</strong>, poslana ' + esc(slanje) + '.'); }
         var istek = fieldVal(entry, 'Datum isteka ponude (admin)');
-        if (istek && (status === 'na_cekanju' || status === 'istekla')) { redovi.push('Rok do: <strong>' + esc(String(istek).replace(/\s\d{2}:\d{2}$/, '')) + '</strong>'); }
+        if (istek && (status === 'na_cekanju' || status === 'istekla')) { redovi.push('Rok do: <strong>' + esc(formatirajRokPrikaz_(istek)) + '</strong>'); }
         if (status === 'ponistena_nakon_prihvata') {
           redovi.push('<span style="color:var(--red-dark)">Ponuda JE bila prihvaćena, ali je naknadno poništena — vidi detalje ispod.</span>');
         }
@@ -5193,8 +5429,30 @@
       };
       renderRokBlok_();
 
+      // Prilagođeni rok (trideset i drugi krug) — polje za broj+jedinicu
+      // vidljivo SAMO kad je u izborniku odabrano "Prilagođeno…".
+      var azurirajPrilagodjenoVidljivost_ = function() {
+        rokPrilagodjenoRed.hidden = (rokSelect.value !== 'prilagodjeno');
+      };
+      azurirajPrilagodjenoVidljivost_();
       rokSelect.addEventListener('click', function(ev) { ev.stopPropagation(); });
-      rokSelect.addEventListener('change', function(ev) { ev.stopPropagation(); });
+      rokSelect.addEventListener('change', function(ev) { ev.stopPropagation(); azurirajPrilagodjenoVidljivost_(); });
+      rokPrilagodjenoBroj.addEventListener('click', function(ev) { ev.stopPropagation(); });
+      rokPrilagodjenoBroj.addEventListener('keydown', function(ev) { ev.stopPropagation(); });
+      rokPrilagodjenoJedinica.addEventListener('click', function(ev) { ev.stopPropagation(); });
+      rokPrilagodjenoJedinica.addEventListener('change', function(ev) { ev.stopPropagation(); });
+
+      // Vraća { brojDana, ukupnoSati, greska } — greska (string) kad je
+      // uneseni prilagođeni broj neispravan (nije poslano ništa serveru u
+      // tom slučaju, poziv koda mora provjeriti prije gasCall-a).
+      var izracunajRokParametre_ = function() {
+        if (rokSelect.value !== 'prilagodjeno') { return { brojDana: rokSelect.value, ukupnoSati: null }; }
+        var broj = parseInt(rokPrilagodjenoBroj.value, 10);
+        if (!broj || broj < 1) { return { brojDana: null, ukupnoSati: null, greska: 'Upišite ispravan broj (najmanje 1).' }; }
+        var ukupnoSati = rokPrilagodjenoJedinica.value === 'sati' ? broj : broj * 24;
+        if (ukupnoSati > 8760) { return { brojDana: null, ukupnoSati: null, greska: 'Prilagođeni rok ne može biti dulji od 365 dana.' }; }
+        return { brojDana: null, ukupnoSati: ukupnoSati };
+      };
 
       rokKopirajBtn.addEventListener('click', function(ev) {
         ev.stopPropagation();
@@ -5214,10 +5472,16 @@
 
       rokBtn.addEventListener('click', function(ev) {
         ev.stopPropagation();
+        var rokParam = izracunajRokParametre_();
+        if (rokParam.greska) {
+          rokStatus.textContent = rokParam.greska;
+          rokStatus.className = 'af-rok-status error';
+          return;
+        }
         rokBtn.disabled = true;
         rokStatus.textContent = 'Spremanje…';
         rokStatus.className = 'af-rok-status';
-        gasCall({ action: 'adminPostaviRokPonude', token: adminToken, rowIndex: entry.rowIndex, brojDana: rokSelect.value }).then(function(res) {
+        gasCall({ action: 'adminPostaviRokPonude', token: adminToken, rowIndex: entry.rowIndex, brojDana: rokParam.brojDana, ukupnoSati: rokParam.ukupnoSati }).then(function(res) {
           if (handleAuthError(res)) { return; }
           if (res.status !== 'ok') {
             rokBtn.disabled = false;
@@ -5226,7 +5490,7 @@
             return;
           }
           entry.fields['Datum isteka ponude (admin)'] = res.datumIstekaPrikaz;
-          entry.fields['Rok važenja ponude (dana, admin)'] = rokSelect.value;
+          entry.fields['Rok važenja ponude (dana, admin)'] = rokParam.ukupnoSati ? '' : rokParam.brojDana;
           if (res.datumSlanjaPrikaz) {
             entry.fields['Datum slanja aktivne ponude (admin)'] = res.datumSlanjaPrikaz;
             entry.fields['Datum slanja aktivne ponude (admin) (sek)'] = res.datumSlanjaPrikazSek || res.datumSlanjaPrikaz;
@@ -5273,11 +5537,17 @@
 
       rokGenerirajBtn.addEventListener('click', function(ev) {
         ev.stopPropagation();
+        var rokParam = izracunajRokParametre_();
+        if (rokParam.greska) {
+          rokStatus.textContent = rokParam.greska;
+          rokStatus.className = 'af-rok-status error';
+          return;
+        }
         if (!confirm('Generirati novu ponudu s novom poveznicom za ovog klijenta? Prijašnji pokušaj ostaje zabilježen u povijesti ispod.')) { return; }
         rokGenerirajBtn.disabled = true;
         rokStatus.textContent = 'Generiranje…';
         rokStatus.className = 'af-rok-status';
-        gasCall({ action: 'adminGenerirajNovuPonudu', token: adminToken, rowIndex: entry.rowIndex, brojDana: rokSelect.value }).then(function(res) {
+        gasCall({ action: 'adminGenerirajNovuPonudu', token: adminToken, rowIndex: entry.rowIndex, brojDana: rokParam.brojDana, ukupnoSati: rokParam.ukupnoSati }).then(function(res) {
           rokGenerirajBtn.disabled = false;
           if (handleAuthError(res)) { return; }
           if (res.status !== 'ok') {
@@ -5290,7 +5560,7 @@
           entry.fields['Datum slanja aktivne ponude (admin)'] = res.datumSlanjaPrikaz;
           entry.fields['Datum slanja aktivne ponude (admin) (sek)'] = res.datumSlanjaPrikazSek || res.datumSlanjaPrikaz;
           entry.fields['Datum isteka ponude (admin)'] = res.datumIstekaPrikaz;
-          entry.fields['Rok važenja ponude (dana, admin)'] = rokSelect.value;
+          entry.fields['Rok važenja ponude (dana, admin)'] = rokParam.ukupnoSati ? '' : rokParam.brojDana;
           // Puna, svježa povijest (uključujući upravo zaključanu prijašnju
           // verziju s njenim ime/funkcija/IP tragom) — server je vraća u
           // res.povijestJson upravo zato da se "Datum N" okvir prijašnje
