@@ -498,6 +498,18 @@
   .af-rok-stavka-ttd-info{color:var(--grey);font-weight:400;font-style:italic;}
   .af-sifra-hint{font-size:11px;color:var(--red-dark);background:#fbeceb;border:1px dashed #e2b4af;border-radius:6px;padding:6px 9px;margin:6px 0 0;line-height:1.4;}
   .af-sifra-hint-info{color:var(--grey);background:#f2f2f2;border:1px dashed #cfcfcf;}
+  /* "Potvrdi"/"Promijeni" red uz INTRIX šifru (21.9.2026., Sašin izričit
+     zahtjev — vidi napomenu uz markup u buildAdminFieldsBlock()). */
+  .af-sifra-red{display:flex;gap:6px;align-items:center;}
+  .af-sifra-red .af-sifra-ponude{flex:1;}
+  .af-sifra-red .af-sifra-ponude[readonly]{background:#f3f4f6;color:var(--graphite);}
+  .af-sifra-btn{padding:7px 11px;border:1px solid var(--line);border-radius:6px;background:#fff;font-size:11.5px;font-weight:700;cursor:pointer;white-space:nowrap;}
+  .af-sifra-potvrdi-btn{color:#fff;background:var(--purple);border-color:var(--purple);}
+  .af-sifra-potvrdi-btn:hover{opacity:.9;}
+  .af-sifra-promijeni-btn{color:var(--purple);}
+  .af-sifra-promijeni-btn:hover{background:#f0fbfa;}
+  .af-sifra-status{font-size:11px;color:#1a7d4f;margin:4px 0 0;min-height:14px;}
+  .af-sifra-status.error{color:var(--red);}
   /* Blok "Predložak za slanje ponude" — vidi buildAdminFieldsBlock() u
      <script> niže za punu napomenu. */
   .af-predlozak-blok{grid-column:1 / -1;margin-top:4px;}
@@ -563,7 +575,10 @@
   .af-dok-okvir-naslov{font-size:13px;font-weight:800;letter-spacing:.02em;text-transform:uppercase;color:var(--purple-dark);display:flex;align-items:center;justify-content:space-between;margin-bottom:7px;gap:6px;}
   .af-dok-osvjezi{background:none;border:1px solid var(--line);border-radius:6px;cursor:pointer;font-size:11px;text-transform:none;letter-spacing:normal;font-weight:600;color:var(--purple);padding:2px 7px;line-height:1.6;}
   .af-dok-osvjezi:hover{color:#fff;background:var(--purple);border-color:var(--purple);}
-  .af-dok-lista{display:flex;flex-direction:column;gap:4px;min-height:40px;}
+  /* Sašin izričit zahtjev (21.9.2026.): scroll umjesto da se okvir beskonačno
+     povisuje kad se doda hrpa dokumenata — oba okvira (izvor i cilj) dijele
+     istu klasu .af-dok-lista, pa ograničenje vrijedi za oba odjednom. */
+  .af-dok-lista{display:flex;flex-direction:column;gap:4px;min-height:40px;max-height:320px;overflow-y:auto;}
   .af-dok-stavka{display:flex;align-items:center;gap:6px;padding:5px 8px;border:1px solid var(--line);border-radius:6px;background:#fff;font-size:12px;cursor:grab;}
   .af-dok-stavka:hover{border-color:var(--purple);background:#f0fbfa;}
   .af-dok-stavka:active{cursor:grabbing;}
@@ -4085,8 +4100,28 @@
         // šifra ponude - INTRIX"): naziv polja pojašnjen da je riječ o
         // internoj In Time šifri ponude iz sustava INTRIX, da ne bude
         // zabune s "Brojem" upitnika/ponude iz ovog sustava.
+        // Sašin izričit zahtjev (21.9.2026.): "unesem, potvrdim, ako želim
+        // promijeniti neka me pita želim li i onda mijenjanje" — dosad je
+        // šifra bila samo obično polje unutar VELIKOG "Spremi" obrasca na
+        // dnu kartice: ako bi se kartica ponovno renderirala (npr. nakon
+        // spremanja NEKOG DRUGOG polja) PRIJE nego što admin klikne taj
+        // veliki Spremi, upisana-ali-nepotvrđena šifra bi se izgubila. Sad
+        // šifra ima svoj MALI, zaseban "✓ Potvrdi" gumb — klik odmah sprema
+        // (samostalan poziv, ne cijeli veliki obrazac) i zaključava polje
+        // (readonly); za izmjenu treba prvo "✎ Promijeni", što traži
+        // potvrdu. Zaključano je već kod učitavanja ako polje već ima
+        // spremljenu vrijednost (postojeći klijenti) — prazno polje (novi
+        // klijent) kreće otključano. Veliki "Spremi" na dnu I DALJE šalje i
+        // ovo polje kao dio cijelog obrasca (nepromijenjeno, radi bez
+        // obzira je li polje zaključano) — ovo je DODATNA, brža staza samo
+        // za ovo jedno polje, ne zamjena.
         '<div><label>Interna In Time šifra ponude (INTRIX)</label>' +
-          '<input type="text" class="af-sifra-ponude" placeholder="npr. šifra ponude iz INTRIX-a" value="' + esc(fieldVal(entry, 'Šifra ponude (admin)')) + '">' +
+          '<div class="af-sifra-red">' +
+            '<input type="text" class="af-sifra-ponude" placeholder="npr. šifra ponude iz INTRIX-a" value="' + esc(fieldVal(entry, 'Šifra ponude (admin)')) + '"' + (fieldVal(entry, 'Šifra ponude (admin)') ? ' readonly' : '') + '>' +
+            '<button type="button" class="af-sifra-btn af-sifra-potvrdi-btn"' + (fieldVal(entry, 'Šifra ponude (admin)') ? ' style="display:none"' : '') + '>✓ Potvrdi</button>' +
+            '<button type="button" class="af-sifra-btn af-sifra-promijeni-btn"' + (fieldVal(entry, 'Šifra ponude (admin)') ? '' : ' style="display:none"') + '>✎ Promijeni</button>' +
+          '</div>' +
+          '<p class="af-sifra-status"></p>' +
           // Sašin izričit zahtjev (20.9.2026., dvadeset i osmi krug): ručni
           // "-IZMJENA" podsjetnik (dvadeset i sedmi krug) zamijenjen
           // automatskim dodatkom "-P{N}" u predmetu/tekstu maila (vidi
@@ -4424,6 +4459,59 @@
         statusEl.textContent = 'Greška u komunikaciji s poslužiteljem.';
         statusEl.classList.add('error');
       });
+    });
+
+    // "✓ Potvrdi" / "✎ Promijeni" uz INTRIX šifru — vidi opširnu napomenu uz
+    // markup gore (buildAdminFieldsBlock, blok "Interna In Time šifra
+    // ponude"). Zaseban, mali gasCall (samo ovo jedno polje) — ne dira ni ne
+    // čeka veliki "Spremi" obrazac iznad.
+    var sifraInput = wrap.querySelector('.af-sifra-ponude');
+    var sifraPotvrdiBtn = wrap.querySelector('.af-sifra-potvrdi-btn');
+    var sifraPromijeniBtn = wrap.querySelector('.af-sifra-promijeni-btn');
+    var sifraStatusEl = wrap.querySelector('.af-sifra-status');
+    sifraPotvrdiBtn.addEventListener('click', function(ev) {
+      ev.stopPropagation();
+      var vrijednost = sifraInput.value.trim();
+      if (!vrijednost) {
+        sifraStatusEl.textContent = 'Upiši šifru prije potvrde.';
+        sifraStatusEl.classList.add('error');
+        return;
+      }
+      sifraStatusEl.textContent = 'Spremanje…';
+      sifraStatusEl.classList.remove('error');
+      sifraPotvrdiBtn.disabled = true;
+      gasCall({ action: 'adminUpdateFields', token: adminToken, rowIndex: entry.rowIndex, fields: { sifra_ponude: vrijednost } }).then(function(res) {
+        sifraPotvrdiBtn.disabled = false;
+        if (handleAuthError(res)) { return; }
+        if (res.status === 'ok') {
+          entry.fields['Šifra ponude (admin)'] = vrijednost;
+          sifraInput.value = vrijednost;
+          sifraInput.readOnly = true;
+          sifraPotvrdiBtn.style.display = 'none';
+          sifraPromijeniBtn.style.display = '';
+          sifraStatusEl.textContent = 'Potvrđeno.';
+          sifraStatusEl.classList.remove('error');
+          if (typeof renderPregled_ === 'function') { renderPregled_(); }
+        } else {
+          sifraStatusEl.textContent = res.message || 'Greška pri spremanju.';
+          sifraStatusEl.classList.add('error');
+        }
+      }).catch(function() {
+        sifraPotvrdiBtn.disabled = false;
+        sifraStatusEl.textContent = 'Greška u komunikaciji s poslužiteljem.';
+        sifraStatusEl.classList.add('error');
+      });
+    });
+    sifraPromijeniBtn.addEventListener('click', function(ev) {
+      ev.stopPropagation();
+      if (!confirm('Sigurno želiš promijeniti Internu In Time šifru ponude (INTRIX)?\n\nTrenutna šifra: "' + sifraInput.value + '"')) { return; }
+      sifraInput.readOnly = false;
+      sifraInput.focus();
+      sifraInput.select();
+      sifraPromijeniBtn.style.display = 'none';
+      sifraPotvrdiBtn.style.display = '';
+      sifraStatusEl.textContent = '';
+      sifraStatusEl.classList.remove('error');
     });
 
     // Sašin izričit zahtjev (19.9.2026.): pozitivno popunjeni upitnik se VIŠE
