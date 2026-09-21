@@ -365,6 +365,14 @@
   .select-all-row{display:flex;gap:8px;margin:0 0 14px;}
   /* "👁 Prikaži skrivene" prekidač u Imeniku (Sašin izričit zahtjev, 21.9.2026.) */
   .imenik-prikazi-skrivene-red{display:flex;align-items:center;gap:7px;font-size:12.5px;color:var(--grey);cursor:pointer;margin:0 0 12px;user-select:none;}
+  /* Brojač otkriveni/skriveni na vrhu Imenika (Sašin izričit zahtjev,
+     21.9.2026., dvadeset i treći krug) — "5/3" gdje je 5 (zeleno) broj
+     otkrivenih, 3 (crveno) broj skrivenih kontakata. */
+  .imenik-brojac{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:700;margin:0 0 12px;}
+  .imenik-brojac-otkriveni{color:var(--green,#1e8449);}
+  .imenik-brojac-sep{color:var(--grey);font-weight:400;}
+  .imenik-brojac-skriveni{color:var(--red,#c0392b);}
+  .imenik-brojac-label{font-weight:400;color:var(--grey);font-size:12px;margin-left:2px;}
 
   .entry-card-body{
     display:none;
@@ -2589,10 +2597,23 @@
         container.appendChild(hintI);
         return;
       }
+      // Brojač otkriveni/skriveni na vrhu Imenika (Sašin izričit zahtjev,
+      // 21.9.2026., dvadeset i treći krug): "5/3" — 5 (zeleno) = otkriveni
+      // kontakti, 3 (crveno) = skriveni kontakti, od SVIH kontakata (ne samo
+      // trenutno prikazanih, koji ovise o pretrazi/filteru).
+      var brojSkrivenihImenikVrh = allImenikEntries.filter(function(e) { return e.skriveno; }).length;
+      var brojOtkrivenihImenikVrh = allImenikEntries.length - brojSkrivenihImenikVrh;
+      var imenikBrojacEl = document.createElement('div');
+      imenikBrojacEl.className = 'imenik-brojac';
+      imenikBrojacEl.innerHTML = '<span class="imenik-brojac-otkriveni">' + brojOtkrivenihImenikVrh + '</span>' +
+        '<span class="imenik-brojac-sep">/</span>' +
+        '<span class="imenik-brojac-skriveni">' + brojSkrivenihImenikVrh + '</span>' +
+        '<span class="imenik-brojac-label">otkriveni / skriveni kontakti</span>';
+      container.appendChild(imenikBrojacEl);
       container.appendChild(buildSearchFilterBar_(searchFilterState.Imenik, 'Pretraži po imenu, tvrtki, OIB-u, gradu, telefonu, mailu ili funkciji…'));
       // "👁 Prikaži skrivene" prekidač (Sašin izričit zahtjev, 21.9.2026.) —
       // vidi napomenu uz `imenikPrikaziSkrivene` gore.
-      var brojSkrivenihImenik = allImenikEntries.filter(function(e) { return e.skriveno; }).length;
+      var brojSkrivenihImenik = brojSkrivenihImenikVrh;
       var imenikSkrivenePanel = document.createElement('label');
       imenikSkrivenePanel.className = 'imenik-prikazi-skrivene-red';
       imenikSkrivenePanel.innerHTML = '<input type="checkbox" class="imenik-prikazi-skrivene-cb"' + (imenikPrikaziSkrivene ? ' checked' : '') + '> 👁 Prikaži skrivene kontakte (' + brojSkrivenihImenik + ')';
@@ -5319,6 +5340,7 @@
             if (handleAuthError(res)) { return; }
             if (res.status === 'ok') { entry.fields[slotDef.stupac] = fields[slotDef.polje]; }
             if (typeof azurirajOsiguracSlanja_ === 'function') { azurirajOsiguracSlanja_(); }
+            if (typeof azurirajPripremaGumb_ === 'function') { azurirajPripremaGumb_(); }
           });
         };
 
@@ -5391,6 +5413,30 @@
       var pripremaBtn = wrap.querySelector('.af-dok-priprema-btn');
       var pripremaStatusEl = wrap.querySelector('.af-dok-priprema-status');
       var pripremaLinkEl = wrap.querySelector('.af-dok-priprema-link');
+      // Osigurač (Sašin izričit zahtjev, 21.9.2026., dvadeset i treći krug):
+      // "📁 Pripremi direktorij i link" NE smije biti klikabilan dok sva tri
+      // FIKSNA dokumenta (analitički cjenik, cjenik Hrvatska, ponuda za
+      // suradnju) nisu učitana — opći popis "Ostali dokumenti" NIJE uvjet za
+      // ovo (samo ta tri su obavezna). Poziva se pri prvom renderu kartice i
+      // nakon svake promjene u fiksnim slotovima (vidi spremiFiksnoPolje_
+      // iznad, isti defensive typeof poziv kao za azurirajOsiguracSlanja_).
+      var azurirajPripremaGumb_ = function() {
+        var nedostaju = ['analiticki', 'cjenikhr', 'ponudasuradnja']
+          .filter(function(k) { return !dokFiksniPolja[k]; })
+          .map(function(k) { return DOK_FIKSNI_SLOTOVI_[k].naziv; });
+        if (nedostaju.length) {
+          pripremaBtn.disabled = true;
+          pripremaStatusEl.textContent = 'Nedostaje: ' + nedostaju.join(', ') + ' — direktorij se ne može pripremiti dok sva tri dokumenta nisu učitana.';
+          pripremaStatusEl.classList.add('error');
+        } else {
+          pripremaBtn.disabled = false;
+          if (pripremaStatusEl.classList.contains('error')) {
+            pripremaStatusEl.textContent = '';
+            pripremaStatusEl.classList.remove('error');
+          }
+        }
+      };
+      azurirajPripremaGumb_();
       var prikaziPostojeciLinkDokumenata_ = function() {
         var postojeciLink = fieldVal(entry, 'Link na direktorij dokumenata ponude (admin)');
         pripremaLinkEl.innerHTML = postojeciLink ? ('Trenutni link: <a href="' + esc(postojeciLink) + '" target="_blank" rel="noopener">' + esc(postojeciLink) + '</a>') : '';
@@ -5398,6 +5444,7 @@
       prikaziPostojeciLinkDokumenata_();
       pripremaBtn.addEventListener('click', function(ev) {
         ev.stopPropagation();
+        if (pripremaBtn.disabled) { return; }
         var stavke = dokumentiPonude.map(function(d) { return { id: d.id }; });
         ['analiticki', 'cjenikhr', 'ponudasuradnja'].forEach(function(slotKljuc) {
           var stavka = dokFiksniPolja[slotKljuc];
