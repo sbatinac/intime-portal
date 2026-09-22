@@ -529,7 +529,12 @@
   .af-predlozak-select{flex:1;min-width:160px;padding:6px 8px;border:1px solid var(--line);border-radius:6px;font-size:12.5px;font-family:inherit;background:#fff;}
   .af-predlozak-btn{background:none;border:1px solid var(--line);border-radius:6px;cursor:pointer;font-size:11px;font-weight:600;color:var(--purple);padding:5px 9px;white-space:nowrap;}
   .af-predlozak-btn:hover{color:#fff;background:var(--purple);border-color:var(--purple);}
-  .af-predlozak-pregled{background:#fff;border:1px solid var(--line);border-radius:8px;padding:12px 14px;max-height:1020px;overflow-y:auto;}
+  /* Bez unutarnjeg max-height/scroll-a (Sašin izričit zahtjev, 22.9.2026.,
+     treći krug: "da ne moram skrolati") — kutija sad raste do pune visine
+     iframe pregleda (koji ionako ima svoj gornji strop, vidi JS niže), pa se
+     cijeli predložak vidi odjednom skrolanjem stranice, bez dvostrukog
+     scroll-a unutar male kutije. */
+  .af-predlozak-pregled{background:#fff;border:1px solid var(--line);border-radius:8px;padding:12px 14px;}
   .af-predlozak-predmet{font-size:12.5px;font-weight:700;color:var(--graphite);margin-bottom:8px;padding-bottom:8px;border-bottom:1px dashed var(--line);}
   .af-predlozak-tijelo{font-size:12.5px;line-height:1.55;color:var(--graphite);white-space:pre-wrap;word-break:break-word;}
   .af-predlozak-prazno{font-size:11.5px;color:var(--grey);font-style:italic;padding:2px;}
@@ -619,6 +624,13 @@
   .af-dok-fiksno-zuto{background:#fffbea;border-color:#ecd98a;}
   .af-dok-fiksno-plavo{background:#eaf2fb;border-color:#a9cbea;}
   .af-dok-fiksno-zeleno{background:#eafaf1;border-color:#a3e0bd;}
+  /* Ponuda za suradnju — promijenjena u ljubičastu (Sašin izričit zahtjev,
+     22.9.2026., treći krug: "ovu ponudu za suradnju napravi ljubičaste
+     boje"). NAPOMENA: CSS varijabla --purple gore u datoteci je zapravo
+     teal/zelena (naslijeđeno ime iz ranijih krugova, ne dira se), pa je ovdje
+     namjerno posebna, stvarno ljubičasta paleta — isti obrazac kao
+     zuto/plavo/zeleno iznad (pastelna pozadina + tamnija bordura). */
+  .af-dok-fiksno-ljubicasto{background:#f5eefc;border-color:#c9a3e8;}
   .af-dok-fiksno.af-dok-drag-over{box-shadow:0 0 0 2px rgba(34,152,145,.3);border-style:solid;}
   .af-dok-fiksno-naslov{font-size:11px;font-weight:800;letter-spacing:.01em;color:var(--purple-dark);display:flex;align-items:center;justify-content:space-between;gap:6px;margin-bottom:5px;}
   .af-dok-fiksno-tip{font-size:9px;font-weight:700;text-transform:uppercase;color:var(--grey);background:rgba(255,255,255,.7);border-radius:4px;padding:1px 5px;white-space:nowrap;}
@@ -1377,7 +1389,39 @@
     loadAll();
   }
 
+  // Sašin izričit zahtjev (22.9.2026., treći krug: "vezano za ubrzavanje 9
+  // zasebnih izvršenja možemo li to napraviti... i spojiti u jedan poziv") —
+  // umjesto 10 zasebnih gasCall poziva odjednom (svaki svoja Apps Script
+  // latencija + čekanje u redu zbog Google-ovog ograničenja istovremenih
+  // izvršavanja → 10-15 sek do prikaza), sad ide JEDAN poziv
+  // (adminUcitajPocetno u InTime_Code.gs), koji sve isto radi ali unutar
+  // jednog izvršavanja. `primijeniXxx_` funkcije niže (uz svaki loadXxx())
+  // su ISTA logika koja je prije živjela izravno u .then() callbacku svakog
+  // loadXxx() — izdvojena da je i ovaj spojeni poziv i pojedinačni
+  // loadXxx() (i dalje se koriste za osvježavanje nakon raznih akcija, npr.
+  // spremanja FAQ-a) mogu dijeliti. Ako spojeni poziv iz bilo kojeg razloga
+  // ne uspije (npr. Code.gs još nije redeployan na najnoviju verziju), tiho
+  // se pada natrag na stari put — 10 zasebnih poziva — da admin ostane
+  // upotrebljiv.
   function loadAll() {
+    gasCall({ action: 'adminUcitajPocetno', token: adminToken }).then(function(res) {
+      if (handleAuthError(res)) { return; }
+      if (res.status !== 'ok') { loadAllOdvojeno_(); return; }
+      primijeniCounters_(res.counters || {});
+      primijeniEntries_(res.entries || {});
+      primijeniAnkete_(res.ankete || {});
+      primijeniAnketaStatistika_(res.anketaStatistika || {});
+      primijeniFaq_(res.faq || {});
+      primijeniZoneStatus_(res.zoneStatus || {});
+      primijeniZoneArhiva_(res.zoneArhiva || {});
+      primijeniBrojStatus_(res.brojStatus || {});
+      primijeniImenik_(res.imenik || {});
+      primijeniImenikAutoSync_(res.imenikAutoSync || {});
+    }).catch(function() { loadAllOdvojeno_(); });
+  }
+
+  // Stari put — 10 zasebnih poziva. Ostaje kao fallback za loadAll() gore.
+  function loadAllOdvojeno_() {
     loadCounters();
     loadEntries();
     loadAnkete();
@@ -1554,48 +1598,57 @@
   // Drive direktorij "IMENIK" — link stiže s backenda (adminListImenik),
   // vidi buildImenikLinkoviPanel_() niže (dvadeset i deveti krug).
   var imenikDriveFolderUrl = '';
+  function primijeniImenik_(res) {
+    if (res.status !== 'ok') { return; }
+    allImenikEntries = res.entries || [];
+    imenikDriveFolderUrl = res.imenikDriveFolderUrl || '';
+    document.getElementById('tab-count-imenik').textContent = allImenikEntries.length;
+    if (activeTab === 'Imenik') { renderEntries(); }
+  }
   function loadImenik() {
     gasCall({ action: 'adminListImenik', token: adminToken }).then(function(res) {
       if (handleAuthError(res)) { return; }
-      if (res.status !== 'ok') { return; }
-      allImenikEntries = res.entries || [];
-      imenikDriveFolderUrl = res.imenikDriveFolderUrl || '';
-      document.getElementById('tab-count-imenik').textContent = allImenikEntries.length;
-      if (activeTab === 'Imenik') { renderEntries(); }
+      primijeniImenik_(res);
     }).catch(function() {});
   }
 
   var imenikAutoSync = { enabled: false, odbijenice: false, ocjeneKvalitete: false, noviUpitnici: false };
+  function primijeniImenikAutoSync_(res) {
+    if (res.status !== 'ok') { return; }
+    imenikAutoSync = res;
+    if (activeTab === 'Imenik') { renderEntries(); }
+  }
   function loadImenikAutoSync_() {
     gasCall({ action: 'adminGetImenikAutoSync', token: adminToken }).then(function(res) {
       if (handleAuthError(res)) { return; }
-      if (res.status !== 'ok') { return; }
-      imenikAutoSync = res;
-      if (activeTab === 'Imenik') { renderEntries(); }
+      primijeniImenikAutoSync_(res);
     }).catch(function() {});
   }
 
   // Numeracija — testni način (3 zasebna prekidača). Učita trenutno stanje
   // pri otvaranju admina, tako da preklopnici odražavaju stvarnu situaciju
   // (npr. ako je Saša uključila test na mobitelu, pa se vrati na desktop).
+  function primijeniBrojStatus_(res) {
+    if (res.status !== 'ok') { return; }
+    document.getElementById('broj-test-upitnik').checked = !!res.testUpitnik;
+    document.getElementById('broj-test-odbijenica').checked = !!res.testOdbijenica;
+    document.getElementById('broj-test-anketa').checked = !!res.testAnketa;
+    // Prikaz "zadnji izdani broj → sljedeći broj" (npr. "0 → sljedeći 0001"),
+    // tako da Saša vidi treba li uopće resetirati prije nego klikne.
+    var godina = new Date().getFullYear();
+    [['upitnik', res.zadnjiUpitnik], ['odbijenica', res.zadnjiOdbijenica], ['anketa', res.zadnjiAnketa]].forEach(function(par){
+      var el = document.getElementById('broj-stanje-' + par[0]);
+      if (!el) { return; }
+      var zadnji = par[1] || 0;
+      var sljedeciFormatiran = ('0000' + (zadnji + 1)).slice(-4);
+      el.textContent = godina + ': zadnji ' + ('0000' + zadnji).slice(-4) + ' → sljedeći ' + sljedeciFormatiran;
+    });
+    azurirajBrojPanelStatus_();
+  }
   function loadBrojStatus_() {
     gasCall({ action: 'adminGetBrojStatus', token: adminToken }).then(function(res) {
       if (handleAuthError(res)) { return; }
-      if (res.status !== 'ok') { return; }
-      document.getElementById('broj-test-upitnik').checked = !!res.testUpitnik;
-      document.getElementById('broj-test-odbijenica').checked = !!res.testOdbijenica;
-      document.getElementById('broj-test-anketa').checked = !!res.testAnketa;
-      // Prikaz "zadnji izdani broj → sljedeći broj" (npr. "0 → sljedeći 0001"),
-      // tako da Saša vidi treba li uopće resetirati prije nego klikne.
-      var godina = new Date().getFullYear();
-      [['upitnik', res.zadnjiUpitnik], ['odbijenica', res.zadnjiOdbijenica], ['anketa', res.zadnjiAnketa]].forEach(function(par){
-        var el = document.getElementById('broj-stanje-' + par[0]);
-        if (!el) { return; }
-        var zadnji = par[1] || 0;
-        var sljedeciFormatiran = ('0000' + (zadnji + 1)).slice(-4);
-        el.textContent = godina + ': zadnji ' + ('0000' + zadnji).slice(-4) + ' → sljedeći ' + sljedeciFormatiran;
-      });
-      azurirajBrojPanelStatus_();
+      primijeniBrojStatus_(res);
     }).catch(function() {});
   }
 
@@ -1627,13 +1680,16 @@
   // FAQ ("Česta pitanja") — zaseban popis (allFaqEntries), zaseban
   // InTime_FAQ Sheet na backendu (adminFaqList), isti obrazac kao
   // allAnketaEntries/loadAnkete() iznad.
+  function primijeniFaq_(res) {
+    if (res.status !== 'ok') { return; }
+    allFaqEntries = res.entries || [];
+    document.getElementById('tab-count-faq').textContent = allFaqEntries.length;
+    if (activeTab === 'FAQ') { renderEntries(); }
+  }
   function loadFaq() {
     gasCall({ action: 'adminFaqList', token: adminToken }).then(function(res) {
       if (handleAuthError(res)) { return; }
-      if (res.status !== 'ok') { return; }
-      allFaqEntries = res.entries || [];
-      document.getElementById('tab-count-faq').textContent = allFaqEntries.length;
-      if (activeTab === 'FAQ') { renderEntries(); }
+      primijeniFaq_(res);
     }).catch(function() {});
   }
 
@@ -1642,13 +1698,16 @@
   // odvojeno od allFaqEntries jer se ovdje ne uređuju pojedinačni retci
   // nego se cijeli popis zamjenjuje jednim Excel uploadom.
   var zoneStatusData = null;
+  function primijeniZoneStatus_(res) {
+    if (res.status !== 'ok') { return; }
+    zoneStatusData = res;
+    document.getElementById('tab-count-zone').textContent = res.broj;
+    if (activeTab === 'Zone') { renderZoneStatusLine_(); }
+  }
   function loadZoneStatus() {
     gasCall({ action: 'adminZoneStatus', token: adminToken }).then(function(res) {
       if (handleAuthError(res)) { return; }
-      if (res.status !== 'ok') { return; }
-      zoneStatusData = res;
-      document.getElementById('tab-count-zone').textContent = res.broj;
-      if (activeTab === 'Zone') { renderZoneStatusLine_(); }
+      primijeniZoneStatus_(res);
     }).catch(function() {});
   }
 
@@ -1667,12 +1726,15 @@
   // Učitava se jednom u loadAll() i ponovno nakon svakog uploada/restorea;
   // renderira se iz keša (zoneArhivaData) kad god je Zone tab aktivan.
   var zoneArhivaData = null;
+  function primijeniZoneArhiva_(res) {
+    if (res.status !== 'ok') { return; }
+    zoneArhivaData = res.entries || [];
+    if (activeTab === 'Zone') { renderZoneArhivaList_(); }
+  }
   function loadZoneArhiva_() {
     gasCall({ action: 'adminZoneArhivaList', token: adminToken }).then(function(res) {
       if (handleAuthError(res)) { return; }
-      if (res.status !== 'ok') { return; }
-      zoneArhivaData = res.entries || [];
-      if (activeTab === 'Zone') { renderZoneArhivaList_(); }
+      primijeniZoneArhiva_(res);
     }).catch(function() {});
   }
 
@@ -1946,16 +2008,19 @@
       .replace(/\{\{LINK_DOKUMENTI\}\}/g, linkDokumentiPrikaz);
   }
 
+  function primijeniCounters_(res) {
+    if (res.status !== 'ok') { return; }
+    document.getElementById('stat-posjete-danas').textContent = (res.posjeteDanas === undefined ? '—' : res.posjeteDanas);
+    document.getElementById('stat-posjete').textContent = res.posjete;
+    document.getElementById('stat-posjete-sveukupno').textContent = (res.posjeteSveukupno === undefined ? '—' : res.posjeteSveukupno);
+    document.getElementById('stat-pozitivno').textContent = res.pozitivno;
+    document.getElementById('stat-negativno').textContent = res.negativno;
+    document.getElementById('stat-ankete').textContent = (res.ankete === undefined ? '—' : res.ankete);
+  }
   function loadCounters() {
     gasCall({ action: 'adminGetCounters', token: adminToken }).then(function(res) {
       if (handleAuthError(res)) { return; }
-      if (res.status !== 'ok') { return; }
-      document.getElementById('stat-posjete-danas').textContent = (res.posjeteDanas === undefined ? '—' : res.posjeteDanas);
-      document.getElementById('stat-posjete').textContent = res.posjete;
-      document.getElementById('stat-posjete-sveukupno').textContent = (res.posjeteSveukupno === undefined ? '—' : res.posjeteSveukupno);
-      document.getElementById('stat-pozitivno').textContent = res.pozitivno;
-      document.getElementById('stat-negativno').textContent = res.negativno;
-      document.getElementById('stat-ankete').textContent = (res.ankete === undefined ? '—' : res.ankete);
+      primijeniCounters_(res);
     }).catch(function() {});
   }
 
@@ -2345,14 +2410,17 @@
     if (callback) { callback(); }
   }
 
+  function primijeniEntries_(res) {
+    if (res.status !== 'ok') { return; }
+    allEntries = res.entries || [];
+    labelToKeyMap = res.labelToKey || {};
+    renderTabCounts();
+    if (activeTab !== 'Ankete') { renderEntries(); }
+  }
   function loadEntries() {
     gasCall({ action: 'adminListEntries', token: adminToken }).then(function(res) {
       if (handleAuthError(res)) { return; }
-      if (res.status !== 'ok') { return; }
-      allEntries = res.entries || [];
-      labelToKeyMap = res.labelToKey || {};
-      renderTabCounts();
-      if (activeTab !== 'Ankete') { renderEntries(); }
+      primijeniEntries_(res);
     }).catch(function() {});
   }
 
@@ -2360,13 +2428,16 @@
   // sasvim drugačiji oblik zapisa ({rowIndex, fields, prosjek}, bez `status`)
   // od upita iz InTime_Upiti — zato zaseban popis (allAnketaEntries) i
   // zasebna funkcija za dohvat, umjesto miješanja s loadEntries()/allEntries.
+  function primijeniAnkete_(res) {
+    if (res.status !== 'ok') { return; }
+    allAnketaEntries = res.entries || [];
+    document.getElementById('tab-count-ankete').textContent = allAnketaEntries.length;
+    if (activeTab === 'Ankete') { renderEntries(); }
+  }
   function loadAnkete() {
     gasCall({ action: 'adminListAnkete', token: adminToken }).then(function(res) {
       if (handleAuthError(res)) { return; }
-      if (res.status !== 'ok') { return; }
-      allAnketaEntries = res.entries || [];
-      document.getElementById('tab-count-ankete').textContent = allAnketaEntries.length;
-      if (activeTab === 'Ankete') { renderEntries(); }
+      primijeniAnkete_(res);
     }).catch(function() {});
     loadAnketaStatistika();
   }
@@ -2376,11 +2447,14 @@
   // loadAnkete()/allAnketaEntries jer backend sam radi zbrajanje/prosjek
   // preko cijelog Sheeta (adminGetAnketaStatistika), umjesto da se to računa
   // ovdje iz već učitanog popisa.
+  function primijeniAnketaStatistika_(res) {
+    if (res.status !== 'ok') { return; }
+    renderAnketaStatistika(res);
+  }
   function loadAnketaStatistika() {
     gasCall({ action: 'adminGetAnketaStatistika', token: adminToken }).then(function(res) {
       if (handleAuthError(res)) { return; }
-      if (res.status !== 'ok') { return; }
-      renderAnketaStatistika(res);
+      primijeniAnketaStatistika_(res);
     }).catch(function() {});
   }
 
@@ -3192,7 +3266,14 @@
     var editableInputs = [];
     poredajLabeleZaPrikaz_(entry).forEach(function(label) {
       if (label === 'Tip' || label === 'Broj') { return; } // Broj je već prikazan u naslovu kartice, nepromjenjiv je
-      if (label.indexOf('(admin)') !== -1) { return; } // admin polja se prikazuju u posebnom obrascu iznad
+      // ISPRAVAK (22.9.2026., treći krug, Sašin izričit zahtjev — "curenje 4
+      // (admin, JSON) polja"): dosadašnja provjera tražila je TOČAN substring
+      // "(admin)", što ne prepoznaje nazive koji završavaju s "(admin, JSON)"
+      // (zarez ga lomi) — ta 4 polja (Dokumenti za ponudu / Analitički
+      // cjenik / Cjenik Hrvatska / Ponuda za suradnju) su zato curila u ovu
+      // generičku tablicu. Regex niže hvata OBA oblika: "(admin)" i
+      // "(admin, ...)" bilo gdje unutar zagrade.
+      if (/\(admin(,|\))/.test(label)) { return; } // admin polja se prikazuju u posebnom obrascu iznad
       // NAPOMENA 15.9.2026. (Sašin izričit zahtjev): za Interes ("Zainteresirani"/
       // "Novi klijenti") 'Naziv tvrtke' i 'OIB' se i dalje izostavljaju ovdje jer
       // imaju svoj poseban UREDLJIVI obrazac niže (buildNazivOibBlock, vidi
@@ -4032,45 +4113,21 @@
     // ADMIN_ONLY_FIELDS.poslovnica_potvrdjena u InTime_Code.gs) — služi kao
     // jedan od 4 uvjeta osigurača prije slanja ponude niže.
     var poslovnicaPotvrdjenaPocetno = !!fieldVal(entry, 'Nadležna poslovnica potvrđena (admin)');
-    // Pretvara ISO string (toISOString(), kako ga sprema
-    // "Povijest prijašnjih slanja ponude (admin, JSON)") u čitljiv prikaz
-    // "dd.MM.yyyy. HH:mm:ss" — koristi PREGLEDNIKOVU lokalnu vremensku zonu
-    // (isto ponašanje kao Utilities.formatDate sa Session.getScriptTimeZone()
-    // na serveru, dok je admin u Hrvatskoj).
-    function formatirajIsoDatumSek_(iso) {
-      if (!iso) { return ''; }
-      var d = new Date(iso);
-      if (isNaN(d.getTime())) { return ''; }
-      var pad = function(n) { return (n < 10 ? '0' : '') + n; };
-      return pad(d.getDate()) + '.' + pad(d.getMonth() + 1) + '.' + d.getFullYear() + '. ' + pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds());
-    }
-    // Sašin izričit zahtjev (21.9.2026.): "Datum slanja/odbijanja ponude
-    // 1/2/3" u Dio 2 ("nakon prihvaćanja ponude") — za TRENUTNO aktivnu
-    // verziju čita žive stupce (uklj. "(sek)" varijantu, puna preciznost —
-    // vidi adminListEntries() u InTime_Code.gs), za već ZAVRŠENE (prijašnje)
-    // verzije čita iz "Povijest prijašnjih slanja ponude (admin, JSON)" —
-    // vidi adminGenerirajNovuPonudu() u InTime_Code.gs, koja tamo već sprema
-    // pun trag (datumSlanja/datumZavrsetka/status) po verziji čim se
-    // generira SLJEDEĆA ponuda.
-    function dohvatiPodatkeVerzije_(entry, brojVerzije) {
-      var trenutnaVerzija = parseInt(fieldVal(entry, 'Redni broj slanja ponude (admin)'), 10) || 1;
-      if (brojVerzije === trenutnaVerzija) {
-        return {
-          slano: fieldVal(entry, 'Datum slanja aktivne ponude (admin) (sek)') || fieldVal(entry, 'Datum slanja aktivne ponude (admin)') || '',
-          odbijeno: fieldVal(entry, 'Datum odbijanja ponude (admin) (sek)') || fieldVal(entry, 'Datum odbijanja ponude (admin)') || ''
-        };
-      }
-      var povijest = [];
-      try {
-        var sirovoPovijest = fieldVal(entry, 'Povijest prijašnjih slanja ponude (admin, JSON)');
-        if (sirovoPovijest) { povijest = JSON.parse(sirovoPovijest); }
-      } catch (errPovijest) { povijest = []; }
-      var zapis = povijest.filter(function(p) { return p && p.verzija === brojVerzije; })[0];
-      if (!zapis) { return { slano: '', odbijeno: '' }; }
-      return {
-        slano: formatirajIsoDatumSek_(zapis.datumSlanja),
-        odbijeno: (zapis.status === 'odbijena') ? formatirajIsoDatumSek_(zapis.datumZavrsetka) : ''
-      };
+    // Sašin izričit zahtjev (22.9.2026., peti krug — pojednostavljenje bloka
+    // "nakon prihvaćanja ponude", predomislio se u odnosu na 21.9.: "ovdje ne
+    // treba toliko toga... datum slanja/odbijanja ponude 1/2/3 maknuti — to
+    // se već vidi u povijesti slanja ponude [gore, af-rok-povijest], a da je
+    // ponuda odbijena možemo zaključiti i kroz samo broj prihvaćene ponude
+    // (2 ili 3 itd.)"). Ranije `dohvatiPodatkeVerzije_`/`formatirajIsoDatumSek_`
+    // (čitale su "Datum slanja/odbijanja ponude 1/2/3") su uklonjene — više
+    // nemaju pozivatelja. Umjesto toga: kad je ponuda prihvaćena, izračunaj
+    // SAMO broj/verziju TE prihvaćene ponude (npr. "INTRIX123-P2") — iz čega
+    // se već vidi da su prethodne verzije bile odbijene, bez zasebnih polja.
+    var brojPrihvaceneponudePrikaz_ = '';
+    if (fieldVal(entry, 'Datum prihvaćanja ponude (admin)')) {
+      var sifraZaPrihvacenu_ = fieldVal(entry, 'Šifra ponude (admin)');
+      var verzijaZaPrihvacenu_ = parseInt(fieldVal(entry, 'Redni broj slanja ponude (admin)'), 10) || 1;
+      brojPrihvaceneponudePrikaz_ = sifraZaPrihvacenu_ ? (sifraZaPrihvacenu_ + '-P' + verzijaZaPrihvacenu_) : ('P' + verzijaZaPrihvacenu_);
     }
     // Sašin izričit zahtjev (19.9.2026., treći krug — drugi val istog dana):
     // dok je zapis još u "Zainteresirani" (nije ni u "Ponude" ni već otvoren
@@ -4415,8 +4472,8 @@
                   '<div class="af-dok-fiksno-naslov"><span>🔵 Cjenik Hrvatska</span><span class="af-dok-fiksno-tip">Excel</span></div>' +
                   '<div class="af-dok-fiksno-sadrzaj"></div>' +
                 '</div>' +
-                '<div class="af-dok-fiksno af-dok-fiksno-zeleno" data-slot="ponudasuradnja">' +
-                  '<div class="af-dok-fiksno-naslov"><span>🟢 Ponuda za suradnju - In Time d.o.o.</span><span class="af-dok-fiksno-tip">PDF</span></div>' +
+                '<div class="af-dok-fiksno af-dok-fiksno-ljubicasto" data-slot="ponudasuradnja">' +
+                  '<div class="af-dok-fiksno-naslov"><span>🟣 Ponuda za suradnju - In Time d.o.o.</span><span class="af-dok-fiksno-tip">PDF</span></div>' +
                   '<div class="af-dok-fiksno-sadrzaj"></div>' +
                 '</div>' +
               '</div>' +
@@ -4534,53 +4591,35 @@
       '</div>' +
       '<h3 class="af-sekcija2-naslov">Podaci vezani za klijenta — nakon prihvaćanja ponude</h3>' +
       '<div class="admin-fields-grid">' +
-        '<div><label>Identifikacijski TM broj klijenta</label>' +
-          '<input type="text" class="af-tm-broj" placeholder="npr. TM broj klijenta" value="' + esc(fieldVal(entry, 'Identifikacijski TM broj klijenta (admin)')) + '"></div>' +
-        '<div><label>Datum otvaranja Online Bookinga</label>' +
-          '<input type="text" class="af-datum-ob" placeholder="npr. 25.09.2026" value="' + esc(fieldVal(entry, 'Datum otvaranja Online Bookinga (admin)')) + '"></div>' +
-        '<div><label>Online Booking — korisničko ime</label>' +
-          '<input type="text" class="af-username" value="' + esc(fieldVal(entry, 'OB korisničko ime (admin)')) + '"></div>' +
-        '<div><label>Online Booking — lozinka</label>' +
-          '<input type="text" class="af-password" value="' + esc(fieldVal(entry, 'OB lozinka (admin)')) + '"></div>' +
-        '<div><label>' + esc(zadnjeVrijemeUnosaLabel) + '</label>' +
-          '<input type="time" class="af-vrijeme" value="' + esc(zadnjeVrijemeUnosaPrikaz) + '"></div>' +
-        '<div><label>' + esc(vrijemePrikupaLabel) + '</label>' +
-          '<input type="text" class="af-vrijeme-prikupa" placeholder="npr. 08:00 - 10:00" value="' + esc(vrijemePrikupaPrikaz) + '"></div>' +
-        // Sašin izričit zahtjev (21.9.2026.): povijest slanja/odbijanja po
-        // verziji ponude (1./2./3.) + potvrda klijenta (ime/funkcija/IP) —
-        // sve SAMO za čitanje (automatski se bilježi, ništa se ovdje ne
-        // upisuje ručno). "Datum prihvaćanja ponude" premješten OVAMO iz
-        // Dio 1 (vidi napomenu uz `.af-datum-prihvacanja` gore) i sad ima
-        // punu preciznost do sekunde (isti "(sek)" izvor kao dosad kod
-        // "Ponuda — slanje i status" bloka — vidi adminListEntries() u
-        // InTime_Code.gs). Verzije 1/2/3 čitaju se iz "Povijest prijašnjih
-        // slanja ponude (admin, JSON)" za već završene verzije, a iz živih
-        // polja za TRENUTNO aktivnu verziju — vidi dohvatiPodatkeVerzije_()
-        // niže u ovoj funkciji.
-        '<div style="grid-column:1 / -1;border-top:1px dashed var(--line);margin:4px 0 2px;padding-top:10px;font-size:11px;font-weight:800;letter-spacing:.02em;text-transform:uppercase;color:var(--purple-dark);">Povijest slanja ponude (automatski)</div>' +
-        '<div><label>Datum slanja ponude 1 (automatski)</label>' +
-          '<input type="text" class="af-povijest-slano-1" value="' + esc(dohvatiPodatkeVerzije_(entry, 1).slano) + '" placeholder="—" readonly></div>' +
-        '<div><label>Datum slanja ponude 2 (automatski)</label>' +
-          '<input type="text" class="af-povijest-slano-2" value="' + esc(dohvatiPodatkeVerzije_(entry, 2).slano) + '" placeholder="—" readonly></div>' +
-        '<div><label>Datum slanja ponude 3 (automatski)</label>' +
-          '<input type="text" class="af-povijest-slano-3" value="' + esc(dohvatiPodatkeVerzije_(entry, 3).slano) + '" placeholder="—" readonly></div>' +
+        // Sašin izričit zahtjev (22.9.2026., peti krug — "predomislio sam
+        // se, ovdje ne treba toliko toga"): blok pojednostavljen i
+        // preuređen. Naslov preimenovan (bio "Povijest slanja ponude" — ta
+        // puna povijest slanja/odbijanja već postoji gore, blok "Ponuda —
+        // slanje i status", af-rok-povijest — ovdje ostaje SAMO ono što se
+        // tiče same potvrde prihvaćanja). Redoslijed polja sad TOČNO prema
+        // Sašinom nabrajanju: datum prihvaćanja, IP adresa, osoba, funkcija
+        // — plus NOVO polje "Broj prihvaćene ponude" (npr. "-P2"), iz kojeg
+        // se već vidi da su prethodne verzije bile odbijene, bez posebnih
+        // "Datum odbijanja ponude 1/2/3" polja (uklonjena, kao i "Datum
+        // slanja ponude 1/2/3" — obje trojke maknute, ne samo sakrivene,
+        // jer to nikad nisu bila ručno upisiva polja, nego čisti automatski
+        // izvod iz podataka koji i dalje postoje u sheetu/povijesti). TM
+        // broj klijenta / Online Booking / termini premješteni NA KRAJ ovog
+        // grida (Sašin izričit zahtjev: "to sve ide na kraj").
+        '<div style="grid-column:1 / -1;border-top:1px dashed var(--line);margin:4px 0 2px;padding-top:10px;font-size:11px;font-weight:800;letter-spacing:.02em;text-transform:uppercase;color:var(--purple-dark);">Potvrda prihvaćanja ponude (automatski)</div>' +
         '<div><label>Datum prihvaćanja ponude (automatski)</label>' +
           '<input type="text" class="af-prihvacanje-datum" value="' + esc(fieldVal(entry, 'Datum prihvaćanja ponude (admin) (sek)') || fieldVal(entry, 'Datum prihvaćanja ponude (admin)')) + '" placeholder="—" readonly></div>' +
+        '<div><label>IP adresa prilikom prihvaćanja (automatski)</label>' +
+          '<input type="text" class="af-prihvacanje-ip" value="' + esc(fieldVal(entry, 'IP adresa prilikom potvrde ponude (admin)')) + '" placeholder="—" readonly></div>' +
         '<div><label>Osoba koja je prihvatila ponudu (automatski)</label>' +
           '<input type="text" class="af-prihvacanje-ime" value="' + esc(fieldVal(entry, 'Ime i prezime osobe koja je potvrdila ponudu (admin)')) + '" placeholder="—" readonly></div>' +
         '<div><label>Funkcija te osobe (automatski)</label>' +
           '<input type="text" class="af-prihvacanje-funkcija" value="' + esc(fieldVal(entry, 'Funkcija osobe koja je potvrdila ponudu (admin)')) + '" placeholder="—" readonly></div>' +
-        '<div><label>IP adresa prilikom prihvaćanja (automatski)</label>' +
-          '<input type="text" class="af-prihvacanje-ip" value="' + esc(fieldVal(entry, 'IP adresa prilikom potvrde ponude (admin)')) + '" placeholder="—" readonly></div>' +
+        '<div><label>Broj prihvaćene ponude (automatski)</label>' +
+          '<input type="text" class="af-prihvacanje-broj" value="' + esc(brojPrihvaceneponudePrikaz_) + '" placeholder="—" readonly></div>' +
         (fieldVal(entry, 'Poveznica na dokument potvrde ponude (admin)')
           ? '<div><label>Dokument potvrde (automatski)</label><div style="padding:9px 0;"><a href="' + esc(fieldVal(entry, 'Poveznica na dokument potvrde ponude (admin)')) + '" target="_blank" rel="noopener">📄 Otvori dokument potvrde na Driveu</a></div></div>'
           : '') +
-        '<div><label>Datum odbijanja ponude 1 (automatski)</label>' +
-          '<input type="text" class="af-povijest-odbijeno-1" value="' + esc(dohvatiPodatkeVerzije_(entry, 1).odbijeno) + '" placeholder="—" readonly></div>' +
-        '<div><label>Datum odbijanja ponude 2 (automatski)</label>' +
-          '<input type="text" class="af-povijest-odbijeno-2" value="' + esc(dohvatiPodatkeVerzije_(entry, 2).odbijeno) + '" placeholder="—" readonly></div>' +
-        '<div><label>Datum odbijanja ponude 3 (automatski)</label>' +
-          '<input type="text" class="af-povijest-odbijeno-3" value="' + esc(dohvatiPodatkeVerzije_(entry, 3).odbijeno) + '" placeholder="—" readonly></div>' +
         (fieldVal(entry, 'Poveznica na dokument odbijanja ponude (admin)')
           ? '<div><label>Dokument odbijanja (automatski)</label><div style="padding:9px 0;"><a href="' + esc(fieldVal(entry, 'Poveznica na dokument odbijanja ponude (admin)')) + '" target="_blank" rel="noopener">📄 Otvori dokument odbijanja na Driveu</a></div></div>'
           : '') +
@@ -4597,6 +4636,19 @@
               '<p class="af-vrati-link-hint">Nakon odbijanja link automatski postaje privatan za 30 min. Ovim gumbom ga ručno vraćaš — radi samo dok ponuda ostane u stanju "odbijena"; čim pripremiš novu verziju, ovo više ne vrijedi.</p>' +
             '</div>'
           : '') +
+        '<div style="grid-column:1 / -1;border-top:1px dashed var(--line);margin:4px 0 2px;padding-top:10px;font-size:11px;font-weight:800;letter-spacing:.02em;text-transform:uppercase;color:var(--purple-dark);">Online Booking i podaci klijenta</div>' +
+        '<div><label>Identifikacijski TM broj klijenta</label>' +
+          '<input type="text" class="af-tm-broj" placeholder="npr. TM broj klijenta" value="' + esc(fieldVal(entry, 'Identifikacijski TM broj klijenta (admin)')) + '"></div>' +
+        '<div><label>Datum otvaranja Online Bookinga</label>' +
+          '<input type="text" class="af-datum-ob" placeholder="npr. 25.09.2026" value="' + esc(fieldVal(entry, 'Datum otvaranja Online Bookinga (admin)')) + '"></div>' +
+        '<div><label>Online Booking — korisničko ime</label>' +
+          '<input type="text" class="af-username" value="' + esc(fieldVal(entry, 'OB korisničko ime (admin)')) + '"></div>' +
+        '<div><label>Online Booking — lozinka</label>' +
+          '<input type="text" class="af-password" value="' + esc(fieldVal(entry, 'OB lozinka (admin)')) + '"></div>' +
+        '<div><label>' + esc(zadnjeVrijemeUnosaLabel) + '</label>' +
+          '<input type="time" class="af-vrijeme" value="' + esc(zadnjeVrijemeUnosaPrikaz) + '"></div>' +
+        '<div><label>' + esc(vrijemePrikupaLabel) + '</label>' +
+          '<input type="text" class="af-vrijeme-prikupa" placeholder="npr. 08:00 - 10:00" value="' + esc(vrijemePrikupaPrikaz) + '"></div>' +
         '<div class="af-napomena-wrap"><label>Interna napomena (samo za tebe, ne šalje se klijentu)</label>' +
           '<textarea class="af-napomena" placeholder="Slobodne bilješke o ovom klijentu...">' + esc(fieldVal(entry, 'Interna napomena (admin)')) + '</textarea></div>' +
       '</div>' +
