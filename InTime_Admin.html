@@ -1345,12 +1345,32 @@
     if (savedToken) { adminToken = savedToken; }
   } catch (e) { /* sessionStorage nedostupan (privatni način rada i sl.) — jednostavno se traži ponovna prijava */ }
 
-  function gasCall(payload) {
+  // Sašin izričit zahtjev (22.9.2026., osmi krug — nakon Network tab dokaza:
+  // "Failed to fetch"/"CORS er..." na redirectu koji Google Apps Script
+  // interno koristi za POST odgovore (script.google.com/exec →
+  // script.googleusercontent.com/macros/echo), i to POVREMENO — isti klik
+  // "Osnovna dokumentacija" jednom padne, drugi put (ručnim ponovnim
+  // otvaranjem) uspije. Ovo je poznata, infrastrukturna nestabilnost na
+  // Googleovoj strani (ne bug u ovoj datoteci ni u .gs-u), pa se ne može
+  // "popraviti" u smislu da nikad više ne zakaže — ALI se može automatski
+  // PONOVITI umjesto da Saša mora ručno kliknuti "Osvježi"/ponovno otvoriti
+  // karticu svaki put kad zakaže. `gasCall` sad automatski pokuša do 3 puta
+  // (rastući razmak 0.7s/1.4s) prije nego stvarno prijavi grešku pozivatelju
+  // — svi postojeći pozivi (`.then(...)`) ostaju nepromijenjeni, jer je
+  // vanjsko ponašanje (Promise koji vrati parsirani JSON) isto kao prije.
+  function gasCall(payload, pokusaj) {
+    pokusaj = pokusaj || 1;
     return fetch(GAS_WEB_APP_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
       body: JSON.stringify(payload)
-    }).then(function(res) { return res.json(); });
+    }).then(function(res) { return res.json(); }).catch(function(err) {
+      if (pokusaj < 3) {
+        return new Promise(function(resolve) { setTimeout(resolve, pokusaj * 700); })
+          .then(function() { return gasCall(payload, pokusaj + 1); });
+      }
+      throw err;
+    });
   }
 
   function showLoginError(msg) {
@@ -4619,11 +4639,16 @@
           '<input type="text" class="af-prihvacanje-funkcija" value="' + esc(fieldVal(entry, 'Funkcija osobe koja je potvrdila ponudu (admin)')) + '" placeholder="—" readonly></div>' +
         '<div><label>Broj prihvaćene ponude (automatski)</label>' +
           '<input type="text" class="af-prihvacanje-broj" value="' + esc(brojPrihvaceneponudePrikaz_) + '" placeholder="—" readonly></div>' +
+        // Sašin izričit zahtjev (22.9.2026., deveti krug): tekst/gumb ovih
+        // poveznica smanjen (font-size:12px, uže — display:inline-block) —
+        // dvije nove ikone gore u bloku "Ponuda — slanje i status" (vidi
+        // renderRokBlok_ niže) sad služe za brzi pristup, ovo ostaje kao
+        // manji, sporedni link.
         (fieldVal(entry, 'Poveznica na dokument potvrde ponude (admin)')
-          ? '<div><label>Dokument potvrde (automatski)</label><div style="padding:9px 0;"><a href="' + esc(fieldVal(entry, 'Poveznica na dokument potvrde ponude (admin)')) + '" target="_blank" rel="noopener">📄 Otvori dokument potvrde na Driveu</a></div></div>'
+          ? '<div><label>Dokument potvrde (automatski)</label><div style="padding:9px 0;"><a href="' + esc(fieldVal(entry, 'Poveznica na dokument potvrde ponude (admin)')) + '" target="_blank" rel="noopener" style="font-size:12px;display:inline-block;">📄 Dokument potvrde (Drive)</a></div></div>'
           : '') +
         (fieldVal(entry, 'Poveznica na dokument odbijanja ponude (admin)')
-          ? '<div><label>Dokument odbijanja (automatski)</label><div style="padding:9px 0;"><a href="' + esc(fieldVal(entry, 'Poveznica na dokument odbijanja ponude (admin)')) + '" target="_blank" rel="noopener">📄 Otvori dokument odbijanja na Driveu</a></div></div>'
+          ? '<div><label>Dokument odbijanja (automatski)</label><div style="padding:9px 0;"><a href="' + esc(fieldVal(entry, 'Poveznica na dokument odbijanja ponude (admin)')) + '" target="_blank" rel="noopener" style="font-size:12px;display:inline-block;">📄 Dokument odbijanja (Drive)</a></div></div>'
           : '') +
         // Sašin izričit zahtjev (23. krug, nastavak): kad klijent odbije
         // ponudu, link na dokumente automatski postaje privatan nakon 30
@@ -5541,7 +5566,7 @@
             var reader = new FileReader();
             reader.onload = function() {
               var base64 = String(reader.result).split(',')[1] || '';
-              gasCall({ action: 'adminUploadPonudaDokument', token: adminToken, rowIndex: entry.rowIndex, base64Data: base64, mimeType: file.type || 'application/octet-stream', filename: file.name }).then(function(res) {
+              gasCall({ action: 'adminUploadPonudaDokument', token: adminToken, rowIndex: entry.rowIndex, base64Data: base64, mimeType: file.type || 'application/octet-stream', filename: file.name, zaFiksnoPolje: true }).then(function(res) {
                 if (handleAuthError(res)) { return; }
                 if (res.status === 'ok') {
                   postaviStavkuUSlot_({ id: res.id, name: res.name, url: res.url });
@@ -6058,6 +6083,20 @@
               if (handleAuthError(res)) { return; }
               azurirajOsiguracSlanja_();
               if (res.status === 'ok') {
+                // ISPRAVAK (22.9.2026., deveti krug — TTD bug): server sad
+                // "Datum slanja aktivne ponude" postavlja TEK kod ovog,
+                // stvarnog slanja (vidi napomenu uz adminPosaljiPonudaMail() u
+                // InTime_Code.gs) — a ne ranije, kod "Postavi rok". Ako je ovo
+                // bilo PRVO slanje, server to javlja kroz datumSlanjaPrikaz;
+                // ažuriramo lokalno i odmah iscrtavamo blok da bedž/TTD/brojač
+                // ne ostanu na starom stanju 'nije poslano' do sljedećeg
+                // punog učitavanja.
+                if (res.datumSlanjaPrikaz) {
+                  entry.fields['Datum slanja aktivne ponude (admin)'] = res.datumSlanjaPrikaz;
+                  entry.fields['Datum slanja aktivne ponude (admin) (sek)'] = res.datumSlanjaPrikazSek || res.datumSlanjaPrikaz;
+                  entry.fields['Redni broj slanja ponude (admin)'] = 1;
+                  if (typeof renderRokBlok_ === 'function') { renderRokBlok_(); }
+                }
                 zavrsiSlanjeProgress_(true, '✅ Ponuda poslana!');
                 slanjePostaviStatus_('Ponuda poslana na: ' + primatelji.join(', ') + (kopijaSebi ? ' (+ kopija tebi).' : '.'), 'ok');
               } else {
@@ -6240,6 +6279,25 @@
         // punim detaljima i TTD-om) sad prikazuju "Datum N" okviri ispod —
         // vidi rebuild niže — pa se ovdje NAMJERNO više ne ponavlja.
         rokTrenutno.innerHTML = redovi.length ? redovi.join('<br>') : 'Odaberi rok i klikni "Pošalji ponudu" — poveznica za klijenta generira se automatski.';
+
+        // Dvije male ikone (Sašin izričit zahtjev, 22.9.2026., deveti krug:
+        // "u svakoj fazi prihvaćena i odbijena napravi malu ikonicu vidi
+        // ponudu i vidi potvrdu... jedna da se vidi cijela ponuda na Google
+        // Driveu, a drugo da se vidi samo dokumenti") — vidljive SAMO dok je
+        // ponuda 'potvrdjena' ili 'odbijena'. "Cijela ponuda" = predirektorij
+        // (interno, cjenici/evidencija/potvrda/odbijanje — link_predirektorij_ponude,
+        // NIKAD klijentu), "Dokumenti" = poddirektorij "POSLANO" (isto što
+        // klijent dobiva u mailu — link_dokumenti_ponude).
+        if (status === 'potvrdjena' || status === 'odbijena') {
+          var predirektorijLink_ = fieldVal(entry, 'Link na predirektorij ponude (admin)');
+          var dokumentiLink_ = fieldVal(entry, 'Link na direktorij dokumenata ponude (admin)');
+          var ikoneRedovi_ = [];
+          if (predirektorijLink_) { ikoneRedovi_.push('<a href="' + esc(predirektorijLink_) + '" target="_blank" rel="noopener" style="font-size:12px;">🗂️ Cijela ponuda (Drive)</a>'); }
+          if (dokumentiLink_) { ikoneRedovi_.push('<a href="' + esc(dokumentiLink_) + '" target="_blank" rel="noopener" style="font-size:12px;">📄 Samo dokumenti (Drive)</a>'); }
+          if (ikoneRedovi_.length) {
+            rokTrenutno.innerHTML += '<div style="margin-top:6px;display:flex;gap:14px;">' + ikoneRedovi_.join('') + '</div>';
+          }
+        }
 
         zaustaviBrojac_();
         if (status === 'na_cekanju') {
