@@ -3269,11 +3269,30 @@
     selectCb.addEventListener('change', function(){ toggleRowSelection(entry.rowIndex, 'upit', selectCb.checked); });
     head.addEventListener('click', function() {
       card.classList.toggle('expanded');
+      izgradiTijeloKartice_();
     });
     card.appendChild(head);
 
     var body = document.createElement('div');
     body.className = 'entry-card-body';
+    card.appendChild(body);
+
+    // UBRZANJE (22.9.2026., jedanaesti krug — Sašin izričit zahtjev: "aplikacija je usporila"):
+    // sadržaj kartice (generička tablica polja, buildAdminFieldsBlock i sl. — desetci
+    // addEventListener/querySelector poziva PO KARTICI, buildAdminFieldsBlock sam ima
+    // >2500 redaka) dosad se gradio ODMAH za SVAKU karticu na popisu, iako je
+    // .entry-card-body skriven (display:none) dok kartica nije otvorena (vidi CSS gore)
+    // — kod većeg broja klijenata to je značilo tisuće nepotrebnih DOM operacija na SVAKI
+    // prikaz popisa (promjena taba, pretraga, ponovno učitavanje nakon bilo koje akcije),
+    // i to se POGORŠAVA kako baza klijenata raste — vjerojatni pravi uzrok osjećaja da je
+    // aplikacija "usporila s vremenom", neovisno o GIF-ovima (koji su bili jednokratan
+    // trošak veličine datoteke, ne trošak PO KARTICI). Sadržaj se sad gradi TEK kod PRVOG
+    // otvaranja kartice (lijeno učitavanje) — `izgradjenoTijelo_` čuva da se ne gradi
+    // iznova na svaki sljedeći klik iste kartice.
+    var izgradjenoTijelo_ = false;
+    var izgradiTijeloKartice_ = function() {
+    if (izgradjenoTijelo_) { return; }
+    izgradjenoTijelo_ = true;
 
     // Generička tablica svih preostalih polja upitnika (osim naziva/OIB-a,
     // koji imaju svoj poseban obrazac niže, i admin-only polja, koja imaju
@@ -3414,7 +3433,8 @@
     actions.appendChild(delBtn);
     body.appendChild(actions);
 
-    card.appendChild(body);
+    };
+
     return card;
   }
 
