@@ -2093,17 +2093,20 @@ var MAIL_PREDLOZAK_HTML_STANDARDNA_ = `<!DOCTYPE html>
 <p style="font-size:14px;line-height:1.6;margin:0 0 14px;color:#2b2b2b;">Poštovani {{IME_OSOBE}},</p>
 <p style="font-size:14px;line-height:1.6;margin:0 0 14px;color:#2b2b2b;">zahvaljujemo Vam na iskazanom interesu za suradnju s In Time d.o.o. Dostavljamo Vam ponudu broj {{BROJ_PONUDE}} za tvrtku {{IME_FIRME}}, izrađenu na temelju podataka navedenih u prodajnom upitniku broj {{BROJ_UPITNIKA}}, za sljedeće logističke usluge:</p>
 
-<div style="white-space:pre-line;font-size:14px;line-height:1.7;background-color:#f6faf9;border:1px solid #d9ece8;border-radius:8px;padding:14px 16px;margin:0 0 18px;color:#2b2b2b;">{{USLUGE}}</div>
+<div style="white-space:pre-line;font-size:14px;line-height:1.7;background-color:#f6faf9;border:1px solid #d9ece8;border-radius:8px;padding:14px 16px;margin:0 0 18px;color:#2b2b2b;text-align:center;font-weight:bold;">{{USLUGE}}</div>
 
 <p style="font-size:14px;line-height:1.6;margin:0 0 14px;color:#2b2b2b;">U slučaju pitanja i potrebe za dodatnim informacijama stojimo Vam na raspolaganju.</p>
 <p style="font-size:14px;line-height:1.6;margin:0 0 14px;color:#2b2b2b;">Bila bi nam velika čast da se odlučite za našu ponudu i započnemo suradnju u 2026. godini.</p>
 <p style="font-size:14px;line-height:1.6;margin:0 0 14px;color:#2b2b2b;">Vjerujemo da možemo biti stabilan i dugoročan poslovni partner te smo u potpunosti otvoreni za model suradnje koji uključuje koegzistenciju s drugim dobavljačima, uz cilj kontinuiranog podizanja razine usluge i optimizacije troškova.</p>
 <p style="font-size:14px;line-height:1.6;margin:0 0 14px;color:#2b2b2b;"><strong>Ponudu možete prihvatiti brzo i jednostavno, bez čekanja na povratni mail — klikom na gumb ispod, gdje je potrebno unijeti OIB Vaše tvrtke te ime i prezime i funkciju osobe koja potvrđuje, kao dokaz ovlaštenja za prihvaćanje ponude {{BROJ_PONUDE}}:</strong></p>
 
+<p style="font-size:14px;line-height:1.6;margin:0 0 14px;color:#2b2b2b;">Na temelju Vaše povratne potvrde te nakon verifikacije ponude u sjedištu društva IN TIME d.o.o. u Zagrebu, Vaš poslovni subjekt bit će otvoren u našem sustavu.</p>
+<p style="font-size:14px;line-height:1.6;margin:0 0 14px;color:#2b2b2b;">Potom ćemo Vam dodijeliti korisničko ime i lozinku za pristup sustavu i unos naloga. U roku od 24 do 48 sati moći ćete započeti s unosom naloga i naručivanjem IN TIME prikupa pošiljaka.</p>
+
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:26px 0;border-collapse:collapse;">
 <tr>
 <td align="center" bgcolor="#0f8b7e" style="border-radius:8px;background-color:#0f8b7e;">
-<a href="{{LINK_POTVRDE}}" target="_blank" rel="noopener" style="display:block;width:100%;box-sizing:border-box;padding:16px 20px;font-family:Arial,Helvetica,sans-serif;font-size:16px;font-weight:bold;color:#ffffff;text-decoration:none;text-align:center;border-radius:8px;">✅ Potvrdi ponudu</a>
+<a href="{{LINK_POTVRDE}}" target="_blank" rel="noopener" style="display:block;width:100%;box-sizing:border-box;padding:16px 20px;font-family:Arial,Helvetica,sans-serif;font-size:16px;font-weight:bold;color:#ffffff;text-decoration:none;text-align:center;border-radius:8px;">Potvrdi ponudu</a>
 </td>
 </tr>
 </table>
@@ -2112,38 +2115,45 @@ var MAIL_PREDLOZAK_HTML_STANDARDNA_ = `<!DOCTYPE html>
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:14px 0 26px;border-collapse:collapse;">
 <tr>
 <td align="center" style="border-radius:8px;border:2px solid #0f8b7e;background-color:#ffffff;">
-<a href="{{LINK_DOKUMENTI}}" target="_blank" rel="noopener" style="display:block;width:100%;box-sizing:border-box;padding:12px 18px;font-family:Arial,Helvetica,sans-serif;font-size:16px;font-weight:bold;color:#0f8b7e;text-decoration:none;text-align:center;">📁 Pogledaj dokumente ponude</a>
+<a href="{{LINK_DOKUMENTI}}" target="_blank" rel="noopener" style="display:block;width:100%;box-sizing:border-box;padding:12px 18px;font-family:Arial,Helvetica,sans-serif;font-size:16px;font-weight:bold;color:#0f8b7e;text-decoration:none;text-align:center;">Pogledaj dokumente ponude</a>
 </td>
 </tr>
 </table>
 <p style="font-size:12px;line-height:1.5;color:#777777;word-break:break-all;margin:0 0 14px;">Ako gumb ne radi, kopirajte poveznicu u preglednik: <a href="{{LINK_DOKUMENTI}}" style="color:#0f8b7e;">{{LINK_DOKUMENTI}}</a></p>
 
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:6px 0 24px;border-collapse:collapse;">
+<tr>
+<td align="center">
+<img src="https://i.imgur.com/JYxGTas.png" alt="In Time d.o.o. — Ponuda" width="560" style="display:block;border:1px solid #e3e6e5;outline:none;text-decoration:none;width:100%;max-width:560px;height:auto;border-radius:10px;box-shadow:0 6px 18px rgba(15,139,126,0.18);">
+</td>
+</tr>
+</table>
+
 <p style="font-size:13px;line-height:1.4;color:#ffffff;font-weight:bold;background-color:#c0392b;border-radius:6px;padding:10px 14px;margin:0 0 18px;text-align:center;">Rok važenja ponude: do {{ROK_VAZENJA}}.</p>
 
-<p style="font-size:14px;line-height:1.6;margin:0 0 14px;color:#2b2b2b;">Na temelju takvog povratnog maila Vaš poslovni subjekt otvaramo u našem sustavu, dodjeljujemo Vam username i password za unos naloga i u roku od 12–24 sata možete početi unositi naloge i naručivati In Time prikup paketa.</p>
 <p style="font-size:14px;line-height:1.6;margin:0 0 14px;color:#2b2b2b;"><strong>In Time d.o.o. prednosti su:</strong></p>
 
 <ol style="font-size:13.5px;line-height:1.6;margin:0 0 18px;padding-left:20px;color:#2b2b2b;">
-<li style="margin-bottom:8px;"><strong>EKSPRESNA ISPORUKA</strong> pošiljaka unutar granica RH po principu „od vrata do vrata", bez posrednika, dodatnih zaustavljanja i paketomata za preuzimanje od strane krajnjeg primatelja.</li>
-<li style="margin-bottom:8px;">Vrlo brzo rješavanje prigovora i naknada štete u slučaju oštećenja ili gubitka Vaših pošiljaka u transportu.</li>
-<li style="margin-bottom:8px;">Prodajni agent zadužen isključivo za Vas kao našeg klijenta brzo i učinkovito rješava svu aktualnu problematiku — ne morate sami kontaktirati različite službe unutar In Time d.o.o.</li>
-<li style="margin-bottom:8px;">Više paketa koje šaljete na jednu adresu tretiramo kao dijelove iste pošiljke — zbrajaju se samo njihove težine.</li>
+<li style="margin-bottom:8px;"><strong>EKSPRESNA ISPORUKA pošiljaka unutar granica RH</strong> po principu <strong>„od vrata do vrata"</strong>, bez posrednika, dodatnih zaustavljanja i paketomata za preuzimanje od strane krajnjeg primatelja.</li>
+<li style="margin-bottom:8px;"><strong>Vrlo brzo rješavanje prigovora i naknada štete</strong> u slučaju oštećenja ili gubitka Vaših pošiljaka u transportu.</li>
+<li style="margin-bottom:8px;"><strong>Prodajni agent zadužen isključivo za Vas</strong> kao našeg klijenta brzo i učinkovito rješava svu aktualnu problematiku — <strong>ne morate sami kontaktirati različite službe unutar In Time d.o.o.</strong></li>
+<li style="margin-bottom:8px;"><strong>Više paketa koje šaljete na jednu adresu tretiramo kao dijelove iste pošiljke</strong> — zbrajaju se samo njihove težine.</li>
 <li style="margin-bottom:8px;">Nudimo <strong>kompletnu dropshipping uslugu</strong> — prikup robe s dodatnih adresa, obradu i slanje pošiljaka u Vaše ime te isporuku Vašim kupcima, uz <strong>automatsku obavijest na Vašem online računu</strong> nakon izvršene usluge.</li>
-<li style="margin-bottom:8px;">Provodimo <strong>interno tjedno i mjesečno vanjsko ocjenjivanje</strong> kvalitete i točnosti usluge, uz korekciju svih uočenih nedostataka i propusta <strong>u vrlo kratkim rokovima</strong>.</li>
+<li style="margin-bottom:8px;">Provodimo <strong>interno tjedno i mjesečno vanjsko ocjenjivanje kvalitete i točnosti usluge</strong>, uz korekciju svih uočenih nedostataka i propusta <strong>u vrlo kratkim rokovima</strong>.</li>
 <li style="margin-bottom:8px;">Našim klijentima osiguravamo pristup <strong>ONLINE BOOKING aplikaciji</strong> koja omogućuje:
   <ul style="margin:6px 0 6px;padding-left:20px;">
     <li style="margin-bottom:4px;">jednostavno otvaranje i storniranje naloga</li>
-    <li style="margin-bottom:4px;">praćenje pošiljke u realnom vremenu</li>
-    <li style="margin-bottom:4px;">potpunu kontrolu nad svim pošiljkama na jednom mjestu</li>
+    <li style="margin-bottom:4px;"><strong>praćenje pošiljke u realnom vremenu</strong></li>
+    <li style="margin-bottom:4px;"><strong>potpunu kontrolu nad svim pošiljkama na jednom mjestu</strong></li>
     <li style="margin-bottom:4px;">ispis dostavnih naljepnica izravno na Vašem A4 printeru, bez dodatne opreme</li>
   </ul>
-  <p style="margin:6px 0 0;font-size:13.5px;line-height:1.6;color:#2b2b2b;">Klijentima bez naknade osiguravamo A4 naljepnice za ispis naloga za pošiljke. Potrebno ih je zatražiti prilikom početka suradnje ili tijekom suradnje kada potrošite postojeću zalihu.</p>
+  <p style="margin:6px 0 0;font-size:13.5px;line-height:1.6;color:#2b2b2b;">Klijentima <strong>bez naknade osiguravamo A4 naljepnice</strong> za ispis naloga za pošiljke. Potrebno ih je zatražiti prilikom početka suradnje ili tijekom suradnje kada potrošite postojeću zalihu.</p>
 </li>
-<li style="margin-bottom:8px;">Prevozimo sve pošiljke — od paketa mase 2 kg do tereta mase 2,5 tone, uključujući sve volumene koji se mogu utovariti u kombi vozila ili kamione s hidrauličnom rampom. Napomena: za utovar većih odnosno težih tereta potrebno je osigurati raspoloživ viličar ili utovarnu rampu na lokaciji prikupa.</li>
-<li style="margin-bottom:8px;">Ekspresna dostava malih pošiljaka od 0 do 40 kg — čak 98,7 % paketa u većim gradovima (Zona 1) isporučuje se unutar 24 sata od preuzimanja.</li>
-<li style="margin-bottom:8px;">Distribucija velikih i paletnih pošiljaka mase veće od 100 kg — isporuka u Zoni 1 najčešće se izvršava u roku od 24 do 48 sati, a maksimalno unutar tri radna dana.</li>
-<li style="margin-bottom:8px;">Radimo <strong>isključivo na temelju ponude</strong>, bez pritiska na ostvarivanje planova i bez obveznog minimalnog volumena pošiljaka koje trebate poslati putem našeg logističkog sustava.</li>
-<li style="margin-bottom:8px;">In Time d.o.o. — poslovni subjekt u potpunom hrvatskom vlasništvu.</li>
+<li style="margin-bottom:8px;"><strong>Prevozimo sve pošiljke — od paketa mase 2 kg do tereta mase 2,5 tone</strong>, uključujući sve volumene koji se mogu utovariti u kombi vozila ili kamione s hidrauličnom rampom. Napomena: za utovar većih odnosno težih tereta potrebno je osigurati raspoloživ viličar ili utovarnu rampu na lokaciji prikupa.</li>
+<li style="margin-bottom:8px;"><strong>Ekspresna dostava malih pošiljaka od 0 do 40 kg</strong> — čak 98,7 % paketa u većim gradovima (Zona 1) isporučuje se <strong>unutar 24 sata od preuzimanja</strong>.</li>
+<li style="margin-bottom:8px;"><strong>Distribucija velikih i paletnih pošiljaka mase veće od 100 kg</strong> — isporuka u Zoni 1 najčešće se izvršava <strong>u roku od 24 do 48 sati</strong>, a maksimalno unutar tri radna dana.</li>
+<li style="margin-bottom:8px;">Radimo <strong>isključivo na temelju ponude</strong>, bez pritiska na ostvarivanje planova i <strong>bez obveznog minimalnog volumena pošiljaka</strong> koje trebate poslati putem našeg logističkog sustava.</li>
+<li style="margin-bottom:8px;"><strong>In Time d.o.o. — poslovni subjekt u potpunom hrvatskom vlasništvu.</strong></li>
 </ol>
 
 <p style="font-size:14px;line-height:1.6;margin:0 0 14px;color:#2b2b2b;">Srdačan pozdrav / Kind regards,</p>
@@ -2212,7 +2222,7 @@ var MAIL_PREDLOZAK_HTML_KORIGIRANA_ = `<!DOCTYPE html>
 <p style="font-size:14px;line-height:1.6;margin:0 0 14px;color:#2b2b2b;">Poštovani {{IME_OSOBE}},</p>
 <p style="font-size:14px;line-height:1.6;margin:0 0 14px;color:#2b2b2b;">dostavljamo Vam ponudu broj {{BROJ_PONUDE}} za tvrtku {{IME_FIRME}}, izrađenu na temelju podataka navedenih u prodajnom upitniku broj {{BROJ_UPITNIKA}}, za sljedeće logističke usluge:</p>
 
-<div style="white-space:pre-line;font-size:14px;line-height:1.7;background-color:#f6faf9;border:1px solid #d9ece8;border-radius:8px;padding:14px 16px;margin:0 0 18px;color:#2b2b2b;">{{USLUGE}}</div>
+<div style="white-space:pre-line;font-size:14px;line-height:1.7;background-color:#f6faf9;border:1px solid #d9ece8;border-radius:8px;padding:14px 16px;margin:0 0 18px;color:#2b2b2b;text-align:center;font-weight:bold;">{{USLUGE}}</div>
 
 <p style="font-size:14px;line-height:1.6;margin:0 0 14px;color:#2b2b2b;">Iznimno nam je stalo do suradnje s Vama. Stoga smo ponovno pažljivo razmotrili sve okolnosti te, želeći u najvećoj mogućoj mjeri uvažiti Vaše potrebe, pripremili korigiranu ponudu za koju vjerujemo da će bolje odgovarati Vašim očekivanjima i otvoriti prostor za uspješnu dugoročnu suradnju.</p>
 <p style="font-size:14px;line-height:1.6;margin:0 0 14px;color:#2b2b2b;"><strong>Ponudu možete prihvatiti brzo i jednostavno, bez čekanja na povratni mail — klikom na gumb ispod, gdje je potrebno unijeti OIB Vaše tvrtke te ime i prezime i funkciju osobe koja potvrđuje, kao dokaz ovlaštenja za prihvaćanje ponude {{BROJ_PONUDE}}:</strong></p>
@@ -2220,7 +2230,7 @@ var MAIL_PREDLOZAK_HTML_KORIGIRANA_ = `<!DOCTYPE html>
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:26px 0;border-collapse:collapse;">
 <tr>
 <td align="center" bgcolor="#0f8b7e" style="border-radius:8px;background-color:#0f8b7e;">
-<a href="{{LINK_POTVRDE}}" target="_blank" rel="noopener" style="display:block;width:100%;box-sizing:border-box;padding:16px 20px;font-family:Arial,Helvetica,sans-serif;font-size:16px;font-weight:bold;color:#ffffff;text-decoration:none;text-align:center;border-radius:8px;">✅ Potvrdi ponudu</a>
+<a href="{{LINK_POTVRDE}}" target="_blank" rel="noopener" style="display:block;width:100%;box-sizing:border-box;padding:16px 20px;font-family:Arial,Helvetica,sans-serif;font-size:16px;font-weight:bold;color:#ffffff;text-decoration:none;text-align:center;border-radius:8px;">Potvrdi ponudu</a>
 </td>
 </tr>
 </table>
@@ -2229,17 +2239,98 @@ var MAIL_PREDLOZAK_HTML_KORIGIRANA_ = `<!DOCTYPE html>
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:14px 0 26px;border-collapse:collapse;">
 <tr>
 <td align="center" style="border-radius:8px;border:2px solid #0f8b7e;background-color:#ffffff;">
-<a href="{{LINK_DOKUMENTI}}" target="_blank" rel="noopener" style="display:block;width:100%;box-sizing:border-box;padding:12px 18px;font-family:Arial,Helvetica,sans-serif;font-size:16px;font-weight:bold;color:#0f8b7e;text-decoration:none;text-align:center;">📁 Pogledaj dokumente ponude</a>
+<a href="{{LINK_DOKUMENTI}}" target="_blank" rel="noopener" style="display:block;width:100%;box-sizing:border-box;padding:12px 18px;font-family:Arial,Helvetica,sans-serif;font-size:16px;font-weight:bold;color:#0f8b7e;text-decoration:none;text-align:center;">Pogledaj dokumente ponude</a>
 </td>
 </tr>
 </table>
 <p style="font-size:12px;line-height:1.5;color:#777777;word-break:break-all;margin:0 0 14px;">Ako gumb ne radi, kopirajte poveznicu u preglednik: <a href="{{LINK_DOKUMENTI}}" style="color:#0f8b7e;">{{LINK_DOKUMENTI}}</a></p>
 
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:6px 0 24px;border-collapse:collapse;">
+<tr>
+<td align="center">
+<img src="https://i.imgur.com/JYxGTas.png" alt="In Time d.o.o. — Ponuda" width="560" style="display:block;border:1px solid #e3e6e5;outline:none;text-decoration:none;width:100%;max-width:560px;height:auto;border-radius:10px;box-shadow:0 6px 18px rgba(15,139,126,0.18);">
+</td>
+</tr>
+</table>
+
 <p style="font-size:13px;line-height:1.4;color:#ffffff;font-weight:bold;background-color:#c0392b;border-radius:6px;padding:10px 14px;margin:0 0 18px;text-align:center;">Rok važenja ponude: do {{ROK_VAZENJA}}.</p>
 
-<p style="font-size:14px;line-height:1.6;margin:0 0 14px;color:#2b2b2b;">Nakon što zaprimimo Vašu povratnu potvrdu, ponuda će biti upućena na verifikaciju u sjedište društva IN TIME d.o.o. u Zagrebu, nakon čega ćemo Vaš poslovni subjekt otvoriti u našem sustavu.</p>
-<p style="font-size:14px;line-height:1.6;margin:0 0 14px;color:#2b2b2b;">U roku od 24 do 48 sati od trenutka zaprimanja Vaše potvrde, na istu adresu e-pošte primit ćete korisničko ime, lozinku i upute za pristup sustavu. Nakon zaprimanja pristupnih podataka moći ćete odmah započeti s unosom naloga i naručivanjem IN TIME prikupa pošiljaka.</p>
+<p style="font-size:14px;line-height:1.6;margin:0 0 14px;color:#2b2b2b;">Na temelju Vaše povratne potvrde te nakon verifikacije ponude u sjedištu društva IN TIME d.o.o. u Zagrebu, Vaš poslovni subjekt bit će otvoren u našem sustavu.</p>
+<p style="font-size:14px;line-height:1.6;margin:0 0 14px;color:#2b2b2b;">Potom ćemo Vam dodijeliti korisničko ime i lozinku za pristup sustavu i unos naloga. U roku od 24 do 48 sati moći ćete započeti s unosom naloga i naručivanjem IN TIME prikupa pošiljaka.</p>
 <p style="font-size:14px;line-height:1.6;margin:0 0 14px;color:#2b2b2b;">U slučaju pitanja i potrebe za dodatnim informacijama stojimo Vam na raspolaganju.</p>
+<p style="font-size:14px;line-height:1.6;margin:0 0 14px;color:#2b2b2b;">Srdačan pozdrav / Kind regards,</p>
+<p style="font-size:14px;line-height:1.6;margin:0 0 18px;color:#2b2b2b;">Saša Batinac</p>
+
+<div style="border-top:1px solid #e3e6e5;margin-top:24px;padding-top:18px;font-size:12.5px;line-height:1.6;color:#444444;">
+<strong style="color:#1f3d3a;">Saša Batinac, univ. spec. oec.</strong><br>
+Sales and Marketing Manager, Voditelj ključnih kupaca<br>
+In Time d.o.o. — Licensee of FedEx<br><br>
+M: +385 91 6262 171 · <a href="mailto:sasa.batinac@in-time.hr" style="color:#0f8b7e;text-decoration:none;">sasa.batinac@in-time.hr</a><br>
+<a href="https://in-time.hr" target="_blank" rel="noopener" style="color:#0f8b7e;text-decoration:none;">in-time.hr</a> · <a href="https://fedex.com" target="_blank" rel="noopener" style="color:#0f8b7e;text-decoration:none;">fedex.com</a><br>
+In Time d.o.o. · FedEx zastupništvo · Hrvatska, BiH, Srbija, Slovenija, Crna Gora, Sjeverna Makedonija
+</div>
+
+</td>
+</tr>
+</table>
+
+</td>
+</tr>
+</table>
+
+<table role="presentation" width="620" cellpadding="0" cellspacing="0" border="0" style="max-width:620px;width:100%;border-collapse:collapse;">
+<tr>
+<td style="font-size:10.5px;line-height:1.5;color:#9aa3a1;text-align:center;padding:14px 10px 0;font-family:Arial,Helvetica,sans-serif;">Izradio Saša Batinac. Sva prava pridržana.<br>Saša Batinac univ. spec. oec. — voditelj ključnih klijenata — In Time d.o.o. — regija istok</td>
+</tr>
+</table>
+
+</td>
+</tr>
+</table>
+</body>
+</html>
+`;
+
+// "Mali skriveni template" (Sašin izričit izraz, 22.9.2026., dvanaesti krug) —
+// NIJE u izborniku "Predložak za slanje ponude" (za razliku od gornja dva) i
+// NE upisuje se u Sheet InTime_MailPredlosci — koristi ga ISKLJUČIVO
+// adminPonistiPrihvacenuPonudu(), automatski, kad Saša poništi VEĆ
+// PRIHVAĆENU ponudu (Uprava je naknadno ne odobri). Banner slika (imgur link)
+// je Sašina vlastita grafika, priložena u chatu i njemu ranije poznata pod
+// istim linkom.
+var MAIL_PREDLOZAK_HTML_NEGATIVNA_VERIFIKACIJA_ = `<!DOCTYPE html>
+<html lang="hr" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<title>Obavijest o negativnoj verifikaciji ponude — In Time d.o.o.</title>
+</head>
+<body style="margin:0;padding:0;background-color:#f2f4f3;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#f2f4f3;margin:0;padding:0;border-collapse:collapse;">
+<tr>
+<td align="center" style="padding:24px 16px;">
+
+<table role="presentation" width="620" cellpadding="0" cellspacing="0" border="0" style="max-width:620px;width:100%;border-collapse:collapse;">
+<tr>
+<td style="background-color:#ffffff;border:1px solid #e3e6e5;border-radius:10px;font-family:Arial,Helvetica,sans-serif;">
+
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;">
+<tr>
+<td style="border-radius:10px 10px 0 0;">
+<img src="https://i.imgur.com/BS64Fmy.png" alt="In Time d.o.o. — Negativna verifikacija ponude" width="620" style="display:block;border:0;outline:none;text-decoration:none;width:100%;max-width:620px;height:auto;border-radius:10px 10px 0 0;">
+</td>
+</tr>
+</table>
+
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;">
+<tr>
+<td style="padding:28px 30px;font-family:Arial,Helvetica,sans-serif;color:#2b2b2b;">
+
+<p style="font-size:14px;line-height:1.6;margin:0 0 14px;color:#2b2b2b;">Poštovani,</p>
+<p style="font-size:14px;line-height:1.6;margin:0 0 14px;color:#2b2b2b;"><strong>Nažalost, moramo Vas obavijestiti da predloženi model suradnje u ovom trenutku nije pozitivno verificiran od strane Uprave IN TIME d.o.o. u Zagrebu.</strong></p>
+<p style="font-size:14px;line-height:1.6;margin:0 0 14px;color:#2b2b2b;">Ljubazno Vas molimo za još malo strpljenja. Nakon dodatnog razmatranja svih mogućnosti, povratno ćemo Vas kontaktirati s novim prijedlogom suradnje, za koji vjerujemo da će biti prihvatljiv objema stranama.</p>
+<p style="font-size:14px;line-height:1.6;margin:0 0 14px;color:#2b2b2b;"><strong>Zahvaljujemo Vam na razumijevanju i iskazanom interesu za suradnju s IN TIME d.o.o.</strong></p>
 <p style="font-size:14px;line-height:1.6;margin:0 0 14px;color:#2b2b2b;">Srdačan pozdrav / Kind regards,</p>
 <p style="font-size:14px;line-height:1.6;margin:0 0 18px;color:#2b2b2b;">Saša Batinac</p>
 
@@ -2339,7 +2430,122 @@ function getOrCreateMailPredlosciSheet() {
   // kroz zasebne InTime_MailPredlozak_*.html fajlove).
   popraviPredloskeBezLinkaDokumenata_(sheet);
   dodajHtmlPredloskeAkoNedostaju_(sheet);
+  popraviIkoniceUHtmlPredloscima_(sheet);
   return sheet;
+}
+
+// Samopopravak (22.9.2026., dvanaesti krug, nastavak — Sašin izričit
+// zahtjev): ✅/📁 ikonice su ranije uklonjene iz standalone datoteka
+// InTime_MailPredlozak_1/2_....html RADI PREGLEDA, ali PRAVI sadržaj koji
+// se stvarno šalje živi u Sheetu "InTime_MailPredlosci" (upisan JEDNOM, kod
+// prvog ikad poziva dodajHtmlPredloskeAkoNedostaju_() gore, dok su
+// MAIL_PREDLOZAK_HTML_STANDARDNA_/KORIGIRANA_ konstante još imale stare
+// ikonice) — pa je već spremljeni redak u Sašinom Sheetu i dalje sadržavao
+// razlomljene ikonice, iako su konstante ovdje u međuvremenu ispravljene.
+// Isti mehanizam iskorišten i za rečenicu "Na temelju takvog povratnog
+// maila..." iz "Standardna ponuda (HTML)" (Sašin izričit zahtjev, isti
+// krug) — bila je ostatak stare verzije teksta (nakon crvenog "Rok
+// važenja" bloka), izbačena je iz konstante, a Saša je zatim tražio
+// proširen/preformuliran tekst na SASVIM DRUGOM mjestu — ODMAH ISPOD
+// uvodnog odlomka "Ponudu možete prihvatiti brzo i jednostavno...", PRIJE
+// zelenog gumba "Potvrdi ponudu" (ne nakon crvenog roka — tamo odmah idu
+// "In Time d.o.o. prednosti su:", bez ičega između). Već spremljeni redak
+// u Sašinom Sheetu je i dalje imao staru rečenicu na starom mjestu, pa je
+// ova funkcija briše odande i umeće novi tekst na ispravno mjesto.
+// Ova funkcija (idempotentna, svaki put provjerava postoje li ostaci)
+// surgically briše/umeće SAMO te poznate podnizove u sadržaju SVAKOG HTML
+// predloška (stupac HTML='DA') — ništa se drugo u sadržaju ne dira, tako
+// da Saša ne gubi nikakvu svoju eventualnu ručnu izmjenu istog predloška.
+function popraviIkoniceUHtmlPredloscima_(sheet) {
+  var lastRow = sheet.getLastRow();
+  if (lastRow < 2) { return; }
+  var data = sheet.getRange(2, 1, lastRow - 1, 6).getValues();
+  var recenicaZaBrisanje_ = '<p style="font-size:14px;line-height:1.6;margin:0 0 14px;color:#2b2b2b;">Na temelju takvog povratnog maila Vaš poslovni subjekt otvaramo u našem sustavu, dodjeljujemo Vam username i password za unos naloga i u roku od 12–24 sata možete početi unositi naloge i naručivati In Time prikup paketa.</p>\n';
+  // Novi, prošireni/preformulirani tekst (Sašin izričit zahtjev, isti
+  // krug) — umeće se ODMAH ISPOD uvodnog odlomka "Ponudu možete
+  // prihvatiti...", PRIJE zelenog gumba "Potvrdi ponudu".
+  var novoObjasnjenje_ = '<p style="font-size:14px;line-height:1.6;margin:0 0 14px;color:#2b2b2b;">Na temelju Vaše povratne potvrde te nakon verifikacije ponude u sjedištu društva IN TIME d.o.o. u Zagrebu, Vaš poslovni subjekt bit će otvoren u našem sustavu.</p>\n<p style="font-size:14px;line-height:1.6;margin:0 0 14px;color:#2b2b2b;">Potom ćemo Vam dodijeliti korisničko ime i lozinku za pristup sustavu i unos naloga. U roku od 24 do 48 sati moći ćete započeti s unosom naloga i naručivanjem IN TIME prikupa pošiljaka.</p>\n';
+  var uvodniOdlomak_ = '<p style="font-size:14px;line-height:1.6;margin:0 0 14px;color:#2b2b2b;"><strong>Ponudu možete prihvatiti brzo i jednostavno, bez čekanja na povratni mail — klikom na gumb ispod, gdje je potrebno unijeti OIB Vaše tvrtke te ime i prezime i funkciju osobe koja potvrđuje, kao dokaz ovlaštenja za prihvaćanje ponude {{BROJ_PONUDE}}:</strong></p>\n\n';
+  // Slika ispod gumba "Pogledaj dokumente ponude" (Sašin izričit zahtjev,
+  // isti krug) — umeće se odmah nakon fallback-linka tog gumba, prije
+  // crvenog "Rok važenja" bloka.
+  var oznakaZaSlikuIza_ = '<p style="font-size:12px;line-height:1.5;color:#777777;word-break:break-all;margin:0 0 14px;">Ako gumb ne radi, kopirajte poveznicu u preglednik: <a href="{{LINK_DOKUMENTI}}" style="color:#0f8b7e;">{{LINK_DOKUMENTI}}</a></p>\n\n';
+  var slikaPonude_ = '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:6px 0 24px;border-collapse:collapse;">\n<tr>\n<td align="center">\n<img src="https://i.imgur.com/JYxGTas.png" alt="In Time d.o.o. — Ponuda" width="560" style="display:block;border:1px solid #e3e6e5;outline:none;text-decoration:none;width:100%;max-width:560px;height:auto;border-radius:10px;box-shadow:0 6px 18px rgba(15,139,126,0.18);">\n</td>\n</tr>\n</table>\n\n';
+  // Staro objašnjenje u "Korigirana ponuda (HTML)" (odmah nakon crvene
+  // "Rok važenja" trake) — Sašin izričit zahtjev, novi krug: zamijeni ga
+  // istim novoObjasnjenje_ tekstom koji je Standardna već dobila.
+  var staroObjasnjenjeKorigirana_ = '<p style="font-size:14px;line-height:1.6;margin:0 0 14px;color:#2b2b2b;">Nakon što zaprimimo Vašu povratnu potvrdu, ponuda će biti upućena na verifikaciju u sjedište društva IN TIME d.o.o. u Zagrebu, nakon čega ćemo Vaš poslovni subjekt otvoriti u našem sustavu.</p>\n<p style="font-size:14px;line-height:1.6;margin:0 0 14px;color:#2b2b2b;">U roku od 24 do 48 sati od trenutka zaprimanja Vaše potvrde, na istu adresu e-pošte primit ćete korisničko ime, lozinku i upute za pristup sustavu. Nakon zaprimanja pristupnih podataka moći ćete odmah započeti s unosom naloga i naručivanjem IN TIME prikupa pošiljaka.</p>';
+  for (var i = 0; i < data.length; i++) {
+    var sadrzaj = String(data[i][2] || '');
+    var jeHtml = data[i][5] === 'DA';
+    if (!jeHtml || !sadrzaj) { continue; }
+    var nazivPredloska_ = String(data[i][0] || '').trim();
+    var popravljeno = sadrzaj.split('✅ Potvrdi ponudu').join('Potvrdi ponudu')
+      .split('📁 Pogledaj dokumente ponude').join('Pogledaj dokumente ponude')
+      .split(recenicaZaBrisanje_).join('');
+    // Umetni novi tekst nakon uvodnog odlomka SAMO za "Standardna ponuda
+    // (HTML)" (isti razlog kao kod slike niže — "Korigirana ponuda (HTML)"
+    // ima identičan uvodni odlomak pa se ne smije oslanjati samo na
+    // sadržaj) i još nema novi tekst (idempotentno).
+    if (nazivPredloska_ === MAIL_PREDLOZAK_HTML_STANDARDNA_NAZIV_ && popravljeno.indexOf(uvodniOdlomak_) !== -1 && popravljeno.indexOf(novoObjasnjenje_) === -1) {
+      popravljeno = popravljeno.split(uvodniOdlomak_).join(uvodniOdlomak_ + novoObjasnjenje_);
+    }
+    // Isto za sliku — SAMO za predložak nazvan točno "Standardna ponuda
+    // (HTML)" (Sašin zahtjev je bio konkretno za taj predložak; "Korigirana
+    // ponuda (HTML)" ima identičan fallback-link tekst gumba pa se ne smije
+    // oslanjati samo na sadržaj, nego i na naziv retka).
+    if (nazivPredloska_ === MAIL_PREDLOZAK_HTML_STANDARDNA_NAZIV_ && popravljeno.indexOf(oznakaZaSlikuIza_) !== -1 && popravljeno.indexOf('JYxGTas') === -1) {
+      popravljeno = popravljeno.split(oznakaZaSlikuIza_).join(oznakaZaSlikuIza_ + slikaPonude_);
+    }
+    // Zamijeni staro objašnjenje novim SAMO za "Korigirana ponuda (HTML)".
+    if (nazivPredloska_ === MAIL_PREDLOZAK_HTML_KORIGIRANA_NAZIV_ && popravljeno.indexOf(staroObjasnjenjeKorigirana_) !== -1) {
+      popravljeno = popravljeno.split(staroObjasnjenjeKorigirana_).join(novoObjasnjenje_.trim());
+    }
+    // Slika i za "Korigirana ponuda (HTML)" (Sašin izričit zahtjev, novi
+    // krug: "ubaci sliku... i u korigiranu ponudu, na isto mjesto").
+    if (nazivPredloska_ === MAIL_PREDLOZAK_HTML_KORIGIRANA_NAZIV_ && popravljeno.indexOf(oznakaZaSlikuIza_) !== -1 && popravljeno.indexOf('JYxGTas') === -1) {
+      popravljeno = popravljeno.split(oznakaZaSlikuIza_).join(oznakaZaSlikuIza_ + slikaPonude_);
+    }
+    // Proširenje podebljanja u "prednosti" listi SAMO za "Standardna ponuda
+    // (HTML)" (Sašin izričit zahtjev, novi krug — točno prema njegovoj
+    // označenoj referenci).
+    if (nazivPredloska_ === MAIL_PREDLOZAK_HTML_STANDARDNA_NAZIV_) {
+      var prednostiZamjene_ = [
+        ['<li style="margin-bottom:8px;"><strong>EKSPRESNA ISPORUKA</strong> pošiljaka unutar granica RH po principu „od vrata do vrata", bez posrednika, dodatnih zaustavljanja i paketomata za preuzimanje od strane krajnjeg primatelja.</li>',
+         '<li style="margin-bottom:8px;"><strong>EKSPRESNA ISPORUKA pošiljaka unutar granica RH</strong> po principu <strong>„od vrata do vrata"</strong>, bez posrednika, dodatnih zaustavljanja i paketomata za preuzimanje od strane krajnjeg primatelja.</li>'],
+        ['<li style="margin-bottom:8px;">Vrlo brzo rješavanje prigovora i naknada štete u slučaju oštećenja ili gubitka Vaših pošiljaka u transportu.</li>',
+         '<li style="margin-bottom:8px;"><strong>Vrlo brzo rješavanje prigovora i naknada štete</strong> u slučaju oštećenja ili gubitka Vaših pošiljaka u transportu.</li>'],
+        ['<li style="margin-bottom:8px;">Prodajni agent zadužen isključivo za Vas kao našeg klijenta brzo i učinkovito rješava svu aktualnu problematiku — ne morate sami kontaktirati različite službe unutar In Time d.o.o.</li>',
+         '<li style="margin-bottom:8px;"><strong>Prodajni agent zadužen isključivo za Vas</strong> kao našeg klijenta brzo i učinkovito rješava svu aktualnu problematiku — <strong>ne morate sami kontaktirati različite službe unutar In Time d.o.o.</strong></li>'],
+        ['<li style="margin-bottom:8px;">Više paketa koje šaljete na jednu adresu tretiramo kao dijelove iste pošiljke — zbrajaju se samo njihove težine.</li>',
+         '<li style="margin-bottom:8px;"><strong>Više paketa koje šaljete na jednu adresu tretiramo kao dijelove iste pošiljke</strong> — zbrajaju se samo njihove težine.</li>'],
+        ['<li style="margin-bottom:8px;">Provodimo <strong>interno tjedno i mjesečno vanjsko ocjenjivanje</strong> kvalitete i točnosti usluge, uz korekciju svih uočenih nedostataka i propusta <strong>u vrlo kratkim rokovima</strong>.</li>',
+         '<li style="margin-bottom:8px;">Provodimo <strong>interno tjedno i mjesečno vanjsko ocjenjivanje kvalitete i točnosti usluge</strong>, uz korekciju svih uočenih nedostataka i propusta <strong>u vrlo kratkim rokovima</strong>.</li>'],
+        ['    <li style="margin-bottom:4px;">praćenje pošiljke u realnom vremenu</li>\n    <li style="margin-bottom:4px;">potpunu kontrolu nad svim pošiljkama na jednom mjestu</li>',
+         '    <li style="margin-bottom:4px;"><strong>praćenje pošiljke u realnom vremenu</strong></li>\n    <li style="margin-bottom:4px;"><strong>potpunu kontrolu nad svim pošiljkama na jednom mjestu</strong></li>'],
+        ['<p style="margin:6px 0 0;font-size:13.5px;line-height:1.6;color:#2b2b2b;">Klijentima bez naknade osiguravamo A4 naljepnice za ispis naloga za pošiljke. Potrebno ih je zatražiti prilikom početka suradnje ili tijekom suradnje kada potrošite postojeću zalihu.</p>',
+         '<p style="margin:6px 0 0;font-size:13.5px;line-height:1.6;color:#2b2b2b;">Klijentima <strong>bez naknade osiguravamo A4 naljepnice</strong> za ispis naloga za pošiljke. Potrebno ih je zatražiti prilikom početka suradnje ili tijekom suradnje kada potrošite postojeću zalihu.</p>'],
+        ['<li style="margin-bottom:8px;">Prevozimo sve pošiljke — od paketa mase 2 kg do tereta mase 2,5 tone, uključujući sve volumene koji se mogu utovariti u kombi vozila ili kamione s hidrauličnom rampom. Napomena: za utovar većih odnosno težih tereta potrebno je osigurati raspoloživ viličar ili utovarnu rampu na lokaciji prikupa.</li>',
+         '<li style="margin-bottom:8px;"><strong>Prevozimo sve pošiljke — od paketa mase 2 kg do tereta mase 2,5 tone</strong>, uključujući sve volumene koji se mogu utovariti u kombi vozila ili kamione s hidrauličnom rampom. Napomena: za utovar većih odnosno težih tereta potrebno je osigurati raspoloživ viličar ili utovarnu rampu na lokaciji prikupa.</li>'],
+        ['<li style="margin-bottom:8px;">Ekspresna dostava malih pošiljaka od 0 do 40 kg — čak 98,7 % paketa u većim gradovima (Zona 1) isporučuje se unutar 24 sata od preuzimanja.</li>',
+         '<li style="margin-bottom:8px;"><strong>Ekspresna dostava malih pošiljaka od 0 do 40 kg</strong> — čak 98,7 % paketa u većim gradovima (Zona 1) isporučuje se <strong>unutar 24 sata od preuzimanja</strong>.</li>'],
+        ['<li style="margin-bottom:8px;">Distribucija velikih i paletnih pošiljaka mase veće od 100 kg — isporuka u Zoni 1 najčešće se izvršava u roku od 24 do 48 sati, a maksimalno unutar tri radna dana.</li>',
+         '<li style="margin-bottom:8px;"><strong>Distribucija velikih i paletnih pošiljaka mase veće od 100 kg</strong> — isporuka u Zoni 1 najčešće se izvršava <strong>u roku od 24 do 48 sati</strong>, a maksimalno unutar tri radna dana.</li>'],
+        ['<li style="margin-bottom:8px;">Radimo <strong>isključivo na temelju ponude</strong>, bez pritiska na ostvarivanje planova i bez obveznog minimalnog volumena pošiljaka koje trebate poslati putem našeg logističkog sustava.</li>',
+         '<li style="margin-bottom:8px;">Radimo <strong>isključivo na temelju ponude</strong>, bez pritiska na ostvarivanje planova i <strong>bez obveznog minimalnog volumena pošiljaka</strong> koje trebate poslati putem našeg logističkog sustava.</li>'],
+        ['<li style="margin-bottom:8px;">In Time d.o.o. — poslovni subjekt u potpunom hrvatskom vlasništvu.</li>',
+         '<li style="margin-bottom:8px;"><strong>In Time d.o.o. — poslovni subjekt u potpunom hrvatskom vlasništvu.</strong></li>']
+      ];
+      for (var p = 0; p < prednostiZamjene_.length; p++) {
+        if (popravljeno.indexOf(prednostiZamjene_[p][0]) !== -1) {
+          popravljeno = popravljeno.split(prednostiZamjene_[p][0]).join(prednostiZamjene_[p][1]);
+        }
+      }
+    }
+    if (popravljeno === sadrzaj) { continue; }
+    sheet.getRange(i + 2, 3).setValue(popravljeno);
+    sheet.getRange(i + 2, 5).setValue(new Date());
+  }
 }
 
 function popraviPredloskeBezLinkaDokumenata_(sheet) {
@@ -4425,20 +4631,36 @@ function adminPonistiPrihvacenuPonudu(token, rowIndex) {
   sheet.getRange(rowIndex, ponistenjeCol + 1).setValue(sada);
 
   var naziv = String(row[header.indexOf('Naziv tvrtke')] || '').trim() || '(bez naziva)';
-  var sifraPonude = String(row[header.indexOf('Šifra ponude (admin)')] || '').trim() || '(bez broja ponude)';
+  // ISPRAVAK (22.9.2026., dvanaesti krug — Sašin izričit zahtjev): raniji kod
+  // je ovdje čitao SAMO sirovu INTRIX šifru ("Šifra ponude (admin)"), bez
+  // "-P{verzija}" sufiksa — zato je naslov maila znao ispasti BEZ punog broja
+  // ponude kad se ova funkcija koristila na 2. ili 3. korigiranoj ponudi
+  // (npr. "5678-44-2026" umjesto "5678-44-2026-P3"). Broj ponude se odsad
+  // računa POTPUNO ISTOM formulom kao svugdje drugdje u sustavu (vidi
+  // adminPripremiDokumenteZaPonudu, zabiljeziEvidencijuSlanja_, {{BROJ_PONUDE}}
+  // tag) — jedan izvor istine.
+  var sifraSirova_ = String(row[header.indexOf(ADMIN_ONLY_FIELDS.sifra_ponude)] || '').trim();
+  var verzijaCol_ = header.indexOf(ADMIN_ONLY_FIELDS.ponuda_verzija);
+  var verzija_ = (verzijaCol_ !== -1 && parseInt(row[verzijaCol_], 10)) || 1;
+  var sifraPonude = sifraSirova_ ? (sifraSirova_ + '-P' + verzija_) : '(bez broja ponude)';
   var mailAdreseSirovo = String(row[header.indexOf('Mail adrese za slanje ponude (admin)')] || '').trim();
   var primatelji = mailAdreseSirovo ? mailAdreseSirovo.split(',').map(function(a) { return a.trim(); }).filter(function(a) { return EMAIL_REGEX_.test(a); }) : [];
 
   var poslanoNa = [];
   if (primatelji.length) {
     try {
-      var tijelo = 'Poštovani,\n\n' +
-        'nažalost, moramo Vas obavijestiti da ponuda broj ' + sifraPonude + ' nije odobrena od strane Uprave In Time d.o.o. u Zagrebu.\n\n' +
-        'Uskoro ćemo Vas kontaktirati s izmijenjenom ponudom.\n\n' +
+      // Naslov, tekst i banner — Sašin izričit zahtjev (22.9.2026., dvanaesti
+      // krug). "Mali skriveni template" — MAIL_PREDLOZAK_HTML_NEGATIVNA_VERIFIKACIJA_
+      // (vidi definiciju gore) — HTML, s bannerom koji je Saša priložio, NIJE
+      // u izborniku predložaka, koristi se samo ovdje.
+      var tijeloTekst_ = 'Poštovani,\n\n' +
+        'Nažalost, moramo Vas obavijestiti da predloženi model suradnje u ovom trenutku nije pozitivno verificiran od strane Uprave IN TIME d.o.o. u Zagrebu.\n\n' +
+        'Ljubazno Vas molimo za još malo strpljenja. Nakon dodatnog razmatranja svih mogućnosti, povratno ćemo Vas kontaktirati s novim prijedlogom suradnje, za koji vjerujemo da će biti prihvatljiv objema stranama.\n\n' +
+        'Zahvaljujemo Vam na razumijevanju i iskazanom interesu za suradnju s IN TIME d.o.o.\n\n' +
         'Srdačan pozdrav / Kind regards,\n\n' +
         'Saša Batinac\n' +
         'Voditelj ključnih kupaca';
-      GmailApp.sendEmail(primatelji.join(','), 'Obavijest o ponudi ' + sifraPonude, tijelo, { bcc: NOTIFY_EMAIL });
+      GmailApp.sendEmail(primatelji.join(','), 'OBAVIJEST O NEGATIVNOJ VERIFIKACIJI PONUDE: ' + sifraPonude, tijeloTekst_, { bcc: NOTIFY_EMAIL, htmlBody: MAIL_PREDLOZAK_HTML_NEGATIVNA_VERIFIKACIJA_ });
       poslanoNa = primatelji;
     } catch (err) {
       // Slanje maila ne smije srušiti samo poništenje — Saša svejedno vidi
