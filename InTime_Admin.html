@@ -530,10 +530,12 @@
   .af-predlozak-btn{background:none;border:1px solid var(--line);border-radius:6px;cursor:pointer;font-size:11px;font-weight:600;color:var(--purple);padding:5px 9px;white-space:nowrap;}
   .af-predlozak-btn:hover{color:#fff;background:var(--purple);border-color:var(--purple);}
   /* Bez unutarnjeg max-height/scroll-a (Sašin izričit zahtjev, 22.9.2026.,
-     treći krug: "da ne moram skrolati") — kutija sad raste do pune visine
-     iframe pregleda (koji ionako ima svoj gornji strop, vidi JS niže), pa se
-     cijeli predložak vidi odjednom skrolanjem stranice, bez dvostrukog
-     scroll-a unutar male kutije. */
+     treći krug: "da ne moram skrolati") — kutija raste do pune visine iframe
+     pregleda ispod. NAPOMENA (šesti krug): sam iframe VIŠE NEMA gornji strop
+     (bio je tvrdo ograničen na 2000px u JS-u, vidi load-listener niže u
+     kodu — to je bio pravi uzrok preostalog skrolanja kod viših predložaka),
+     pa se cijeli predložak sad uvijek vidi odjednom, skrolanjem stranice,
+     bez dvostrukog scroll-a unutar male kutije. */
   .af-predlozak-pregled{background:#fff;border:1px solid var(--line);border-radius:8px;padding:12px 14px;}
   .af-predlozak-predmet{font-size:12.5px;font-weight:700;color:var(--graphite);margin-bottom:8px;padding-bottom:8px;border-bottom:1px dashed var(--line);}
   .af-predlozak-tijelo{font-size:12.5px;line-height:1.55;color:var(--graphite);white-space:pre-wrap;word-break:break-word;}
@@ -5724,8 +5726,18 @@
           var iframeEl = predlozakPregled.querySelector('iframe');
           iframeEl.addEventListener('load', function() {
             try {
+              // Sašin izričit zahtjev (22.9.2026., šesti krug — "ovo nije
+              // ispravljeno, template je još uvijek za skrolanje... treći put
+              // da isto ne valja"): PRAVI uzrok skrolanja NIJE bio vanjski
+              // `.af-predlozak-pregled` okvir (taj je već uklonjen prošli
+              // krug) nego OVAJ tvrdi strop od 2000px na samom iframeu —
+              // predložak viši od 2000px se svejedno morao interno skrolati
+              // UNUTAR iframea, bez obzira što vanjski okvir više nije
+              // rezao. Sad NEMA gornjeg stropa uopće — iframe uvijek naraste
+              // točno na visinu stvarnog sadržaja, pa se cijeli predložak
+              // uvijek vidi odjednom, skrolanjem same stranice.
               var visina = iframeEl.contentWindow.document.body.scrollHeight;
-              if (visina > 0) { iframeEl.style.height = Math.min(visina + 16, 2000) + 'px'; }
+              if (visina > 0) { iframeEl.style.height = (visina + 16) + 'px'; }
             } catch (e) { /* cross-origin/sandbox — zadrži CSS min-height */ }
           });
         } else {
