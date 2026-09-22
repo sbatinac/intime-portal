@@ -529,7 +529,7 @@
   .af-predlozak-select{flex:1;min-width:160px;padding:6px 8px;border:1px solid var(--line);border-radius:6px;font-size:12.5px;font-family:inherit;background:#fff;}
   .af-predlozak-btn{background:none;border:1px solid var(--line);border-radius:6px;cursor:pointer;font-size:11px;font-weight:600;color:var(--purple);padding:5px 9px;white-space:nowrap;}
   .af-predlozak-btn:hover{color:#fff;background:var(--purple);border-color:var(--purple);}
-  .af-predlozak-pregled{background:#fff;border:1px solid var(--line);border-radius:8px;padding:12px 14px;max-height:340px;overflow-y:auto;}
+  .af-predlozak-pregled{background:#fff;border:1px solid var(--line);border-radius:8px;padding:12px 14px;max-height:1020px;overflow-y:auto;}
   .af-predlozak-predmet{font-size:12.5px;font-weight:700;color:var(--graphite);margin-bottom:8px;padding-bottom:8px;border-bottom:1px dashed var(--line);}
   .af-predlozak-tijelo{font-size:12.5px;line-height:1.55;color:var(--graphite);white-space:pre-wrap;word-break:break-word;}
   .af-predlozak-prazno{font-size:11.5px;color:var(--grey);font-style:italic;padding:2px;}
@@ -592,7 +592,7 @@
      Visina povećana (isti dan, drugi zahtjev — "malo veći, duži ne širi, da
      mogu više dokumenata vidjeti a da ne moram skrolati") sa 320px na
      560px — samo VISINA, širina ostaje ista (određena gridom af-dok-okviri). */
-  .af-dok-lista{display:flex;flex-direction:column;gap:4px;min-height:40px;max-height:560px;overflow-y:auto;}
+  .af-dok-lista{display:flex;flex-direction:column;gap:4px;min-height:40px;max-height:560px;overflow-y:auto;flex:1 1 auto;}
   .af-dok-stavka{display:flex;align-items:center;gap:6px;padding:5px 8px;border:1px solid var(--line);border-radius:6px;background:#fff;font-size:12px;cursor:grab;}
   .af-dok-stavka:hover{border-color:var(--purple);background:#f0fbfa;}
   .af-dok-stavka:active{cursor:grabbing;}
@@ -600,7 +600,7 @@
   .af-dok-cilj-stavka{display:flex;align-items:center;gap:6px;padding:5px 8px;border:1px solid var(--purple);border-radius:6px;background:#fff;font-size:12px;}
   .af-dok-ukloni{background:none;border:none;color:var(--red);cursor:pointer;font-size:13px;font-weight:700;padding:0 2px;line-height:1;}
   .af-dok-ukloni:hover{color:var(--red-dark);}
-  .af-dok-cilj{min-height:100px;}
+  .af-dok-cilj{min-height:100px;flex:1 1 auto;}
   .af-dok-cilj.af-dok-drag-over{border-color:var(--purple);background:#f7e4e0;box-shadow:0 0 0 2px rgba(34,152,145,.18);}
   .af-dok-cilj-hint{font-size:10.5px;color:var(--grey);margin-top:7px;line-height:1.4;}
   .af-dok-prazno{font-size:11.5px;color:var(--grey);font-style:italic;padding:4px 2px;}
@@ -5480,6 +5480,14 @@
           });
         };
 
+        // Automatska priprema direktorija (Sašin izričit zahtjev, 22.9.2026.):
+        // čim se fiksno polje spremi, ODMAH se pokreće ista priprema kao klik
+        // na "📁 Pripremi direktorij i link" — bez čekanja da sva tri budu
+        // popunjena i bez ručnog klika. adminPripremiDokumenteZaPonudu je
+        // idempotentna (briše pa iznova kopira), pa ponovljeni automatski
+        // pozivi ne gomilaju kopije. Ako INTRIX šifra još nije potvrđena,
+        // poziv vraća grešku koju samo tiho prikažemo u pripremaStatusEl —
+        // spremanje polja time nije pogođeno.
         var spremiFiksnoPolje_ = function() {
           var fields = {};
           fields[slotDef.polje] = dokFiksniPolja[slotKljuc] ? JSON.stringify(dokFiksniPolja[slotKljuc]) : '';
@@ -5488,6 +5496,21 @@
             if (res.status === 'ok') { entry.fields[slotDef.stupac] = fields[slotDef.polje]; }
             if (typeof azurirajOsiguracSlanja_ === 'function') { azurirajOsiguracSlanja_(); }
             if (typeof azurirajPripremaGumb_ === 'function') { azurirajPripremaGumb_(); }
+            if (typeof pripremiDirektorij_ === 'function' && typeof pripremaStatusEl !== 'undefined' && pripremaStatusEl) {
+              pripremaStatusEl.textContent = 'Automatska priprema direktorija…';
+              pripremaStatusEl.classList.remove('error');
+              pripremiDirektorij_().then(function(pripRes) {
+                if (pripRes.status === 'ok') {
+                  pripremaStatusEl.textContent = 'Spremno — ' + pripRes.broj + ' dokument(a) u direktoriju.';
+                  pripremaStatusEl.classList.remove('error');
+                  if (typeof prikaziPostojeciLinkDokumenata_ === 'function') { prikaziPostojeciLinkDokumenata_(); }
+                  if (typeof renderPregled_ === 'function') { renderPregled_(); }
+                } else {
+                  pripremaStatusEl.textContent = pripRes.message || 'Greška pri automatskoj pripremi direktorija.';
+                  pripremaStatusEl.classList.add('error');
+                }
+              });
+            }
           });
         };
 
@@ -5496,6 +5519,16 @@
             dokStatus.textContent = '"' + stavka.name + '" nije dozvoljeni tip za "' + slotDef.naziv + '" — dozvoljeno: ' + slotDef.opisTipa + '.';
             dokStatus.classList.add('error');
             return;
+          }
+          // Zamjena već popunjenog polja (Sašin izričit zahtjev, 22.9.2026.) —
+          // traži potvrdu; stari dokument se u svakom slučaju briše iz
+          // direktorija na Driveu čim se sljedeći put pokrene priprema (očisti
+          // pa iznova kopira, vidi adminPripremiDokumenteZaPonudu), a
+          // automatski poziv iznad to radi odmah.
+          var postojecaStavka = dokFiksniPolja[slotKljuc];
+          if (postojecaStavka && postojecaStavka.name) {
+            var potvrdaZamjene = confirm('Zamijeniti trenutni dokument "' + postojecaStavka.name + '" novim "' + stavka.name + '" za "' + slotDef.naziv + '"?\n\nStari dokument će biti obrisan iz direktorija ponude.');
+            if (!potvrdaZamjene) { return; }
           }
           dokFiksniPolja[slotKljuc] = stavka;
           renderSlot_();
@@ -5601,10 +5634,13 @@
       // bez obzira je li Saša ranije ručno obrisao folder i zaboravio
       // ponovno kliknuti "Pripremi".
       var izgradiStavkeZaPripremu_ = function() {
-        var stavke = dokumentiPonude.map(function(d) { return { id: d.id }; });
+        // `slotKljuc` (22.9.2026.) — poslužitelju govori TOČNO u koji
+        // direktorij ide svaka stavka (predirektorij / POSLANO / oba), vidi
+        // napomenu uz restrukturiranje u adminPripremiDokumenteZaPonudu.
+        var stavke = dokumentiPonude.map(function(d) { return { id: d.id, slotKljuc: 'ostalo' }; });
         ['analiticki', 'cjenikhr', 'ponudasuradnja'].forEach(function(slotKljuc) {
           var stavka = dokFiksniPolja[slotKljuc];
-          if (stavka && stavka.id) { stavke.push({ id: stavka.id, fiksniNaziv: DOK_FIKSNI_SLOTOVI_[slotKljuc].naziv }); }
+          if (stavka && stavka.id) { stavke.push({ id: stavka.id, fiksniNaziv: DOK_FIKSNI_SLOTOVI_[slotKljuc].naziv, slotKljuc: slotKljuc }); }
         });
         return stavke;
       };
@@ -5674,7 +5710,7 @@
       // unutar sandboxiranog iframea, njegov textContent nije čitljiv izvan
       // njega), pa se čitanje iz DOM-a više ne može koristiti kao jedini
       // izvor istine.
-      var zadnjiPregled_ = { predmet: '', tijelo: '', html: false };
+      var zadnjiPregled_ = { predmet: '', tijelo: '', html: false, naziv: '' };
 
       var renderPregled_ = function() {
         var odabraniId = parseInt(predlozakSelect.value, 10);
@@ -5683,14 +5719,16 @@
           predlozakPregled.innerHTML = '<div class="af-predlozak-prazno">Nema još nijednog predloška — klikni "+ Novi predložak".</div>';
           predlozakUrediBtn.disabled = true;
           predlozakKopirajBtn.disabled = true;
-          zadnjiPregled_ = { predmet: '', tijelo: '', html: false };
+          zadnjiPregled_ = { predmet: '', tijelo: '', html: false, naziv: '' };
           return;
         }
         predlozakUrediBtn.disabled = false;
         predlozakKopirajBtn.disabled = false;
         var predmetIzrenderiran = renderMailTekst_(odabrani.predmet, entry);
         var tijeloIzrenderirano = renderMailTekst_(odabrani.sadrzaj, entry);
-        zadnjiPregled_ = { predmet: predmetIzrenderiran, tijelo: tijeloIzrenderirano, html: !!odabrani.html };
+        // `naziv` (22.9.2026.) — ide u Evidenciju slanja ("koji predložak je
+        // poslan"), vidi napomenu uz adminPosaljiPonudaMail/zabiljeziEvidencijuSlanja_ u InTime_Code.gs.
+        zadnjiPregled_ = { predmet: predmetIzrenderiran, tijelo: tijeloIzrenderirano, html: !!odabrani.html, naziv: odabrani.naziv || '' };
         var predmetHtml = predmetIzrenderiran ? '<div class="af-predlozak-predmet">Predmet: ' + esc(predmetIzrenderiran) + '</div>' : '';
         if (odabrani.html) {
           // HTML predložak (trideset i prvi krug) — pregled u SANDBOXIRANOM
@@ -5704,7 +5742,7 @@
           iframeEl.addEventListener('load', function() {
             try {
               var visina = iframeEl.contentWindow.document.body.scrollHeight;
-              if (visina > 0) { iframeEl.style.height = Math.min(visina + 16, 900) + 'px'; }
+              if (visina > 0) { iframeEl.style.height = Math.min(visina + 16, 2000) + 'px'; }
             } catch (e) { /* cross-origin/sandbox — zadrži CSS min-height */ }
           });
         } else {
@@ -5843,6 +5881,18 @@
       // može ponovno pojaviti kod SLJEDEĆEG prijelaza u "spremno"). Zvončić
       // gumb uz naslov uključuje/isključuje (pamti se po pregledniku).
       var vecPrikazanaAnimacijaSpremno = false;
+      // Sašin izričit zahtjev (24. krug, ispravka): "video se pojavljuje
+      // čim kliknem na bilo koju ponudu — treba tek kad se zadovolji
+      // ZADNJI od 4 uvjeta, dok je kartica otvorena". Bug je bio: za
+      // ponudu koja je VEĆ bila potpuno spremna PRIJE otvaranja kartice
+      // (sva 4 uvjeta ispunjena od ranije), prvi poziv azurirajOsiguracSlanja_()
+      // (odmah pri renderiranju kartice) je to tumačio kao "TEK sad postala
+      // spremna" i odmah pucao popup. `prviPozivOsiguraca_` rješava to: na
+      // baš prvom pozivu za ovu karticu, ako je već sveOk, tiho se označi
+      // kao "već viđeno" (BEZ popupa) — popup se odsad pojavljuje SAMO na
+      // stvarni prijelaz iz neispunjeno→ispunjeno koji se dogodi DOK je
+      // kartica otvorena (npr. upravo označio zadnji uvjet).
+      var prviPozivOsiguraca_ = true;
       var animacijaToggleBtn = wrap.querySelector('.af-animacija-toggle');
       var azurirajAnimacijaToggleIzgled_ = function() {
         if (!animacijaToggleBtn) { return; }
@@ -5884,7 +5934,12 @@
         // identičan mail kakav bi stvarno primio, pa nema smisla testirati
         // dok ponuda još nije spremna za stvarno slanje.
         if (slanjeTestBtn) { slanjeTestBtn.disabled = !sveOk; }
-        if (sveOk && !vecPrikazanaAnimacijaSpremno) {
+        if (prviPozivOsiguraca_) {
+          prviPozivOsiguraca_ = false;
+          // Prvi render ove kartice — ako je ponuda VEĆ spremna (od
+          // ranije), to nije nova promjena, samo tiho zabilježi kao viđeno.
+          vecPrikazanaAnimacijaSpremno = sveOk;
+        } else if (sveOk && !vecPrikazanaAnimacijaSpremno) {
           vecPrikazanaAnimacijaSpremno = true;
           if (animacijaSpremnoOmogucena_()) {
             prikaziGifPopup_(GIF_SIDRO_SPREMNO_, { trajanjeMs: 4000, tekst: '⚓ Ponuda je spremna za slanje!' });
@@ -5919,7 +5974,7 @@
         // — samo izvor istine više nije DOM nego zadnje izračunata
         // vrijednost.
         var dohvatiTekstZaSlanje_ = function() {
-          return { predmet: zadnjiPregled_.predmet || '', tijelo: zadnjiPregled_.tijelo || '', html: !!zadnjiPregled_.html };
+          return { predmet: zadnjiPregled_.predmet || '', tijelo: zadnjiPregled_.tijelo || '', html: !!zadnjiPregled_.html, naziv: zadnjiPregled_.naziv || '' };
         };
 
         var dohvatiOznaceneMailoveZaSlanje_ = function() {
@@ -6039,7 +6094,7 @@
             }
             slanjePostaviStatus_('Šaljem ponudu…', null);
             pokreniSlanjeProgress_('📨 Šaljem ponudu…');
-            gasCall({ action: 'adminPosaljiPonudaMail', token: adminToken, rowIndex: entry.rowIndex, primatelji: primatelji, predmet: tekst.predmet, tijelo: tekst.tijelo, kopijaSebi: kopijaSebi, jeHtml: tekst.html }).then(function(res) {
+            gasCall({ action: 'adminPosaljiPonudaMail', token: adminToken, rowIndex: entry.rowIndex, primatelji: primatelji, predmet: tekst.predmet, tijelo: tekst.tijelo, kopijaSebi: kopijaSebi, jeHtml: tekst.html, nazivPredloska: tekst.naziv }).then(function(res) {
               zatvoriPaljbu_();
               if (handleAuthError(res)) { return; }
               azurirajOsiguracSlanja_();
