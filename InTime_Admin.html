@@ -5719,26 +5719,38 @@
           // HTML predložak (trideset i prvi krug) — pregled u SANDBOXIRANOM
           // iframeu (srcdoc), a ne izravno u DOM-u kartice, da proizvoljan
           // HTML/CSS koji Saša zalijepi ne može "procuriti" i pokvariti
-          // izgled ostatka admin stranice. `sandbox=""` bez ijedne dozvole —
-          // ovo je samo pregled, ne treba mu izvršavati skripte ni slati
-          // formove.
-          predlozakPregled.innerHTML = predmetHtml + '<iframe class="mp-predlozak-html-pregled" sandbox="" srcdoc="' + esc(tijeloIzrenderirano) + '"></iframe>';
+          // izgled ostatka admin stranice.
+          //
+          // PRAVI UZROK skrolanja NAĐEN (22.9.2026., sedmi krug, nakon TRI
+          // promašena pokušaja — Sašin izričit zahtjev: "ne razumijem kako
+          // to ne možemo riješiti"): `sandbox=""` BEZ "allow-same-origin"
+          // daje iframeu potpuno ODVOJENO, "opaque" podrijetlo — svaki
+          // pokušaj čitanja `iframeEl.contentWindow.document` odozgo baca
+          // SecurityError, koji je `catch` blok niže TIHO gutao. Dakle kod
+          // koji mjeri visinu sadržaja i postavlja `iframeEl.style.height`
+          // NIKAD nije stvarno ni jednom uspio izvršiti se — ni u ovom ni u
+          // prethodna dva "popravka" (koji su ispravljali SAMO vanjski CSS
+          // okvir i strop od 2000px, dok je stvarni problem bio ovdje, u
+          // ovoj liniji). Iframe je stoga cijelo vrijeme ostajao na
+          // zadanoj/CSS visini (`min-height:120px`), pa se STVARNI (mnogo
+          // viši) sadržaj predloška morao interno skrolati UNUTAR te male
+          // kutije.
+          //
+          // Ispravak: `sandbox="allow-same-origin"` — iframe i dalje NE
+          // smije izvršavati skripte iz predloška (namjerno nismo dodali
+          // "allow-scripts", pa se `<script>` tagovi u predlošku i dalje
+          // nikad ne pokreću — izolacija je i dalje puna), ali roditeljska
+          // stranica sad SMIJE pročitati visinu njegovog sadržaja, jer
+          // dijele isto podrijetlo. CSS se i dalje ne može "procuriti" iz
+          // iframea u ostatak stranice (to nikad nije ni ovisilo o
+          // sandbox-u) — sigurnosni cilj ostaje netaknut.
+          predlozakPregled.innerHTML = predmetHtml + '<iframe class="mp-predlozak-html-pregled" sandbox="allow-same-origin" srcdoc="' + esc(tijeloIzrenderirano) + '"></iframe>';
           var iframeEl = predlozakPregled.querySelector('iframe');
           iframeEl.addEventListener('load', function() {
             try {
-              // Sašin izričit zahtjev (22.9.2026., šesti krug — "ovo nije
-              // ispravljeno, template je još uvijek za skrolanje... treći put
-              // da isto ne valja"): PRAVI uzrok skrolanja NIJE bio vanjski
-              // `.af-predlozak-pregled` okvir (taj je već uklonjen prošli
-              // krug) nego OVAJ tvrdi strop od 2000px na samom iframeu —
-              // predložak viši od 2000px se svejedno morao interno skrolati
-              // UNUTAR iframea, bez obzira što vanjski okvir više nije
-              // rezao. Sad NEMA gornjeg stropa uopće — iframe uvijek naraste
-              // točno na visinu stvarnog sadržaja, pa se cijeli predložak
-              // uvijek vidi odjednom, skrolanjem same stranice.
               var visina = iframeEl.contentWindow.document.body.scrollHeight;
               if (visina > 0) { iframeEl.style.height = (visina + 16) + 'px'; }
-            } catch (e) { /* cross-origin/sandbox — zadrži CSS min-height */ }
+            } catch (e) { /* iznimno, neki drugi razlog (npr. jako star browser) — zadrži CSS min-height */ }
           });
         } else {
           predlozakPregled.innerHTML = predmetHtml + '<div class="af-predlozak-tijelo">' + esc(tijeloIzrenderirano) + '</div>';
