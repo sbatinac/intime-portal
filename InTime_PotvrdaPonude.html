@@ -21,27 +21,31 @@
         treba zamijeniti POTVRDA_PONUDE_STRANICA_URL placeholder stvarnim
         URL-om te stranice (mail predložak koji Saša šalje klijentu sadrži
         poveznicu sastavljenu od tog URL-a + ?token=...).
-     3) TOK: klijent otvori ovu stranicu s ?token=... u adresi → stranica
-        odmah (bez prijave/lozinke) zove potvrdaPonudeInfo() da provjeri je
-        li poveznica ispravna i je li ponuda već potvrđena/odbijena/poništena
-        → ako nije ništa od toga, klijent bira: (a) unese OIB tvrtke +
-        ime/prezime + funkciju, potvrdi kvačicu ovlaštenja i klikne
-        "Potvrđujem ponudu" → stranica zove potvrdiPonudu(), koja na SERVERU
-        provjerava odgovara li uneseni OIB stvarnom OIB-u tvrtke iz te
-        ponude; ili (b) klikne "Ne prihvaćate ponudu? Odbijte je ovdje." →
-        otvara se kratki obrazac (opcionalan razlog) → stranica zove
-        odbijPonudu(), koja ne traži nikakav dokaz identiteta (niže rizična
-        radnja od potvrde). Nakon uspješne potvrde ILI odbijanja poveznica se
-        zaključava — ponovno otvaranje samo prikazuje konačan ishod, s
-        datumom. Ako Saša ručno "poništi" ponudu u adminu, poveznica isto
-        prestaje raditi dok se ne generira nova (novi token/nova poveznica).
+     3) TOK (NADOGRAĐENO 23.9.2026. — jedinstveni obrazac): klijent otvori ovu
+        stranicu s ?token=... u adresi → stranica odmah (bez prijave/lozinke)
+        zove potvrdaPonudeInfo() da provjeri je li poveznica ispravna i je li
+        ponuda već potvrđena/odbijena/poništena → ako nije ništa od toga,
+        klijent na JEDNOM obrascu unosi OIB tvrtke + ime/prezime + funkciju,
+        potvrdi kvačicu ovlaštenja, pa bira jedan od dva velika gumba
+        ("Prihvati ponudu" / "Odbij ponudu" — samo BIRA namjeru, ništa se još
+        ne šalje) i klikne "Potvrdi svoju odluku" → prikazuje se kratki drugi
+        korak koji još jednom pita je li siguran/na (s "Da, prihvati/odbij
+        ponudu" i "Ne, vrati me natrag") → tek na taj klik stranica zove
+        potvrdiPonudu() ili odbijPonudu(), koje OBJE na SERVERU provjeravaju
+        odgovara li uneseni OIB stvarnom OIB-u tvrtke iz te ponude (odbijanje
+        od sad ISTO traži i provjerava OIB — više NIJE niže-rizična radnja
+        bez dokaza identiteta kao ranije). Nakon uspješne potvrde ILI
+        odbijanja poveznica se zaključava — ponovno otvaranje samo prikazuje
+        konačan ishod, s datumom. Ako Saša ručno "poništi" ponudu u adminu,
+        poveznica isto prestaje raditi dok se ne generira nova (novi
+        token/nova poveznica).
      4) IP ADRESA: dohvaća se OVDJE, u klijentovom pregledniku, preko
         besplatnog javnog servisa (api.ipify.org) — Apps Script backend nema
         izravan pristup IP adresi pošiljatelja. Ako dohvat IP adrese ne
         uspije (npr. servis nedostupan, ili ga preglednik/mrežna politika
-        blokira), potvrda se SVEJEDNO šalje dalje — IP adresa je dodatni
-        trag, ne uvjet za potvrdu. Odbijanje IP adresu uopće ne bilježi (nije
-        potrebna za nižerizičnu radnju).
+        blokira), potvrda/odbijanje se SVEJEDNO šalje dalje — IP adresa je
+        dodatni trag, ne uvjet. Bilježi se za OBJE radnje (i potvrdu i
+        odbijanje) na isti način.
      ============================================================ */
 
   :root{
@@ -208,6 +212,71 @@
     padding:11px 8px;
   }
 
+  /* Jedinstveni obrazac prihvaćanja/odbijanja (23.9.2026., Sašin izričit
+     zahtjev: "prekompliciran je... lijevo Prihvati ponudu, desno crveno
+     Odbij ponudu... dolje gumb Potvrdi svoju odluku... i ona da ga još
+     jednom pita da li ste sigurni"). Dva velika gumba biraju NAMJERU
+     (ne šalju ništa sami) — vizualno se "uključi" (.selected) onaj koji je
+     klijent odabrao, kao velike kartice-prekidači, ugodnije za dodir na
+     mobitelu od malih radio-kružića. */
+  .decision-row{display:flex;gap:10px;margin:20px 0 6px;}
+  .decision-btn{
+    flex:1;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:5px;
+    padding:16px 10px;
+    border-radius:9px;
+    border:2px solid var(--line);
+    background:#fff;
+    font-size:13.5px;
+    font-weight:700;
+    color:var(--graphite);
+    transition:border-color .15s, background-color .15s, box-shadow .15s;
+  }
+  .decision-icon{font-size:23px;line-height:1;}
+  .decision-accept .decision-icon{color:var(--green);}
+  .decision-accept:hover{border-color:var(--green);background:#eef8f0;}
+  .decision-accept.selected{border-color:var(--green);background:#e3f5e7;box-shadow:0 0 0 1px var(--green) inset;color:var(--green);}
+  .decision-reject .decision-icon{color:var(--red);}
+  .decision-reject:hover{border-color:var(--red);background:#fdecea;}
+  .decision-reject.selected{border-color:var(--red);background:#fbe1de;box-shadow:0 0 0 1px var(--red) inset;color:var(--red);}
+
+  .btn-green{background:var(--green);border-color:var(--green);}
+  .btn-green:hover{background:#166638;border-color:#166638;}
+  .btn-red{background:var(--red);border-color:var(--red);}
+  .btn-red:hover{background:#9c3023;border-color:#9c3023;}
+  .btn-back-text{
+    display:block;
+    width:100%;
+    text-align:center;
+    background:none;
+    border:none;
+    color:var(--grey);
+    font-size:13px;
+    text-decoration:underline;
+    padding:12px 8px 0;
+  }
+  #confirm-step{text-align:center;}
+  #confirm-step .hint{text-align:left;}
+
+  #razlog-block{margin-top:6px;}
+  #razlog-block > label{margin:16px 0 6px;}
+  #razlog-checkbox-list .checkbox-row{margin:0 0 8px;}
+  #razlog-ostalo-tekst{
+    width:100%;
+    padding:9px 11px;
+    border:1px solid var(--line);
+    border-radius:6px;
+    font-size:13.5px;
+    font-family:inherit;
+    color:var(--graphite);
+    margin:2px 0 4px 27px;
+    width:calc(100% - 27px);
+  }
+
   .site-footer{
     max-width:900px;
     margin:0 auto;
@@ -283,46 +352,78 @@
 <div id="form-screen" class="screen" hidden>
   <div class="card">
     <img class="card-banner" src="InTime_PotvrdaPonude_banner.jpg" alt="In Time Express">
-    <h1>Potvrda prihvaćanja ponude</h1>
-    <div class="company-box">
-      <strong id="form-naziv"></strong>
-      Za potvrdu prihvaćanja ponude In Time d.o.o. unesite podatke ispod.
-    </div>
-    <p class="hint" id="form-rok-brojac" hidden></p>
-    <p class="hint">OIB tvrtke potvrđuje da je BAŠ ova tvrtka ta koja prihvaća ponudu; ime, prezime i funkcija bilježe se kao trag o tome tko je konkretno potvrdio.</p>
 
-    <form id="potvrda-form" onsubmit="return handleSubmit(event)">
-      <label for="pp-oib">OIB tvrtke</label>
-      <input type="text" id="pp-oib" inputmode="numeric" maxlength="11" placeholder="11 znamenki" autocomplete="off" required>
-
-      <label for="pp-ime">Ime i prezime osobe koja potvrđuje</label>
-      <input type="text" id="pp-ime" placeholder="npr. Ivan Ivić" autocomplete="off" required>
-
-      <label for="pp-funkcija">Funkcija / pozicija</label>
-      <input type="text" id="pp-funkcija" placeholder="npr. direktor, opunomoćenik" autocomplete="off" required>
-
-      <label class="checkbox-row" for="pp-ovlasten">
-        <input type="checkbox" id="pp-ovlasten" required>
-        <span>Potvrđujem da sam ovlašten/a prihvatiti ovu ponudu u ime gore navedene tvrtke.</span>
-      </label>
-
-      <p class="form-error" id="form-error" hidden></p>
-      <button type="submit" class="btn" id="submit-btn">Potvrđujem ponudu</button>
-    </form>
-
-    <div class="reject-row">
-      <button type="button" class="link-btn" id="show-reject-btn">Ne prihvaćate ponudu? Odbijte je ovdje.</button>
-    </div>
-    <div id="reject-panel" hidden>
-      <label for="pp-razlog-ime">Ime i prezime (nije obavezno)</label>
-      <input type="text" id="pp-razlog-ime" placeholder="npr. Ivan Ivić" autocomplete="off">
-      <label for="pp-razlog">Razlog odbijanja (nije obavezno)</label>
-      <textarea id="pp-razlog" rows="3" placeholder="Ako želite, ukratko navedite razlog…"></textarea>
-      <p class="form-error" id="reject-error" hidden></p>
-      <div class="reject-actions">
-        <button type="button" class="btn-outline-red" id="reject-confirm-btn">Da, odbijam ponudu</button>
-        <button type="button" class="btn-text" id="reject-cancel-btn">Odustani</button>
+    <div id="decision-step">
+      <h1>Vaša odluka o ponudi</h1>
+      <div class="company-box">
+        <strong id="form-naziv"></strong>
+        Unesite podatke ispod i odaberite prihvaćate li ili odbijate ovu ponudu In Time d.o.o.
       </div>
+      <p class="hint" id="form-rok-brojac" hidden></p>
+      <p class="hint">OIB tvrtke potvrđuje da je BAŠ ova tvrtka ta koja donosi odluku; ime, prezime i funkcija bilježe se kao trag o tome tko je konkretno odlučio.</p>
+
+      <form id="odluka-form" onsubmit="return false;">
+        <label for="pp-oib">OIB tvrtke</label>
+        <input type="text" id="pp-oib" inputmode="numeric" maxlength="11" placeholder="11 znamenki" autocomplete="off" required>
+
+        <label for="pp-ime">Ime i prezime</label>
+        <input type="text" id="pp-ime" placeholder="npr. Ivan Ivić" autocomplete="off" required>
+
+        <label for="pp-funkcija">Funkcija / pozicija</label>
+        <input type="text" id="pp-funkcija" placeholder="npr. direktor, opunomoćenik" autocomplete="off" required>
+
+        <label class="checkbox-row" for="pp-ovlasten">
+          <input type="checkbox" id="pp-ovlasten" required>
+          <span>Potvrđujem da sam ovlašten/a donijeti ovu odluku u ime gore navedene tvrtke.</span>
+        </label>
+
+        <div class="decision-row">
+          <button type="button" class="decision-btn decision-accept" id="choose-accept-btn">
+            <span class="decision-icon">✓</span>
+            <span>Prihvati ponudu</span>
+          </button>
+          <button type="button" class="decision-btn decision-reject" id="choose-reject-btn">
+            <span class="decision-icon">✕</span>
+            <span>Odbij ponudu</span>
+          </button>
+        </div>
+
+        <!-- Razlog odbijanja — Sašin izričit zahtjev (23.9.2026.): vratiti
+             razlog, ali ponuditi POPIS (isti razlozi kao u "Odbijenici" na
+             InTime_PismoNamjere.html, "Razlog nezainteresiranosti"), s
+             "Ostalo" opcijom za slobodan upis. Prikazuje se SAMO kad je
+             odabrano "Odbij ponudu" (odaberiOdluku_() niže), nije obavezno —
+             isti niskotrenutni princip kao dosad. -->
+        <div id="razlog-block" hidden>
+          <label>Razlog odbijanja (nije obavezno, ali nam pomaže)</label>
+          <div id="razlog-checkbox-list">
+            <label class="checkbox-row"><input type="checkbox" class="razlog-cb" value="Zadovoljni smo trenutnim dostavnim partnerom"><span>Zadovoljni smo trenutnim dostavnim partnerom</span></label>
+            <label class="checkbox-row"><input type="checkbox" class="razlog-cb" value="Cijena usluge nam trenutno nije prihvatljiva"><span>Cijena usluge nam trenutno nije prihvatljiva</span></label>
+            <label class="checkbox-row"><input type="checkbox" class="razlog-cb" value="Nemamo dovoljan broj pošiljaka"><span>Nemamo dovoljan broj pošiljaka</span></label>
+            <label class="checkbox-row"><input type="checkbox" class="razlog-cb" value="Trenutno nemamo potrebu za dodatnim dostavnim partnerom"><span>Trenutno nemamo potrebu za dodatnim dostavnim partnerom</span></label>
+            <label class="checkbox-row"><input type="checkbox" class="razlog-cb" value="Uvjeti plaćanja nam ne odgovaraju"><span>Uvjeti plaćanja nam ne odgovaraju</span></label>
+            <label class="checkbox-row"><input type="checkbox" class="razlog-cb" value="Rokovi dostave ne odgovaraju našim potrebama"><span>Rokovi dostave ne odgovaraju našim potrebama</span></label>
+            <label class="checkbox-row"><input type="checkbox" class="razlog-cb" value="Naša roba ili način poslovanja zahtijevaju drugačiju vrstu logistike"><span>Naša roba ili način poslovanja zahtijevaju drugačiju vrstu logistike</span></label>
+            <label class="checkbox-row"><input type="checkbox" class="razlog-cb" value="Imali smo ranije loše iskustvo s In Time-om"><span>Imali smo ranije loše iskustvo s In Time-om</span></label>
+            <label class="checkbox-row"><input type="checkbox" class="razlog-cb" value="Dobili smo negativne preporuke od poslovnih partnera čije mišljenje cijenimo"><span>Dobili smo negativne preporuke od poslovnih partnera čije mišljenje cijenimo</span></label>
+            <label class="checkbox-row"><input type="checkbox" class="razlog-cb" value="Trenutno nije pravi trenutak, ali smo otvoreni za razgovor u budućnosti"><span>Trenutno nije pravi trenutak, ali smo otvoreni za razgovor u budućnosti</span></label>
+            <label class="checkbox-row"><input type="checkbox" id="razlog-ostalo-cb"><span>Ostalo — molimo navedite:</span></label>
+          </div>
+          <input type="text" id="razlog-ostalo-tekst" placeholder="Upišite razlog…" autocomplete="off" style="display:none;margin-top:-4px;">
+        </div>
+
+        <p class="form-error" id="form-error" hidden></p>
+        <button type="button" class="btn" id="proceed-btn" disabled>Potvrdi svoju odluku</button>
+      </form>
+    </div>
+
+    <div id="confirm-step" hidden>
+      <div class="status-icon" id="confirm-icon">?</div>
+      <h1 id="confirm-naslov">Jeste li sigurni?</h1>
+      <p class="hint" id="confirm-tekst"></p>
+      <p class="form-error" id="confirm-error" hidden></p>
+      <button type="button" class="btn" id="confirm-yes-btn">Da, potvrdi</button>
+      <button type="button" class="btn-back-text" id="confirm-back-btn">Ne, vrati me natrag</button>
     </div>
   </div>
 </div>
@@ -418,46 +519,153 @@
 
   var trenutniToken = null;
 
-  function handleSubmit(ev) {
-    ev.preventDefault();
+  // Jedinstveni obrazac prihvaćanja/odbijanja (23.9.2026., Sašin izričit
+  // zahtjev): OIB, ime i prezime, funkcija te ovlaštenje traže se ISTO za
+  // obje radnje (odbijanje od sad ISTO provjerava OIB na serveru, vidi
+  // napomenu uz odbijPonudu() u InTime_Code.gs) — klijent samo bira KOJU od
+  // dvije radnje želi (odabranaOdluka), pa jednim gumbom "Potvrdi svoju
+  // odluku" prelazi na kratki drugi korak koji još jednom pita je li
+  // siguran/na, prije nego što se išta stvarno pošalje na server.
+  var odabranaOdluka = null; // 'prihvati' | 'odbij'
+
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function(c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+
+  function azurirajProceedBtn_() {
     var oib = document.getElementById('pp-oib').value.trim();
     var ime = document.getElementById('pp-ime').value.trim();
     var funkcija = document.getElementById('pp-funkcija').value.trim();
+    var ovlasten = document.getElementById('pp-ovlasten').checked;
+    document.getElementById('proceed-btn').disabled = !(oib && ime && funkcija && ovlasten && odabranaOdluka);
+  }
+  ['pp-oib', 'pp-ime', 'pp-funkcija'].forEach(function(id) {
+    document.getElementById(id).addEventListener('input', azurirajProceedBtn_);
+  });
+  document.getElementById('pp-ovlasten').addEventListener('change', azurirajProceedBtn_);
+
+  function odaberiOdluku_(odluka) {
+    odabranaOdluka = odluka;
+    document.getElementById('choose-accept-btn').classList.toggle('selected', odluka === 'prihvati');
+    document.getElementById('choose-reject-btn').classList.toggle('selected', odluka === 'odbij');
+    // Razlog odbijanja — Sašin izričit zahtjev (23.9.2026.): popis se
+    // prikazuje SAMO kad je odabrano "Odbij ponudu" (nema smisla kod
+    // prihvaćanja).
+    document.getElementById('razlog-block').hidden = (odluka !== 'odbij');
+    document.getElementById('form-error').hidden = true;
+    azurirajProceedBtn_();
+  }
+  document.getElementById('choose-accept-btn').addEventListener('click', function() { odaberiOdluku_('prihvati'); });
+  document.getElementById('choose-reject-btn').addEventListener('click', function() { odaberiOdluku_('odbij'); });
+
+  document.getElementById('razlog-ostalo-cb').addEventListener('change', function() {
+    document.getElementById('razlog-ostalo-tekst').style.display = this.checked ? 'block' : 'none';
+  });
+
+  // Prikuplja odabrane razloge odbijanja u JEDAN tekst (server već prima
+  // slobodan tekst 'razlog' — vidi odbijPonudu() u InTime_Code.gs, koji se
+  // ovdje ničim ne mijenja). "Ostalo" ide na kraj, s upisanim tekstom ako
+  // postoji.
+  function prikupiRazlog_() {
+    var odabrani = Array.prototype.slice.call(document.querySelectorAll('.razlog-cb:checked')).map(function(cb) { return cb.value; });
+    if (document.getElementById('razlog-ostalo-cb').checked) {
+      var ostaloTekst = document.getElementById('razlog-ostalo-tekst').value.trim();
+      odabrani.push(ostaloTekst ? ('Ostalo: ' + ostaloTekst) : 'Ostalo');
+    }
+    return odabrani.join('; ');
+  }
+
+  document.getElementById('proceed-btn').addEventListener('click', function() {
     var errEl = document.getElementById('form-error');
     errEl.hidden = true;
-
-    if (!oib || !ime || !funkcija) {
-      errEl.textContent = 'Molimo popunite sva polja.';
+    if (!odabranaOdluka) {
+      errEl.textContent = 'Odaberite prihvaćate li ili odbijate ponudu.';
       errEl.hidden = false;
-      return false;
+      return;
     }
+    var oib = document.getElementById('pp-oib').value.trim();
+    if (!/^\d{11}$/.test(oib)) {
+      errEl.textContent = 'OIB mora imati točno 11 znamenki.';
+      errEl.hidden = false;
+      return;
+    }
+    prikaziPotvrduKorak_();
+  });
 
-    var btn = document.getElementById('submit-btn');
+  function prikaziPotvrduKorak_() {
+    var naziv = document.getElementById('form-naziv').textContent;
+    var icon = document.getElementById('confirm-icon');
+    var tekst = document.getElementById('confirm-tekst');
+    var yesBtn = document.getElementById('confirm-yes-btn');
+    document.getElementById('confirm-error').hidden = true;
+    if (odabranaOdluka === 'prihvati') {
+      icon.className = 'status-icon ok';
+      icon.textContent = '✓';
+      tekst.innerHTML = 'Potvrđujete da tvrtka <strong>' + esc(naziv) + '</strong> <strong>PRIHVAĆA</strong> ovu ponudu In Time d.o.o. Odluka je konačna i ne može se naknadno promijeniti ovom poveznicom.';
+      yesBtn.textContent = 'Da, prihvati ponudu';
+      yesBtn.className = 'btn btn-green';
+    } else {
+      icon.className = 'status-icon err';
+      icon.textContent = '✕';
+      tekst.innerHTML = 'Potvrđujete da tvrtka <strong>' + esc(naziv) + '</strong> <strong>ODBIJA</strong> ovu ponudu In Time d.o.o. Odluka je konačna i ne može se naknadno promijeniti ovom poveznicom.';
+      var razlogSazetak_ = prikupiRazlog_();
+      if (razlogSazetak_) {
+        tekst.innerHTML += '<br><br>Naveden razlog: <em>' + esc(razlogSazetak_) + '</em>';
+      }
+      yesBtn.textContent = 'Da, odbij ponudu';
+      yesBtn.className = 'btn btn-red';
+    }
+    document.getElementById('decision-step').hidden = true;
+    document.getElementById('confirm-step').hidden = false;
+  }
+
+  document.getElementById('confirm-back-btn').addEventListener('click', function() {
+    document.getElementById('confirm-step').hidden = true;
+    document.getElementById('decision-step').hidden = false;
+  });
+
+  document.getElementById('confirm-yes-btn').addEventListener('click', function() {
+    var btn = this;
+    var errEl = document.getElementById('confirm-error');
+    errEl.hidden = true;
     btn.disabled = true;
+    document.getElementById('confirm-back-btn').hidden = true;
+    var izvorniTekst = btn.textContent;
     btn.textContent = 'Slanje…';
+    var oib = document.getElementById('pp-oib').value.trim();
+    var ime = document.getElementById('pp-ime').value.trim();
+    var funkcija = document.getElementById('pp-funkcija').value.trim();
 
     dohvatiIP_().then(function(ip) {
-      return gasCall({
-        action: 'potvrdiPonudu',
-        token: trenutniToken,
-        oib: oib,
-        imeOsobe: ime,
-        funkcijaOsobe: funkcija,
-        ipAdresa: ip
+      if (odabranaOdluka === 'prihvati') {
+        return gasCall({ action: 'potvrdiPonudu', token: trenutniToken, oib: oib, imeOsobe: ime, funkcijaOsobe: funkcija, ipAdresa: ip }).then(function(res) {
+          if (res.status !== 'ok') { throw res; }
+          document.getElementById('success-datum').textContent = res.datumPotvrde || '';
+          showScreen('success-screen');
+        });
+      }
+      return gasCall({ action: 'odbijPonudu', token: trenutniToken, oib: oib, imeOsobe: ime, funkcijaOsobe: funkcija, ipAdresa: ip, razlog: prikupiRazlog_() }).then(function(res) {
+        if (res.status !== 'ok') { throw res; }
+        document.getElementById('rejected-naziv').textContent = document.getElementById('form-naziv').textContent;
+        document.getElementById('rejected-datum').textContent = res.datumOdbijanja || '';
+        showScreen('rejected-screen');
       });
-    }).then(function(res) {
-      if (res.status !== 'ok') {
-        btn.disabled = false;
-        btn.textContent = 'Potvrđujem ponudu';
-        errEl.textContent = res.message || 'Potvrda nije uspjela. Provjerite unesene podatke i pokušajte ponovno.';
+    }).catch(function(res) {
+      btn.disabled = false;
+      btn.textContent = izvorniTekst;
+      document.getElementById('confirm-back-btn').hidden = false;
+      if (res && res.status === 'error') {
+        errEl.textContent = res.message || 'Slanje nije uspjelo. Provjerite unesene podatke i pokušajte ponovno.';
         errEl.hidden = false;
         if (res.vecPotvrdjeno) {
           document.getElementById('already-naziv').textContent = document.getElementById('form-naziv').textContent;
           document.getElementById('already-datum').textContent = res.datumPotvrde || '';
           showScreen('already-screen');
         } else if (res.odbijena) {
-          // Netko je (ranije, na istoj poveznici) već kliknuo "Odbijam
-          // ponudu" — potvrda se više ne može poslati.
+          // Netko je (ranije, na istoj poveznici) već kliknuo "Odbij ponudu"
+          // — potvrda se više ne može poslati.
           document.getElementById('rejected-naziv').textContent = document.getElementById('form-naziv').textContent;
           document.getElementById('rejected-datum').textContent = '';
           showScreen('rejected-screen');
@@ -468,67 +676,10 @@
           document.getElementById('expired-datum').textContent = '';
           showScreen('expired-screen');
         }
-        return;
-      }
-      document.getElementById('success-datum').textContent = res.datumPotvrde || '';
-      showScreen('success-screen');
-    }).catch(function() {
-      btn.disabled = false;
-      btn.textContent = 'Potvrđujem ponudu';
-      errEl.textContent = 'Greška u komunikaciji s poslužiteljem. Provjerite internetsku vezu i pokušajte ponovno.';
-      errEl.hidden = false;
-    });
-
-    return false;
-  }
-
-  // Odbijanje ponude — Sašin izričit zahtjev (20.9.2026., dvadeset i treći
-  // krug: "možemo li staviti dugme za odbijanje ponude"). Namjerno NE traži
-  // OIB/ime/funkciju kao potvrda — odbijanje je niže-rizična radnja, cilj je
-  // da bude jednostavno zabilježiti da klijent ne prihvaća. NADOGRAĐENO
-  // (dvadeset i sedmi krug — "ako odbiju neka piše odbijeno IP adresa i tko
-  // je odbio"): ime i dalje NIJE obavezno (polje ostaje opcionalno, isti
-  // princip niskog trenja), ali se sada, ako se upiše, šalje — i IP adresa
-  // se dohvaća automatski (dohvatiIP_(), isti mehanizam kao kod potvrde).
-  document.getElementById('show-reject-btn').addEventListener('click', function() {
-    document.getElementById('reject-panel').hidden = false;
-    this.hidden = true;
-  });
-  document.getElementById('reject-cancel-btn').addEventListener('click', function() {
-    document.getElementById('reject-panel').hidden = true;
-    document.getElementById('show-reject-btn').hidden = false;
-  });
-  document.getElementById('reject-confirm-btn').addEventListener('click', function() {
-    var btn = this;
-    var razlog = document.getElementById('pp-razlog').value.trim();
-    var imeOdbio = document.getElementById('pp-razlog-ime').value.trim();
-    var errEl = document.getElementById('reject-error');
-    errEl.hidden = true;
-    btn.disabled = true;
-    btn.textContent = 'Slanje…';
-    dohvatiIP_().then(function(ip) {
-      return gasCall({ action: 'odbijPonudu', token: trenutniToken, razlog: razlog, imeOsobe: imeOdbio, ipAdresa: ip });
-    }).then(function(res) {
-      if (res.status !== 'ok') {
-        btn.disabled = false;
-        btn.textContent = 'Da, odbijam ponudu';
-        errEl.textContent = res.message || 'Odbijanje nije uspjelo. Pokušajte ponovno.';
+      } else {
+        errEl.textContent = 'Greška u komunikaciji s poslužiteljem. Provjerite internetsku vezu i pokušajte ponovno.';
         errEl.hidden = false;
-        if (res.vecPotvrdjeno) {
-          document.getElementById('already-naziv').textContent = document.getElementById('form-naziv').textContent;
-          document.getElementById('already-datum').textContent = res.datumPotvrde || '';
-          showScreen('already-screen');
-        }
-        return;
       }
-      document.getElementById('rejected-naziv').textContent = document.getElementById('form-naziv').textContent;
-      document.getElementById('rejected-datum').textContent = res.datumOdbijanja || '';
-      showScreen('rejected-screen');
-    }).catch(function() {
-      btn.disabled = false;
-      btn.textContent = 'Da, odbijam ponudu';
-      errEl.textContent = 'Greška u komunikaciji s poslužiteljem. Provjerite internetsku vezu i pokušajte ponovno.';
-      errEl.hidden = false;
     });
   });
 

@@ -6232,18 +6232,23 @@
               if (handleAuthError(res)) { return; }
               azurirajOsiguracSlanja_();
               if (res.status === 'ok') {
-                // ISPRAVAK (22.9.2026., deveti krug — TTD bug): server sad
-                // "Datum slanja aktivne ponude" postavlja TEK kod ovog,
-                // stvarnog slanja (vidi napomenu uz adminPosaljiPonudaMail() u
-                // InTime_Code.gs) — a ne ranije, kod "Postavi rok". Ako je ovo
-                // bilo PRVO slanje, server to javlja kroz datumSlanjaPrikaz;
-                // ažuriramo lokalno i odmah iscrtavamo blok da bedž/TTD/brojač
-                // ne ostanu na starom stanju 'nije poslano' do sljedećeg
-                // punog učitavanja.
+                // ISPRAVAK (22.9.2026., deveti krug — TTD bug; nadograđeno
+                // 23.9.2026.): server "Datum slanja aktivne ponude" postavlja
+                // TEK kod ovog, stvarnog slanja (vidi napomenu uz
+                // adminPosaljiPonudaMail() u InTime_Code.gs) — a ne ranije,
+                // kod "Postavi rok"/"Generiraj novu ponudu". Ako je ovo bilo
+                // PRVO stvarno slanje TE verzije (1., 2., 3.…), server to
+                // javlja kroz datumSlanjaPrikaz; ažuriramo lokalno i odmah
+                // iscrtavamo blok da bedž/TTD/brojač ne ostanu na starom
+                // stanju 'nije poslano' do sljedećeg punog učitavanja.
+                // "Redni broj slanja ponude" se NAMJERNO ne dira ovdje —
+                // njega već ispravno nosi entry.fields od prije (postavlja
+                // ga isključivo "Generiraj novu ponudu"); prijašnji upis
+                // "= 1" bi za 2./3.… ponudu vratio brojač natrag na 1 i
+                // pokvario prikaz — uklonjen.
                 if (res.datumSlanjaPrikaz) {
                   entry.fields['Datum slanja aktivne ponude (admin)'] = res.datumSlanjaPrikaz;
                   entry.fields['Datum slanja aktivne ponude (admin) (sek)'] = res.datumSlanjaPrikazSek || res.datumSlanjaPrikaz;
-                  entry.fields['Redni broj slanja ponude (admin)'] = 1;
                   if (typeof renderRokBlok_ === 'function') { renderRokBlok_(); }
                 }
                 zavrsiSlanjeProgress_(true, '✅ Ponuda poslana!');
@@ -6565,10 +6570,17 @@
         }
 
         if (stavke.length) {
+          // Sašin izričit zahtjev (23.9.2026.): naslov svake stavke povijesti
+          // sad prikazuje BROJ PONUDE (INTRIX šifra + "-P" + redni broj), ne
+          // datum — datum je već vidljiv niže u samoj stavci ("Poslano: ..."),
+          // a broj ponude odmah otkriva o kojoj je ponudi riječ (svaka
+          // sljedeća ima veći broj, pa je redoslijed sam po sebi jasan).
+          var sifraZaPovijest_ = fieldVal(entry, 'Šifra ponude (admin)');
           rokPovijestEl.innerHTML = '<div class="af-rok-povijest-naslov">Povijest slanja ponude (' + stavke.length + ')</div>' +
             stavke.map(function(s, idx) {
               var statusOpis = STATUS_LABEL_PONUDE_[s.status] || s.status;
-              var naziv = 'Datum ' + (idx + 1) + (s.trenutna ? ' (trenutna)' : '');
+              var brojPonudeStavke_ = sifraZaPovijest_ ? (sifraZaPovijest_ + '-P' + s.verzija) : ('Ponuda br. ' + s.verzija);
+              var naziv = brojPonudeStavke_ + (s.trenutna ? ' (trenutna)' : '');
               var redci = [];
               if (s.slanjePrikaz) { redci.push('Poslano: <b>' + esc(s.slanjePrikaz) + '</b>'); }
               if (s.status === 'odbijena' && s.odbijenoPrikaz) {
