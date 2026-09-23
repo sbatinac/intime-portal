@@ -58,6 +58,7 @@
     --red:#c0392b;
     --green:#1e8449;
     --amber:#8a6d00;
+    --yellow:#e0b400;
   }
 
   *{box-sizing:border-box;}
@@ -277,6 +278,61 @@
     width:calc(100% - 27px);
   }
 
+  /* Ocjena voditelja ključnih kupaca kod prihvaćanja ponude (23.9.2026.,
+     Sašin izričit zahtjev: "precrtano" iz InTime_Anketa.html — isti klizač
+     0-10, isti vizualni obrazac, ali BEZ slobodnog komentara, samo skala. */
+  #ocjena-blok{margin-top:6px;}
+  #ocjena-blok > label{margin:16px 0 2px;}
+  .ocjena-pitanje{margin-top:16px;padding-top:14px;border-top:1px solid var(--line);}
+  .ocjena-pitanje:first-of-type{margin-top:10px;padding-top:0;border-top:none;}
+  .ocjena-pitanje-tekst{font-size:13.5px;font-weight:700;color:var(--graphite);}
+  .impact-slider-wrap{margin-top:10px;}
+  input[type=range].impact-slider-input{
+    -webkit-appearance:none;
+    appearance:none;
+    width:100%;
+    height:6px;
+    border-radius:3px;
+    background:linear-gradient(to right, var(--red) 0%, var(--yellow) 50%, var(--green) 100%);
+    outline:none;
+    cursor:pointer;
+    margin:0;
+  }
+  input[type=range].impact-slider-input::-webkit-slider-thumb{
+    -webkit-appearance:none;
+    width:18px;
+    height:18px;
+    border-radius:50%;
+    background:var(--purple-dark);
+    border:2px solid #fff;
+    box-shadow:0 0 0 1px var(--purple-dark);
+    cursor:pointer;
+  }
+  input[type=range].impact-slider-input::-moz-range-thumb{
+    width:18px;
+    height:18px;
+    border-radius:50%;
+    background:var(--purple-dark);
+    border:2px solid #fff;
+    box-shadow:0 0 0 1px var(--purple-dark);
+    cursor:pointer;
+  }
+  input[type=range].impact-slider-input::-moz-range-track{
+    height:6px;
+    border-radius:3px;
+    background:linear-gradient(to right, var(--red) 0%, var(--yellow) 50%, var(--green) 100%);
+  }
+  .ocjena-slider-untouched{opacity:.5;}
+  .impact-slider-labels{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-top:8px;
+    gap:8px;
+  }
+  .impact-slider-labels .scale-end{font-size:11.5px;color:var(--grey);max-width:120px;}
+  .impact-slider-value{font-size:11.5px;color:var(--grey);font-weight:400;white-space:nowrap;}
+
   .site-footer{
     max-width:900px;
     margin:0 auto;
@@ -410,6 +466,19 @@
             <label class="checkbox-row"><input type="checkbox" id="razlog-ostalo-cb"><span>Ostalo — molimo navedite:</span></label>
           </div>
           <input type="text" id="razlog-ostalo-tekst" placeholder="Upišite razlog…" autocomplete="off" style="display:none;margin-top:-4px;">
+        </div>
+
+        <!-- Ocjena voditelja ključnih kupaca — Sašin izričit zahtjev
+             (23.9.2026.): kod PRIHVAĆANJA ponude, ista skala 0-10 kao u
+             InTime_Anketa.html ("ocjena kvalitete"), samo skala, bez
+             slobodnog upisa. Prikazuje se SAMO kad je odabrano "Prihvati
+             ponudu" (odaberiOdluku_() niže), nije obavezno. Sadržaj triju
+             pitanja gradi JS (renderOcjenaPitanja_) da se ne ponavlja ista
+             klizna-skala oznaka triput ručno u HTML-u. -->
+        <div id="ocjena-blok" hidden>
+          <label>Ocjena voditelja ključnih kupaca koji vas je kontaktirao (nije obavezno)</label>
+          <p class="hint" style="margin:0 0 4px;">Samo odaberite na skali — ništa nije potrebno upisivati.</p>
+          <div id="ocjena-pitanja-container"></div>
         </div>
 
         <p class="form-error" id="form-error" hidden></p>
@@ -554,6 +623,9 @@
     // prikazuje SAMO kad je odabrano "Odbij ponudu" (nema smisla kod
     // prihvaćanja).
     document.getElementById('razlog-block').hidden = (odluka !== 'odbij');
+    // Ocjena voditelja ključnih kupaca — obrnuto od razloga, SAMO kod
+    // "Prihvati ponudu".
+    document.getElementById('ocjena-blok').hidden = (odluka !== 'prihvati');
     document.getElementById('form-error').hidden = true;
     azurirajProceedBtn_();
   }
@@ -563,6 +635,96 @@
   document.getElementById('razlog-ostalo-cb').addEventListener('change', function() {
     document.getElementById('razlog-ostalo-tekst').style.display = this.checked ? 'block' : 'none';
   });
+
+  // Ocjena voditelja ključnih kupaca — Sašin izričit zahtjev (23.9.2026.):
+  // isti klizač 0-10 kao InTime_Anketa.html ("precrtano" odatle), samo tri
+  // pitanja, bez slobodnog komentara. "Još niste ocijenili" dok klijent
+  // stvarno ne dotakne klizač (isti anti-bias trik kao u anketi) — inače bi
+  // svaka nedotaknuta ocjena tiho ušla kao "5" (sredina skale) i iskrivila
+  // podatke.
+  var OCJENA_PITANJA = [
+    { key: 'znanje', tekst: 'Koliko ste zadovoljni znanjem voditelja ključnih kupaca koji vas je kontaktirao?' },
+    { key: 'prezentacija', tekst: 'Koliko ste zadovoljni prezentacijom tvrtke od strane voditelja ključnih kupaca?' },
+    { key: 'ugovaranje', tekst: 'Koliko ste zadovoljni načinom ugovaranja (pregovora) s voditeljem ključnih kupaca?' }
+  ];
+
+  function azurirajOcjenuSlider_(key) {
+    var input = document.getElementById('oc-' + key + '-range');
+    if (!input) { return; }
+    input.setAttribute('data-dotaknuto', 'true');
+    input.classList.remove('ocjena-slider-untouched');
+    var v = parseInt(input.value, 10);
+    var valSpan = document.getElementById('oc-' + key + '-value');
+    if (valSpan) {
+      valSpan.textContent = 'Ocjena: ' + v + ' / 10';
+      valSpan.style.fontWeight = '700';
+      valSpan.style.color = 'var(--purple-dark)';
+    }
+  }
+
+  function buildOcjenaPitanje_(p) {
+    var wrap = document.createElement('div');
+    wrap.className = 'ocjena-pitanje';
+
+    var tekstDiv = document.createElement('div');
+    tekstDiv.className = 'ocjena-pitanje-tekst';
+    tekstDiv.textContent = p.tekst;
+    wrap.appendChild(tekstDiv);
+
+    var sliderWrap = document.createElement('div');
+    sliderWrap.className = 'impact-slider-wrap';
+
+    var input = document.createElement('input');
+    input.type = 'range';
+    input.className = 'impact-slider-input ocjena-slider ocjena-slider-untouched';
+    input.id = 'oc-' + p.key + '-range';
+    input.min = '0';
+    input.max = '10';
+    input.step = '1';
+    input.value = '5';
+    input.setAttribute('data-dotaknuto', 'false');
+    input.oninput = (function(k) { return function() { azurirajOcjenuSlider_(k); }; })(p.key);
+    sliderWrap.appendChild(input);
+
+    var labelsDiv = document.createElement('div');
+    labelsDiv.className = 'impact-slider-labels';
+    var lijevo = document.createElement('span');
+    lijevo.className = 'scale-end';
+    lijevo.textContent = '0 – u potpunosti nezadovoljavajuće';
+    var vrijednost = document.createElement('span');
+    vrijednost.className = 'impact-slider-value';
+    vrijednost.id = 'oc-' + p.key + '-value';
+    vrijednost.textContent = 'Još niste ocijenili';
+    var desno = document.createElement('span');
+    desno.className = 'scale-end';
+    desno.style.textAlign = 'right';
+    desno.textContent = '10 – u potpunosti zadovoljavajuće';
+    labelsDiv.appendChild(lijevo);
+    labelsDiv.appendChild(vrijednost);
+    labelsDiv.appendChild(desno);
+    sliderWrap.appendChild(labelsDiv);
+    wrap.appendChild(sliderWrap);
+
+    return wrap;
+  }
+
+  (function renderOcjenaPitanja_() {
+    var container = document.getElementById('ocjena-pitanja-container');
+    if (!container) { return; }
+    OCJENA_PITANJA.forEach(function(p) { container.appendChild(buildOcjenaPitanje_(p)); });
+  })();
+
+  // Vraća { znanje: '0'..'10' ili '', prezentacija: ..., ugovaranje: ... } —
+  // prazan string za svako pitanje koje klijent nije dotaknuo (server ga
+  // onda jednostavno ne upisuje, vidi potvrdiPonudu() u InTime_Code.gs).
+  function prikupiOcjene_() {
+    var rezultat = {};
+    OCJENA_PITANJA.forEach(function(p) {
+      var input = document.getElementById('oc-' + p.key + '-range');
+      rezultat[p.key] = (input && input.getAttribute('data-dotaknuto') === 'true') ? input.value : '';
+    });
+    return rezultat;
+  }
 
   // Prikuplja odabrane razloge odbijanja u JEDAN tekst (server već prima
   // slobodan tekst 'razlog' — vidi odbijPonudu() u InTime_Code.gs, koji se
@@ -604,6 +766,14 @@
       icon.className = 'status-icon ok';
       icon.textContent = '✓';
       tekst.innerHTML = 'Potvrđujete da tvrtka <strong>' + esc(naziv) + '</strong> <strong>PRIHVAĆA</strong> ovu ponudu In Time d.o.o. Odluka je konačna i ne može se naknadno promijeniti ovom poveznicom.';
+      var ocjeneSazetak_ = prikupiOcjene_();
+      var ocjeneRedci_ = [];
+      if (ocjeneSazetak_.znanje !== '') { ocjeneRedci_.push('znanje ' + ocjeneSazetak_.znanje + '/10'); }
+      if (ocjeneSazetak_.prezentacija !== '') { ocjeneRedci_.push('prezentacija tvrtke ' + ocjeneSazetak_.prezentacija + '/10'); }
+      if (ocjeneSazetak_.ugovaranje !== '') { ocjeneRedci_.push('način ugovaranja ' + ocjeneSazetak_.ugovaranje + '/10'); }
+      if (ocjeneRedci_.length) {
+        tekst.innerHTML += '<br><br>Vaša ocjena voditelja ključnih kupaca: <em>' + esc(ocjeneRedci_.join(', ')) + '</em>';
+      }
       yesBtn.textContent = 'Da, prihvati ponudu';
       yesBtn.className = 'btn btn-green';
     } else {
@@ -640,7 +810,8 @@
 
     dohvatiIP_().then(function(ip) {
       if (odabranaOdluka === 'prihvati') {
-        return gasCall({ action: 'potvrdiPonudu', token: trenutniToken, oib: oib, imeOsobe: ime, funkcijaOsobe: funkcija, ipAdresa: ip }).then(function(res) {
+        var ocjene = prikupiOcjene_();
+        return gasCall({ action: 'potvrdiPonudu', token: trenutniToken, oib: oib, imeOsobe: ime, funkcijaOsobe: funkcija, ipAdresa: ip, ocjenaZnanje: ocjene.znanje, ocjenaPrezentacija: ocjene.prezentacija, ocjenaUgovaranje: ocjene.ugovaranje }).then(function(res) {
           if (res.status !== 'ok') { throw res; }
           document.getElementById('success-datum').textContent = res.datumPotvrde || '';
           showScreen('success-screen');

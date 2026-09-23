@@ -4547,8 +4547,16 @@
           '</div>' +
           '<div class="af-dok-priprema">' +
             '<button type="button" class="af-dok-priprema-btn">📁 Pripremi direktorij i link</button>' +
-            '<p class="af-dok-cilj-hint" style="margin-top:6px;">Kopira i preimenuje sve dokumente iznad (fiksna polja + ostali) u zaseban direktorij na Driveu za TRENUTNU verziju ponude, i priprema link koji se šalje klijentu tagom <code>{{LINK_DOKUMENTI}}</code> — umjesto fizičkih priloga na mailu. Ponovni klik osvježava sadržaj direktorija; kod nove verzije ponude ("Generiraj novu ponudu") stari link automatski prestaje raditi čim klikneš ovdje za novu verziju.</p>' +
+            // ISPRAVAK (23.9.2026., Sašin izričit zahtjev — tekst je bio
+            // zbunjujuć: "čim klikneš ovdje za novu verziju" zvučalo je kao da
+            // se odnosi na OVAJ gumb, a zapravo govori o SASVIM DRUGOM gumbu
+            // ("↻ Generiraj novu ponudu"), koji je niže na stranici, u
+            // odjeljku "Ponuda — slanje i status", i vidljiv je samo kad je
+            // ponuda odbijena/istekla/poništena. Tekst sad izričito imenuje
+            // taj drugi gumb i njegovu lokaciju.
+            '<p class="af-dok-cilj-hint" style="margin-top:6px;">Kopira i preimenuje sve dokumente iznad (fiksna polja + ostali) u zaseban direktorij na Driveu za TRENUTNU verziju ponude, i priprema link koji se šalje klijentu tagom <code>{{LINK_DOKUMENTI}}</code> — umjesto fizičkih priloga na mailu. Ponovni klik na OVAJ gumb samo osvježava sadržaj istog direktorija — link ostaje isti.</p>' +
             '<p class="af-dok-cilj-hint">Ako je ponuda već izdana, ponovna priprema mijenja samo sadržaj na tom istom linku — klijent kojem je link poslan o promjeni ne dobiva nikakvu obavijest.</p>' +
+            '<p class="af-dok-cilj-hint">Upozorenje: kad KASNIJE klikneš gumb "↻ Generiraj novu ponudu" (niže na stranici, u odjeljku "Ponuda — slanje i status") da napraviš novu verziju cijele ponude, OVAJ link automatski prestaje raditi.</p>' +
             '<div class="af-dok-priprema-status"></div>' +
             '<div class="af-dok-priprema-link"></div>' +
           '</div>' +
@@ -4660,6 +4668,17 @@
               '<button type="button" class="af-rok-btn opasnost af-rok-abandon">✕ Abandon (odustani od klijenta)</button>' +
             '</div>' +
             '<p class="af-rok-napomena">Ako je ponuda već poslana, promjena roka je ne poništava — link i dalje radi, samo se na njemu promijeni rok.</p>' +
+            // ISPRAVAK (23.9.2026., Sašin izričit zahtjev — "malo je
+            // zbunjujuće, imamo 2 gumba Pošalji ponudu"): donji gumb
+            // (.af-rok-primijeni) se dosad ZVAO "Pošalji ponudu" dok ponuda
+            // još nije poslana, iako NE šalje mail — samo postavlja rok i
+            // priprema link za potvrdu (vidi renderRokBlok_() niže, gdje mu
+            // se sad dodijelio novi tekst "Aktiviraj rok i link"). Pravi
+            // gumb koji STVARNO šalje mail je "📧 Pošalji ponudu označenim
+            // primateljima" u odjeljku "Slanje ponude mailom" IZNAD. Ova
+            // napomena to izričito objašnjava, da se dva gumba više ne
+            // brkaju.
+            '<p class="af-rok-napomena">Ovaj gumb NE šalje mail — samo postavlja rok važenja i priprema poveznicu za klijentovu potvrdu/odbijanje. Stvarno slanje maila radi se gumbom "📧 Pošalji ponudu označenim primateljima" u odjeljku "Slanje ponude mailom" iznad.</p>' +
             '<div class="af-rok-status"></div>' +
             '<div class="af-rok-povijest"></div>' +
           '</div>' +
@@ -6249,6 +6268,18 @@
                 if (res.datumSlanjaPrikaz) {
                   entry.fields['Datum slanja aktivne ponude (admin)'] = res.datumSlanjaPrikaz;
                   entry.fields['Datum slanja aktivne ponude (admin) (sek)'] = res.datumSlanjaPrikazSek || res.datumSlanjaPrikaz;
+                  // ISPRAVAK (23.9.2026., Sašin izričit zahtjev — automatski
+                  // zadani rok od 15 dana ako nije ručno postavljen PRIJE
+                  // slanja, vidi napomenu uz adminPosaljiPonudaMail() u
+                  // InTime_Code.gs). Server javlja datumIstekaPrikaz SAMO ako
+                  // je stvarno automatski postavio rok (bio je prazan) — ako
+                  // je Saša rok već ranije ručno postavio, server ga ovdje
+                  // ne dira i ovo polje ostaje null, pa se lokalni prikaz ne
+                  // mijenja (već je ispravan od ranije).
+                  if (res.datumIstekaPrikaz) {
+                    entry.fields['Datum isteka ponude (admin)'] = res.datumIstekaPrikaz;
+                    entry.fields['Rok važenja ponude (dana, admin)'] = res.rokDanaPostavljen || 15;
+                  }
                   if (typeof renderRokBlok_ === 'function') { renderRokBlok_(); }
                 }
                 zavrsiSlanjeProgress_(true, '✅ Ponuda poslana!');
@@ -6433,7 +6464,7 @@
         // Sve ostalo (poslano/odbijeno/prihvaćeno/poništeno, po verziji, s
         // punim detaljima i TTD-om) sad prikazuju "Datum N" okviri ispod —
         // vidi rebuild niže — pa se ovdje NAMJERNO više ne ponavlja.
-        rokTrenutno.innerHTML = redovi.length ? redovi.join('<br>') : 'Odaberi rok i klikni "Pošalji ponudu" — poveznica za klijenta generira se automatski.';
+        rokTrenutno.innerHTML = redovi.length ? redovi.join('<br>') : 'Odaberi rok i klikni "Aktiviraj rok i link" — poveznica za klijenta generira se automatski.';
 
         // Dvije male ikone (Sašin izričit zahtjev, 22.9.2026., deveti krug:
         // "u svakoj fazi prihvaćena i odbijena napravi malu ikonicu vidi
@@ -6489,7 +6520,10 @@
         var mozePostaviRok = (status === 'nije_poslano' || status === 'na_cekanju' || status === 'istekla' || status === 'ponistena');
         rokSelect.disabled = !mozePostaviRok;
         rokBtn.disabled = !mozePostaviRok;
-        rokBtn.textContent = status === 'nije_poslano' ? 'Pošalji ponudu' : (status === 'istekla' ? 'Produži rok' : (status === 'ponistena' ? 'Otključaj (isti link)' : 'Postavi rok'));
+        // ISPRAVAK (23.9.2026.): "Pošalji ponudu" preimenovano u "Aktiviraj rok
+        // i link" — ovaj gumb ne šalje mail (vidi napomenu uz af-rok-napomena
+        // iznad), pa mu naziv nije smio zvučati kao pravi gumb za slanje.
+        rokBtn.textContent = status === 'nije_poslano' ? 'Aktiviraj rok i link' : (status === 'istekla' ? 'Produži rok' : (status === 'ponistena' ? 'Otključaj (isti link)' : 'Postavi rok'));
 
         rokPonistiBtn.hidden = !(status === 'na_cekanju' || status === 'istekla');
         rokGenerirajBtn.hidden = !(status === 'odbijena' || status === 'ponistena' || status === 'istekla' || status === 'ponistena_nakon_prihvata');
@@ -6629,7 +6663,14 @@
         // odbijena ili poništena, ne može se kliknuti ili nema gumba ako se
         // čeka odgovor" — cijeli blok (opis + gumb) se skriva izvan tog
         // uvjeta, ne samo gumb zaključava.
-        if (restartBlokEl) { restartBlokEl.hidden = !(status === 'odbijena' || status === 'ponistena'); }
+        // DOPUNA (23.9.2026., Sašin izričit zahtjev, provjera istog dana:
+        // "nema opcije restart nakon što je ponuda poništena nakon
+        // prihvaćanja") — 'ponistena_nakon_prihvata' je NOVIJI status, dodan
+        // NAKON izvorne 37. runde, pa je ovdje slučajno izostao iz uvjeta.
+        // Backend (adminRestartPonudu) uopće ne provjerava status pa je ovo
+        // bila ČISTO frontend praznina — server je oduvijek prihvaćao poziv,
+        // samo gumb nije bio prikazan.
+        if (restartBlokEl) { restartBlokEl.hidden = !(status === 'odbijena' || status === 'ponistena' || status === 'ponistena_nakon_prihvata'); }
       };
       renderRokBlok_();
 
@@ -6742,7 +6783,14 @@
           entry.fields['Datum poništenja ponude (admin)'] = res.datumPonistenjaPrikaz;
           entry.fields['Datum poništenja ponude (admin) (sek)'] = res.datumPonistenjaPrikazSek || res.datumPonistenjaPrikaz;
           renderRokBlok_();
-          rokStatus.textContent = 'Ponuda poništena.';
+          // ISPRAVAK (23.9.2026.): server sad automatski šalje klijentu
+          // obavijest o povlačenju ponude (vidi napomenu uz
+          // MAIL_PREDLOZAK_HTML_PONISTENA_PONUDA_/adminPonistiPonudu() u
+          // InTime_Code.gs) — status poruka ovdje to potvrđuje, ili upozorava
+          // ako obavijest nije uspjela otići (poslanoNa prazan).
+          rokStatus.textContent = (res.poslanoNa && res.poslanoNa.length)
+            ? ('Ponuda poništena. Obavijest poslana klijentu na: ' + res.poslanoNa.join(', ') + '.')
+            : 'Ponuda poništena. (NAPOMENA: obavijest klijentu nije poslana — nema poznate email adrese za ovu ponudu.)';
           rokStatus.className = 'af-rok-status ok';
           if (typeof renderPregled_ === 'function') { renderPregled_(); }
         }).catch(function() {
@@ -6893,6 +6941,23 @@
       dv(d.getHours()) + 'h ' + dv(d.getMinutes()) + ' minuta ' + dv(d.getSeconds()) + ' sekunde';
   }
 
+  // ISPRAVAK (23.9.2026., Sašin izričit zahtjev — otkriveno preko bug reporta
+  // "bug nekako je prošao oib bez 11 znakova u sustav"): ovo polje do sada
+  // NIJE imalo NIKAKVU zaštitu (za razliku od OIB polja u
+  // InTime_PismoNamjere.html/InTime_Anketa.html, koja imaju maxlength=11 +
+  // filter samo-brojke + provjeru pri slanju) — moglo se upisati bilo što,
+  // bilo koje duljine. Zbog toga je u sustav mogao ući OIB koji nema točno
+  // 11 znamenki, što KASNIJE blokira klijentovu potvrdu ponude
+  // (InTime_PotvrdaPonude.html zahtijeva da klijent upiše TOČNO 11 znamenki
+  // — ispravno, jer je hrvatski OIB uvijek 11 znamenki — pa taj unos onda
+  // nikad ne može odgovarati pogrešno spremljenom OIB-u iz Sheeta). Ista
+  // zaštita (filter na unosu + provjera duljine prije spremanja) sad je
+  // dodana i ovdje, da se ovakva greška više ne može ponoviti.
+  function ogranicniOibAdminInput_(input) {
+    var samoBrojevi = input.value.replace(/[^0-9]/g, '').slice(0, 11);
+    if (samoBrojevi !== input.value) { input.value = samoBrojevi; }
+  }
+
   // Naziv tvrtke i OIB su JEDINI podaci koje klijent nikad ne smije sam
   // mijenjati putem poveznice za ispravak (vidi ispravakSaveChanges() u
   // InTime_Code.gs) — jedinstveni su i koriste se za provjeru duplikata pri
@@ -6906,7 +6971,7 @@
         '<div><label>Naziv tvrtke</label>' +
           '<input type="text" class="no-naziv" value="' + esc(fieldVal(entry, 'Naziv tvrtke')) + '"></div>' +
         '<div><label>OIB</label>' +
-          '<input type="text" class="no-oib" value="' + esc(fieldVal(entry, 'OIB')) + '"></div>' +
+          '<input type="text" class="no-oib" maxlength="11" inputmode="numeric" oninput="ogranicniOibAdminInput_(this)" value="' + esc(fieldVal(entry, 'OIB')) + '"></div>' +
       '</div>' +
       '<div class="admin-fields-actions">' +
         '<span class="save-status"></span>' +
@@ -6917,12 +6982,22 @@
     var saveBtn = wrap.querySelector('.admin-fields-actions .btn');
     saveBtn.addEventListener('click', function(ev) {
       ev.stopPropagation();
-      statusEl.textContent = 'Spremanje…';
-      statusEl.classList.remove('error');
       var fields = {
         naziv: wrap.querySelector('.no-naziv').value,
-        oib: wrap.querySelector('.no-oib').value
+        oib: wrap.querySelector('.no-oib').value.trim()
       };
+      // ISPRAVAK (23.9.2026.): provjera duljine OIB-a PRIJE slanja na server
+      // — vidi napomenu uz ogranicniOibAdminInput_() iznad zašto je ovo
+      // dodano. Prazan OIB je dopušten (npr. ako ga admin namjerno briše),
+      // ali upisan a nepotpun/predug OIB se odbija ovdje, bez slanja na
+      // server.
+      if (fields.oib && fields.oib.length !== 11) {
+        statusEl.textContent = 'OIB mora imati točno 11 znamenki (trenutno ' + fields.oib.length + ').';
+        statusEl.classList.add('error');
+        return;
+      }
+      statusEl.textContent = 'Spremanje…';
+      statusEl.classList.remove('error');
       gasCall({ action: 'adminUpdateFields', token: adminToken, rowIndex: entry.rowIndex, fields: fields }).then(function(res) {
         if (handleAuthError(res)) { return; }
         if (res.status === 'ok') {
