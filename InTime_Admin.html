@@ -485,7 +485,17 @@
   .af-rok-btn.opasnost:disabled:hover{background:var(--red-dark);color:#fff;}
   .af-rok-status{font-size:11px;color:var(--grey);margin-top:6px;min-height:14px;}
   .af-rok-status.error{color:var(--red);}
+  /* "Restartiraj ponudu" — najniže, najstrože zaštićeno dugme na kartici
+     (Sašin izričit zahtjev, 23.9.2026.): zaokruženo/boksano upozorenje,
+     posve na dnu. */
+  .af-restart-blok{grid-column:1 / -1;margin-top:18px;padding:14px 16px;border:2px solid var(--red);border-radius:10px;background:#fff5f4;}
+  .af-restart-naslov{font-size:13px;font-weight:800;color:var(--red-dark);letter-spacing:.02em;margin-bottom:6px;}
+  .af-restart-opis{font-size:12px;line-height:1.5;color:#7a2d27;margin:0 0 10px;}
+  .af-restart-status{font-size:11px;color:var(--grey);margin-top:6px;min-height:14px;}
+  .af-restart-status.error{color:var(--red);}
+  .af-restart-status.uspjeh{color:var(--green);}
   .af-rok-status.ok{color:var(--green);}
+  .af-rok-napomena{font-size:10.5px;color:var(--grey);line-height:1.4;margin-top:6px;}
   .af-rok-povijest{margin-top:10px;padding-top:8px;border-top:1px dashed #d8d3ec;font-size:11.5px;color:var(--grey);}
   .af-rok-povijest-naslov{font-weight:700;color:var(--graphite);margin-bottom:4px;}
   .af-rok-povijest-stavka{margin-bottom:3px;}
@@ -561,6 +571,8 @@
   .af-slanje-btn.uspjeh{border-color:var(--green);color:var(--green);}
   .af-slanje-btn.uspjeh:hover{background:var(--green);color:#fff;}
   .af-slanje-btn.uspjeh:disabled:hover{background:#fff;color:var(--green);}
+  .af-slanje-okvir.zamrznuto{opacity:.5;pointer-events:none;}
+  .af-slanje-zamrznuto-traka{background:#fde3c2;color:#8a5a00;border-radius:6px;padding:7px 10px;font-size:11.5px;font-weight:700;margin-bottom:9px;}
   .af-slanje-posalji-btn{display:block;width:100%;}
   .af-slanje-status{font-size:11px;color:var(--grey);margin-top:8px;min-height:14px;}
   .af-slanje-status.error{color:var(--red);}
@@ -1029,7 +1041,7 @@
       <button type="button" class="tab-btn" id="tab-btn-arhiva" onclick="switchTab('Arhiva')">Arhiva (<span id="tab-count-arhiva">0</span>)</button>
       <button type="button" class="tab-btn" id="tab-btn-odbijenica" onclick="switchTab('Odbijenica')">Nisu zainteresirani (<span id="tab-count-odbijenica">0</span>)</button>
       <button type="button" class="tab-btn" id="tab-btn-ankete" onclick="switchTab('Ankete')">Ankete kvalitete (<span id="tab-count-ankete">0</span>)</button>
-      <button type="button" class="tab-btn" id="tab-btn-novi-klijenti" onclick="switchTab('NoviKlijenti')">Novi klijenti (<span id="tab-count-novi-klijenti">0</span>)</button>
+      <button type="button" class="tab-btn" id="tab-btn-novi-klijenti" onclick="switchTab('NoviKlijenti')">Klijenti (<span id="tab-count-novi-klijenti">0</span>)</button>
       <button type="button" class="tab-btn" id="tab-btn-faq" onclick="switchTab('FAQ')">Česta pitanja (<span id="tab-count-faq">0</span>)</button>
       <button type="button" class="tab-btn" id="tab-btn-zone" onclick="switchTab('Zone')">Zone dostave (<span id="tab-count-zone">0</span>)</button>
       <!-- NOVO (19.9.2026., trinaesti krug, Sašin izričit zahtjev): "Imenik" —
@@ -3258,7 +3270,13 @@
     head.innerHTML =
       '<label class="entry-select-wrap"><input type="checkbox" class="entry-select-cb"></label>' +
       '<div>' +
-        '<div class="entry-card-title">' + (broj ? '<span class="entry-broj-badge' + (entry.status === 'Odbijenica' ? ' entry-broj-badge-odbijenica' : '') + '">' + esc(broj) + '</span>' : '') + esc(naziv) + '</div>' +
+        '<div class="entry-card-title">' + (broj ? '<span class="entry-broj-badge' + (entry.status === 'Odbijenica' ? ' entry-broj-badge-odbijenica' : '') + '">' + esc(broj) + '</span>' : '') + esc(naziv) +
+          // "ABANDON" crvenim slovima u Arhivi — SAMO za zapise koje smo MI
+          // napustili (gumb "Abandon"), ne za sve arhivirane (Sašin izričit
+          // zahtjev, trideset i šesti krug — vidi datum_odustajanja_mi u
+          // InTime_Code.gs).
+          (jeArhiva(entry) && fieldVal(entry, 'Datum odustajanja od klijenta - mi (admin)') ? ' <span style="color:#c0392b;font-weight:800;font-size:11px;letter-spacing:.03em;">ABANDON</span>' : '') +
+        '</div>' +
         '<div class="entry-card-sub">' +
           subParts.map(function(p){ return '<span>' + p + '</span>'; }).join('') +
         '</div>' +
@@ -4530,6 +4548,7 @@
           '<div class="af-dok-priprema">' +
             '<button type="button" class="af-dok-priprema-btn">📁 Pripremi direktorij i link</button>' +
             '<p class="af-dok-cilj-hint" style="margin-top:6px;">Kopira i preimenuje sve dokumente iznad (fiksna polja + ostali) u zaseban direktorij na Driveu za TRENUTNU verziju ponude, i priprema link koji se šalje klijentu tagom <code>{{LINK_DOKUMENTI}}</code> — umjesto fizičkih priloga na mailu. Ponovni klik osvježava sadržaj direktorija; kod nove verzije ponude ("Generiraj novu ponudu") stari link automatski prestaje raditi čim klikneš ovdje za novu verziju.</p>' +
+            '<p class="af-dok-cilj-hint">Ako je ponuda već izdana, ponovna priprema mijenja samo sadržaj na tom istom linku — klijent kojem je link poslan o promjeni ne dobiva nikakvu obavijest.</p>' +
             '<div class="af-dok-priprema-status"></div>' +
             '<div class="af-dok-priprema-link"></div>' +
           '</div>' +
@@ -4564,7 +4583,15 @@
         '<div class="af-slanje-blok">' +
           '<label>Slanje ponude mailom</label>' +
           '<div class="af-slanje-okvir">' +
-            '<div class="af-slanje-desc">Šalje se TOČNO tekst iz pregleda predloška iznad (uključujući trenutno odabrani predložak) i prilozi iz bloka "Dokumenti za ponudu".</div>' +
+            // Sašin izričit zahtjev (23.9.2026., trideset i sedmi krug): dok
+            // se čeka klijentov odgovor (status 'na_cekanju'), CIJELI ovaj
+            // blok mora izgledati zamrznut/neoperabilan — ne samo gumb
+            // zaključan. Otvara se opet čim je ponuda odbijena ili
+            // poništena (ili prije prvog slanja) — vidi
+            // azurirajOsiguracSlanja_()/renderRokBlok_() niže za uvjet i
+            // .af-slanje-okvir.zamrznuto CSS za izgled.
+            '<div class="af-slanje-zamrznuto-traka" hidden>🔒 Zamrznuto dok se čeka klijentov odgovor — ponovno se otključava tek ako ponuda bude odbijena ili je poništimo.</div>' +
+            '<div class="af-slanje-desc">Šalje se TOČNO tekst iz pregleda predloška iznad (uključujući trenutno odabrani predložak) — samo poveznice, bez fizičkih priloga. Direktorij iza poveznice {{LINK_DOKUMENTI}} sadrži: Ponudu za suradnju + sve dokumente dodane u "Ostali dokumenti" (blok "Dokumenti za ponudu" gore), pod nazivima nakon preimenovanja. Analitički cjenik i Cjenik Hrvatska ostaju interni, klijent ih NE vidi.</div>' +
             '<div class="af-slanje-test-red">' +
               '<input type="email" class="af-slanje-test-input" placeholder="test adresa za probno slanje">' +
               '<button type="button" class="af-slanje-btn af-slanje-test-btn">✉ Pošalji test</button>' +
@@ -4625,7 +4652,14 @@
               // ostala tri gumba iznad jer poništava VEĆ prihvaćenu ponudu i
               // šalje pravi mail klijentu.
               '<button type="button" class="af-rok-btn opasnost af-rok-ponisti-prihvacenu">⚠ Poništi PRIHVAĆENU ponudu</button>' +
+              // "Abandon" — Sašin izričit zahtjev (23.9.2026., trideset i šesti
+              // krug): MI odustajemo od klijenta — šalje automatski mail
+              // (žaljenje/odbijenica s naše strane) i odmah seli zapis u
+              // Arhivu. Vidljivost i klik-handler u renderRokBlok_()/wiring
+              // niže.
+              '<button type="button" class="af-rok-btn opasnost af-rok-abandon">✕ Abandon (odustani od klijenta)</button>' +
             '</div>' +
+            '<p class="af-rok-napomena">Ako je ponuda već poslana, promjena roka je ne poništava — link i dalje radi, samo se na njemu promijeni rok.</p>' +
             '<div class="af-rok-status"></div>' +
             '<div class="af-rok-povijest"></div>' +
           '</div>' +
@@ -4699,6 +4733,25 @@
         '<div class="af-napomena-wrap"><label>Interna napomena (samo za tebe, ne šalje se klijentu)</label>' +
           '<textarea class="af-napomena" placeholder="Slobodne bilješke o ovom klijentu...">' + esc(fieldVal(entry, 'Interna napomena (admin)')) + '</textarea></div>' +
       '</div>' +
+      // "Restartiraj ponudu" (Sašin izričit zahtjev, 23.9.2026., trideset i
+      // treći krug) — vraća CIJELU ponudu ovog klijenta na 0, kao da nikad
+      // nije poslana (šifra, verzija, status, rok, povijest, potvrda/
+      // odbijanje/poništenje, linkovi/folderi dokumenata) — NE dira osnovne
+      // podatke klijenta (naziv/OIB/upitnik), TM/OB podatke ni internu
+      // napomenu. Namjerno POSVE NA DNU kartice, vizualno izdvojeno u
+      // crveni okvir s "PAZI!" upozorenjem — Sašin izričit zahtjev. Zaštita:
+      // NAJVIŠA razina u cijelom adminu, ISTI četverostruki tok kao "Master
+      // reset SVE numeracije" (vidi openMasterResetBrojevaModal): confirm()
+      // → potvrda riječju (superjunak) → confirm() → admin lozinka. Vidljivo
+      // samo kad je puni blok uopće prikazan (isti uvjet kao "Spremi" gumb).
+      (prikaziPuniBlok ?
+        '<div class="af-restart-blok">' +
+          '<div class="af-restart-naslov">⚠ PAZI!</div>' +
+          '<p class="af-restart-opis">Ovim se CIJELA ponuda ovog klijenta vraća na 0 — kao da nikad nije poslana (šifra, verzija, rok, status, povijest, potvrda/odbijanje/poništenje, linkovi i pripremljeni dokumenti ponude). Osnovni podaci klijenta (naziv, OIB, odgovori iz upitnika), TM/OB podaci i interna napomena OSTAJU netaknuti. Svi dokumenti ponude na Driveu (uklj. POSLANO) spakirat će se u JEDAN zip nazvan po broju ponude + "RESTART", koji ostaje u osnovnom direktoriju klijenta — sam direktorij te ponude se nakon toga trajno briše. Ova radnja se ne može poništiti.</p>' +
+          '<button type="button" class="btn btn-danger btn-small af-restart-btn">⟲ Restartiraj ponudu (na 0)</button>' +
+          '<div class="af-restart-status"></div>' +
+        '</div>'
+      : '') +
       '</div>' +
       '<div class="admin-fields-actions">' +
         '<span class="save-status"></span>' +
@@ -4742,6 +4795,60 @@
         statusEl.classList.add('error');
       });
     });
+
+    // "⟲ Restartiraj ponudu (na 0)" (Sašin izričit zahtjev, 23.9.2026.,
+    // trideset i treći krug) — vidi napomenu uz markup iznad. Isti
+    // četverostruki tok kao "Master reset SVE numeracije"
+    // (openMasterResetBrojevaModal): confirm() → riječ (superjunak) →
+    // confirm() → admin lozinka → tek onda backend poziv.
+    var restartBtn = wrap.querySelector('.af-restart-btn');
+    var restartStatus = wrap.querySelector('.af-restart-status');
+    // Vidljivost ovog bloka ovisi o statusu ponude — postavlja se u
+    // renderRokBlok_() niže (Sašin izričit zahtjev, trideset i sedmi krug),
+    // jer status tamo prvi put postaje dostupan. Vidi taj hook za uvjet.
+    var restartBlokEl = wrap.querySelector('.af-restart-blok');
+    if (restartBtn) {
+      restartBtn.addEventListener('click', function(ev) {
+        ev.stopPropagation();
+        if (!confirm('Sigurno restartirati CIJELU ponudu ovog klijenta na 0? Šifra, verzija, rok, status, povijest, potvrda/odbijanje/poništenje i linkovi dokumenata bit će zaboravljeni — kao da ponuda nikad nije poslana. Ovo se ne može poništiti.')) {
+          return;
+        }
+        openSuperheroWordConfirmModal(
+          'Restart ponude',
+          'Za potvrdu upišite riječ ispod. Cijela ponuda ovog klijenta bit će vraćena na 0.',
+          function() {
+            if (!confirm('Zadnja provjera — potpuno sigurni da restartiramo ponudu ovog klijenta na 0?')) {
+              return;
+            }
+            openAdminPasswordConfirmModal(
+              'Restart ponude',
+              'Unesite admin lozinku za konačnu potvrdu. Cijela ponuda ovog klijenta bit će vraćena na 0.',
+              function() {
+                restartStatus.textContent = 'Restartiranje u tijeku…';
+                restartStatus.classList.remove('error', 'uspjeh');
+                restartBtn.disabled = true;
+                gasCall({ action: 'adminRestartPonudu', token: adminToken, rowIndex: entry.rowIndex }).then(function(res) {
+                  restartBtn.disabled = false;
+                  if (handleAuthError(res)) { return; }
+                  if (res.status === 'ok') {
+                    restartStatus.textContent = 'Ponuda je vraćena na 0.';
+                    restartStatus.classList.add('uspjeh');
+                    loadEntries();
+                  } else {
+                    restartStatus.textContent = res.message || 'Restart nije uspio.';
+                    restartStatus.classList.add('error');
+                  }
+                }).catch(function() {
+                  restartBtn.disabled = false;
+                  restartStatus.textContent = 'Greška u komunikaciji s poslužiteljem.';
+                  restartStatus.classList.add('error');
+                });
+              }
+            );
+          }
+        );
+      });
+    }
 
     // "🔓 Vrati link na dokumente" (23. krug, nastavak) — vidi napomenu uz
     // markup iznad i adminVratiLinkDokumenataOdbijenePonude u
@@ -5925,8 +6032,28 @@
       var slanjeGuardBox = wrap.querySelector('.af-slanje-guard');
       var slanjeGuardUvjeti = wrap.querySelector('.af-slanje-guard-uvjeti');
       var slanjeGuardHint = wrap.querySelector('.af-slanje-guard-hint');
+      var slanjeOkvirEl = wrap.querySelector('.af-slanje-okvir');
+      var slanjeZamrznutoTraka = wrap.querySelector('.af-slanje-zamrznuto-traka');
       var azurirajOsiguracSlanja_ = function() {
         if (!slanjeGuardBox || !slanjeGuardUvjeti) { return; }
+        // Sašin izričit zahtjev (23.9.2026., trideset i sedmi krug): "dok se
+        // čeka odgovor" (status 'na_cekanju') CIJELI blok "Slanje ponude
+        // mailom" mora izgledati zamrznut i biti neoperabilan — otključava
+        // se ponovno tek kad je ponuda odbijena, poništena (uklj. poništenu
+        // VEĆ prihvaćenu), ili prije nego je uopće poslana. `typeof` provjera
+        // je zaštita od redoslijeda definicija unutar ove funkcije —
+        // izracunajStatusPonude_() je definirana NIŽE (uz renderRokBlok_), pa
+        // na samom prvom, odmašnom pozivu ovdje (linija ispod, prije nego je
+        // renderRokBlok_() uopće definirana) još ne postoji; renderRokBlok_()
+        // odmah zatim ponovno zove ovu funkciju (vidi kraj te funkcije niže)
+        // kad je izracunajStatusPonude_() već spremna, pa se stanje odmah
+        // ispravi — sve unutar istog, sinkronog gradenja kartice, prije nego
+        // je korisnik uopće vidi (kartica je do tad display:none).
+        var trenutniStatus_ = (typeof izracunajStatusPonude_ === 'function') ? izracunajStatusPonude_() : null;
+        var cekaOdgovor = (trenutniStatus_ === 'na_cekanju' || trenutniStatus_ === 'istekla');
+        if (slanjeOkvirEl) { slanjeOkvirEl.classList.toggle('zamrznuto', cekaOdgovor); }
+        if (slanjeZamrznutoTraka) { slanjeZamrznutoTraka.hidden = !cekaOdgovor; }
+
         var poslovnicaOk = !!(poslovnicaToggle && poslovnicaToggle.disabled);
         var sifraOk = !!(sifraInput && sifraInput.readOnly && sifraInput.value.trim());
         var brojDok = ['analiticki', 'cjenikhr', 'ponudasuradnja'].filter(function(k) { return !!dokFiksniPolja[k]; }).length;
@@ -5941,7 +6068,7 @@
         slanjeGuardUvjeti.innerHTML = uvjeti.map(function(u) {
           return '<div class="uvjet ' + (u.ok ? 'ok' : 'fail') + '"><span class="ikona">' + (u.ok ? '✓' : '✕') + '</span> ' + esc(u.tekst) + '</div>';
         }).join('');
-        var sveOk = uvjeti.every(function(u) { return u.ok; });
+        var sveOk = uvjeti.every(function(u) { return u.ok; }) && !cekaOdgovor;
         slanjeGuardBox.classList.toggle('spremno', sveOk);
         if (slanjePosaljiBtn) { slanjePosaljiBtn.disabled = !sveOk; }
         // Sašin izričit zahtjev (21.9.2026., nastavak — "testirati možemo
@@ -5952,9 +6079,11 @@
         // dok ponuda još nije spremna za stvarno slanje.
         if (slanjeTestBtn) { slanjeTestBtn.disabled = !sveOk; }
         if (slanjeGuardHint) {
-          slanjeGuardHint.textContent = sveOk
-            ? 'Svi uvjeti ispunjeni — ponuda se može poslati.'
-            : 'Gumb "📧 Pošalji ponudu..." ispod je zaključan dok se ne ispune svi uvjeti iznad.';
+          slanjeGuardHint.textContent = cekaOdgovor
+            ? 'Blok "Slanje ponude mailom" je zamrznut dok se čeka klijentov odgovor.'
+            : (sveOk
+              ? 'Svi uvjeti ispunjeni — ponuda se može poslati.'
+              : 'Gumb "📧 Pošalji ponudu..." ispod je zaključan dok se ne ispune svi uvjeti iznad.');
         }
       };
       azurirajOsiguracSlanja_();
@@ -6169,6 +6298,7 @@
       var rokPonistiBtn = wrap.querySelector('.af-rok-ponisti');
       var rokGenerirajBtn = wrap.querySelector('.af-rok-generiraj');
       var rokPonistiPrihvacenuBtn = wrap.querySelector('.af-rok-ponisti-prihvacenu');
+      var rokAbandonBtn = wrap.querySelector('.af-rok-abandon');
       var rokStatus = wrap.querySelector('.af-rok-status');
       var rokPovijestEl = wrap.querySelector('.af-rok-povijest');
       var rokTickInterval = null;
@@ -6363,6 +6493,15 @@
         // mogućnost da je ja poništim" — dakle SAMO nakon prihvaćanja, ne
         // prije i ne nakon što je već poništena/generirana nova).
         rokPonistiPrihvacenuBtn.hidden = (status !== 'potvrdjena');
+        // "Abandon" — ISPRAVLJENO (23.9.2026., trideset i sedmi krug, Sašin
+        // izričit zahtjev — obrnuto od prvotne verzije): NIJE dostupan dok
+        // se čeka odgovor ('na_cekanju') ni dok je istekla ('istekla') — to
+        // je jos otvoreno, čeka se klijent. JEST dostupan: prije nego je
+        // ponuda uopće poslana ('nije_poslano'), ili KAD je već odbijena
+        // ili smo je MI poništili (uklj. poništenu VEĆ prihvaćenu) — "to je
+        // rješenje ako ne možemo pronaći model suradnje" (Sašine riječi).
+        // NIJE dostupan kad je prihvaćena, niti kad je klijent već u Arhivi.
+        rokAbandonBtn.hidden = jeArhiva(entry) || (status === 'na_cekanju' || status === 'istekla' || status === 'potvrdjena');
 
         // ---- "Datum N" okviri — Sašin izričit zahtjev (dvadeset i sedmi
         // krug, skica odobrena): jedna stavka po SVAKOM slanju ponude ovom
@@ -6464,6 +6603,21 @@
         } else {
           rokPovijestEl.innerHTML = '';
         }
+
+        // Sašin izričit zahtjev (23.9.2026., trideset i sedmi krug): blok
+        // "Slanje ponude mailom" prati status ponude (zamrznut dok se čeka
+        // odgovor) — ovdje se ponovno provjerava SVAKI put kad se status
+        // promijeni (renderRokBlok_ se zove nakon svakog slanja/odbijanja/
+        // poništenja/generiranja nove ponude niže), ne samo kod izmjena u
+        // samom bloku slanja.
+        if (typeof azurirajOsiguracSlanja_ === 'function') { azurirajOsiguracSlanja_(); }
+
+        // "Restart ponude" — Sašin izričit zahtjev (23.9.2026., trideset i
+        // sedmi krug): "to se može kliknuti samo i jedino ako je ponuda
+        // odbijena ili poništena, ne može se kliknuti ili nema gumba ako se
+        // čeka odgovor" — cijeli blok (opis + gumb) se skriva izvan tog
+        // uvjeta, ne samo gumb zaključava.
+        if (restartBlokEl) { restartBlokEl.hidden = !(status === 'odbijena' || status === 'ponistena'); }
       };
       renderRokBlok_();
 
@@ -6674,6 +6828,37 @@
           if (typeof renderPregled_ === 'function') { renderPregled_(); }
         }).catch(function() {
           rokPonistiPrihvacenuBtn.disabled = false;
+          rokStatus.textContent = 'Greška u komunikaciji s poslužiteljem.';
+          rokStatus.className = 'af-rok-status error';
+        });
+      });
+
+      // "Abandon" (Sašin izričit zahtjev, trideset i šesti krug) — isti
+      // obrazac zaštite kao "Poništi PRIHVAĆENU ponudu" iznad (upisivanje
+      // riječi umjesto običnog confirm()), jer i ova akcija odmah šalje
+      // pravi, nepovratan mail klijentu i seli zapis u Arhivu.
+      rokAbandonBtn.addEventListener('click', function(ev) {
+        ev.stopPropagation();
+        var unos = window.prompt('OVO ŠALJE KLIJENTU MAIL da nažalost trenutno ne možemo ponuditi suradnju, i ODMAH prebacuje ovaj zapis u Arhivu. Ne može se vratiti klikom.\n\nZa potvrdu upišite riječ ABANDON (velikim slovima) i pritisnite OK.');
+        if (unos !== 'ABANDON') { return; }
+        rokAbandonBtn.disabled = true;
+        rokStatus.textContent = 'Slanje maila i prebacivanje u arhivu…';
+        rokStatus.className = 'af-rok-status';
+        gasCall({ action: 'adminOdustaniOdKlijenta', token: adminToken, rowIndex: entry.rowIndex }).then(function(res) {
+          rokAbandonBtn.disabled = false;
+          if (handleAuthError(res)) { return; }
+          if (res.status !== 'ok') {
+            rokStatus.textContent = res.message || 'Nije uspjelo.';
+            rokStatus.className = 'af-rok-status error';
+            return;
+          }
+          entry.fields['Datum prebacivanja u arhivu (admin)'] = res.datumPrikaz;
+          entry.fields['Datum odustajanja od klijenta - mi (admin)'] = res.datumPrikaz;
+          rokStatus.textContent = 'Mail poslan na: ' + (res.poslanoNa && res.poslanoNa.length ? res.poslanoNa.join(', ') : '(?)') + ' — klijent prebačen u Arhivu.';
+          rokStatus.className = 'af-rok-status ok';
+          loadAll();
+        }).catch(function() {
+          rokAbandonBtn.disabled = false;
           rokStatus.textContent = 'Greška u komunikaciji s poslužiteljem.';
           rokStatus.className = 'af-rok-status error';
         });
