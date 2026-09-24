@@ -525,8 +525,14 @@
   /* "Potvrdi"/"Promijeni" red uz INTRIX šifru (21.9.2026., Sašin izričit
      zahtjev — vidi napomenu uz markup u buildAdminFieldsBlock()). */
   .af-sifra-red{display:flex;gap:6px;align-items:center;}
-  .af-sifra-red .af-sifra-ponude{flex:1;}
-  .af-sifra-red .af-sifra-ponude[readonly]{background:#f3f4f6;color:var(--graphite);}
+  .af-sifra-red input{flex:1;}
+  .af-sifra-red input[readonly]{background:#f3f4f6;color:var(--graphite);}
+  /* TM broj/Online Booking polja (24.9.2026.) dijele ISTI .af-sifra-red
+     redak/gumbe kao INTRIX šifra, ali imaju i treće, "zaključano" stanje
+     (disabled) dok uvjet otključavanja nije ispunjen — vidi napomenu uz
+     markup u buildAdminFieldsBlock(). */
+  .af-sifra-red input:disabled{background:#ececec;color:#999;cursor:not-allowed;}
+  .af-sifra-btn:disabled{opacity:.4;cursor:not-allowed;}
   .af-sifra-btn{padding:7px 11px;border:1px solid var(--line);border-radius:6px;background:#fff;font-size:11.5px;font-weight:700;cursor:pointer;white-space:nowrap;}
   .af-sifra-potvrdi-btn{color:#fff;background:var(--purple);border-color:var(--purple);}
   .af-sifra-potvrdi-btn:hover{opacity:.9;}
@@ -654,6 +660,27 @@
   .af-dok-fiksno-tip{font-size:9px;font-weight:700;text-transform:uppercase;color:var(--grey);background:rgba(255,255,255,.7);border-radius:4px;padding:1px 5px;white-space:nowrap;}
   .af-dok-fiksno-prazno{font-size:10.5px;color:var(--grey);font-style:italic;text-align:center;padding:6px 3px;border:1.5px dashed rgba(0,0,0,.12);border-radius:8px;}
   .af-dok-fiksno-stavka{display:flex;align-items:center;gap:6px;padding:4px 7px;border:1px solid var(--purple);border-radius:6px;background:#fff;font-size:11.5px;}
+  /* Preglednici "Klijenti"/"Arhiva" (24.9.2026.) — vidi napomenu uz markup
+     u buildAdminFieldsBlock(). Naslovna traka dobiva punu boju (umjesto
+     ljubičastog teksta na bijeloj kao ostali okviri) da se odmah vizualno
+     razlikuju od "Osnovna dokumentacija"/"Ostali dokumenti" iznad — Sašin
+     izričit izbor: Klijenti tamnozeleno, Arhiva tamnoplavo. */
+  .af-dok-sustav-preglednik{border-color:#cfcfcf;}
+  .af-dok-sustav-klijenti{border-color:#1b6e3c;}
+  .af-dok-sustav-arhiva{border-color:#1c4a8a;}
+  .af-dok-sustav-preglednik .af-dok-okvir-naslov{margin:-10px -10px 8px;padding:8px 10px;border-radius:12px 12px 0 0;color:#fff;}
+  .af-dok-sustav-klijenti .af-dok-okvir-naslov{background:#1b6e3c;}
+  .af-dok-sustav-arhiva .af-dok-okvir-naslov{background:#1c4a8a;}
+  .af-dok-sustav-preglednik .af-dok-osvjezi{background:#fff;border-color:#fff;}
+  .af-dok-sustav-klijenti .af-dok-osvjezi{color:#1b6e3c;}
+  .af-dok-sustav-arhiva .af-dok-osvjezi{color:#1c4a8a;}
+  .af-dok-sustav-preglednik .af-dok-osvjezi:hover{opacity:.85;background:#fff;}
+  .af-dok-sustav-putanja{font-size:11px;color:var(--grey);margin-bottom:6px;line-height:1.5;word-break:break-word;}
+  .af-dok-sustav-putanja a{color:var(--purple);cursor:pointer;text-decoration:none;}
+  .af-dok-sustav-putanja a:hover{text-decoration:underline;}
+  .af-dok-sustav-putanja span.trenutno{font-weight:700;color:var(--graphite);}
+  .af-dok-stavka-folder{cursor:pointer;font-weight:700;}
+  .af-dok-stavka-folder:hover{border-color:var(--purple);background:#f0fbfa;}
   .af-dok-priprema{grid-column:1 / -1;margin-top:10px;padding-top:10px;border-top:1px dashed var(--line);}
   .af-dok-priprema-btn{padding:8px 14px;border-radius:7px;border:1px solid var(--purple);background:var(--purple);color:#fff;font-size:12.5px;font-weight:700;cursor:pointer;}
   .af-dok-priprema-btn:hover{opacity:.9;}
@@ -4746,6 +4773,30 @@
                 '<div class="af-dok-status"></div>' +
               '</div>' +
             '</div>' +
+            // Sašin izričit zahtjev (24.9.2026.): ispod okvira "Osnovna
+            // dokumentacija"/"Ostali dokumenti" iznad, dva NOVA okvira za
+            // ponovnu upotrebu STARIH dokumenata drugih klijenata pri izradi
+            // nove ponude — jedan pregledava Drive direktorij "KLIJENTI"
+            // (svi dosad generirani klijenti), drugi "ARHIVA" (arhivirani
+            // klijenti). Oba dijele ISTI .af-dok-okviri grid (2 stupca) kao
+            // red iznad — novi par djece automatski pada u NOVI red ispod,
+            // iste širine, bez posebnog layout CSS-a. Klijenti = tamnozeleni
+            // naslov, Arhiva = tamnoplavi (Sašin izričit izbor boja).
+            // Navigacija kroz poddirektorije (drill-down, klik na folder) i
+            // klik/drag na datoteku dodaje je u "Ostali dokumenti" iznad —
+            // vidi izgradiSustavPreglednik_() niže u ovoj funkciji.
+            '<div class="af-dok-okvir af-dok-sustav-preglednik af-dok-sustav-klijenti" data-korijen="klijenti">' +
+              '<div class="af-dok-okvir-naslov"><span>📂 Klijenti (stari dokumenti)</span>' +
+                '<button type="button" class="af-dok-osvjezi af-dok-sustav-osvjezi" title="Ponovno učitaj">⟳ Osvježi</button></div>' +
+              '<div class="af-dok-sustav-putanja"></div>' +
+              '<div class="af-dok-lista af-dok-sustav-lista"><div class="af-dok-prazno">Učitavanje…</div></div>' +
+            '</div>' +
+            '<div class="af-dok-okvir af-dok-sustav-preglednik af-dok-sustav-arhiva" data-korijen="arhiva">' +
+              '<div class="af-dok-okvir-naslov"><span>🗄 Arhiva</span>' +
+                '<button type="button" class="af-dok-osvjezi af-dok-sustav-osvjezi" title="Ponovno učitaj">⟳ Osvježi</button></div>' +
+              '<div class="af-dok-sustav-putanja"></div>' +
+              '<div class="af-dok-lista af-dok-sustav-lista"><div class="af-dok-prazno">Učitavanje…</div></div>' +
+            '</div>' +
           '</div>' +
           '<div class="af-dok-priprema">' +
             '<button type="button" class="af-dok-priprema-btn">📁 Pripremi direktorij i link</button>' +
@@ -4776,52 +4827,19 @@
             '<div class="af-predlozak-status"></div>' +
           '</div>' +
         '</div>' +
-        // Osigurač prije slanja ponude (Sašin izričit zahtjev, 21.9.2026.,
-        // odobreno prema mockupu) — 4 uvjeta se provjeravaju UŽIVO
-        // (azurirajOsiguracSlanja_ niže, u bloku "Slanje ponude mailom"):
-        // nadležna poslovnica potvrđena, INTRIX šifra potvrđena, sva 3
-        // fiksna dokumenta postavljena, barem 1 mail adresa označena. Dok
-        // bilo koji uvjet nije ispunjen, gumb "📧 Pošalji ponudu..." niže je
-        // zaključan (disabled) i okvir je crven; kad su svi ispunjeni, okvir
-        // postaje zelen i gumb se otključava. Sadržaj `.af-slanje-guard-uvjeti`
-        // se generira JS-om, ne ovdje (prazan na prvi render).
-        '<div class="af-slanje-guard">' +
-          '<h4>🔒 Uvjeti za slanje ponude</h4>' +
-          '<div class="af-slanje-guard-uvjeti"></div>' +
-          '<p class="af-slanje-guard-hint"></p>' +
-        '</div>' +
-        '<div class="af-slanje-blok">' +
-          '<label>Slanje ponude mailom</label>' +
-          '<div class="af-slanje-okvir">' +
-            // Sašin izričit zahtjev (23.9.2026., trideset i sedmi krug): dok
-            // se čeka klijentov odgovor (status 'na_cekanju'), CIJELI ovaj
-            // blok mora izgledati zamrznut/neoperabilan — ne samo gumb
-            // zaključan. Otvara se opet čim je ponuda odbijena ili
-            // poništena (ili prije prvog slanja) — vidi
-            // azurirajOsiguracSlanja_()/renderRokBlok_() niže za uvjet i
-            // .af-slanje-okvir.zamrznuto CSS za izgled.
-            '<div class="af-slanje-zamrznuto-traka" hidden>🔒 Zamrznuto dok se čeka klijentov odgovor — ponovno se otključava tek ako ponuda bude odbijena ili je poništimo.</div>' +
-            '<div class="af-slanje-desc">Šalje se TOČNO tekst iz pregleda predloška iznad (uključujući trenutno odabrani predložak) — samo poveznice, bez fizičkih priloga. Direktorij iza poveznice {{LINK_DOKUMENTI}} sadrži: Ponudu za suradnju + sve dokumente dodane u "Ostali dokumenti" (blok "Dokumenti za ponudu" gore), pod nazivima nakon preimenovanja. Analitički cjenik i Cjenik Hrvatska ostaju interni, klijent ih NE vidi.</div>' +
-            '<div class="af-slanje-test-red">' +
-              '<input type="email" class="af-slanje-test-input" placeholder="test adresa za probno slanje">' +
-              '<button type="button" class="af-slanje-btn af-slanje-test-btn">✉ Pošalji test</button>' +
-            '</div>' +
-            '<label class="af-slanje-kopija-red"><input type="checkbox" class="af-slanje-kopija-cb"> Pošalji i meni kopiju (sbatinac.intime@gmail.com)</label>' +
-            '<button type="button" class="af-slanje-btn af-slanje-posalji-btn uspjeh">📧 Pošalji ponudu označenim primateljima</button>' +
-            '<div class="af-slanje-progress-wrap"><div class="af-slanje-progress-track"><div class="af-slanje-progress-bar"></div></div><div class="af-slanje-progress-label"></div></div>' +
-            '<div class="af-slanje-status"></div>' +
-          '</div>' +
-        '</div>' +
-        // Sašin izričit zahtjev (20.9.2026., dvadeset i sedmi krug — "ovo mi
-        // stavi poslije slanja ponuda mailom, tamo prebaci ponuda - slanje i
-        // status"): blok premješten OVDJE, iza "Slanje ponude mailom" (bio je
-        // prije "Predložak za slanje ponude"/"Slanje ponude mailom" — vidi
-        // grep povijest gore u ovoj funkciji za staru poziciju). Ovo je ČISTO
-        // premještanje MARKUPA (redoslijed prikaza) — redoslijed IZVRŠAVANJA
-        // JS wiring koda niže u ovoj funkciji ostaje NEPROMIJENJEN (rok-wiring
-        // i dalje mora izvršiti se NAKON predlozak-wiring, jer poziva
-        // renderPregled_() da osvježi {{ROK_VAZENJA}} tag), jer
-        // wrap.querySelector(...) radi neovisno o poziciji u DOM-u.
+        // Sašin izričit zahtjev (24.9.2026.): blok "Ponuda — slanje i
+        // status" (status bedž, "Aktiviraj rok i link" i sl.) premješten
+        // OVDJE, odmah ispod "Predložak za slanje ponude" — logičnije
+        // mjesto jer se rok/link aktivira PRIJE slanja, a aktivacija je
+        // sad i JEDAN OD UVJETA za slanje (vidi novi peti uvjet "Rok i
+        // link ponude aktivirani" u azurirajOsiguracSlanja_ niže, blok
+        // "Slanje ponude mailom"). "Povijest slanja ponude" i Abandon gumb
+        // OSTAJU na staroj poziciji, ispod "Slanje ponude mailom" — vidi
+        // DRUGI af-rok-blok niže u ovoj istoj funkciji (sadrži samo
+        // povijest + Abandon). ČISTO premještanje MARKUPA (redoslijed
+        // prikaza) — redoslijed IZVRŠAVANJA JS wiring koda niže u ovoj
+        // funkciji ostaje NEPROMIJENJEN jer wrap.querySelector(...) radi
+        // neovisno o poziciji u DOM-u.
         '<div class="af-rok-blok">' +
           '<label>Ponuda — slanje i status</label>' +
           '<div class="af-rok-okvir">' +
@@ -4871,11 +4889,66 @@
             // priprema link za potvrdu (vidi renderRokBlok_() niže, gdje mu
             // se sad dodijelio novi tekst "Aktiviraj rok i link"). Pravi
             // gumb koji STVARNO šalje mail je "📧 Pošalji ponudu označenim
-            // primateljima" u odjeljku "Slanje ponude mailom" IZNAD. Ova
-            // napomena to izričito objašnjava, da se dva gumba više ne
-            // brkaju.
-            '<p class="af-rok-napomena">Ovaj gumb NE šalje mail — samo postavlja rok važenja i priprema poveznicu za klijentovu potvrdu/odbijanje. Stvarno slanje maila radi se gumbom "📧 Pošalji ponudu označenim primateljima" u odjeljku "Slanje ponude mailom" iznad.</p>' +
+            // primateljima" u odjeljku "Slanje ponude mailom" NIŽE (tekst
+            // ažuriran 24.9.2026. s "iznad" na "niže" otkad je ovaj blok
+            // premješten IZNAD tog odjeljka). Ova napomena to izričito
+            // objašnjava, da se dva gumba više ne brkaju.
+            '<p class="af-rok-napomena">Ovaj gumb NE šalje mail — samo postavlja rok važenja i priprema poveznicu za klijentovu potvrdu/odbijanje. Stvarno slanje maila radi se gumbom "📧 Pošalji ponudu označenim primateljima" u odjeljku "Slanje ponude mailom" niže.</p>' +
             '<div class="af-rok-status"></div>' +
+          '</div>' +
+        '</div>' +
+        // Osigurač prije slanja ponude (Sašin izričit zahtjev, 21.9.2026.,
+        // odobreno prema mockupu; PROŠIREN 24.9.2026. na 5 uvjeta — dodan
+        // "Rok i link ponude aktivirani", Sašin izričit zahtjev: "jedna od
+        // uvjeta za slanje ponude bude i definiranje roka... aktivacija
+        // roka i linka među ostalim [uvjetima]") — 5 uvjeta se provjeravaju
+        // UŽIVO (azurirajOsiguracSlanja_ niže, u bloku "Slanje ponude
+        // mailom"): nadležna poslovnica potvrđena, INTRIX šifra potvrđena,
+        // sva 3 fiksna dokumenta postavljena, rok i link aktivirani (blok
+        // "Ponuda — slanje i status" iznad), barem 1 mail adresa označena.
+        // Dok bilo koji uvjet nije ispunjen, gumb "📧 Pošalji ponudu..."
+        // niže je zaključan (disabled) i okvir je crven; kad su svi
+        // ispunjeni, okvir postaje zelen i gumb se otključava. Sadržaj
+        // `.af-slanje-guard-uvjeti` se generira JS-om, ne ovdje (prazan na
+        // prvi render).
+        '<div class="af-slanje-guard">' +
+          '<h4>🔒 Uvjeti za slanje ponude</h4>' +
+          '<div class="af-slanje-guard-uvjeti"></div>' +
+          '<p class="af-slanje-guard-hint"></p>' +
+        '</div>' +
+        '<div class="af-slanje-blok">' +
+          '<label>Slanje ponude mailom</label>' +
+          '<div class="af-slanje-okvir">' +
+            // Sašin izričit zahtjev (23.9.2026., trideset i sedmi krug): dok
+            // se čeka klijentov odgovor (status 'na_cekanju'), CIJELI ovaj
+            // blok mora izgledati zamrznut/neoperabilan — ne samo gumb
+            // zaključan. Otvara se opet čim je ponuda odbijena ili
+            // poništena (ili prije prvog slanja) — vidi
+            // azurirajOsiguracSlanja_()/renderRokBlok_() niže za uvjet i
+            // .af-slanje-okvir.zamrznuto CSS za izgled.
+            '<div class="af-slanje-zamrznuto-traka" hidden>🔒 Zamrznuto dok se čeka klijentov odgovor — ponovno se otključava tek ako ponuda bude odbijena ili je poništimo.</div>' +
+            '<div class="af-slanje-desc">Šalje se TOČNO tekst iz pregleda predloška iznad (uključujući trenutno odabrani predložak) — samo poveznice, bez fizičkih priloga. Direktorij iza poveznice {{LINK_DOKUMENTI}} sadrži: Ponudu za suradnju + sve dokumente dodane u "Ostali dokumenti" (blok "Dokumenti za ponudu" gore), pod nazivima nakon preimenovanja. Analitički cjenik i Cjenik Hrvatska ostaju interni, klijent ih NE vidi.</div>' +
+            '<div class="af-slanje-test-red">' +
+              '<input type="email" class="af-slanje-test-input" placeholder="test adresa za probno slanje">' +
+              '<button type="button" class="af-slanje-btn af-slanje-test-btn">✉ Pošalji test</button>' +
+            '</div>' +
+            '<label class="af-slanje-kopija-red"><input type="checkbox" class="af-slanje-kopija-cb"> Pošalji i meni kopiju (sbatinac.intime@gmail.com)</label>' +
+            '<button type="button" class="af-slanje-btn af-slanje-posalji-btn uspjeh">📧 Pošalji ponudu označenim primateljima</button>' +
+            '<div class="af-slanje-progress-wrap"><div class="af-slanje-progress-track"><div class="af-slanje-progress-bar"></div></div><div class="af-slanje-progress-label"></div></div>' +
+            '<div class="af-slanje-status"></div>' +
+          '</div>' +
+        '</div>' +
+        // Sašin izričit zahtjev (24.9.2026.): "Povijest slanja ponude" i
+        // Abandon gumb OSTAJU ovdje, ispod "Slanje ponude mailom" —
+        // nepromijenjena pozicija ("povijest slanja i ponuda ostavi dolje
+        // gdje je i sada, to će biti ispod tipke pošalji ponudu označenim
+        // primateljima"). Samo status/rok-aktivacija dio bloka "Ponuda —
+        // slanje i status" je premješten GORE, odmah ispod "Predložak za
+        // slanje ponude" (vidi taj af-rok-blok iznad u ovoj funkciji) — ovaj
+        // DRUGI af-rok-blok ovdje sadrži ISKLJUČIVO povijest + Abandon
+        // (isti sadržaj koji je do 24.9.2026. bio dio JEDNOG bloka gore).
+        '<div class="af-rok-blok">' +
+          '<div class="af-rok-okvir">' +
             '<div class="af-rok-povijest"></div>' +
             // "Abandon" — Sašin izričit zahtjev (23.9.2026., trideset i šesti
             // krug, PREMJEŠTENO isti dan na Sašin naknadni izričit zahtjev:
@@ -4884,13 +4957,12 @@
             // tu je dok ne poništim napustim klijenta"): fizički gumb i dalje
             // isti element/klasa (.af-rok-abandon) — samo mu se promijenilo
             // MJESTO u markupu, ispod "Povijest slanja ponude" umjesto u redu
-            // s ostalim gumbima iznad, poravnat desno. NAMJERNO se ne stavlja
+            // s ostalim gumbima, poravnat desno. NAMJERNO se ne stavlja
             // UNUTAR .af-rok-povijest — taj div se u cijelosti prepisuje
             // (innerHTML) na svaki renderRokBlok_(), pa bi gumb unutra nestao
             // i trebao ponovno vezanje click-handlera pri svakom prikazu.
             // Pravila vidljivosti (kad je sakriven/prikazan po statusu)
-            // OSTAJU NEPROMIJENJENA — Saša je eksplicitno potvrdio da mijenja
-            // samo poziciju, ne i ta pravila (vidi renderRokBlok_() niže).
+            // OSTAJU NEPROMIJENJENA.
             '<div class="af-rok-abandon-red">' +
               '<button type="button" class="af-rok-btn opasnost af-rok-abandon">✕ Abandon (odustani od klijenta)</button>' +
             '</div>' +
@@ -4950,18 +5022,70 @@
             '</div>'
           : '') +
         '<div style="grid-column:1 / -1;border-top:1px dashed var(--line);margin:4px 0 2px;padding-top:10px;font-size:11px;font-weight:800;letter-spacing:.02em;text-transform:uppercase;color:var(--purple-dark);">Online Booking i podaci klijenta</div>' +
+        // Sašin izričit zahtjev (24.9.2026.): lanac zaključavanja — "jako su
+        // bitni podaci". TM broj se otključava (postaje uredljiv) tek kad
+        // KLIJENT prihvati ponudu ('Datum prihvaćanja ponude (admin)'
+        // popunjen); svih 5 polja Online Bookinga ispod ostaju zaključana
+        // dok TM broj nije POTVRĐEN. Svako od 6 polja dobiva ISTI "✓
+        // Potvrdi"/"✎ Promijeni" mehanizam kao INTRIX šifra ponude (vidi taj
+        // blok iznad u ovoj funkciji, isti CSS razred .af-sifra-red/
+        // .af-sifra-btn) — "potvrđeno" = polje ima spremljenu vrijednost,
+        // bez posebnog boolean stupca (isto kao kod šifre). Wiring vidi niže
+        // u ovoj funkciji, odmah iza "✓ Potvrdi"/"✎ Promijeni" INTRIX šifre.
+        (!fieldVal(entry, 'Datum prihvaćanja ponude (admin)')
+          ? '<p class="af-sifra-hint af-sifra-hint-info" style="grid-column:1 / -1;">🔒 TM broj i Online Booking podaci otključavaju se tek kad klijent prihvati ponudu.</p>'
+          : '') +
         '<div><label>Identifikacijski TM broj klijenta</label>' +
-          '<input type="text" class="af-tm-broj" placeholder="npr. TM broj klijenta" value="' + esc(fieldVal(entry, 'Identifikacijski TM broj klijenta (admin)')) + '"></div>' +
+          '<div class="af-sifra-red">' +
+            '<input type="text" class="af-tm-broj" placeholder="npr. TM broj klijenta" value="' + esc(fieldVal(entry, 'Identifikacijski TM broj klijenta (admin)')) + '"' + (fieldVal(entry, 'Identifikacijski TM broj klijenta (admin)') ? ' readonly' : (fieldVal(entry, 'Datum prihvaćanja ponude (admin)') ? '' : ' disabled')) + '>' +
+            (fieldVal(entry, 'Identifikacijski TM broj klijenta (admin)')
+              ? '<button type="button" class="af-sifra-btn af-sifra-promijeni-btn af-tm-promijeni-btn">✎ Promijeni</button>'
+              : '<button type="button" class="af-sifra-btn af-sifra-potvrdi-btn af-tm-potvrdi-btn"' + (fieldVal(entry, 'Datum prihvaćanja ponude (admin)') ? '' : ' disabled') + '>✓ Potvrdi</button>') +
+          '</div>' +
+        '</div>' +
+        (fieldVal(entry, 'Identifikacijski TM broj klijenta (admin)')
+          ? ''
+          : '<p class="af-sifra-hint af-sifra-hint-info af-ob-lock-hint" style="grid-column:1 / -1;">🔒 Ostala polja ispod otključavaju se tek kad TM broj bude potvrđen.</p>') +
         '<div><label>Datum otvaranja Online Bookinga</label>' +
-          '<input type="text" class="af-datum-ob" placeholder="npr. 25.09.2026" value="' + esc(fieldVal(entry, 'Datum otvaranja Online Bookinga (admin)')) + '"></div>' +
+          '<div class="af-sifra-red">' +
+            '<input type="text" class="af-datum-ob" placeholder="npr. 25.09.2026" value="' + esc(fieldVal(entry, 'Datum otvaranja Online Bookinga (admin)')) + '"' + (fieldVal(entry, 'Datum otvaranja Online Bookinga (admin)') ? ' readonly' : (fieldVal(entry, 'Identifikacijski TM broj klijenta (admin)') ? '' : ' disabled')) + '>' +
+            (fieldVal(entry, 'Datum otvaranja Online Bookinga (admin)')
+              ? '<button type="button" class="af-sifra-btn af-sifra-promijeni-btn af-ob-polje-promijeni-btn" data-polje="datumOb">✎ Promijeni</button>'
+              : '<button type="button" class="af-sifra-btn af-sifra-potvrdi-btn af-ob-polje-potvrdi-btn" data-polje="datumOb"' + (fieldVal(entry, 'Identifikacijski TM broj klijenta (admin)') ? '' : ' disabled') + '>✓ Potvrdi</button>') +
+          '</div>' +
+        '</div>' +
         '<div><label>Online Booking — korisničko ime</label>' +
-          '<input type="text" class="af-username" value="' + esc(fieldVal(entry, 'OB korisničko ime (admin)')) + '"></div>' +
+          '<div class="af-sifra-red">' +
+            '<input type="text" class="af-username" value="' + esc(fieldVal(entry, 'OB korisničko ime (admin)')) + '"' + (fieldVal(entry, 'OB korisničko ime (admin)') ? ' readonly' : (fieldVal(entry, 'Identifikacijski TM broj klijenta (admin)') ? '' : ' disabled')) + '>' +
+            (fieldVal(entry, 'OB korisničko ime (admin)')
+              ? '<button type="button" class="af-sifra-btn af-sifra-promijeni-btn af-ob-polje-promijeni-btn" data-polje="username">✎ Promijeni</button>'
+              : '<button type="button" class="af-sifra-btn af-sifra-potvrdi-btn af-ob-polje-potvrdi-btn" data-polje="username"' + (fieldVal(entry, 'Identifikacijski TM broj klijenta (admin)') ? '' : ' disabled') + '>✓ Potvrdi</button>') +
+          '</div>' +
+        '</div>' +
         '<div><label>Online Booking — lozinka</label>' +
-          '<input type="text" class="af-password" value="' + esc(fieldVal(entry, 'OB lozinka (admin)')) + '"></div>' +
+          '<div class="af-sifra-red">' +
+            '<input type="text" class="af-password" value="' + esc(fieldVal(entry, 'OB lozinka (admin)')) + '"' + (fieldVal(entry, 'OB lozinka (admin)') ? ' readonly' : (fieldVal(entry, 'Identifikacijski TM broj klijenta (admin)') ? '' : ' disabled')) + '>' +
+            (fieldVal(entry, 'OB lozinka (admin)')
+              ? '<button type="button" class="af-sifra-btn af-sifra-promijeni-btn af-ob-polje-promijeni-btn" data-polje="password">✎ Promijeni</button>'
+              : '<button type="button" class="af-sifra-btn af-sifra-potvrdi-btn af-ob-polje-potvrdi-btn" data-polje="password"' + (fieldVal(entry, 'Identifikacijski TM broj klijenta (admin)') ? '' : ' disabled') + '>✓ Potvrdi</button>') +
+          '</div>' +
+        '</div>' +
         '<div><label>' + esc(zadnjeVrijemeUnosaLabel) + '</label>' +
-          '<input type="time" class="af-vrijeme" value="' + esc(zadnjeVrijemeUnosaPrikaz) + '"></div>' +
+          '<div class="af-sifra-red">' +
+            '<input type="time" class="af-vrijeme" value="' + esc(zadnjeVrijemeUnosaPrikaz) + '"' + (zadnjeVrijemeUnosaAdmin ? ' readonly' : (fieldVal(entry, 'Identifikacijski TM broj klijenta (admin)') ? '' : ' disabled')) + '>' +
+            (zadnjeVrijemeUnosaAdmin
+              ? '<button type="button" class="af-sifra-btn af-sifra-promijeni-btn af-ob-polje-promijeni-btn" data-polje="zadnjeVrijeme">✎ Promijeni</button>'
+              : '<button type="button" class="af-sifra-btn af-sifra-potvrdi-btn af-ob-polje-potvrdi-btn" data-polje="zadnjeVrijeme"' + (fieldVal(entry, 'Identifikacijski TM broj klijenta (admin)') ? '' : ' disabled') + '>✓ Potvrdi</button>') +
+          '</div>' +
+        '</div>' +
         '<div><label>' + esc(vrijemePrikupaLabel) + '</label>' +
-          '<input type="text" class="af-vrijeme-prikupa" placeholder="npr. 08:00 - 10:00" value="' + esc(vrijemePrikupaPrikaz) + '"></div>' +
+          '<div class="af-sifra-red">' +
+            '<input type="text" class="af-vrijeme-prikupa" placeholder="npr. 08:00 - 10:00" value="' + esc(vrijemePrikupaPrikaz) + '"' + (vrijemePrikupaAdmin ? ' readonly' : (fieldVal(entry, 'Identifikacijski TM broj klijenta (admin)') ? '' : ' disabled')) + '>' +
+            (vrijemePrikupaAdmin
+              ? '<button type="button" class="af-sifra-btn af-sifra-promijeni-btn af-ob-polje-promijeni-btn" data-polje="vrijemePrikupa">✎ Promijeni</button>'
+              : '<button type="button" class="af-sifra-btn af-sifra-potvrdi-btn af-ob-polje-potvrdi-btn" data-polje="vrijemePrikupa"' + (fieldVal(entry, 'Identifikacijski TM broj klijenta (admin)') ? '' : ' disabled') + '>✓ Potvrdi</button>') +
+          '</div>' +
+        '</div>' +
         '<div class="af-napomena-wrap"><label>Interna napomena (samo za tebe, ne šalje se klijentu)</label>' +
           '<textarea class="af-napomena" placeholder="Slobodne bilješke o ovom klijentu...">' + esc(fieldVal(entry, 'Interna napomena (admin)')) + '</textarea></div>' +
       '</div>' +
@@ -5359,6 +5483,124 @@
       sifraStatusEl.textContent = '';
       sifraStatusEl.classList.remove('error');
       if (typeof azurirajOsiguracSlanja_ === 'function') { azurirajOsiguracSlanja_(); }
+    });
+
+    // TM broj + 5 polja Online Bookinga — lanac zaključavanja (Sašin
+    // izričit zahtjev, 24.9.2026., vidi opširnu napomenu uz markup gore).
+    // Definicija PRIJE TM bloka (iako se koristi tek u njegovom Potvrdi
+    // handleru) — poredak je čisto radi čitljivosti, JS closure je svejedno
+    // vidi u trenutku klika, ne u trenutku definicije.
+    var OB_POLJA_DEF_ = {
+      datumOb: { selektor: '.af-datum-ob', param: 'datum_otvaranja_ob', label: 'Datum otvaranja Online Bookinga (admin)' },
+      username: { selektor: '.af-username', param: 'ob_username', label: 'OB korisničko ime (admin)' },
+      password: { selektor: '.af-password', param: 'ob_password', label: 'OB lozinka (admin)' },
+      zadnjeVrijeme: { selektor: '.af-vrijeme', param: 'zadnje_vrijeme_unosa', label: 'Zadnje vrijeme unosa naloga (admin)' },
+      vrijemePrikupa: { selektor: '.af-vrijeme-prikupa', param: 'admin_vrijeme_prikupa', label: 'Vrijeme prikupa — ručno uređeno (admin)' }
+    };
+    // Otključava svih 5 OB polja (input.disabled = false, Potvrdi gumb
+    // disabled = false) — poziva se jednom kad TM broj bude potvrđen, bez
+    // čekanja da se kartica ponovno učita. Ne dira polja koja su VEĆ
+    // readonly (već ranije potvrđena) — samo skida "čekam TM" zaključavanje.
+    var otkljucajObPolja_ = function() {
+      Object.keys(OB_POLJA_DEF_).forEach(function(kljuc) {
+        var def = OB_POLJA_DEF_[kljuc];
+        var input = wrap.querySelector(def.selektor);
+        var potvrdiBtn = wrap.querySelector('.af-ob-polje-potvrdi-btn[data-polje="' + kljuc + '"]');
+        if (input && input.disabled && !input.readOnly) { input.disabled = false; }
+        if (potvrdiBtn) { potvrdiBtn.disabled = false; }
+      });
+      var lockHint = wrap.querySelector('.af-ob-lock-hint');
+      if (lockHint) { lockHint.style.display = 'none'; }
+    };
+    var tmInput = wrap.querySelector('.af-tm-broj');
+    var tmPotvrdiBtn = wrap.querySelector('.af-tm-potvrdi-btn');
+    var tmPromijeniBtn = wrap.querySelector('.af-tm-promijeni-btn');
+    if (tmPotvrdiBtn) {
+      tmPotvrdiBtn.addEventListener('click', function(ev) {
+        ev.stopPropagation();
+        if (tmPotvrdiBtn.disabled) { return; }
+        var vrijednost = tmInput.value.trim();
+        if (!vrijednost) { tmInput.focus(); return; }
+        tmPotvrdiBtn.disabled = true;
+        gasCall({ action: 'adminUpdateFields', token: adminToken, rowIndex: entry.rowIndex, fields: { identifikacijski_tm_broj: vrijednost } }).then(function(res) {
+          if (handleAuthError(res)) { return; }
+          if (res.status === 'ok') {
+            entry.fields['Identifikacijski TM broj klijenta (admin)'] = vrijednost;
+            tmInput.value = vrijednost;
+            tmInput.readOnly = true;
+            tmPotvrdiBtn.style.display = 'none';
+            if (tmPromijeniBtn) { tmPromijeniBtn.style.display = ''; }
+            otkljucajObPolja_();
+          } else {
+            tmPotvrdiBtn.disabled = false;
+            alert(res.message || 'Spremanje TM broja nije uspjelo.');
+          }
+        }).catch(function() {
+          tmPotvrdiBtn.disabled = false;
+          alert('Greška u komunikaciji s poslužiteljem.');
+        });
+      });
+    }
+    if (tmPromijeniBtn) {
+      tmPromijeniBtn.addEventListener('click', function(ev) {
+        ev.stopPropagation();
+        if (!confirm('Sigurno želiš promijeniti TM broj klijenta?\n\nTrenutni TM broj: "' + tmInput.value + '"')) { return; }
+        tmInput.readOnly = false;
+        tmInput.focus();
+        tmInput.select();
+        tmPromijeniBtn.style.display = 'none';
+        if (tmPotvrdiBtn) { tmPotvrdiBtn.style.display = ''; }
+      });
+    }
+    // Preostalih 5 OB polja — generička petlja (data-polje → OB_POLJA_DEF_)
+    // umjesto pet gotovo identičnih blokova koda.
+    Array.prototype.slice.call(wrap.querySelectorAll('.af-ob-polje-potvrdi-btn')).forEach(function(potvrdiBtn) {
+      var kljuc = potvrdiBtn.getAttribute('data-polje');
+      var def = OB_POLJA_DEF_[kljuc];
+      var input = def ? wrap.querySelector(def.selektor) : null;
+      if (!def || !input) { return; }
+      var promijeniBtn = wrap.querySelector('.af-ob-polje-promijeni-btn[data-polje="' + kljuc + '"]');
+      potvrdiBtn.addEventListener('click', function(ev) {
+        ev.stopPropagation();
+        if (potvrdiBtn.disabled) { return; }
+        var vrijednost = input.value.trim();
+        if (!vrijednost) { input.focus(); return; }
+        potvrdiBtn.disabled = true;
+        var fields = {};
+        fields[def.param] = vrijednost;
+        gasCall({ action: 'adminUpdateFields', token: adminToken, rowIndex: entry.rowIndex, fields: fields }).then(function(res) {
+          if (handleAuthError(res)) { return; }
+          if (res.status === 'ok') {
+            entry.fields[def.label] = vrijednost;
+            input.value = vrijednost;
+            input.readOnly = true;
+            potvrdiBtn.style.display = 'none';
+            if (promijeniBtn) { promijeniBtn.style.display = ''; }
+          } else {
+            potvrdiBtn.disabled = false;
+            alert(res.message || 'Spremanje nije uspjelo.');
+          }
+        }).catch(function() {
+          potvrdiBtn.disabled = false;
+          alert('Greška u komunikaciji s poslužiteljem.');
+        });
+      });
+    });
+    Array.prototype.slice.call(wrap.querySelectorAll('.af-ob-polje-promijeni-btn')).forEach(function(promijeniBtn) {
+      var kljuc = promijeniBtn.getAttribute('data-polje');
+      var def = OB_POLJA_DEF_[kljuc];
+      var input = def ? wrap.querySelector(def.selektor) : null;
+      if (!def || !input) { return; }
+      var potvrdiBtn = wrap.querySelector('.af-ob-polje-potvrdi-btn[data-polje="' + kljuc + '"]');
+      promijeniBtn.addEventListener('click', function(ev) {
+        ev.stopPropagation();
+        if (!confirm('Sigurno želiš promijeniti ovo polje?\n\nTrenutna vrijednost: "' + input.value + '"')) { return; }
+        input.readOnly = false;
+        input.focus();
+        input.select();
+        promijeniBtn.style.display = 'none';
+        if (potvrdiBtn) { potvrdiBtn.style.display = ''; }
+      });
     });
 
     // Sašin izričit zahtjev (19.9.2026.): pozitivno popunjeni upitnik se VIŠE
@@ -5812,6 +6054,85 @@
       ucitajIzvorListu_(false);
 
       dokOsvjeziBtn.addEventListener('click', function(ev) { ev.stopPropagation(); ucitajIzvorListu_(true); });
+
+      // Preglednici "Klijenti"/"Arhiva" (24.9.2026.) — vidi opširnu
+      // napomenu uz markup iznad (buildAdminFieldsBlock, blok "Dokumenti za
+      // ponudu") i adminBrowseSustavFolder() u InTime_Code.gs. Generička
+      // funkcija, pozvana JEDNOM PO PANELU — svaki panel drži SVOJE
+      // trenutno stanje (trenutniFolderId) u vlastitom closureu, potpuno
+      // neovisno o drugom panelu (Klijenti i Arhiva se navigiraju svaki za
+      // sebe, istovremeno, bez međusobnog utjecaja). Klik na datoteku
+      // dodaje je u "Ostali dokumenti" (dodajDokumentUPonudu_, ISTA funkcija
+      // koju koristi i "Osnovna dokumentacija" lijevo) — i drag&drop na
+      // fiksna polja/cilj radi isto tako (isti `source: 'osnovna'` tag u
+      // dataTransfer payloadu kao kod Osnovna dokumentacija — dropovi ga
+      // prepoznaju po tom tagu, ne po tome odakle je stvarno došao, pa nema
+      // potrebe dirati te drop-handlere).
+      var izgradiSustavPreglednik_ = function(panelEl) {
+        var korijen = panelEl.getAttribute('data-korijen');
+        var putanjaEl = panelEl.querySelector('.af-dok-sustav-putanja');
+        var listaEl = panelEl.querySelector('.af-dok-sustav-lista');
+        var osvjeziBtn = panelEl.querySelector('.af-dok-sustav-osvjezi');
+        var trenutniFolderId = null;
+
+        var ucitaj_ = function() {
+          listaEl.innerHTML = '<div class="af-dok-prazno">Učitavanje…</div>';
+          gasCall({ action: 'adminBrowseSustavFolder', token: adminToken, korijen: korijen, folderId: trenutniFolderId }).then(function(res) {
+            if (handleAuthError(res)) { return; }
+            if (res.status !== 'ok') {
+              listaEl.innerHTML = '<div class="af-dok-prazno">Greška: ' + esc(res.message || 'nepoznata greška') + '</div>';
+              return;
+            }
+            trenutniFolderId = res.folderId;
+            putanjaEl.innerHTML = res.putanja.map(function(p, i) {
+              var zadnji = (i === res.putanja.length - 1);
+              return zadnji
+                ? '<span class="trenutno">' + esc(p.name) + '</span>'
+                : ('<a data-id="' + esc(p.id) + '">' + esc(p.name) + '</a> / ');
+            }).join('');
+            Array.prototype.slice.call(putanjaEl.querySelectorAll('a')).forEach(function(a) {
+              a.addEventListener('click', function(ev) {
+                ev.stopPropagation();
+                trenutniFolderId = a.getAttribute('data-id');
+                ucitaj_();
+              });
+            });
+            var stavkeHtml = '';
+            res.podfolderi.forEach(function(f) {
+              stavkeHtml += '<div class="af-dok-stavka af-dok-stavka-folder" data-id="' + esc(f.id) + '">' +
+                '<span>📁</span><span class="af-dok-naziv">' + esc(f.name) + '</span>' +
+              '</div>';
+            });
+            res.datoteke.forEach(function(f) {
+              stavkeHtml += '<div class="af-dok-stavka" draggable="true" data-id="' + esc(f.id) + '" data-name="' + esc(f.name) + '" data-url="' + esc(f.url) + '">' +
+                '<span>📄</span><span class="af-dok-naziv">' + esc(f.name) + '</span>' +
+              '</div>';
+            });
+            listaEl.innerHTML = stavkeHtml || '<div class="af-dok-prazno">Prazan direktorij.</div>';
+            Array.prototype.slice.call(listaEl.querySelectorAll('.af-dok-stavka-folder')).forEach(function(el) {
+              el.addEventListener('click', function(ev) {
+                ev.stopPropagation();
+                trenutniFolderId = el.getAttribute('data-id');
+                ucitaj_();
+              });
+            });
+            Array.prototype.slice.call(listaEl.querySelectorAll('.af-dok-stavka:not(.af-dok-stavka-folder)')).forEach(function(el) {
+              var stavka = { source: 'osnovna', id: el.getAttribute('data-id'), name: el.getAttribute('data-name'), url: el.getAttribute('data-url') };
+              el.addEventListener('click', function(ev) { ev.stopPropagation(); dodajDokumentUPonudu_(stavka); });
+              el.addEventListener('dragstart', function(ev) {
+                ev.dataTransfer.setData('text/plain', JSON.stringify(stavka));
+                ev.dataTransfer.effectAllowed = 'copy';
+              });
+            });
+          }).catch(function() {
+            listaEl.innerHTML = '<div class="af-dok-prazno">Greška u komunikaciji s poslužiteljem.</div>';
+          });
+        };
+
+        if (osvjeziBtn) { osvjeziBtn.addEventListener('click', function(ev) { ev.stopPropagation(); ucitaj_(); }); }
+        ucitaj_();
+      };
+      Array.prototype.slice.call(wrap.querySelectorAll('.af-dok-sustav-preglednik')).forEach(izgradiSustavPreglednik_);
 
       dokCiljOkvir.addEventListener('dragover', function(ev) {
         ev.preventDefault();
@@ -6348,11 +6669,20 @@
         var sifraOk = !!(sifraInput && sifraInput.readOnly && sifraInput.value.trim());
         var brojDok = ['analiticki', 'cjenikhr', 'ponudasuradnja'].filter(function(k) { return !!dokFiksniPolja[k]; }).length;
         var dokOk = brojDok === 3;
+        // Peti uvjet (Sašin izričit zahtjev, 24.9.2026.: "jedna od uvjeta za
+        // slanje ponude bude i definiranje roka... aktivacija roka i linka
+        // među ostalim [uvjetima]") — provjerava je li rok/link već
+        // aktiviran barem jednom (gumb "Aktiviraj rok i link" u bloku
+        // "Ponuda — slanje i status" iznad, koji postavlja upravo ovo polje
+        // — vidi rokBtn click-handler niže i adminPostaviRokPonude() u
+        // InTime_Code.gs).
+        var rokOk = !!fieldVal(entry, 'Datum isteka ponude (admin)');
         var mailOk = wrap.querySelectorAll('.af-mail-cb:checked').length > 0;
         var uvjeti = [
           { ok: poslovnicaOk, tekst: poslovnicaOk ? 'Nadležna poslovnica potvrđena' : 'Nadležna poslovnica nije potvrđena' },
           { ok: sifraOk, tekst: sifraOk ? 'Interna In Time šifra ponude (INTRIX) potvrđena' : 'Interna In Time šifra ponude (INTRIX) nije potvrđena' },
           { ok: dokOk, tekst: dokOk ? 'Sva 3 osnovna priloga postavljena' : ('Nedostaju osnovni prilozi — postavljeno ' + brojDok + '/3 (Analitički cjenik, Cjenik Hrvatska, Ponuda za suradnju)') },
+          { ok: rokOk, tekst: rokOk ? 'Rok i link ponude aktivirani' : 'Rok i link ponude nisu aktivirani — klikni "Aktiviraj rok i link" u odjeljku "Ponuda — slanje i status"' },
           { ok: mailOk, tekst: mailOk ? 'Označena barem 1 mail adresa za slanje ponude' : 'Nijedna mail adresa nije označena za slanje ponude' }
         ];
         slanjeGuardUvjeti.innerHTML = uvjeti.map(function(u) {
