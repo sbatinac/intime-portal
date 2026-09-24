@@ -1068,6 +1068,12 @@
         <!-- NOVO (dvadeset i šesti krug) — sakrij/otkrij, samo na tabu "Imenik" (vidi updateBulkActionsBar()) -->
         <button type="button" class="btn btn-outline btn-small" id="bulk-sakrij-imenik-btn" onclick="startSakrijSelectedImenik(true)" hidden>🙈 Sakrij odabrano</button>
         <button type="button" class="btn btn-outline btn-small" id="bulk-otkrij-imenik-btn" onclick="startSakrijSelectedImenik(false)" hidden>👁 Otkrij odabrano</button>
+        <!-- NOVO (23.9.2026., Dio 2) — sakrij/otkrij za sve OSTALE tabove sa
+             checkboxom (Interes/Ponude/Arhiva/Odbijenica/NoviKlijenti/Ankete),
+             isti obrazac kao Imenikov par gumbova iznad, vidi
+             updateBulkActionsBar() i startSakrijSelected(). -->
+        <button type="button" class="btn btn-outline btn-small" id="bulk-sakrij-btn" onclick="startSakrijSelected(true)" hidden>🙈 Sakrij odabrano</button>
+        <button type="button" class="btn btn-outline btn-small" id="bulk-otkrij-btn" onclick="startSakrijSelected(false)" hidden>👁 Otkrij odabrano</button>
         <button type="button" class="btn btn-danger btn-small" onclick="startBulkDelete()">Obriši odabrano</button>
       </div>
     </div>
@@ -1499,6 +1505,15 @@
   // resetira se na "isključeno" kod svakog ponovnog učitavanja stranice
   // (namjerno, da skriveni kontakti ne ostanu tiho vidljivi zauvijek).
   var imenikPrikaziSkrivene = false;
+
+  // NOVO (23.9.2026., Dio 2 — isti princip kao imenikPrikaziSkrivene gore,
+  // ali PO TABU umjesto jednog zajedničkog prekidača, jer Interes/Ponude/
+  // Arhiva/Odbijenica/NoviKlijenti/Ankete su 6 zasebnih tabova (Imenik ima
+  // samo jedan). Isto NIJE spremljeno trajno — resetira se na "isključeno"
+  // kod svakog ponovnog učitavanja stranice, namjerno (isti razlog kao
+  // Imenik). Popunjava se lijeno (prvi put kad se tab otvori), vidi
+  // renderEntries().
+  var prikaziSkrivenoState = {};
 
   var DATUMSKI_RASPONI_ = [
     { key: null, label: 'Sve' },
@@ -2563,6 +2578,16 @@
     return !!fieldVal(entry, 'Datum prebacivanja u arhivu (admin)');
   }
 
+  // NOVO (23.9.2026., Dio 2 — "svuda... napravi isto kao u imeniku
+  // mogućnost sakrivanja"): radi za entry iz allEntries (Interes/Ponude/
+  // Arhiva/Odbijenica/NoviKlijenti, polje "Skriveno (admin)" iz
+  // "InTime_Upiti") I za entry iz allAnketaEntries (isto polje, iz
+  // "InTime_Ankete") — obje vrste koriste .fields/fieldVal(), za razliku od
+  // Imenika koji ima vlastiti entry.skriveno boolean (bespoke struktura).
+  function jeSkriven(entry) {
+    return fieldVal(entry, 'Skriveno (admin)') === 'Da';
+  }
+
   // Obojena značka uz ime klijenta u Arhivi — Sašin izričit zahtjev
   // (23.9.2026.): "za odbijenu ponudu treba biti crni natpis ODBIJENA, za
   // poništenu ponudu ljubičasti natpis PONIŠTENA, za nedovršenu žutim
@@ -2711,10 +2736,36 @@
         container.appendChild(hintA);
         return;
       }
+      // "Sakrij"/"Otkrij" (23.9.2026., Dio 2) — isti obrazac kao dolje u
+      // zajedničkoj grani za Interes/Ponude/Arhiva/Odbijenica/NoviKlijenti
+      // (vidi opširnu napomenu ondje), ovdje za Ankete (odvojeni
+      // "InTime_Ankete" Sheet i allAnketaEntries niz).
+      var brojSkrivenihAnkete = allAnketaEntries.filter(function(e) { return jeSkriven(e); }).length;
+      var brojOtkrivenihAnkete = allAnketaEntries.length - brojSkrivenihAnkete;
+      var anketeBrojacEl = document.createElement('div');
+      anketeBrojacEl.className = 'imenik-brojac';
+      anketeBrojacEl.innerHTML = '<span class="imenik-brojac-otkriveni">' + brojOtkrivenihAnkete + '</span>' +
+        '<span class="imenik-brojac-sep">/</span>' +
+        '<span class="imenik-brojac-skriveni">' + brojSkrivenihAnkete + '</span>' +
+        '<span class="imenik-brojac-label">otkriveno / skriveno</span>';
+      container.appendChild(anketeBrojacEl);
+
       container.appendChild(buildSearchFilterBar_(searchFilterState.Ankete, 'Pretraži ankete…'));
       var rasponAnkete = izracunajDatumskiRaspon_(searchFilterState.Ankete.raspon);
+      var trenutnoPretrazujeAnkete_ = !!(searchFilterState.Ankete.q && searchFilterState.Ankete.q.trim());
+      if (prikaziSkrivenoState.Ankete === undefined) { prikaziSkrivenoState.Ankete = false; }
+      var anketeSkrivenoPanel = document.createElement('label');
+      anketeSkrivenoPanel.className = 'imenik-prikazi-skrivene-red';
+      anketeSkrivenoPanel.innerHTML = '<input type="checkbox" class="prikazi-skrivene-cb"' + (prikaziSkrivenoState.Ankete ? ' checked' : '') + '> 👁 Prikaži skriveno (' + brojSkrivenihAnkete + ')';
+      container.appendChild(anketeSkrivenoPanel);
+      anketeSkrivenoPanel.querySelector('.prikazi-skrivene-cb').addEventListener('change', function(ev) {
+        prikaziSkrivenoState.Ankete = ev.target.checked;
+        renderEntries();
+      });
       var prikazAnkete = allAnketaEntries.filter(function(e) {
         return entryOdgovaraPretrazi_(e, searchFilterState.Ankete.q) && entryOdgovaraRasponu_(e, rasponAnkete);
+      }).filter(function(e) {
+        return !jeSkriven(e) || trenutnoPretrazujeAnkete_ || prikaziSkrivenoState.Ankete;
       });
       if (prikazAnkete.length === 0) {
         var hintAPrazno = document.createElement('div');
@@ -2829,9 +2880,26 @@
       list = allEntries.filter(function(e){ return e.status === activeTab; });
     }
 
-    // Pretraga + datumski filter — samo na tabovima koji su navedeni u
-    // searchFilterState (Interes/Ponude/Odbijenica/Arhiva; "NoviKlijenti"
-    // namjerno izostavljen, Saša ga nije tražio).
+    // "Sakrij"/"Otkrij" (23.9.2026., Dio 2 Sašinog zahtjeva — "svuda u
+    // Zainteresirane, Ponude, Arhivu, Nisu zainteresirani, Ankete kvalitete,
+    // Klijent napravi isto kao u Imeniku mogućnost sakrivanja na istu
+    // logiku") — ISTI UX obrazac kao Imenik (vidi imenikPrikaziSkrivene i
+    // "imenik-brojac"/"imenik-prikazi-skrivene-red" CSS gore, koje su
+    // dovoljno generične da se koriste i ovdje), samo brojač/prekidač
+    // računat PO OVOM TABU (svih 5 dijeli isto "Skriveno (admin)" polje u
+    // istom Sheetu, pa mora biti po tabu da brojevi imaju smisla).
+    var brojSkrivenihTab = list.filter(function(e) { return jeSkriven(e); }).length;
+    var brojOtkrivenihTab = list.length - brojSkrivenihTab;
+    var skrivenoBrojacEl = document.createElement('div');
+    skrivenoBrojacEl.className = 'imenik-brojac';
+    skrivenoBrojacEl.innerHTML = '<span class="imenik-brojac-otkriveni">' + brojOtkrivenihTab + '</span>' +
+      '<span class="imenik-brojac-sep">/</span>' +
+      '<span class="imenik-brojac-skriveni">' + brojSkrivenihTab + '</span>' +
+      '<span class="imenik-brojac-label">otkriveno / skriveno</span>';
+    container.appendChild(skrivenoBrojacEl);
+
+    // Pretraga + datumski filter — na tabovima koji su navedeni u
+    // searchFilterState.
     var traziSeAktivno = false;
     var stanjeTraga = searchFilterState[activeTab];
     if (stanjeTraga) {
@@ -2842,6 +2910,25 @@
         return entryOdgovaraPretrazi_(e, stanjeTraga.q) && entryOdgovaraRasponu_(e, raspon);
       });
     }
+
+    // "👁 Prikaži skriveno" prekidač — dodan nakon trake za pretragu (isti
+    // vizualni redoslijed kao Imenik). Skriveni zapisi se otkrivaju i kad se
+    // AKTIVNO pretražuje tekstom (isto ponašanje kao Imenik —
+    // imenikTrenutnoPretrazuje), da se skriveni zapis svejedno može pronaći
+    // pretragom bez potrebe za uključivanjem prekidača.
+    var trenutnoPretrazujeSkriveno_ = !!(stanjeTraga && stanjeTraga.q && stanjeTraga.q.trim());
+    if (prikaziSkrivenoState[activeTab] === undefined) { prikaziSkrivenoState[activeTab] = false; }
+    var skrivenoPanel = document.createElement('label');
+    skrivenoPanel.className = 'imenik-prikazi-skrivene-red';
+    skrivenoPanel.innerHTML = '<input type="checkbox" class="prikazi-skrivene-cb"' + (prikaziSkrivenoState[activeTab] ? ' checked' : '') + '> 👁 Prikaži skriveno (' + brojSkrivenihTab + ')';
+    container.appendChild(skrivenoPanel);
+    skrivenoPanel.querySelector('.prikazi-skrivene-cb').addEventListener('change', function(ev) {
+      prikaziSkrivenoState[activeTab] = ev.target.checked;
+      renderEntries();
+    });
+    list = list.filter(function(e) {
+      return !jeSkriven(e) || trenutnoPretrazujeSkriveno_ || prikaziSkrivenoState[activeTab];
+    });
 
     if (list.length === 0) {
       var hint = document.createElement('div');
@@ -3455,6 +3542,33 @@
 
     var actions = document.createElement('div');
     actions.className = 'entry-card-actions';
+
+    // "Sakrij"/"Otkrij" pojedinačno po kartici (23.9.2026., Dio 2) — isti
+    // obrazac kao Imenikov sakrijBtn niže, samo šalje adminSetUpitiSkriveno
+    // (jedan rowIndex u nizu) umjesto adminSetImenikSkriveno.
+    var sakrijBtnUpit = document.createElement('button');
+    sakrijBtnUpit.className = 'btn btn-outline btn-small';
+    sakrijBtnUpit.textContent = jeSkriven(entry) ? '👁 Otkrij' : '🙈 Sakrij';
+    sakrijBtnUpit.addEventListener('click', function(ev) {
+      ev.stopPropagation();
+      var noviSkriveno = !jeSkriven(entry);
+      sakrijBtnUpit.disabled = true;
+      gasCall({ action: 'adminSetUpitiSkriveno', token: adminToken, rowIndexes: [entry.rowIndex], skriveno: noviSkriveno }).then(function(res) {
+        sakrijBtnUpit.disabled = false;
+        if (handleAuthError(res)) { return; }
+        if (res.status === 'ok') {
+          entry.fields['Skriveno (admin)'] = noviSkriveno ? 'Da' : 'Ne';
+          loadAll();
+        } else {
+          alert(res.message || 'Nije uspjelo.');
+        }
+      }).catch(function() {
+        sakrijBtnUpit.disabled = false;
+        alert('Greška u komunikaciji s poslužiteljem.');
+      });
+    });
+    actions.appendChild(sakrijBtnUpit);
+
     var delBtn = document.createElement('button');
     delBtn.className = 'btn btn-danger btn-small';
     delBtn.textContent = 'Obriši upit';
@@ -3679,6 +3793,33 @@
 
     var actions = document.createElement('div');
     actions.className = 'entry-card-actions';
+
+    // "Sakrij"/"Otkrij" pojedinačno po kartici (23.9.2026., Dio 2) — isti
+    // obrazac kao kod buildEntryCard() gore, samo šalje adminSetAnketaSkriveno
+    // (odvojeni "InTime_Ankete" Sheet).
+    var sakrijBtnAnketa = document.createElement('button');
+    sakrijBtnAnketa.className = 'btn btn-outline btn-small';
+    sakrijBtnAnketa.textContent = jeSkriven(entry) ? '👁 Otkrij' : '🙈 Sakrij';
+    sakrijBtnAnketa.addEventListener('click', function(ev) {
+      ev.stopPropagation();
+      var noviSkriveno = !jeSkriven(entry);
+      sakrijBtnAnketa.disabled = true;
+      gasCall({ action: 'adminSetAnketaSkriveno', token: adminToken, rowIndexes: [entry.rowIndex], skriveno: noviSkriveno }).then(function(res) {
+        sakrijBtnAnketa.disabled = false;
+        if (handleAuthError(res)) { return; }
+        if (res.status === 'ok') {
+          entry.fields['Skriveno (admin)'] = noviSkriveno ? 'Da' : 'Ne';
+          loadAll();
+        } else {
+          alert(res.message || 'Nije uspjelo.');
+        }
+      }).catch(function() {
+        sakrijBtnAnketa.disabled = false;
+        alert('Greška u komunikaciji s poslužiteljem.');
+      });
+    });
+    actions.appendChild(sakrijBtnAnketa);
+
     var delBtn = document.createElement('button');
     delBtn.className = 'btn btn-danger btn-small';
     delBtn.textContent = 'Obriši anketu';
@@ -4071,6 +4212,39 @@
       if (res.status === 'ok') {
         clearSelection();
         loadImenik();
+      } else {
+        alert(res.message || 'Nije uspjelo.');
+      }
+    }).catch(function() {
+      btn.disabled = false;
+      btn.textContent = stariTekst;
+      alert('Greška u komunikaciji s poslužiteljem.');
+    });
+  }
+
+  // Masovno sakrivanje/otkrivanje OZNAČENIH kartica na SVIM OSTALIM tabovima
+  // sa checkboxom (Interes/Ponude/Arhiva/Odbijenica/NoviKlijenti/Ankete) —
+  // isti obrazac kao startSakrijSelectedImenik gore, samo bira ispravnu
+  // backend akciju prema TRENUTNO aktivnom tabu (renderEntries() poziva
+  // clearSelection() na svaki re-render/promjenu taba, pa selectedRowIndexes
+  // u trenutku klika uvijek pripada SAMO trenutnom tabu — nema miješanja
+  // 'upit'/'anketa' zapisa u istom pozivu).
+  function startSakrijSelected(skriveno) {
+    var rowIndexes = Object.keys(selectedRowIndexes).map(function(s){ return parseInt(s, 10); });
+    if (rowIndexes.length === 0) { return; }
+    var action = (activeTab === 'Ankete') ? 'adminSetAnketaSkriveno' : 'adminSetUpitiSkriveno';
+    var btnId = skriveno ? 'bulk-sakrij-btn' : 'bulk-otkrij-btn';
+    var btn = document.getElementById(btnId);
+    var stariTekst = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = skriveno ? 'Sakrivanje…' : 'Otkrivanje…';
+    gasCall({ action: action, token: adminToken, rowIndexes: rowIndexes, skriveno: skriveno }).then(function(res) {
+      btn.disabled = false;
+      btn.textContent = stariTekst;
+      if (handleAuthError(res)) { return; }
+      if (res.status === 'ok') {
+        clearSelection();
+        loadAll();
       } else {
         alert(res.message || 'Nije uspjelo.');
       }
@@ -7306,6 +7480,14 @@
     if (sakrijBtn) { sakrijBtn.hidden = (activeTab !== 'Imenik'); }
     var otkrijBtn = document.getElementById('bulk-otkrij-imenik-btn');
     if (otkrijBtn) { otkrijBtn.hidden = (activeTab !== 'Imenik'); }
+    // NOVO (23.9.2026., Dio 2) — generički sakrij/otkrij par, na svim
+    // OSTALIM tabovima sa checkboxom (ne Imenik, koji ima svoj vlastiti par
+    // iznad; ne FAQ/Zone, koji nemaju checkbox/odabir uopće).
+    var sakrijBtnOpci = document.getElementById('bulk-sakrij-btn');
+    var otkrijBtnOpci = document.getElementById('bulk-otkrij-btn');
+    var imaSakrivanje = ['Interes', 'Ponude', 'Arhiva', 'Odbijenica', 'NoviKlijenti', 'Ankete'].indexOf(activeTab) !== -1;
+    if (sakrijBtnOpci) { sakrijBtnOpci.hidden = !imaSakrivanje; }
+    if (otkrijBtnOpci) { otkrijBtnOpci.hidden = !imaSakrivanje; }
   }
 
   // ---- Baza od 30 kratkih imena superjunaka za riječ-potvrdu kod masovnog
