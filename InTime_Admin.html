@@ -499,6 +499,10 @@
   .af-rok-povijest{margin-top:10px;padding-top:8px;border-top:1px dashed #d8d3ec;font-size:11.5px;color:var(--grey);}
   .af-rok-povijest-naslov{font-weight:700;color:var(--graphite);margin-bottom:4px;}
   .af-rok-povijest-stavka{margin-bottom:3px;}
+  /* Abandon gumb — PREMJEŠTEN (23.9.2026., Sašin izričit zahtjev) na dno
+     "Povijesti slanja ponude", poravnat desno; vidi napomenu uz markup u
+     buildAdminFieldsBlock(). */
+  .af-rok-abandon-red{margin-top:10px;padding-top:8px;border-top:1px dashed #d8d3ec;display:flex;justify-content:flex-end;}
   /* "Datum N" okviri (dvadeset i sedmi krug) — dizajn odobren kroz skicu
      (skica_povijest_ponude.png), isti vizualni jezik kao ostatak af-rok
      bloka. Svaka .af-rok-stavka je JEDNO slanje ponude (prijašnje, iz
@@ -2559,6 +2563,31 @@
     return !!fieldVal(entry, 'Datum prebacivanja u arhivu (admin)');
   }
 
+  // Obojena značka uz ime klijenta u Arhivi — Sašin izričit zahtjev
+  // (23.9.2026.): "za odbijenu ponudu treba biti crni natpis ODBIJENA, za
+  // poništenu ponudu ljubičasti natpis PONIŠTENA, za nedovršenu žutim
+  // slovima NIJE DOVRŠENO! Abandon već ima boju slova" — boje/tekst ovdje
+  // MORAJU se poklapati s ARHIVA_KATEGORIJA_FOLDER_IMENA_ u InTime_Code.gs
+  // (isti ključevi: ABANDON/ODBIJENA/PONISTENA/NIJE_DOVRSENA).
+  var ARHIVA_KATEGORIJA_BADGE_ = {
+    ABANDON: { tekst: 'ABANDON', boja: '#c0392b' },
+    ODBIJENA: { tekst: 'ODBIJENA', boja: '#1a1a1a' },
+    PONISTENA: { tekst: 'PONIŠTENA', boja: '#8e44ad' },
+    NIJE_DOVRSENA: { tekst: 'NIJE DOVRŠENO!', boja: '#b8860b' }
+  };
+  function arhivaKategorijaBadgeHtml_(entry) {
+    if (!jeArhiva(entry)) { return ''; }
+    var kategorija = fieldVal(entry, 'Kategorija arhiviranja (admin)');
+    var info = ARHIVA_KATEGORIJA_BADGE_[kategorija];
+    if (!info && fieldVal(entry, 'Datum odustajanja od klijenta - mi (admin)')) {
+      // Zapis arhiviran PRIJE ovog ispravka (23.9.2026.) — nema spremljenu
+      // kategoriju, ali ima trag Abandon akcije, pa se svejedno prepozna.
+      info = ARHIVA_KATEGORIJA_BADGE_.ABANDON;
+    }
+    if (!info) { return ''; }
+    return ' <span style="color:' + info.boja + ';font-weight:800;font-size:11px;letter-spacing:.03em;">' + esc(info.tekst) + '</span>';
+  }
+
   function renderTabCounts() {
     var interesCount = allEntries.filter(function(e){ return e.status === 'Interes' && !jeOtvorenKlijent(e) && !jePonuda(e) && !jeArhiva(e); }).length;
     var odbijenicaCount = allEntries.filter(function(e){ return e.status === 'Odbijenica'; }).length;
@@ -3271,11 +3300,10 @@
       '<label class="entry-select-wrap"><input type="checkbox" class="entry-select-cb"></label>' +
       '<div>' +
         '<div class="entry-card-title">' + (broj ? '<span class="entry-broj-badge' + (entry.status === 'Odbijenica' ? ' entry-broj-badge-odbijenica' : '') + '">' + esc(broj) + '</span>' : '') + esc(naziv) +
-          // "ABANDON" crvenim slovima u Arhivi — SAMO za zapise koje smo MI
-          // napustili (gumb "Abandon"), ne za sve arhivirane (Sašin izričit
-          // zahtjev, trideset i šesti krug — vidi datum_odustajanja_mi u
-          // InTime_Code.gs).
-          (jeArhiva(entry) && fieldVal(entry, 'Datum odustajanja od klijenta - mi (admin)') ? ' <span style="color:#c0392b;font-weight:800;font-size:11px;letter-spacing:.03em;">ABANDON</span>' : '') +
+          // Obojena značka po kategoriji arhiviranja — vidi
+          // arhivaKategorijaBadgeHtml_() gore (ABANDON/ODBIJENA/PONIŠTENA/
+          // NIJE DOVRŠENO!, Sašin izričit zahtjev 23.9.2026.).
+          arhivaKategorijaBadgeHtml_(entry) +
         '</div>' +
         '<div class="entry-card-sub">' +
           subParts.map(function(p){ return '<span>' + p + '</span>'; }).join('') +
@@ -4660,12 +4688,6 @@
               // ostala tri gumba iznad jer poništava VEĆ prihvaćenu ponudu i
               // šalje pravi mail klijentu.
               '<button type="button" class="af-rok-btn opasnost af-rok-ponisti-prihvacenu">⚠ Poništi PRIHVAĆENU ponudu</button>' +
-              // "Abandon" — Sašin izričit zahtjev (23.9.2026., trideset i šesti
-              // krug): MI odustajemo od klijenta — šalje automatski mail
-              // (žaljenje/odbijenica s naše strane) i odmah seli zapis u
-              // Arhivu. Vidljivost i klik-handler u renderRokBlok_()/wiring
-              // niže.
-              '<button type="button" class="af-rok-btn opasnost af-rok-abandon">✕ Abandon (odustani od klijenta)</button>' +
             '</div>' +
             '<p class="af-rok-napomena">Ako je ponuda već poslana, promjena roka je ne poništava — link i dalje radi, samo se na njemu promijeni rok.</p>' +
             // ISPRAVAK (23.9.2026., Sašin izričit zahtjev — "malo je
@@ -4681,6 +4703,23 @@
             '<p class="af-rok-napomena">Ovaj gumb NE šalje mail — samo postavlja rok važenja i priprema poveznicu za klijentovu potvrdu/odbijanje. Stvarno slanje maila radi se gumbom "📧 Pošalji ponudu označenim primateljima" u odjeljku "Slanje ponude mailom" iznad.</p>' +
             '<div class="af-rok-status"></div>' +
             '<div class="af-rok-povijest"></div>' +
+            // "Abandon" — Sašin izričit zahtjev (23.9.2026., trideset i šesti
+            // krug, PREMJEŠTENO isti dan na Sašin naknadni izričit zahtjev:
+            // "tipka Abandon ide na dno povijesti slanja ponuda, dno s desne
+            // strane, i uvijek ostaje tu... kako dolaze nove ponude/verzije,
+            // tu je dok ne poništim napustim klijenta"): fizički gumb i dalje
+            // isti element/klasa (.af-rok-abandon) — samo mu se promijenilo
+            // MJESTO u markupu, ispod "Povijest slanja ponude" umjesto u redu
+            // s ostalim gumbima iznad, poravnat desno. NAMJERNO se ne stavlja
+            // UNUTAR .af-rok-povijest — taj div se u cijelosti prepisuje
+            // (innerHTML) na svaki renderRokBlok_(), pa bi gumb unutra nestao
+            // i trebao ponovno vezanje click-handlera pri svakom prikazu.
+            // Pravila vidljivosti (kad je sakriven/prikazan po statusu)
+            // OSTAJU NEPROMIJENJENA — Saša je eksplicitno potvrdio da mijenja
+            // samo poziciju, ne i ta pravila (vidi renderRokBlok_() niže).
+            '<div class="af-rok-abandon-red">' +
+              '<button type="button" class="af-rok-btn opasnost af-rok-abandon">✕ Abandon (odustani od klijenta)</button>' +
+            '</div>' +
           '</div>' +
         '</div>' +
       '</div>' +
@@ -4777,14 +4816,20 @@
         '<button type="button" class="btn btn-small btn-export">Export podataka</button>' +
         (prikaziPrebaciUKlijenteGumb ? '<button type="button" class="btn btn-klijent btn-prebaci-klijent">Prebaci u nove klijente</button>' : '') +
         '<button type="button" class="btn btn-small btn-prebaci' + (prebaciLabel === 'Prebaci u arhivu' ? ' btn-prebaci-arhiva' : '') + '"' + (jeArhiva(entry) ? ' style="display:none"' : '') + '>' + prebaciLabel + '</button>' +
+        // "Vrati u ponude" — Sašin izričit zahtjev (23.9.2026.): "i sve se
+        // takve ponude moraju moći vratiti u ponude" — dosad NIJE postojao
+        // način da se klijent vrati iz Arhive (gumb "Prebaci u arhivu" iznad
+        // se ovdje samo sakrivao). Vidljiv ISKLJUČIVO na karticama u Arhivi.
+        (jeArhiva(entry) ? '<button type="button" class="btn btn-small btn-vrati-arhiva">↩ Vrati u ponude</button>' : '') +
         '<button type="button" class="btn btn-small"' + (prikaziPuniBlok ? '' : ' style="display:none"') + '>Spremi</button>' +
       '</div>';
 
     var statusEl = wrap.querySelector('.save-status');
-    var saveBtn = wrap.querySelector('.admin-fields-actions .btn:not(.btn-prebaci):not(.btn-export):not(.btn-klijent)');
+    var saveBtn = wrap.querySelector('.admin-fields-actions .btn:not(.btn-prebaci):not(.btn-export):not(.btn-klijent):not(.btn-vrati-arhiva)');
     var prebaciBtn = wrap.querySelector('.btn-prebaci');
     var exportBtn = wrap.querySelector('.btn-export');
     var prebaciKlijentBtn = wrap.querySelector('.btn-prebaci-klijent');
+    var vratiArhivaBtn = wrap.querySelector('.btn-vrati-arhiva');
 
     // "Export podataka" — admin kao kontrolni centar, Faza 1 (19.9.2026., vidi
     // claude/admin-kontrolni-centar-plan.md u Projectu). Šalje SVE trenutno
@@ -5210,17 +5255,27 @@
               'Prebacivanje u arhivu',
               'Klijent će biti prebačen u karticu "Arhiva". Zabilježit će se točan datum i vrijeme prebacivanja. Za potvrdu unesite admin lozinku.',
               function() {
-                var formatiranArhiva = formatirajDatumOtvaranjaKlijenta_(new Date());
+                // ISPRAVAK (23.9.2026., Sašin izričit zahtjev — "kad ga
+                // prebacim u arhivu da li dokumentacija mijenja mjesto na
+                // Google Disku"): zamijenjen generički adminUpdateFields s
+                // adminPrebaciUArhivu, koja UZ Sheet upis (isto kao dosad)
+                // odredi kategoriju iz statusa ponude i fizički premjesti
+                // klijentov direktorij na Driveu u ARHIVA/<kategorija>/. Datum
+                // i kategoriju sad vraća SERVER (res.datumPrikaz/res.kategorija),
+                // ne klijent — vidi adminPrebaciUArhivu() u InTime_Code.gs.
                 statusEl.textContent = 'Prebacivanje u arhivu…';
                 statusEl.classList.remove('error');
-                gasCall({ action: 'adminUpdateFields', token: adminToken, rowIndex: entry.rowIndex, fields: { datum_prebacivanja_arhiva: formatiranArhiva } }).then(function(res) {
+                gasCall({ action: 'adminPrebaciUArhivu', token: adminToken, rowIndex: entry.rowIndex }).then(function(res) {
                   if (handleAuthError(res)) { return; }
                   if (res.status === 'ok') {
-                    statusEl.textContent = 'Prebačeno u arhivu ' + formatiranArhiva + '.';
+                    statusEl.textContent = 'Prebačeno u arhivu ' + res.datumPrikaz + '.';
                     statusEl.classList.remove('error');
-                    entry.fields['Datum prebacivanja u arhivu (admin)'] = formatiranArhiva;
+                    entry.fields['Datum prebacivanja u arhivu (admin)'] = res.datumPrikaz;
+                    entry.fields['Kategorija arhiviranja (admin)'] = res.kategorija || '';
                     loadAll();
                   } else {
+                    // Npr. "Prihvaćena ponuda se ne prebacuje u Arhivu." —
+                    // Sašin izričit zahtjev, poruka dolazi izravno sa servera.
                     statusEl.textContent = res.message || 'Greška pri prebacivanju.';
                     statusEl.classList.add('error');
                   }
@@ -5310,6 +5365,48 @@
                     loadAll();
                   } else {
                     statusEl.textContent = res.message || 'Greška pri prebacivanju.';
+                    statusEl.classList.add('error');
+                  }
+                }).catch(function() {
+                  statusEl.textContent = 'Greška u komunikaciji s poslužiteljem.';
+                  statusEl.classList.add('error');
+                });
+              }
+            );
+          }
+        );
+      });
+    }
+
+    // "Vrati u ponude" — Sašin izričit zahtjev (23.9.2026.): "i sve se
+    // takve ponude moraju moći vratiti u ponude". Ista dvostruka zaštita
+    // (riječ pa admin lozinka) kao ostala prebacivanja iznad — ovo je
+    // reverzibilna, ali svejedno svjesna radnja (briše status arhiviranja i
+    // fizički vraća direktorij na Driveu natrag u PONUDE/, vidi
+    // adminVratiIzArhive() u InTime_Code.gs).
+    if (vratiArhivaBtn) {
+      vratiArhivaBtn.addEventListener('click', function(ev) {
+        ev.stopPropagation();
+        openSuperheroWordConfirmModal(
+          'Vraćanje iz arhive',
+          'Klijent će biti vraćen natrag u karticu "Ponude" (i dokumentacija na Google Disku natrag u PONUDE/). Za potvrdu upišite riječ ispod — nakon toga tražit će se i admin lozinka.',
+          function() {
+            openAdminPasswordConfirmModal(
+              'Vraćanje iz arhive',
+              'Klijent će biti vraćen natrag u karticu "Ponude". Za potvrdu unesite admin lozinku.',
+              function() {
+                statusEl.textContent = 'Vraćanje iz arhive…';
+                statusEl.classList.remove('error');
+                gasCall({ action: 'adminVratiIzArhive', token: adminToken, rowIndex: entry.rowIndex }).then(function(res) {
+                  if (handleAuthError(res)) { return; }
+                  if (res.status === 'ok') {
+                    statusEl.textContent = 'Vraćeno u ponude.';
+                    statusEl.classList.remove('error');
+                    entry.fields['Datum prebacivanja u arhivu (admin)'] = '';
+                    entry.fields['Kategorija arhiviranja (admin)'] = '';
+                    loadAll();
+                  } else {
+                    statusEl.textContent = res.message || 'Greška pri vraćanju.';
                     statusEl.classList.add('error');
                   }
                 }).catch(function() {
@@ -6914,6 +7011,7 @@
           }
           entry.fields['Datum prebacivanja u arhivu (admin)'] = res.datumPrikaz;
           entry.fields['Datum odustajanja od klijenta - mi (admin)'] = res.datumPrikaz;
+          entry.fields['Kategorija arhiviranja (admin)'] = 'ABANDON';
           rokStatus.textContent = 'Mail poslan na: ' + (res.poslanoNa && res.poslanoNa.length ? res.poslanoNa.join(', ') : '(?)') + ' — klijent prebačen u Arhivu.';
           rokStatus.className = 'af-rok-status ok';
           loadAll();
