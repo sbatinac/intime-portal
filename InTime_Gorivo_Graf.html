@@ -1,0 +1,996 @@
+<!DOCTYPE html>
+<html lang="hr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>In Time — GORIVO — graf (predložak)</title>
+<style>
+
+  /* ============================================================
+     NAPOMENA ZA SAŠU (24.9.2026.):
+     Ovo je SAMOSTALAN PREDLOŽAK grafa za GORIVO modul — tražio si
+     "napravi graf u obliku templatea tj. HTML pa ćemo ga kasnije
+     ugraditi gdje treba". Radi kao potpuno zaseban file (otvoriš ga
+     u browseru, ništa se ne šalje na server) da prvo vidiš/odobriš
+     IZGLED, BOJE i PONAŠANJE prije nego ga zalijepim u Admin i
+     spojim na stvarne podatke.
+
+     ŠTO JE OVDJE STVARNO ISTRAŽENO (real:true točke, pune kružiće
+     na grafu, izvori u komentaru kod PODACI niže):
+       - Eurodizel/Eurosuper95: 4 potvrđene točke (1.1., 7.4., 15.6.,
+         22.9.2026.) iz objavljenih vijesti (nafta.hr, net.hr, n1info.hr).
+       - Brent: 5 potvrđenih točaka (2.3., 31.3., 1.7., 24.7., 22.9.2026.)
+         iz Wikipedije ("2026 Iran war fuel crisis") i FRED-a.
+     ŠTO JE PLACEHOLDER (jasno označeno i u legendi i u tooltipu):
+       - WTI nema još posebno istraženih brojki — crta se kao
+         ILUSTRATIVNI omjer prema Brentu (typični razmak), SAMO da
+         se vidi kako bi 4. serija izgledala. Kad spojimo pravi FRED
+         dnevni izvor, ovo nestaje.
+       - Sve točke IZMEĐU potvrđenih anchor-a su ravna interpolacija
+         (isprekidano, bez kružića) — procjena, ne stvaran podatak.
+     "Dodaj događaj" i "Mjesečni dodatak na gorivo" forme dolje RADE
+     u ovoj stranici (dodaju u listu, redraw), ali SAMO lokalno u
+     memoriji ovog browser taba — ništa se još ne sprema u Sheet.
+     To spajanje (adminSpremiGorivoDogadjaj / adminSpremiGorivoPostotak
+     u InTime_Code.gs + retroaktivni unos) je sljedeći korak kad
+     odobriš izgled.
+     ============================================================ */
+
+  :root{
+    --purple:#229891;
+    --purple-dark:#135450;
+    --graphite:#131313;
+    --grey:#6b6b6b;
+    --line:#e2e6ea;
+    --bg:#f7fafb;
+    --red:#c0392b;
+    --red-dark:#922b21;
+    --green:#1e8449;
+
+    /* Boje 4 serije — Sašin izbor (24.9.2026.): dizel crna, eurosuper zelena;
+       Brent/WTI dodano da se sve 4 serije jasno razlikuju. */
+    --boja-dizel:#131313;
+    --boja-eurosuper:#1e8449;
+    --boja-brent:#1c4a8a;
+    --boja-wti:#d9791e;
+  }
+
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:'Segoe UI', Arial, sans-serif;
+    color:var(--graphite);
+    background:var(--bg);
+    line-height:1.5;
+    padding:24px;
+  }
+  .wrap{max-width:1180px;margin:0 auto;}
+
+  .predlozak-banner{
+    background:#fff7e6;border:1px solid #f0c36d;border-radius:10px;
+    padding:12px 16px;margin-bottom:18px;font-size:13px;color:#7a5a12;
+  }
+  .predlozak-banner b{color:#5c4409;}
+
+  h1{font-size:20px;margin:0 0 4px;}
+  .podnaslov{color:var(--grey);font-size:13.5px;margin-bottom:18px;}
+
+  .panel{
+    background:#fff;border:1px solid var(--line);border-radius:14px;
+    padding:18px 20px;margin-bottom:18px;
+  }
+  .panel h2{font-size:15px;margin:0 0 12px;}
+
+  /* --- Kontrole iznad grafa --- */
+  .graf-kontrole{
+    display:flex;flex-wrap:wrap;gap:10px;align-items:center;
+    justify-content:space-between;margin-bottom:14px;
+  }
+  .raspon-grupa{display:flex;gap:6px;flex-wrap:wrap;}
+  .raspon-btn{
+    border:1px solid var(--line);background:#fff;border-radius:20px;
+    padding:6px 14px;font-size:12.5px;font-weight:600;color:var(--grey);
+  }
+  .raspon-btn.aktivan{background:var(--purple);border-color:var(--purple);color:#fff;}
+
+  .legenda{display:flex;flex-wrap:wrap;gap:10px;}
+  .legenda-chip{
+    display:flex;align-items:center;gap:7px;border:1px solid var(--line);
+    border-radius:20px;padding:5px 12px 5px 8px;font-size:12.5px;font-weight:600;
+    background:#fff;opacity:1;transition:opacity .15s;
+  }
+  .legenda-chip.skriveno{opacity:.35;}
+  .legenda-dot{width:11px;height:11px;border-radius:50%;flex:none;}
+  .legenda-chip small{font-weight:400;color:var(--grey);margin-left:2px;}
+
+  /* --- Graf --- */
+  .graf-omot{position:relative;}
+  canvas#grafCanvas{width:100%;height:420px;display:block;cursor:crosshair;}
+  .tooltip{
+    position:absolute;pointer-events:none;background:var(--graphite);color:#fff;
+    border-radius:8px;padding:9px 12px;font-size:12px;line-height:1.5;
+    box-shadow:0 6px 18px rgba(0,0,0,.25);opacity:0;transform:translate(-50%,-110%);
+    transition:opacity .08s;white-space:nowrap;z-index:5;
+  }
+  .tooltip b{display:block;margin-bottom:3px;font-size:12.5px;}
+  .tooltip .tt-red{display:flex;align-items:center;gap:6px;}
+  .tooltip .tt-dot{width:8px;height:8px;border-radius:50%;flex:none;}
+  .tooltip .tt-est{color:#c8c8c8;font-style:italic;}
+
+  .dogadjaj-tooltip{
+    position:absolute;pointer-events:none;background:#fff;color:var(--graphite);
+    border:1px solid var(--line);border-radius:8px;padding:8px 11px;font-size:12px;
+    max-width:240px;box-shadow:0 8px 20px rgba(0,0,0,.14);opacity:0;
+    transform:translate(-50%,-108%);transition:opacity .08s;z-index:6;
+  }
+  .dogadjaj-tooltip .dt-datum{font-weight:700;color:var(--red);margin-bottom:3px;}
+
+  .osi-napomena{display:flex;justify-content:space-between;font-size:11.5px;color:var(--grey);margin-top:6px;}
+
+  /* --- Događaji / postoci forme --- */
+  .forma-red{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:14px;}
+  .forma-polje{display:flex;flex-direction:column;gap:4px;font-size:12.5px;color:var(--grey);}
+  .forma-polje input, .forma-polje select{
+    border:1px solid var(--line);border-radius:7px;padding:7px 9px;font-size:13px;
+    font-family:inherit;color:var(--graphite);min-width:120px;
+  }
+  .forma-polje input[type="text"]{min-width:260px;}
+  .forma-btn{
+    background:var(--purple);color:#fff;border:none;border-radius:8px;
+    padding:9px 18px;font-size:13px;font-weight:700;height:37px;
+  }
+  .forma-btn:hover{background:var(--purple-dark);}
+
+  table.lista-tablica{width:100%;border-collapse:collapse;font-size:13px;}
+  table.lista-tablica th{
+    text-align:left;font-size:11.5px;color:var(--grey);text-transform:uppercase;
+    letter-spacing:.03em;border-bottom:1px solid var(--line);padding:6px 8px;
+  }
+  table.lista-tablica td{padding:8px;border-bottom:1px solid #f0f2f4;vertical-align:top;}
+  table.lista-tablica tr:last-child td{border-bottom:none;}
+  .ukloni-btn{
+    border:1px solid var(--line);background:#fff;color:var(--red);border-radius:6px;
+    padding:3px 9px;font-size:12px;font-weight:700;
+  }
+  .prazna-lista{color:var(--grey);font-size:13px;font-style:italic;padding:6px 0;}
+  .badge-real{background:#e8f5ec;color:var(--green);border-radius:5px;padding:1px 7px;font-size:11px;font-weight:700;}
+  .badge-est{background:#fdeee0;color:#8a4a0f;border-radius:5px;padding:1px 7px;font-size:11px;font-weight:700;}
+
+  .boje-objasnjenje{display:flex;flex-wrap:wrap;gap:16px;font-size:12.5px;color:var(--grey);margin-top:4px;}
+  .boje-objasnjenje span{display:flex;align-items:center;gap:6px;}
+  .boje-objasnjenje .legenda-dot{width:10px;height:10px;}
+
+  /* Kućica — status widget */
+  .kucica-panel{padding:16px 22px;}
+  .kucica-red{display:flex;align-items:stretch;gap:24px;flex-wrap:wrap;}
+  .kucica-sat, .kucica-promjena, .kucica-trend{flex:1;min-width:200px;}
+  .kucica-divider{width:1px;background:var(--line);align-self:stretch;}
+  .kucica-label{font-size:11.5px;color:var(--grey);text-transform:uppercase;letter-spacing:.03em;margin-bottom:5px;}
+  .kucica-vrijednost{font-size:20px;font-weight:700;color:var(--graphite);font-variant-numeric:tabular-nums;}
+  .kucica-sat .kucica-vrijednost{color:var(--purple-dark);}
+  .kucica-trend-red{display:flex;align-items:center;gap:8px;}
+  .kucica-strelica{font-size:22px;line-height:1;}
+  .kucica-strelica.dolje{color:var(--green);}
+  .kucica-strelica.gore{color:var(--red);}
+  .kucica-strelica.isto{color:var(--grey);}
+  @media (max-width:720px){ .kucica-divider{display:none;} }
+
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="predlozak-banner">
+    <b>Predložak / demo stranica.</b> Boje, raspon, legenda, hover, toggle Crtice/Linije, toggle događaja,
+    dodavanje događaja i postotaka — sve ovdje radi vizualno. Pun kružić = stvarno istražen podatak
+    (izvor u tooltipu), šupalj kružić = procjena/placeholder — WTI serija je trenutno u cijelosti
+    ilustrativni placeholder dok se ne spoji pravi FRED izvor. Kad odobriš izgled, ovo se ugrađuje
+    u Admin i spaja na stvarne HAK/FRED podatke i na InTime_Gorivo list.
+  </div>
+
+  <h1>GORIVO — kretanje cijena kroz 2026.</h1>
+  <div class="podnaslov">Eurodizel i Eurosuper95 (€/L, lijeva os) · Brent i WTI (US$/barel, desna os) · s oznakama ključnih događaja</div>
+
+  <!-- "Kućica" — plutajući status widget (Sašin zahtjev, 25.9.2026.):
+       uživo sat gore, ispod datum/vrijeme sljedeće promjene dodatka na
+       gorivo (zadnja sekunda tekućeg mjeseca), i strelica trenda naspram
+       prošlog mjeseca — zelena dolje ako je dodatak PAO, crvena gore ako
+       je RASTAO. Samostalan blok, lako se kasnije izdvoji za ugradnju na
+       druge stranice (naslovnica, pokraj kalkulatora, itd.). -->
+  <div class="panel kucica-panel">
+    <div class="kucica-red">
+      <div class="kucica-sat">
+        <div class="kucica-label">Trenutno vrijeme</div>
+        <div class="kucica-vrijednost" id="kucicaSat">—</div>
+      </div>
+      <div class="kucica-divider"></div>
+      <div class="kucica-promjena">
+        <div class="kucica-label">Sljedeća promjena dodatka na gorivo</div>
+        <div class="kucica-vrijednost" id="kucicaPromjena">—</div>
+      </div>
+      <div class="kucica-divider"></div>
+      <div class="kucica-trend">
+        <div class="kucica-label">Trend naspram prošlog mjeseca</div>
+        <div class="kucica-vrijednost kucica-trend-red" id="kucicaTrend">—</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="graf-kontrole">
+      <div class="raspon-grupa" id="rasponGrupa">
+        <button class="raspon-btn aktivan" data-raspon="godina">Cijela 2026.</button>
+        <button class="raspon-btn" data-raspon="6m">Zadnjih 6 mjeseci</button>
+        <button class="raspon-btn" data-raspon="3m">Zadnja 3 mjeseca</button>
+      </div>
+      <div class="raspon-grupa" id="prikazGrupa">
+        <button class="raspon-btn aktivan" data-prikaz="tocke">• Crtice</button>
+        <button class="raspon-btn" data-prikaz="linije">— Linije</button>
+        <button class="raspon-btn" data-prikaz="isprekidano">┄ Isprekidano</button>
+      </div>
+      <div class="raspon-grupa" id="dogadjajiToggleGrupa">
+        <button class="raspon-btn aktivan" id="dogadjajiToggleBtn">🚩 Događaji: uključeni</button>
+      </div>
+      <div class="legenda" id="legenda"></div>
+    </div>
+
+    <div class="graf-omot">
+      <canvas id="grafCanvas"></canvas>
+      <div class="tooltip" id="tooltip"></div>
+      <div class="dogadjaj-tooltip" id="dogadjajTooltip"></div>
+    </div>
+    <div class="osi-napomena">
+      <span>◐ pun kružić = potvrđen podatak (izvor u tooltipu) · šupalj kružić = procjena/placeholder</span>
+      <span>🚩 označava događaj — pređi mišem preko zastavice na vrhu grafa</span>
+    </div>
+
+    <div class="boje-objasnjenje">
+      <span><span class="legenda-dot" style="background:var(--boja-dizel);"></span> Eurodizel — crna</span>
+      <span><span class="legenda-dot" style="background:var(--boja-eurosuper);"></span> Eurosuper95 — zelena</span>
+      <span><span class="legenda-dot" style="background:var(--boja-brent);"></span> Brent — tamnoplava</span>
+      <span><span class="legenda-dot" style="background:var(--boja-wti);"></span> WTI — narančasta</span>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>Ključni događaji</h2>
+    <div class="forma-red">
+      <div class="forma-polje">
+        <label for="dogDatum">Datum (može i u prošlost)</label>
+        <input type="date" id="dogDatum" value="2026-09-24">
+      </div>
+      <div class="forma-polje">
+        <label for="dogTekst">Opis (jedna rečenica)</label>
+        <input type="text" id="dogTekst" placeholder="npr. Vlada regulirala cijene zbog rata u Iranu">
+      </div>
+      <button class="forma-btn" id="dogDodajBtn">+ Dodaj događaj</button>
+    </div>
+    <table class="lista-tablica" id="dogadjajiTablica">
+      <thead><tr><th style="width:110px;">Datum</th><th>Opis</th><th style="width:60px;"></th></tr></thead>
+      <tbody id="dogadjajiTbody"></tbody>
+    </table>
+  </div>
+
+  <div class="panel">
+    <h2>Mjesečni dodatak na gorivo (%)</h2>
+    <div class="forma-red">
+      <div class="forma-polje">
+        <label for="pctMjesec">Mjesec</label>
+        <select id="pctMjesec">
+          <option value="1">Siječanj</option><option value="2">Veljača</option><option value="3">Ožujak</option>
+          <option value="4">Travanj</option><option value="5">Svibanj</option><option value="6">Lipanj</option>
+          <option value="7">Srpanj</option><option value="8">Kolovoz</option><option value="9" selected>Rujan</option>
+          <option value="10">Listopad</option><option value="11">Studeni</option><option value="12">Prosinac</option>
+        </select>
+      </div>
+      <div class="forma-polje">
+        <label for="pctGodina">Godina</label>
+        <input type="number" id="pctGodina" value="2026" min="2024" max="2030" style="min-width:90px;">
+      </div>
+      <div class="forma-polje">
+        <label for="pctVrijednost">Postotak (%)</label>
+        <input type="number" id="pctVrijednost" step="0.01" min="0" placeholder="npr. 21.50" style="min-width:110px;">
+      </div>
+      <div class="forma-polje">
+        <label for="pctNapomena">Napomena (opcionalno)</label>
+        <input type="text" id="pctNapomena" placeholder="npr. retroaktivan unos za veljaču">
+      </div>
+      <button class="forma-btn" id="pctDodajBtn">+ Spremi postotak</button>
+    </div>
+    <table class="lista-tablica" id="postociTablica">
+      <thead><tr><th style="width:130px;">Vrijedi od</th><th style="width:90px;">Postotak</th><th>Napomena</th><th style="width:60px;"></th></tr></thead>
+      <tbody id="postociTbody"></tbody>
+    </table>
+  </div>
+
+</div>
+
+<script>
+(function(){
+
+  // ============================================================
+  // PODACI — vidi banner na vrhu stranice za objašnjenje real vs.
+  // procjena. Kad ovo ugradimo u Admin, ovaj blok se zamjenjuje
+  // pozivom gasCall({action:'adminDohvatiGorivoPodatke', ...}) koji
+  // čita InTime_Gorivo list + dnevni HAK/FRED dohvat.
+  // ============================================================
+
+  var SERIJE = [
+    {
+      key:'dizel', label:'Eurodizel', boja:'var(--boja-dizel)', bojaHex:'#131313', os:'eur', jedinica:'€/L',
+      tocke:[
+        // izvor: inflacija.me (siječanj), nafta.hr / net.hr (travanj, lipanj, rujan)
+        {datum:'2026-01-01', v:1.48, real:true,  izvor:'inflacija.me — početak siječnja 2026.'},
+        {datum:'2026-04-07', v:1.85, real:true,  izvor:'net.hr — nove cijene od 7.4.2026. (poskupljenje +0,12)'},
+        {datum:'2026-06-15', v:1.59, real:true,  izvor:'nafta.hr — nove cijene od 15.6.2026. (−0,02)'},
+        {datum:'2026-09-22', v:1.91, real:true,  izvor:'net.hr — nove cijene od 22.9.2026. (+0,06)'}
+      ]
+    },
+    {
+      key:'eurosuper', label:'Eurosuper95', boja:'var(--boja-eurosuper)', bojaHex:'#1e8449', os:'eur', jedinica:'€/L',
+      tocke:[
+        {datum:'2026-01-01', v:1.54, real:true,  izvor:'inflacija.me — početak siječnja 2026.'},
+        {datum:'2026-04-07', v:1.66, real:true,  izvor:'net.hr — nove cijene od 7.4.2026. (+0,04)'},
+        {datum:'2026-06-15', v:1.57, real:true,  izvor:'nafta.hr — nove cijene od 15.6.2026. (−0,04)'},
+        {datum:'2026-09-22', v:1.74, real:true,  izvor:'net.hr — nove cijene od 22.9.2026. (+0,01)'}
+      ]
+    },
+    {
+      key:'brent', label:'Brent', boja:'var(--boja-brent)', bojaHex:'#1c4a8a', os:'usd', jedinica:'$/barel',
+      tocke:[
+        // izvor: Wikipedia "2026 Iran war fuel crisis" + FRED (DCOILBRENTEU)
+        {datum:'2026-03-02', v:81,     real:true, izvor:'Wikipedia — rani skok, "10–13% na ~80–82 $"'},
+        {datum:'2026-03-31', v:118.35, real:true, izvor:'Wikipedia — vrhunac krize'},
+        {datum:'2026-07-01', v:71.57,  real:true, izvor:'Wikipedia — deeskalacija'},
+        {datum:'2026-07-24', v:96.78,  real:true, izvor:'Wikipedia — oporavak'},
+        {datum:'2026-09-22', v:114.89, real:true, izvor:'FRED (DCOILBRENTEU), oko 22.9.2026.'}
+      ]
+    },
+    {
+      key:'wti', label:'WTI', boja:'var(--boja-wti)', bojaHex:'#d9791e', os:'usd', jedinica:'$/barel',
+      placeholder:true, // vidi banner — ilustrativni omjer prema Brentu, ne pravi podatak
+      tocke:[] // popunjava se niže iz Brent serije (~7% niže, tipičan razmak)
+    }
+  ];
+  // WTI placeholder = Brent * 0.93, samo da se vidi 4. linija na grafu
+  (function popuniWtiPlaceholder(){
+    var brent = SERIJE.filter(function(s){return s.key==='brent';})[0];
+    var wti = SERIJE.filter(function(s){return s.key==='wti';})[0];
+    wti.tocke = brent.tocke.map(function(t){
+      return {datum:t.datum, v: Math.round(t.v*0.93*100)/100, real:false, izvor:'ILUSTRATIVNO — placeholder omjer prema Brentu, čeka pravi FRED (DCOILWTICO) dohvat'};
+    });
+  })();
+
+  // Dopunjeno 24.9.2026. ("kreni s događajima od početka 2026") — dodani
+  // koraci eskalacije SAD/Izrael–Iran krize iz siječnja/veljače 2026.,
+  // izvor: Wikipedia "2026 Iran–United States crisis".
+  var DOGADJAJI = [
+    {datum:'2026-01-23', tekst:'Trump najavljuje vojnu "armadu" prema Bliskom istoku — početak eskalacije'},
+    {datum:'2026-02-03', tekst:'IRGC pokušava zaplijeniti američki tanker u Hormuzu; SAD obara iranski dron'},
+    {datum:'2026-02-05', tekst:'Iran zaplijenio dva strana tankera s naftom kod otoka Farsi'},
+    {datum:'2026-02-17', tekst:'Hormuški tjesnac zatvoren zbog vojne vježbe'},
+    {datum:'2026-02-28', tekst:'SAD i Izrael napali Iran — prvi izvještaji o pogibiji Khameneija'},
+    {datum:'2026-03-01', tekst:'Iran uzvraća raketama/dronovima na Izrael, UAE, Katar i dr. — otvoreni rat'},
+    {datum:'2026-03-09', tekst:'Vlada RH uvodi tjedno reguliranje max. cijena goriva (rat SAD/Izrael–Iran)'},
+    {datum:'2026-03-18', tekst:'Napad na katarski LNG kompleks Ras Laffan (−17% proizvodnje)'},
+    {datum:'2026-03-31', tekst:'Brent na vrhuncu krize — 118,35 $/barel'},
+    {datum:'2026-07-01', tekst:'Deeskalacija — Brent pada na 71,57 $/barel'},
+    {datum:'2026-09-21', tekst:'Novi skok cijena — Vlada intervenirala trošarinama'}
+  ];
+
+  // Stvarni podaci In Time d.o.o. (Sašin unos, 24.9.2026.) — do 1.4.2026.
+  // dodatak je bio 15% (stabilno posljednje ~2 godine), pa promijenjen.
+  // Siječanj-ožujak dodan kao nastavak tog stabilnog razdoblja (točan
+  // datum kad je 15% prvi put uvedeno nije naveden, samo "zadnje 2
+  // godine") da graf ima kontinuitet kroz cijelu 2026.
+  var POSTOCI = [
+    {godina:2026, mjesec:1, postotak:15.00, napomena:'Nastavak stabilnog razdoblja (dotad ~2 godine) prije travanjske izmjene — točan datum kad je 15% prvi put uvedeno nije naveden.'},
+    {godina:2026, mjesec:4, postotak:20.00, napomena:'S 15% (stabilno prethodne ~2 godine) na 20% — rast troška goriva; obavijest klijentima 1.4.2026., primjenjuje se na sve cijene dostave u Unutarnjem i Međunarodnom prometu.'},
+    {godina:2026, mjesec:5, postotak:20.50, napomena:''},
+    {godina:2026, mjesec:6, postotak:19.00, napomena:''},
+    {godina:2026, mjesec:7, postotak:17.50, napomena:''},
+    {godina:2026, mjesec:8, postotak:20.50, napomena:''},
+    {godina:2026, mjesec:9, postotak:21.50, napomena:''}
+  ];
+
+  var MJESECI_HR = ['','siječanj','veljača','ožujak','travanj','svibanj','lipanj','srpanj','kolovoz','rujan','listopad','studeni','prosinac'];
+
+  // ============================================================
+  // Stanje prikaza
+  // ============================================================
+  var vidljivo = {dizel:true, eurosuper:true, brent:true, wti:true};
+  var prikaziDodatak = true; // 5. linija — In Time dodatak na gorivo %, zasebna (treća) os
+  var BOJA_DODATAK = '#229891'; // "In Time" boja — ista kao --purple u Adminu (zapravo tirkizno-zelena)
+
+  // Puls sjaja In Time linije — vraća 0..1 po sinusoidi, period ~2.2s
+  var PULS_T0 = performance.now();
+  function pulsFaza(){
+    var t = (performance.now() - PULS_T0) / 1000;
+    return (Math.sin(t * 2.85) + 1) / 2;
+  }
+  var raspon = 'godina'; // 'godina' | '6m' | '3m'
+  var DANAS = new Date('2026-09-24T00:00:00');
+
+  // Dodatak na gorivo je STEP funkcija — vrijedi od 1. u mjesecu do
+  // sljedeće izmjene, ne interpolira se glatko kao cijene goriva.
+  function sortiraniPostoci(){
+    return POSTOCI.slice().sort(function(a,b){ return (a.godina*100+a.mjesec)-(b.godina*100+b.mjesec); });
+  }
+  function aktivniPostotak(datumMs){
+    var p = sortiraniPostoci();
+    var rez = null;
+    for (var i=0;i<p.length;i++){
+      var td = new Date(p[i].godina, p[i].mjesec-1, 1).getTime();
+      if (td <= datumMs) rez = p[i]; else break;
+    }
+    return rez;
+  }
+
+  // ============================================================
+  // "Kućica" — status widget (Sašin zahtjev 25.9.2026.): stvarno
+  // trenutno vrijeme (NE demo-DANAS gore, koji je fiksiran na 2026.
+  // radi grafa), sljedeća promjena dodatka (zadnja sekunda tekućeg
+  // mjeseca) i strelica trenda naspram prošlog mjeseca.
+  // ============================================================
+  function azurirajKucicu(){
+    var sad = new Date();
+    var opcijeDatum = {day:'2-digit', month:'2-digit', year:'numeric'};
+    var opcijeVrijeme = {hour:'2-digit', minute:'2-digit', second:'2-digit'};
+
+    var satEl = document.getElementById('kucicaSat');
+    if (satEl) satEl.textContent = sad.toLocaleDateString('hr-HR',opcijeDatum) + '  ' + sad.toLocaleTimeString('hr-HR',opcijeVrijeme);
+
+    // zadnja sekunda tekućeg mjeseca = dan 0 SLJEDEĆEG mjeseca u 23:59:59
+    var sljedecaPromjena = new Date(sad.getFullYear(), sad.getMonth()+1, 0, 23, 59, 59);
+    var promjenaEl = document.getElementById('kucicaPromjena');
+    if (promjenaEl) promjenaEl.textContent = sljedecaPromjena.toLocaleDateString('hr-HR',opcijeDatum) + '  ' + sljedecaPromjena.toLocaleTimeString('hr-HR',opcijeVrijeme);
+
+    var trendEl = document.getElementById('kucicaTrend');
+    if (!trendEl) return;
+    var pSort = sortiraniPostoci();
+    var trenutni = aktivniPostotak(sad.getTime());
+    if (!trenutni){
+      trendEl.innerHTML = '<span class="kucica-strelica isto">–</span> nema unesenog podatka';
+      return;
+    }
+    var idx = pSort.indexOf(trenutni);
+    var prethodni = idx>0 ? pSort[idx-1] : null;
+    if (!prethodni){
+      trendEl.innerHTML = trenutni.postotak.toFixed(2)+'%  <span class="kucica-strelica isto">–</span>';
+    } else if (trenutni.postotak < prethodni.postotak){
+      // pao naspram prošlog mjeseca — zelena strelica dolje
+      trendEl.innerHTML = trenutni.postotak.toFixed(2)+'%  <span class="kucica-strelica dolje">▼</span>';
+    } else if (trenutni.postotak > prethodni.postotak){
+      // porastao naspram prošlog mjeseca — crvena strelica gore
+      trendEl.innerHTML = trenutni.postotak.toFixed(2)+'%  <span class="kucica-strelica gore">▲</span>';
+    } else {
+      trendEl.innerHTML = trenutni.postotak.toFixed(2)+'%  <span class="kucica-strelica isto">–</span>';
+    }
+  }
+
+  function rasponDatumi(){
+    var od, doD = new Date(DANAS);
+    if (raspon === '3m') { od = new Date(DANAS); od.setMonth(od.getMonth()-3); }
+    else if (raspon === '6m') { od = new Date(DANAS); od.setMonth(od.getMonth()-6); }
+    else { od = new Date('2026-01-01T00:00:00'); }
+    return {od:od, doD:doD};
+  }
+
+  function parseD(s){ return new Date(s+'T00:00:00'); }
+  function fmtD(d){
+    return d.toLocaleDateString('hr-HR', {day:'2-digit', month:'2-digit', year:'numeric'});
+  }
+
+  // Linearna interpolacija vrijednosti serije na dani datum (unutar poznatog raspona točaka)
+  function interpoliraj(serija, datum){
+    var t = serija.tocke;
+    if (t.length === 0) return null;
+    var td = datum.getTime();
+    if (td <= parseD(t[0].datum).getTime()) return {v:t[0].v, real: t[0].real && td === parseD(t[0].datum).getTime()};
+    if (td >= parseD(t[t.length-1].datum).getTime()) {
+      var last = t[t.length-1];
+      return {v:last.v, real: last.real && td === parseD(last.datum).getTime()};
+    }
+    for (var i=0;i<t.length-1;i++){
+      var a = t[i], b = t[i+1];
+      var ta = parseD(a.datum).getTime(), tb = parseD(b.datum).getTime();
+      if (td >= ta && td <= tb){
+        if (td === ta) return {v:a.v, real:a.real};
+        if (td === tb) return {v:b.v, real:b.real};
+        var udio = (td-ta)/(tb-ta);
+        return {v: a.v + (b.v-a.v)*udio, real:false};
+      }
+    }
+    return null;
+  }
+
+  // ============================================================
+  // Legenda
+  // ============================================================
+  var legendaEl = document.getElementById('legenda');
+  function izgradiLegendu(){
+    legendaEl.innerHTML = '';
+    SERIJE.forEach(function(s){
+      var chip = document.createElement('div');
+      chip.className = 'legenda-chip' + (vidljivo[s.key] ? '' : ' skriveno');
+      chip.innerHTML = '<span class="legenda-dot" style="background:'+s.boja+';"></span>' + s.label +
+        '<small>' + (s.placeholder ? '(placeholder)' : s.jedinica) + '</small>';
+      chip.addEventListener('click', function(){
+        vidljivo[s.key] = !vidljivo[s.key];
+        izgradiLegendu();
+        nacrtaj();
+      });
+      legendaEl.appendChild(chip);
+    });
+
+    // 5. čipić — dodatak na gorivo % (zasebna treća os, debela linija)
+    var chipPct = document.createElement('div');
+    chipPct.className = 'legenda-chip' + (prikaziDodatak ? '' : ' skriveno');
+    chipPct.innerHTML = '<span class="legenda-dot" style="background:'+BOJA_DODATAK+';width:14px;height:6px;border-radius:3px;"></span> In Time dodatak na gorivo<small>%</small>';
+    chipPct.addEventListener('click', function(){
+      prikaziDodatak = !prikaziDodatak;
+      izgradiLegendu();
+      nacrtaj();
+    });
+    legendaEl.appendChild(chipPct);
+  }
+
+  document.getElementById('rasponGrupa').addEventListener('click', function(ev){
+    var btn = ev.target.closest('.raspon-btn');
+    if (!btn) return;
+    raspon = btn.getAttribute('data-raspon');
+    Array.prototype.slice.call(document.querySelectorAll('#rasponGrupa .raspon-btn')).forEach(function(b){ b.classList.remove('aktivan'); });
+    btn.classList.add('aktivan');
+    nacrtaj();
+  });
+
+  // "• Crtice" (zadano) = samo točke, bez spojnica. "— Linije" = točke
+  // (stvarne i procijenjene) spojene ravnim crtama direktno jedna na drugu
+  // (Sašin zahtjev, 24.9.2026.: "gledati graf sa crticama a ako se klikne
+  // sa strane da se povežu u ravne linije").
+  var nacinPrikaza = 'tocke';
+  document.getElementById('prikazGrupa').addEventListener('click', function(ev){
+    var btn = ev.target.closest('.raspon-btn');
+    if (!btn) return;
+    nacinPrikaza = btn.getAttribute('data-prikaz');
+    Array.prototype.slice.call(document.querySelectorAll('#prikazGrupa .raspon-btn')).forEach(function(b){ b.classList.remove('aktivan'); });
+    btn.classList.add('aktivan');
+    nacrtaj();
+  });
+
+  // Isključi/uključi događaje (Sašin zahtjev, 24.9.2026.: "mogućnost da
+  // isključim događaje da ne smetaju") — gasi zastavice, ukošene nazive i
+  // isprekidane okomite crte, ali ostavlja sve 5 cjenovnih/postotak linija.
+  var prikaziDogadjaje = true;
+  document.getElementById('dogadjajiToggleBtn').addEventListener('click', function(){
+    prikaziDogadjaje = !prikaziDogadjaje;
+    this.textContent = '🚩 Događaji: ' + (prikaziDogadjaje ? 'uključeni' : 'isključeni');
+    this.classList.toggle('aktivan', prikaziDogadjaje);
+    nacrtaj();
+  });
+
+  // ============================================================
+  // Canvas graf
+  // ============================================================
+  var canvas = document.getElementById('grafCanvas');
+  var ctx = canvas.getContext('2d');
+  var tooltip = document.getElementById('tooltip');
+  var dogTooltip = document.getElementById('dogadjajTooltip');
+  var PAD = {l:56, r:118, t:95, b:40}; // t: mjesta za zastavice/nazive događaja; r: mjesta za treću os (dodatak na gorivo %)
+  var zadnjiLayout = null; // spremljen layout za hit-testing na mousemove
+
+  function pripremiCanvas(){
+    var rect = canvas.getBoundingClientRect();
+    var dpr = window.devicePixelRatio || 1;
+    canvas.width = rect.width * dpr;
+    canvas.height = rect.height * dpr;
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+    return {w:rect.width, h:rect.height};
+  }
+
+  function nacrtaj(){
+    var dim = pripremiCanvas();
+    var w = dim.w, h = dim.h;
+    ctx.clearRect(0,0,w,h);
+
+    var rd = rasponDatumi();
+    var odT = rd.od.getTime(), doT = rd.doD.getTime();
+
+    var plotL = PAD.l, plotR = w-PAD.r, plotT = PAD.t, plotB = h-PAD.b;
+    var plotW = plotR-plotL, plotH = plotB-plotT;
+
+    function x(datumMs){ return plotL + (datumMs-odT)/(doT-odT) * plotW; }
+
+    // raspon EUR osi
+    var eurVals = [], usdVals = [];
+    SERIJE.forEach(function(s){
+      if (!vidljivo[s.key]) return;
+      s.tocke.forEach(function(t){
+        var tt = parseD(t.datum).getTime();
+        if (tt < odT-1000*3600*24*40 || tt > doT+1000*3600*24*5) return;
+        (s.os==='eur'?eurVals:usdVals).push(t.v);
+      });
+    });
+    if (eurVals.length===0) eurVals=[1.2,2.2];
+    if (usdVals.length===0) usdVals=[60,130];
+    var eurMin = Math.min.apply(null,eurVals), eurMax = Math.max.apply(null,eurVals);
+    var usdMin = Math.min.apply(null,usdVals), usdMax = Math.max.apply(null,usdVals);
+    var eurPad = (eurMax-eurMin)*0.18 || 0.1; eurMin-=eurPad; eurMax+=eurPad;
+    var usdPad = (usdMax-usdMin)*0.18 || 5; usdMin-=usdPad; usdMax+=usdPad;
+
+    function yEur(v){ return plotB - (v-eurMin)/(eurMax-eurMin) * plotH; }
+    function yUsd(v){ return plotB - (v-usdMin)/(usdMax-usdMin) * plotH; }
+
+    // Treća os — dodatak na gorivo % (Sašin zahtjev 24.9.2026.: "još jedna
+    // linija, debela, In Time boja")
+    var pctVals = POSTOCI.map(function(p){ return p.postotak; });
+    var pctMin = Math.min.apply(null,pctVals), pctMax = Math.max.apply(null,pctVals);
+    var pctPad = (pctMax-pctMin)*0.3 || 3; pctMin-=pctPad; pctMax+=pctPad;
+    function yPct(v){ return plotB - (v-pctMin)/(pctMax-pctMin) * plotH; }
+
+    // gridline + mjeseci na X osi
+    ctx.strokeStyle = '#eef1f3'; ctx.lineWidth = 1; ctx.font='11px Segoe UI, Arial'; ctx.fillStyle='#8a8f98';
+    var cur = new Date(rd.od.getFullYear(), rd.od.getMonth(), 1);
+    while (cur.getTime() <= doT) {
+      var xx = x(cur.getTime());
+      if (xx>=plotL && xx<=plotR){
+        ctx.beginPath(); ctx.moveTo(xx,plotT); ctx.lineTo(xx,plotB); ctx.stroke();
+        ctx.fillText(cur.toLocaleDateString('hr-HR',{month:'short'}), xx-10, plotB+18);
+      }
+      cur.setMonth(cur.getMonth()+1);
+    }
+
+    // Y os lijevo (EUR) i desno (USD) — 4 linije skale
+    ctx.strokeStyle = '#eef1f3';
+    ctx.fillStyle = '#8a8f98';
+    for (var i=0;i<=4;i++){
+      var ev = eurMin + (eurMax-eurMin)*i/4;
+      var yy = yEur(ev);
+      ctx.beginPath(); ctx.moveTo(plotL,yy); ctx.lineTo(plotR,yy); ctx.stroke();
+      ctx.fillText(ev.toFixed(2)+' €', 6, yy+4);
+      var uv = usdMin + (usdMax-usdMin)*i/4;
+      ctx.fillText('$'+uv.toFixed(0), plotR+8, yUsd(uv)+4);
+    }
+    if (prikaziDodatak){
+      ctx.fillStyle = BOJA_DODATAK;
+      ctx.font = '700 11px Segoe UI, Arial';
+      for (var ip=0; ip<=4; ip++){
+        var pv = pctMin + (pctMax-pctMin)*ip/4;
+        ctx.fillText(pv.toFixed(1)+'%', plotR+62, yPct(pv)+4);
+      }
+      ctx.font = '11px Segoe UI, Arial';
+    }
+
+    // Serije — dva načina prikaza (toggle "Crtice"/"Linije" iznad grafa,
+    // Sašin zahtjev 24.9.2026.):
+    //  - 'tocke'       (zadano): SAMO točke — pun kružić = stvarno potvrđen
+    //    podatak, šuplji kružić = procjena/placeholder. Bez spojnica.
+    //  - 'linije':      točke spojene PUNIM ravnim crtama.
+    //  - 'isprekidano': isto spajanje, ali ISPREKIDANOM crtom (Sašin
+    //    zahtjev 24.9.2026.: "napravi još crtice linije... isprekidane
+    //    crtice, kad to kliknem da se poveže isprekidanim linijama").
+    //    Razlika real/procjena se u oba spojena načina vidi SAMO na
+    //    kružićima (pun/šupalj) i u tooltipu, ne kroz stil crte.
+    ctx.save();
+    ctx.beginPath(); ctx.rect(plotL,plotT,plotW,plotH); ctx.clip();
+
+    SERIJE.forEach(function(s){
+      if (!vidljivo[s.key]) return;
+
+      if (nacinPrikaza === 'linije' || nacinPrikaza === 'isprekidano'){
+        for (var i=0;i<s.tocke.length-1;i++){
+          var a = s.tocke[i], b = s.tocke[i+1];
+          var ta = parseD(a.datum).getTime(), tb = parseD(b.datum).getTime();
+          if (tb<odT || ta>doT) continue;
+          var pax = x(ta), pbx = x(tb);
+          var pay = (s.os==='eur') ? yEur(a.v) : yUsd(a.v);
+          var pby = (s.os==='eur') ? yEur(b.v) : yUsd(b.v);
+          ctx.beginPath();
+          ctx.setLineDash(nacinPrikaza==='isprekidano' ? [7,5] : []);
+          ctx.strokeStyle = s.bojaHex;
+          ctx.lineWidth = 2.2;
+          ctx.moveTo(pax,pay); ctx.lineTo(pbx,pby);
+          ctx.stroke();
+        }
+        ctx.setLineDash([]);
+      }
+
+      // Točke — u oba načina prikaza (u 'linije' načinu dodatno naglašavaju
+      // gdje su stvarni anchor-i naspram procjene).
+      s.tocke.forEach(function(t){
+        var tt = parseD(t.datum).getTime();
+        if (tt<odT || tt>doT) return;
+        var px = x(tt), py = (s.os==='eur') ? yEur(t.v) : yUsd(t.v);
+        var r = (nacinPrikaza==='tocke') ? 5.5 : 4.2;
+        ctx.beginPath();
+        ctx.arc(px,py,r,0,Math.PI*2);
+        if (t.real){
+          ctx.fillStyle = s.bojaHex;
+          ctx.fill();
+          ctx.lineWidth=2; ctx.strokeStyle='#fff'; ctx.stroke();
+        } else {
+          ctx.fillStyle = '#fff';
+          ctx.fill();
+          ctx.lineWidth=2; ctx.strokeStyle=s.bojaHex; ctx.stroke();
+        }
+      });
+    });
+    ctx.restore();
+
+    // 5. linija — In Time dodatak na gorivo % — STEP funkcija (vrijedi
+    // cijeli mjesec, skok na 1. sljedećeg), debela, "In Time" boja.
+    // Zasebna treća os (desno, dalje od $ osi).
+    if (prikaziDodatak && POSTOCI.length){
+      ctx.save();
+      ctx.beginPath(); ctx.rect(plotL,plotT,plotW,plotH); ctx.clip();
+      var pSort = sortiraniPostoci();
+
+      // "Svijetli" — Sašin zahtjev 24.9.2026. ("da In Time linija svijetli").
+      // Dva prolaza: prvi širi/prozirniji sloj kao sjaj (shadowBlur), drugi
+      // puna crta preko njega — daje efekt neonskog obruba oko crte.
+      function nacrtajStepLiniju(){
+        ctx.beginPath();
+        var zapoceto = false, zadnjaY = null;
+        for (var ip2=0; ip2<pSort.length; ip2++){
+          var od1 = new Date(pSort[ip2].godina, pSort[ip2].mjesec-1, 1).getTime();
+          var doSlj = (ip2+1<pSort.length) ? new Date(pSort[ip2+1].godina, pSort[ip2+1].mjesec-1, 1).getTime() : doT+1000*3600*24*3;
+          var segOd = Math.max(od1, odT), segDo = Math.min(doSlj, doT);
+          if (segDo < segOd) continue;
+          var py = yPct(pSort[ip2].postotak);
+          var pxOd = x(segOd), pxDo = x(segDo);
+          if (!zapoceto){ ctx.moveTo(pxOd,py); zapoceto=true; }
+          else if (zadnjaY !== null && Math.abs(zadnjaY-py) > 0.01){ ctx.lineTo(pxOd,py); } // okomiti skok na promjeni
+          ctx.lineTo(pxDo,py);
+          zadnjaY = py;
+        }
+        ctx.stroke();
+      }
+
+      ctx.lineJoin = 'miter';
+      ctx.lineCap = 'round';
+
+      // Pulsirajući sjaj (Sašin zahtjev 24.9.2026.: "da In Time linija
+      // svijetli" → "pulsira") — jačina sjaja oscilira po sinusoidi
+      // preko pulsFaza() (vidi animacijsku petlju niže), pa se cijeli
+      // graf iscrtava svakih ~60ms dok je ova linija uključena.
+      var puls = pulsFaza(); // 0..1
+      var blurJak = 9 + puls*14;      // 9..23
+      var blurTocke = 5 + puls*11;    // 5..16
+
+      // sloj sjaja (glow)
+      ctx.strokeStyle = BOJA_DODATAK;
+      ctx.lineWidth = 4.5;
+      ctx.shadowColor = BOJA_DODATAK;
+      ctx.shadowBlur = blurJak;
+      nacrtajStepLiniju();
+      nacrtajStepLiniju(); // dvaput za jači sjaj
+
+      // oštra puna crta preko sjaja
+      ctx.shadowBlur = 0;
+      ctx.lineWidth = 3;
+      ctx.strokeStyle = '#5fd4c4'; // svjetlija jezgra iste boje
+      nacrtajStepLiniju();
+
+      // kružić na svakoj točki promjene (unutar vidljivog raspona) — i oni svijetle
+      ctx.shadowColor = BOJA_DODATAK;
+      ctx.shadowBlur = blurTocke;
+      pSort.forEach(function(p){
+        var td = new Date(p.godina, p.mjesec-1, 1).getTime();
+        if (td<odT || td>doT) return;
+        var px = x(td), py = yPct(p.postotak);
+        ctx.beginPath();
+        ctx.arc(px,py,5,0,Math.PI*2);
+        ctx.fillStyle = BOJA_DODATAK;
+        ctx.fill();
+        ctx.shadowBlur = 0;
+        ctx.lineWidth=2; ctx.strokeStyle='#fff'; ctx.stroke();
+        ctx.shadowBlur = blurTocke;
+      });
+      ctx.shadowBlur = 0;
+      ctx.restore();
+    }
+
+    // Događaji — veće zastavice na vrhu + naziv ispisan pokraj (Sašin
+    // zahtjev 24.9.2026.: "malo veće kazalo taj jezičić i pokraj toga
+    // naziv"). Naziv je ukošen da se više njih ne preklapa kad su
+    // događaji blizu jedan drugom (npr. tri u ožujku).
+    var dogLayout = [];
+    DOGADJAJI.forEach(function(dg){
+      if (!prikaziDogadjaje) return;
+      var tt = parseD(dg.datum).getTime();
+      if (tt<odT || tt>doT) return;
+      var px = x(tt);
+      ctx.strokeStyle = '#c0392b55';
+      ctx.setLineDash([3,3]);
+      ctx.beginPath(); ctx.moveTo(px,plotT); ctx.lineTo(px,plotB); ctx.stroke();
+      ctx.setLineDash([]);
+
+      // veća zastavica (bila 8x12px, sad ~13x19px)
+      ctx.fillStyle = '#c0392b';
+      ctx.beginPath();
+      ctx.moveTo(px,plotT-22); ctx.lineTo(px+13,plotT-13); ctx.lineTo(px,plotT-4); ctx.closePath();
+      ctx.fill();
+      ctx.strokeStyle='#c0392b'; ctx.lineWidth=2;
+      ctx.beginPath(); ctx.moveTo(px,plotT-22); ctx.lineTo(px,plotB); ctx.stroke();
+
+      // naziv događaja ispisan pokraj zastavice, blago ukošeno prema
+      // gore-desno (dovoljno malo da stane u gornju marginu grafa)
+      var naziv = dg.tekst.length > 34 ? dg.tekst.slice(0,33)+'…' : dg.tekst;
+      ctx.save();
+      ctx.translate(px+15, plotT-14);
+      ctx.rotate(-16*Math.PI/180);
+      ctx.font = '10.5px Segoe UI, Arial';
+      ctx.fillStyle = '#922b21';
+      ctx.textAlign = 'left';
+      ctx.fillText(naziv, 0, 0);
+      ctx.restore();
+
+      dogLayout.push({px:px, dg:dg});
+    });
+
+    zadnjiLayout = {plotL:plotL, plotR:plotR, plotT:plotT, plotB:plotB, odT:odT, doT:doT, x:x,
+      yEur:yEur, yUsd:yUsd, eurMin:eurMin, eurMax:eurMax, usdMin:usdMin, usdMax:usdMax, dogLayout:dogLayout, w:w, h:h};
+  }
+
+  // ============================================================
+  // Hover — tooltip vrijednosti + tooltip događaja
+  // ============================================================
+  canvas.addEventListener('mousemove', function(ev){
+    if (!zadnjiLayout) return;
+    var rect = canvas.getBoundingClientRect();
+    var mx = ev.clientX - rect.left, my = ev.clientY - rect.top;
+
+    // prvo provjeri je li blizu neke zastavice događaja
+    var nadDog = zadnjiLayout.dogLayout.filter(function(d){ return Math.abs(d.px-mx)<9 && my > zadnjiLayout.plotT-24 && my < zadnjiLayout.plotT+2; })[0];
+    if (nadDog){
+      dogTooltip.style.opacity = 1;
+      dogTooltip.style.left = nadDog.px+'px';
+      dogTooltip.style.top = (zadnjiLayout.plotT-24)+'px';
+      dogTooltip.innerHTML = '<div class="dt-datum">'+fmtD(parseD(nadDog.dg.datum))+'</div>'+nadDog.dg.tekst;
+      tooltip.style.opacity = 0;
+      return;
+    }
+    dogTooltip.style.opacity = 0;
+
+    if (mx<zadnjiLayout.plotL || mx>zadnjiLayout.plotR){ tooltip.style.opacity=0; return; }
+    var td = zadnjiLayout.odT + (mx-zadnjiLayout.plotL)/(zadnjiLayout.plotR-zadnjiLayout.plotL) * (zadnjiLayout.doT-zadnjiLayout.odT);
+    // Zaokruži na najbliži cijeli dan (ponoć) — inače hover skoro nikad ne
+    // pogodi točan trenutak stvarne točke (real:true) zbog razlomaka dana
+    // iz piksel-mapiranja, pa se u tooltipu uvijek pokazivalo "(procjena)"
+    // čak i kad je miš točno iznad potvrđenog datuma.
+    var DAN_MS = 1000*3600*24;
+    var td_zaokruzen = zadnjiLayout.odT + Math.round((td-zadnjiLayout.odT)/DAN_MS)*DAN_MS;
+    var datum = new Date(td_zaokruzen);
+
+    var linije = ['<b>'+fmtD(datum)+'</b>'];
+    SERIJE.forEach(function(s){
+      if (!vidljivo[s.key]) return;
+      var val = interpoliraj(s, datum);
+      if (!val) return;
+      linije.push('<div class="tt-red"><span class="tt-dot" style="background:'+s.bojaHex+';"></span>'+
+        s.label+': '+val.v.toFixed(2)+(s.os==='eur'?' €':' $')+
+        (val.real ? '' : ' <span class="tt-est">(procjena)</span>')+'</div>');
+    });
+    if (prikaziDodatak){
+      var aktivan = aktivniPostotak(td_zaokruzen);
+      if (aktivan){
+        linije.push('<div class="tt-red"><span class="tt-dot" style="background:'+BOJA_DODATAK+';"></span>'+
+          'In Time dodatak na gorivo: '+aktivan.postotak.toFixed(2)+'%</div>');
+      }
+    }
+    tooltip.innerHTML = linije.join('');
+    tooltip.style.opacity = 1;
+    tooltip.style.left = mx+'px';
+    tooltip.style.top = (my-4)+'px';
+  });
+  canvas.addEventListener('mouseleave', function(){ tooltip.style.opacity=0; dogTooltip.style.opacity=0; });
+
+  window.addEventListener('resize', nacrtaj);
+
+  // ============================================================
+  // Događaji — dodavanje / lista
+  // ============================================================
+  function izgradiDogadjajeTbody(){
+    var tbody = document.getElementById('dogadjajiTbody');
+    tbody.innerHTML = '';
+    if (DOGADJAJI.length===0){
+      tbody.innerHTML = '<tr><td colspan="3" class="prazna-lista">Još nema unesenih događaja.</td></tr>';
+      return;
+    }
+    DOGADJAJI.slice().sort(function(a,b){ return parseD(a.datum)-parseD(b.datum); }).forEach(function(dg){
+      var tr = document.createElement('tr');
+      tr.innerHTML = '<td>'+fmtD(parseD(dg.datum))+'</td><td>'+dg.tekst.replace(/</g,'&lt;')+'</td><td></td>';
+      var tdBtn = tr.querySelector('td:last-child');
+      var btn = document.createElement('button');
+      btn.className='ukloni-btn'; btn.textContent='✕';
+      btn.addEventListener('click', function(){
+        var idx = DOGADJAJI.indexOf(dg);
+        if (idx>-1) DOGADJAJI.splice(idx,1);
+        izgradiDogadjajeTbody(); nacrtaj();
+      });
+      tdBtn.appendChild(btn);
+      tbody.appendChild(tr);
+    });
+  }
+
+  document.getElementById('dogDodajBtn').addEventListener('click', function(){
+    var datum = document.getElementById('dogDatum').value;
+    var tekst = document.getElementById('dogTekst').value.trim();
+    if (!datum || !tekst){ alert('Upiši datum i kratak opis događaja.'); return; }
+    DOGADJAJI.push({datum:datum, tekst:tekst});
+    document.getElementById('dogTekst').value = '';
+    izgradiDogadjajeTbody();
+    nacrtaj();
+  });
+
+  // ============================================================
+  // Mjesečni postotak — dodavanje / lista (retroaktivno dopušteno,
+  // nema min ograničenja na godinu/mjesec)
+  // ============================================================
+  function izgradiPostociTbody(){
+    var tbody = document.getElementById('postociTbody');
+    tbody.innerHTML = '';
+    if (POSTOCI.length===0){
+      tbody.innerHTML = '<tr><td colspan="4" class="prazna-lista">Još nema unesenih postotaka.</td></tr>';
+      return;
+    }
+    POSTOCI.slice().sort(function(a,b){ return (a.godina*100+a.mjesec)-(b.godina*100+b.mjesec); }).forEach(function(p){
+      var tr = document.createElement('tr');
+      tr.innerHTML = '<td>1. '+MJESECI_HR[p.mjesec]+' '+p.godina+'.</td>'+
+        '<td>'+p.postotak.toFixed(2)+' %</td>'+
+        '<td>'+(p.napomena? p.napomena.replace(/</g,'&lt;') : '<span class="prazna-lista">—</span>')+'</td><td></td>';
+      var tdBtn = tr.querySelector('td:last-child');
+      var btn = document.createElement('button');
+      btn.className='ukloni-btn'; btn.textContent='✕';
+      btn.addEventListener('click', function(){
+        var idx = POSTOCI.indexOf(p);
+        if (idx>-1) POSTOCI.splice(idx,1);
+        izgradiPostociTbody();
+      });
+      tdBtn.appendChild(btn);
+      tbody.appendChild(tr);
+    });
+  }
+
+  document.getElementById('pctDodajBtn').addEventListener('click', function(){
+    var mjesec = parseInt(document.getElementById('pctMjesec').value,10);
+    var godina = parseInt(document.getElementById('pctGodina').value,10);
+    var vrijednost = parseFloat(document.getElementById('pctVrijednost').value);
+    var napomena = document.getElementById('pctNapomena').value.trim();
+    if (!godina || !vrijednost && vrijednost!==0){ alert('Upiši barem godinu i postotak.'); return; }
+    var postojeci = POSTOCI.filter(function(p){ return p.godina===godina && p.mjesec===mjesec; })[0];
+    if (postojeci){
+      if (!confirm('Za taj mjesec već postoji postotak ('+postojeci.postotak.toFixed(2)+'%). Zamijeniti ga?')) return;
+      postojeci.postotak = vrijednost; postojeci.napomena = napomena;
+    } else {
+      POSTOCI.push({godina:godina, mjesec:mjesec, postotak:vrijednost, napomena:napomena});
+    }
+    document.getElementById('pctVrijednost').value = '';
+    document.getElementById('pctNapomena').value = '';
+    izgradiPostociTbody();
+  });
+
+  // ============================================================
+  // Init
+  // ============================================================
+  izgradiLegendu();
+  izgradiDogadjajeTbody();
+  izgradiPostociTbody();
+  nacrtaj();
+
+  azurirajKucicu();
+  setInterval(azurirajKucicu, 1000);
+
+  // Animacijska petlja SAMO za puls sjaja In Time linije — ~16 fps je
+  // dovoljno glatko za sporu pulsaciju, a puno jeftinije od pravog 60fps
+  // rAF-a budući da svaki "tick" ponovno iscrtava CIJELI graf. Gasi se
+  // sama kad je linija skrivena (prikaziDodatak=false), da ne troši
+  // procesor uzalud dok se ne gleda.
+  setInterval(function(){
+    if (prikaziDodatak) nacrtaj();
+  }, 60);
+
+})();
+</script>
+</body>
+</html>

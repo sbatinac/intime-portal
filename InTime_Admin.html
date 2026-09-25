@@ -953,6 +953,18 @@
   .zone-arhiva-meta{font-size:12px;color:var(--grey);margin-top:2px;}
   .zone-arhiva-vrati-btn{flex-shrink:0;}
 
+  /* Kartica "⛽ Gorivo" (25.9.2026.) — red za unos mjesečnog postotka; popis
+     unosa ispod ponovno koristi .zone-arhiva-item (isti vizualni obrazac kao
+     arhiva Zone uploada), a red za e-mail podsjetnik ponovno koristi
+     .af-sifra-red/.af-sifra-btn (isti obrazac kao INTRIX šifra). */
+  .gorivo-unos-red{display:flex;flex-wrap:wrap;gap:7px;align-items:center;margin-bottom:4px;}
+  .gorivo-unos-red select,.gorivo-unos-red input[type=number],.gorivo-unos-red input[type=text]{
+    padding:7px 9px;border:1px solid var(--line);border-radius:6px;font-size:12.5px;font-family:inherit;background:#fff;
+  }
+  .gorivo-unos-red select{min-width:110px;}
+  .gorivo-unos-red input[type=number]{width:90px;}
+  .gorivo-unos-red input[type=text]{flex:1;min-width:140px;}
+
   /* ---- MODAL (promjena lozinke, potvrda brisanja) ---- */
   .modal-overlay{
     position:fixed;inset:0;background:rgba(0,0,0,.45);
@@ -1075,6 +1087,12 @@
       <button type="button" class="tab-btn" id="tab-btn-novi-klijenti" onclick="switchTab('NoviKlijenti')">Klijenti (<span id="tab-count-novi-klijenti">0</span>)</button>
       <button type="button" class="tab-btn" id="tab-btn-faq" onclick="switchTab('FAQ')">Česta pitanja (<span id="tab-count-faq">0</span>)</button>
       <button type="button" class="tab-btn" id="tab-btn-zone" onclick="switchTab('Zone')">Zone dostave (<span id="tab-count-zone">0</span>)</button>
+      <!-- NOVO (25.9.2026., Sašin izričit zahtjev, glasovna poruka) — modul
+           "Gorivo": unos stvarnih mjesečnih postotaka dodatka na gorivo +
+           mail podsjetnik za unos. Puni grafički prikaz (iz
+           InTime_Gorivo_Graf.html) i unos događaja dolaze ovdje sljedeći
+           krug, zajedno s izgledom na naslovnici. -->
+      <button type="button" class="tab-btn" id="tab-btn-gorivo" onclick="switchTab('Gorivo')">⛽ Gorivo</button>
       <!-- NOVO (19.9.2026., trinaesti krug, Sašin izričit zahtjev): "Imenik" —
            objedinjeni kontakti iz sva tri obrasca (Upitnik/Odbijenica/Ocjena
            kvalitete), s malom ikonom telefona uz naziv kartice. -->
@@ -1488,6 +1506,8 @@
       primijeniBrojStatus_(res.brojStatus || {});
       primijeniImenik_(res.imenik || {});
       primijeniImenikAutoSync_(res.imenikAutoSync || {});
+      primijeniGorivoPostotci_(res.gorivoPostotci || {});
+      primijeniGorivoEmail_(res.gorivoEmail || {});
     }).catch(function() { loadAllOdvojeno_(); });
   }
 
@@ -1502,6 +1522,8 @@
     loadBrojStatus_();
     loadImenik();
     loadImenikAutoSync_();
+    loadGorivoPostotke_();
+    loadGorivoEmail_();
   }
 
   // ============================================================
@@ -2668,6 +2690,7 @@
     document.getElementById('tab-btn-novi-klijenti').classList.toggle('active', tab === 'NoviKlijenti');
     document.getElementById('tab-btn-faq').classList.toggle('active', tab === 'FAQ');
     document.getElementById('tab-btn-zone').classList.toggle('active', tab === 'Zone');
+    document.getElementById('tab-btn-gorivo').classList.toggle('active', tab === 'Gorivo');
     document.getElementById('tab-btn-imenik').classList.toggle('active', tab === 'Imenik');
     var statPanel = document.getElementById('anketa-statistika-panel');
     if (statPanel) { statPanel.hidden = (tab !== 'Ankete') || !statPanel.innerHTML; }
@@ -2827,6 +2850,11 @@
       container.appendChild(buildZonePanel_());
       renderZoneStatusLine_();
       renderZoneArhivaList_();
+      return;
+    }
+
+    if (activeTab === 'Gorivo') {
+      container.appendChild(buildGorivoPanel_());
       return;
     }
 
@@ -3356,6 +3384,284 @@
       statusEl.className = 'faq-admin-status error';
     };
     reader.readAsDataURL(file);
+  }
+
+  // ============================================================
+  // GORIVO — kartica "⛽ Gorivo" (Sašin izričit zahtjev, 25.9.2026., glasovna
+  // poruka — vidi opširnu napomenu uz gorivoDnevnaProvjera_ u
+  // InTime_Code.gs). OVAJ krug NAMJERNO sadrži samo: (a) unos/pregled
+  // STVARNIH mjesečnih postotaka dodatka na gorivo (retroaktivno dopušteno),
+  // (b) potvrda/zaključavanje mail adrese za podsjetnike (isti "✓ Potvrdi"/
+  // "✎ Promijeni" obrazac kao INTRIX šifra — vidi .af-sifra-* CSS gore), i
+  // (c) gumb za probno slanje podsjetnika. PUNI graf (iz
+  // InTime_Gorivo_Graf.html) i unos DOGAĐAJA u adminu dolaze SLJEDEĆI krug,
+  // zajedno s izgledom na naslovnici (Saša čeka svoju skicu/sliku za to) —
+  // da se grafički kod ne piše dvaput.
+  // ============================================================
+  var GORIVO_MJESECI_HR_ = ['Siječanj','Veljača','Ožujak','Travanj','Svibanj','Lipanj','Srpanj','Kolovoz','Rujan','Listopad','Studeni','Prosinac'];
+  var gorivoPostotciCache_ = [];
+  var gorivoEmailCache_ = { email: '', zakljucano: false };
+
+  function primijeniGorivoPostotci_(res) {
+    if (res.status !== 'ok') { return; }
+    gorivoPostotciCache_ = res.redovi || [];
+    if (activeTab === 'Gorivo') { renderEntries(); }
+  }
+  function loadGorivoPostotke_() {
+    gasCall({ action: 'gorivoDohvatiPostotke', token: adminToken }).then(function(res) {
+      if (handleAuthError(res)) { return; }
+      primijeniGorivoPostotci_(res);
+    }).catch(function() { /* tiho — pokušat će opet pri sljedećem otvaranju taba */ });
+  }
+
+  function primijeniGorivoEmail_(res) {
+    if (res.status !== 'ok') { return; }
+    gorivoEmailCache_ = { email: res.email || '', zakljucano: !!res.zakljucano };
+    if (activeTab === 'Gorivo') { renderEntries(); }
+  }
+  function loadGorivoEmail_() {
+    gasCall({ action: 'gorivoDohvatiEmailPodsjetnik', token: adminToken }).then(function(res) {
+      if (handleAuthError(res)) { return; }
+      primijeniGorivoEmail_(res);
+    }).catch(function() { /* tiho */ });
+  }
+
+  function buildGorivoPanel_() {
+    var wrap = document.createElement('div');
+    wrap.className = 'faq-admin-card';
+    wrap.innerHTML =
+      '<h3>⛽ Dodatak na gorivo — mjesečni postotci</h3>' +
+      '<p class="faq-admin-hint">Ovdje se unosi STVARNI mjesečni postotak dodatka na gorivo (retroaktivan unos je moguć — ako nešto zakasni, samo se naknadno upiše za taj mjesec). Ovi podaci pokreću i podsjetnik mailom ispod. Puni grafički prikaz i unos događaja stižu sljedeći krug.</p>' +
+      '<div class="gorivo-unos-red">' +
+        '<select id="gorivo-mjesec-select"></select>' +
+        '<input type="number" id="gorivo-godina-input" placeholder="Godina" min="2000" max="2100">' +
+        '<input type="number" id="gorivo-postotak-input" placeholder="%" step="0.01" min="0" max="100">' +
+        '<input type="text" id="gorivo-napomena-input" placeholder="Napomena (nije obavezno)">' +
+        '<button type="button" class="btn btn-small" id="gorivo-spremi-btn">Spremi</button>' +
+      '</div>' +
+      '<span class="faq-admin-status" id="gorivo-postotak-status"></span>' +
+      '<div id="gorivo-postotci-lista"></div>' +
+      '<h3 class="zone-arhiva-naslov">✉ Podsjetnik mailom za unos</h3>' +
+      '<p class="faq-admin-hint">Zadnjih 7 dana u mjesecu, ako sljedeći mjesec još nema unesen postotak, na ovu adresu automatski stiže podsjetnik s poveznicom za brzi unos (bez prijave u admin). Adresu treba prvo potvrditi — bez potvrđene adrese podsjetnici se ne šalju.</p>' +
+      '<div class="af-sifra-red">' +
+        '<input type="email" id="gorivo-email-input" placeholder="npr. sbatinac.intime@gmail.com">' +
+        '<button type="button" class="af-sifra-btn af-sifra-potvrdi-btn" id="gorivo-email-potvrdi-btn">✓ Potvrdi</button>' +
+        '<button type="button" class="af-sifra-btn af-sifra-promijeni-btn" id="gorivo-email-promijeni-btn" style="display:none">✎ Promijeni</button>' +
+      '</div>' +
+      '<div class="af-sifra-status" id="gorivo-email-status"></div>' +
+      '<div class="faq-admin-card-actions">' +
+        '<span class="faq-admin-status" id="gorivo-test-status"></span>' +
+        '<button type="button" class="btn btn-outline btn-small" id="gorivo-test-podsjetnik-btn">Pošalji test podsjetnik sada</button>' +
+      '</div>' +
+      '<h3 class="zone-arhiva-naslov">📊 Baza kretanja cijena goriva</h3>' +
+      '<p class="faq-admin-hint">Eurodizel i Eurosuper95 se svaki dan automatski očitavaju s <a href="https://www.hak.hr/info/cijene-goriva/" target="_blank" rel="noopener">HAK stranice</a> (najčešća/medijan cijena među svim ponuđačima), Brent i WTI s FRED-a (javni podaci, DCOILBRENTEU/DCOILWTICO). Triger za automatski dnevni dohvat treba postaviti jednom u Apps Script editoru (funkcija <code>postaviTrigerZaGorivoCijene</code>).</p>' +
+      '<div class="faq-admin-card-actions">' +
+        '<button type="button" class="btn btn-outline btn-small" id="gorivo-cijene-toggle-btn">Prikaži/sakrij bazu cijena</button>' +
+        '<button type="button" class="btn btn-outline btn-small" id="gorivo-cijene-dohvati-btn">Dohvati cijene sada (test)</button>' +
+        '<span class="faq-admin-status" id="gorivo-cijene-status"></span>' +
+      '</div>' +
+      '<div id="gorivo-cijene-lista" hidden></div>';
+
+    var mjesecSelect = wrap.querySelector('#gorivo-mjesec-select');
+    GORIVO_MJESECI_HR_.forEach(function(naziv, idx) {
+      var opt = document.createElement('option');
+      opt.value = idx + 1;
+      opt.textContent = naziv;
+      mjesecSelect.appendChild(opt);
+    });
+    var danas = new Date();
+    wrap.querySelector('#gorivo-godina-input').value = danas.getFullYear();
+    mjesecSelect.value = danas.getMonth() + 1;
+
+    wrap.querySelector('#gorivo-spremi-btn').addEventListener('click', function() {
+      gorivoSpremiPostotakKlik_(wrap);
+    });
+
+    var emailInput = wrap.querySelector('#gorivo-email-input');
+    var potvrdiBtn = wrap.querySelector('#gorivo-email-potvrdi-btn');
+    var promijeniBtn = wrap.querySelector('#gorivo-email-promijeni-btn');
+    emailInput.value = gorivoEmailCache_.email;
+    if (gorivoEmailCache_.zakljucano) {
+      emailInput.readOnly = true;
+      potvrdiBtn.style.display = 'none';
+      promijeniBtn.style.display = '';
+    }
+    potvrdiBtn.addEventListener('click', function() {
+      var val = emailInput.value.trim();
+      var statusEl = wrap.querySelector('#gorivo-email-status');
+      if (!val) { statusEl.textContent = 'Upišite e-mail adresu.'; statusEl.className = 'af-sifra-status error'; return; }
+      potvrdiBtn.disabled = true;
+      gasCall({ action: 'gorivoSpremiEmailPodsjetnik', token: adminToken, email: val }).then(function(res) {
+        potvrdiBtn.disabled = false;
+        if (handleAuthError(res)) { return; }
+        if (res.status !== 'ok') { statusEl.textContent = res.message || 'Spremanje nije uspjelo.'; statusEl.className = 'af-sifra-status error'; return; }
+        statusEl.textContent = 'Adresa potvrđena.';
+        statusEl.className = 'af-sifra-status';
+        gorivoEmailCache_ = { email: val, zakljucano: true };
+        emailInput.readOnly = true;
+        potvrdiBtn.style.display = 'none';
+        promijeniBtn.style.display = '';
+      }).catch(function() {
+        potvrdiBtn.disabled = false;
+        statusEl.textContent = 'Greška u komunikaciji s poslužiteljem.';
+        statusEl.className = 'af-sifra-status error';
+      });
+    });
+    promijeniBtn.addEventListener('click', function() {
+      if (!confirm('Otključati adresu za izmjenu?')) { return; }
+      gasCall({ action: 'gorivoOtkljucajEmailPodsjetnik', token: adminToken }).then(function(res) {
+        if (handleAuthError(res)) { return; }
+        gorivoEmailCache_.zakljucano = false;
+        emailInput.readOnly = false;
+        promijeniBtn.style.display = 'none';
+        potvrdiBtn.style.display = '';
+      }).catch(function() { /* tiho — lokalno je već otključano, sljedeći "Potvrdi" ionako sprema svježe stanje */ });
+    });
+
+    wrap.querySelector('#gorivo-test-podsjetnik-btn').addEventListener('click', function() {
+      var statusEl = wrap.querySelector('#gorivo-test-status');
+      var btn = wrap.querySelector('#gorivo-test-podsjetnik-btn');
+      btn.disabled = true;
+      statusEl.textContent = 'Slanje...';
+      statusEl.className = 'faq-admin-status';
+      gasCall({ action: 'gorivoPosaljiTestPodsjetnik', token: adminToken }).then(function(res) {
+        btn.disabled = false;
+        if (handleAuthError(res)) { return; }
+        if (res.status !== 'ok') { statusEl.textContent = res.message || 'Slanje nije uspjelo.'; statusEl.className = 'faq-admin-status error'; return; }
+        statusEl.textContent = 'Test podsjetnik poslan na ' + esc(gorivoEmailCache_.email) + '.';
+        statusEl.className = 'faq-admin-status';
+      }).catch(function() {
+        btn.disabled = false;
+        statusEl.textContent = 'Greška u komunikaciji s poslužiteljem.';
+        statusEl.className = 'faq-admin-status error';
+      });
+    });
+
+    // "📊 Baza kretanja cijena goriva" (25.9.2026., Sašin izričit zahtjev:
+    // "negdje na kartici gorivo... skrivena podkartica ili button prema
+    // bazi kretanja cijena goriva") — sakriveno po defaultu (hidden), učita
+    // se lijeno tek pri prvom otvaranju, da se ne opterećuje svako
+    // učitavanje admina.
+    var gorivoCijeneUcitane_ = false;
+    wrap.querySelector('#gorivo-cijene-toggle-btn').addEventListener('click', function() {
+      var listaEl = wrap.querySelector('#gorivo-cijene-lista');
+      listaEl.hidden = !listaEl.hidden;
+      if (!listaEl.hidden && !gorivoCijeneUcitane_) {
+        gorivoCijeneUcitane_ = true;
+        listaEl.textContent = 'Učitavanje...';
+        gasCall({ action: 'gorivoDohvatiCijene', token: adminToken }).then(function(res) {
+          if (handleAuthError(res)) { return; }
+          if (res.status !== 'ok') { listaEl.textContent = res.message || 'Učitavanje nije uspjelo.'; return; }
+          renderGorivoCijeneLista_(listaEl, res.redovi || []);
+        }).catch(function() { listaEl.textContent = 'Greška u komunikaciji s poslužiteljem.'; });
+      }
+    });
+    wrap.querySelector('#gorivo-cijene-dohvati-btn').addEventListener('click', function() {
+      var statusEl = wrap.querySelector('#gorivo-cijene-status');
+      var btn = wrap.querySelector('#gorivo-cijene-dohvati-btn');
+      btn.disabled = true;
+      statusEl.textContent = 'Dohvaćanje s HAK/FRED-a — može potrajati par sekundi...';
+      statusEl.className = 'faq-admin-status';
+      gasCall({ action: 'gorivoPokreniDohvatCijenaSada', token: adminToken }).then(function(res) {
+        btn.disabled = false;
+        if (handleAuthError(res)) { return; }
+        if (res.status !== 'ok') { statusEl.textContent = res.message || 'Dohvat nije uspio.'; statusEl.className = 'faq-admin-status error'; return; }
+        statusEl.textContent = 'Dohvaćeno — otvori bazu cijena ispod za pregled.';
+        statusEl.className = 'faq-admin-status';
+        gorivoCijeneUcitane_ = false;
+        var listaEl = wrap.querySelector('#gorivo-cijene-lista');
+        if (!listaEl.hidden) {
+          listaEl.hidden = true;
+          wrap.querySelector('#gorivo-cijene-toggle-btn').click();
+        }
+      }).catch(function() {
+        btn.disabled = false;
+        statusEl.textContent = 'Greška u komunikaciji s poslužiteljem.';
+        statusEl.className = 'faq-admin-status error';
+      });
+    });
+
+    renderGorivoPostotciLista_(wrap);
+    return wrap;
+  }
+
+  function renderGorivoCijeneLista_(listaEl, redovi) {
+    listaEl.innerHTML = '';
+    if (!redovi.length) {
+      listaEl.textContent = 'Još nema dnevnih zapisa — klikni "Dohvati cijene sada (test)" iznad, ili pričekaj dnevni triger.';
+      return;
+    }
+    redovi.forEach(function(r) {
+      var row = document.createElement('div');
+      row.className = 'zone-arhiva-item';
+      row.innerHTML =
+        '<div>' +
+          '<div class="zone-arhiva-naziv">' + esc(r.datum) + '</div>' +
+          '<div class="zone-arhiva-meta">Eurodizel: ' + (r.eurodizel != null ? Number(r.eurodizel).toLocaleString('hr-HR') + ' €' : '—') +
+            ' · Eurosuper95: ' + (r.eurosuper95 != null ? Number(r.eurosuper95).toLocaleString('hr-HR') + ' €' : '—') +
+            ' · Brent: ' + (r.brent != null ? Number(r.brent).toLocaleString('hr-HR') + ' $' : '—') +
+            ' · WTI: ' + (r.wti != null ? Number(r.wti).toLocaleString('hr-HR') + ' $' : '—') +
+            (r.napomena ? '<br>⚠ ' + esc(r.napomena) : '') +
+          '</div>' +
+        '</div>';
+      listaEl.appendChild(row);
+    });
+  }
+
+  function renderGorivoPostotciLista_(wrap) {
+    var container = wrap.querySelector('#gorivo-postotci-lista');
+    container.innerHTML = '';
+    if (gorivoPostotciCache_.length === 0) {
+      var hint = document.createElement('div');
+      hint.className = 'empty-hint';
+      hint.textContent = 'Još nema unesenih postotaka.';
+      container.appendChild(hint);
+      return;
+    }
+    var sortirano = gorivoPostotciCache_.slice().sort(function(a, b) { return (b.godina - a.godina) || (b.mjesec - a.mjesec); });
+    sortirano.forEach(function(r) {
+      var row = document.createElement('div');
+      row.className = 'zone-arhiva-item';
+      row.innerHTML =
+        '<div>' +
+          '<div class="zone-arhiva-naziv">' + esc(GORIVO_MJESECI_HR_[r.mjesec - 1]) + ' ' + r.godina + ' — ' + Number(r.postotak).toLocaleString('hr-HR') + '%</div>' +
+          '<div class="zone-arhiva-meta">' + (r.napomena ? esc(r.napomena) + ' — ' : '') + 'uneseno: ' + (r.datumUnosa ? new Date(r.datumUnosa).toLocaleString('hr-HR') : '') + '</div>' +
+        '</div>' +
+        '<button type="button" class="btn btn-outline btn-small zone-arhiva-vrati-btn gorivo-obrisi-btn">Obriši</button>';
+      row.querySelector('.gorivo-obrisi-btn').addEventListener('click', function() {
+        if (!confirm('Obrisati unos za ' + GORIVO_MJESECI_HR_[r.mjesec - 1] + ' ' + r.godina + '?')) { return; }
+        gasCall({ action: 'gorivoObrisiPostotak', token: adminToken, godina: r.godina, mjesec: r.mjesec }).then(function(res) {
+          if (handleAuthError(res)) { return; }
+          if (res.status === 'ok') { loadGorivoPostotke_(); } else { alert(res.message || 'Brisanje nije uspjelo.'); }
+        }).catch(function() { alert('Greška u komunikaciji s poslužiteljem.'); });
+      });
+      container.appendChild(row);
+    });
+  }
+
+  function gorivoSpremiPostotakKlik_(wrap) {
+    var mjesec = parseInt(wrap.querySelector('#gorivo-mjesec-select').value, 10);
+    var godina = parseInt(wrap.querySelector('#gorivo-godina-input').value, 10);
+    var postotak = wrap.querySelector('#gorivo-postotak-input').value;
+    var napomena = wrap.querySelector('#gorivo-napomena-input').value;
+    var statusEl = wrap.querySelector('#gorivo-postotak-status');
+    if (!godina || postotak === '') { statusEl.textContent = 'Upišite godinu i postotak.'; statusEl.className = 'faq-admin-status error'; return; }
+    var btn = wrap.querySelector('#gorivo-spremi-btn');
+    btn.disabled = true;
+    gasCall({ action: 'gorivoSpremiPostotak', token: adminToken, godina: godina, mjesec: mjesec, postotak: postotak, napomena: napomena }).then(function(res) {
+      btn.disabled = false;
+      if (handleAuthError(res)) { return; }
+      if (res.status !== 'ok') { statusEl.textContent = res.message || 'Spremanje nije uspjelo.'; statusEl.className = 'faq-admin-status error'; return; }
+      statusEl.textContent = 'Spremljeno.';
+      statusEl.className = 'faq-admin-status';
+      wrap.querySelector('#gorivo-postotak-input').value = '';
+      wrap.querySelector('#gorivo-napomena-input').value = '';
+      loadGorivoPostotke_();
+    }).catch(function() {
+      btn.disabled = false;
+      statusEl.textContent = 'Greška u komunikaciji s poslužiteljem.';
+      statusEl.className = 'faq-admin-status error';
+    });
   }
 
   function buildEntryCard(entry) {
@@ -5193,8 +5499,13 @@
                   restartBtn.disabled = false;
                   if (handleAuthError(res)) { return; }
                   if (res.status === 'ok') {
-                    restartStatus.textContent = 'Ponuda je vraćena na 0.';
-                    restartStatus.classList.add('uspjeh');
+                    if (res.zipUpozorenje) {
+                      restartStatus.textContent = 'Ponuda je vraćena na 0. ⚠ ' + res.zipUpozorenje;
+                      restartStatus.classList.add('error');
+                    } else {
+                      restartStatus.textContent = 'Ponuda je vraćena na 0. ZIP arhiva dokumenata je spremljena u klijentov direktorij.';
+                      restartStatus.classList.add('uspjeh');
+                    }
                     loadEntries();
                   } else {
                     restartStatus.textContent = res.message || 'Restart nije uspio.';
