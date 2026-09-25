@@ -91,8 +91,11 @@
 
   .form-section{margin-top:32px;padding-top:24px;border-top:4px solid var(--purple);}
   .form-section:first-of-type{margin-top:0;padding-top:0;border-top:none;}
-  .form-section h3{margin:0 0 2px;font-size:14.5px;color:var(--purple-dark);text-transform:none;letter-spacing:0;}
+  .form-section h3{margin:0 0 6px;font-size:21px;font-weight:800;color:var(--purple-dark);text-transform:uppercase;letter-spacing:.4px;}
   .sec-hint{font-size:12px;color:var(--grey);margin:0 0 4px;}
+  .objasnjenje-blok{margin-top:44px;}
+  .objasnjenje-naslov{margin:0 0 5px;font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:var(--purple-dark);}
+  #anketa-pitanja-container .form-section:first-of-type{margin-top:32px;padding-top:24px;border-top:4px solid var(--purple);}
 
   .anketa-pitanje{margin-top:22px;padding-top:18px;border-top:1px solid var(--line);}
   .anketa-pitanje:first-of-type{margin-top:14px;padding-top:0;border-top:none;}
@@ -276,7 +279,10 @@
             </div>
           </div>
 
-          <p class="sec-hint" style="margin-top:22px;">Uputa za ocjenjivanje: pomicanjem klizača odaberite ocjenu od 0 do 10 za svaki navedeni dio naše usluge (0 – u potpunosti nezadovoljavajuće, 10 – u potpunosti zadovoljavajuće). Ako nemate iskustva s pojedinim dijelom usluge, označite "Ne mogu procijeniti". Sva pitanja su obavezna — potrebno je ili ocijeniti ili označiti da ne možete procijeniti.</p>
+          <div class="objasnjenje-blok">
+            <p class="objasnjenje-naslov">Objašnjenje</p>
+            <p class="sec-hint">Uputa za ocjenjivanje: pomicanjem klizača odaberite ocjenu od 0 do 10 za svaki navedeni dio naše usluge (0 – u potpunosti nezadovoljavajuće, 10 – u potpunosti zadovoljavajuće). Ako nemate iskustva s pojedinim dijelom usluge, označite "Ne mogu procijeniti". Sva pitanja su obavezna — potrebno je ili ocijeniti ili označiti da ne možete procijeniti.</p>
+          </div>
 
           <div id="anketa-pitanja-container"></div>
 
@@ -385,6 +391,17 @@
     { naslov: 'Reklamacije, računi i administracija', pitanja: [
       { key:'q22', tekst:'Kako biste ocijenili brzinu i kvalitetu rješavanja reklamacija, oštećenja i drugih poteškoća?' },
       { key:'q23', tekst:'Kako biste ocijenili točnost računa te jasnoću obračunatih cijena i dodatnih naknada?' }
+    ]},
+    // NOVO POGLAVLJE (25.9.2026., Sašin izričit zahtjev: "računovodstvo,
+    // usklađivanje, fakturiranje, otkupnine, brzina uplata otkupnina") — ako
+    // se ovdje išta mijenja/dodaje, MORA se ručno ažurirati i ANKETA_FIELDS +
+    // ANKETA_KATEGORIJE + izracunajProsjekOcjenaAnkete_() u InTime_Code.gs.
+    { naslov: 'Računovodstvo, fakturiranje i otkupnine', pitanja: [
+      { key:'q26', tekst:'Kako biste ocijenili točnost i pravovremenost izdavanja računa/faktura?' },
+      { key:'q27', tekst:'Kako biste ocijenili preglednost i jednostavnost usklađivanja (rekonsilijacije) evidencija i stanja s IN TIME-om?' },
+      { key:'q28', tekst:'Kako biste ocijenili točnost obračunatih otkupnina?' },
+      { key:'q29', tekst:'Kako biste ocijenili brzinu isplate naplaćenih otkupnina na Vaš račun?' },
+      { key:'q30', tekst:'Kako biste ocijenili dostupnost i susretljivost računovodstva/administracije IN TIME-a pri rješavanju financijskih upita?' }
     ]}
   ];
   // Završna ocjena (NPS-stil) — BEZ "Ne mogu procijeniti" opcije, drukčiji

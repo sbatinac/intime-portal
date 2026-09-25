@@ -268,6 +268,26 @@
       linear-gradient(90deg, rgba(8,20,28,.76), rgba(8,20,28,.42)),
       url('https://i.imgur.com/V2krix2.png') center/cover no-repeat;
   }
+  /* GORIVO — nova kartica (25.9.2026., Faza 2, Sašin izričit zahtjev: "to je
+     trebala biti posebna kartica, a ne u sklopu kalkulatora") — ISTI obrazac
+     kao ostale "tema-foto-*" kartice, samo slika je LOKALNA datoteka
+     (InTime_Naslovnica_Gorivo_banner.jpg, mora biti uploadana u istu mapu/
+     domenu kao ova stranica), ne imgur link kao ostale. Sadržaj se NE
+     ugrađuje u iframe (za razliku od Kalkulatora/Bookinga) — graf je obična
+     HTML/canvas komponenta koju kontroliramo, pa se otvara direktno ispod
+     kartice, isti obrazac kao Dokumenti/Slike/Video galerije
+     (toggleGalerijaSadrzaj_). */
+  .galerija-toggle-btn.tema-foto-gorivo{
+    background:
+      linear-gradient(90deg, rgba(8,20,28,.66), rgba(8,20,28,.32)),
+      url('InTime_Naslovnica_Gorivo_banner.jpg') center/cover no-repeat;
+  }
+  .galerija-toggle-btn.tema-foto-gorivo:hover{
+    background:
+      linear-gradient(90deg, rgba(8,20,28,.76), rgba(8,20,28,.42)),
+      url('InTime_Naslovnica_Gorivo_banner.jpg') center/cover no-repeat;
+  }
+
   /* KALKULATOR — ugrađen (iframe) ispod kartice, isti obrazac kao Online
      Booking (ručni fullscreen prekidač "Raširi", ne automatsko mjerenje
      visine) — kalkulator je vrlo velika, interaktivna stranica pa je
@@ -1382,6 +1402,25 @@
           </div>
         </div>
         <iframe id="kalkulator-embed-iframe" class="kalkulator-embed-iframe" title="In Time — kalkulator cijene dostave" loading="lazy"></iframe>
+      </div>
+    </div>
+  </section>
+
+  <!-- GORIVO — nova, POSEBNA kartica (25.9.2026., Faza 2) — Saša je izričito
+       tražio da ovo NE bude dio kalkulatora, nego zasebna kartica na
+       naslovnici, isti obrazac kao Dokumenti/Slike/Video (otvara se direktno
+       ispod kartice, ne u iframe-u — graf je naša vlastita HTML/canvas
+       komponenta). Podaci dolaze s javne (bez tokena) rute
+       gorivoJavniPodaci() u InTime_Code.gs. Graf se montira lijeno, tek pri
+       prvom otvaranju kartice (vidi osiguirajGorivoGraf_() u JS-u niže). -->
+  <section>
+    <div class="wrap-galerija">
+      <button type="button" id="gorivo-galerija-toggle-btn" class="galerija-toggle-btn tema-foto-gorivo" onclick="toggleGalerijaSadrzaj_('gorivo-galerija-sadrzaj','gorivo-galerija-toggle-btn'); osiguirajGorivoGraf_();">
+        <span>Kretanje cijena goriva</span>
+        <span class="galerija-toggle-arrow">▾</span>
+      </button>
+      <div id="gorivo-galerija-sadrzaj" hidden style="margin-top:18px;">
+        <div id="gorivo-graf-mount"></div>
       </div>
     </div>
   </section>
@@ -3305,6 +3344,566 @@
     if (otvoreno) {
       sadrzaj.scrollIntoView({behavior:'smooth', block:'start'});
     }
+  }
+
+  // ============================================================
+  // GORIVO — dijeljeni graf modul (25.9.2026., Faza 2). ISTI blok kao u
+  // InTime_Admin.html (kartica "Gorivo") — kopiran doslovno jer sve
+  // InTime_* datoteke moraju ostati samostalne (bez build koraka, bez
+  // <script src> na drugi fajl, vidi dokumentacija-za-ugradnju.md). Ako se
+  // ikad treba mijenjati, mijenjati na SVA mjesta (InTime_Admin.html i
+  // ovdje). Read-only prikaz — nema formi za unos (te su samo u adminu), ne
+  // dira #dodatakGorivoPct kalkulatora (namjerno nepovezano do spajanja
+  // kalkulatora — sljedeća faza). Koristi POSTOJEĆI GAS_WEB_APP_URL ove
+  // stranice (isti Web App kao ostatak forme, vidi gorivoGasCall_ niže),
+  // samo nova akcija 'gorivoJavniPodaci' (javna ruta, bez tokena).
+  // ============================================================
+  function pokreniGorivoGraf(mountEl, opcije) {
+    opcije = opcije || {};
+    var dohvatiPodatke = opcije.dohvatiPodatke || function() { return Promise.resolve({postotci:[], dogadjaji:[], cijene:[]}); };
+
+    if (!document.getElementById('gorivoGrafStil')) {
+      var styleEl = document.createElement('style');
+      styleEl.id = 'gorivoGrafStil';
+      styleEl.textContent = [
+        '.gg-wrap{--gg-purple:#229891;--gg-purple-dark:#135450;--gg-graphite:#131313;--gg-grey:#6b6b6b;--gg-line:#e2e6ea;--gg-bg:#f7fafb;--gg-red:#c0392b;',
+        '--gg-boja-dizel:#131313;--gg-boja-eurosuper:#1e8449;--gg-boja-brent:#1c4a8a;--gg-boja-wti:#d9791e;',
+        'font-family:"Segoe UI",Arial,sans-serif;color:var(--gg-graphite);}',
+        '.gg-wrap *{box-sizing:border-box;}',
+        '.gg-panel{background:#fff;border:1px solid var(--gg-line);border-radius:14px;padding:18px 20px;margin-bottom:16px;}',
+        '.gg-panel h2,.gg-panel h3{font-size:15px;margin:0 0 12px;}',
+        '.gg-kucica-red{display:flex;align-items:stretch;gap:24px;flex-wrap:wrap;}',
+        '.gg-kucica-sat,.gg-kucica-promjena,.gg-kucica-trend{flex:1;min-width:190px;}',
+        '.gg-kucica-divider{width:1px;background:var(--gg-line);align-self:stretch;}',
+        '.gg-kucica-label{font-size:11px;color:var(--gg-grey);text-transform:uppercase;letter-spacing:.03em;margin-bottom:5px;}',
+        '.gg-kucica-vrijednost{font-size:19px;font-weight:700;color:var(--gg-graphite);font-variant-numeric:tabular-nums;}',
+        '.gg-kucica-sat .gg-kucica-vrijednost{color:var(--gg-purple-dark);}',
+        '.gg-kucica-trend-red{display:flex;align-items:center;gap:8px;}',
+        '.gg-strelica{font-size:20px;line-height:1;}',
+        '.gg-strelica.dolje{color:var(--gg-green,#1e8449);}',
+        '.gg-strelica.gore{color:var(--gg-red);}',
+        '.gg-strelica.isto{color:var(--gg-grey);}',
+        '@media (max-width:720px){.gg-kucica-divider{display:none;}}',
+        '.gg-kontrole{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;margin-bottom:14px;}',
+        '.gg-raspon-grupa{display:flex;gap:6px;flex-wrap:wrap;}',
+        '.gg-btn{border:1px solid var(--gg-line);background:#fff;border-radius:20px;padding:6px 14px;font-size:12px;font-weight:600;color:var(--gg-grey);cursor:pointer;}',
+        '.gg-btn.aktivan{background:var(--gg-purple);border-color:var(--gg-purple);color:#fff;}',
+        '.gg-legenda{display:flex;flex-wrap:wrap;gap:8px;}',
+        '.gg-legenda-chip{display:flex;align-items:center;gap:6px;border:1px solid var(--gg-line);border-radius:20px;padding:5px 11px 5px 8px;font-size:12px;font-weight:600;background:#fff;opacity:1;transition:opacity .15s;cursor:pointer;}',
+        '.gg-legenda-chip.skriveno{opacity:.35;}',
+        '.gg-dot{width:10px;height:10px;border-radius:50%;flex:none;}',
+        '.gg-legenda-chip small{font-weight:400;color:var(--gg-grey);margin-left:2px;}',
+        '.gg-omot{position:relative;}',
+        '.gg-canvas{width:100%;height:380px;display:block;cursor:crosshair;}',
+        '.gg-tooltip{position:absolute;pointer-events:none;background:var(--gg-graphite);color:#fff;border-radius:8px;padding:8px 11px;font-size:11.5px;line-height:1.5;box-shadow:0 6px 18px rgba(0,0,0,.25);opacity:0;transform:translate(-50%,-110%);transition:opacity .08s;white-space:nowrap;z-index:5;}',
+        '.gg-tooltip b{display:block;margin-bottom:3px;font-size:12px;}',
+        '.gg-tt-red{display:flex;align-items:center;gap:6px;}',
+        '.gg-tooltip .gg-dot{width:8px;height:8px;}',
+        '.gg-dog-tooltip{position:absolute;pointer-events:none;background:#fff;color:var(--gg-graphite);border:1px solid var(--gg-line);border-radius:8px;padding:8px 11px;font-size:12px;max-width:230px;box-shadow:0 8px 20px rgba(0,0,0,.14);opacity:0;transform:translate(-50%,-108%);transition:opacity .08s;z-index:6;}',
+        '.gg-dog-tooltip .gg-dt-datum{font-weight:700;color:var(--gg-red);margin-bottom:3px;}',
+        '.gg-napomena{display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px;font-size:11px;color:var(--gg-grey);margin-top:6px;}',
+        '.gg-prazno{color:var(--gg-grey);font-size:12.5px;font-style:italic;padding:8px 0;}',
+        '.gg-slajder-red{display:flex;align-items:center;gap:12px;margin-top:14px;padding-top:14px;border-top:1px solid var(--gg-line);}',
+        '.gg-slajder-ikona{font-size:15px;flex:none;color:var(--gg-grey);}',
+        '.gg-slajder{flex:1;-webkit-appearance:none;appearance:none;height:5px;border-radius:3px;background:var(--gg-line);outline:none;cursor:pointer;}',
+        '.gg-slajder::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:17px;height:17px;border-radius:50%;background:var(--gg-purple);border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.35);cursor:pointer;}',
+        '.gg-slajder::-moz-range-thumb{width:17px;height:17px;border-radius:50%;background:var(--gg-purple);border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.35);cursor:pointer;}',
+        '.gg-slajder-oznaka{flex:none;font-size:11.5px;font-weight:600;color:var(--gg-grey);white-space:nowrap;min-width:150px;text-align:right;font-variant-numeric:tabular-nums;}'
+      ].join('\n');
+      document.head.appendChild(styleEl);
+    }
+
+    mountEl.innerHTML =
+      '<div class="gg-wrap">' +
+        '<div class="gg-panel">' +
+          '<div class="gg-kucica-red">' +
+            '<div class="gg-kucica-sat"><div class="gg-kucica-label">Trenutno vrijeme</div><div class="gg-kucica-vrijednost" data-gg="sat">—</div></div>' +
+            '<div class="gg-kucica-divider"></div>' +
+            '<div class="gg-kucica-promjena"><div class="gg-kucica-label">Sljedeća promjena dodatka na gorivo</div><div class="gg-kucica-vrijednost" data-gg="promjena">—</div></div>' +
+            '<div class="gg-kucica-divider"></div>' +
+            '<div class="gg-kucica-trend"><div class="gg-kucica-label">Trend naspram prošlog mjeseca</div><div class="gg-kucica-vrijednost gg-kucica-trend-red" data-gg="trend">—</div></div>' +
+          '</div>' +
+        '</div>' +
+        '<div class="gg-panel">' +
+          '<div class="gg-kontrole">' +
+            '<div class="gg-raspon-grupa" data-gg="rasponGrupa"></div>' +
+            '<div class="gg-raspon-grupa" data-gg="prikazGrupa">' +
+              '<button type="button" class="gg-btn aktivan" data-prikaz="tocke">• Crtice</button>' +
+              '<button type="button" class="gg-btn" data-prikaz="linije">— Linije</button>' +
+              '<button type="button" class="gg-btn" data-prikaz="isprekidano">┄ Isprekidano</button>' +
+            '</div>' +
+            '<div class="gg-raspon-grupa" data-gg="dogGrupa"><button type="button" class="gg-btn aktivan" data-gg="dogBtn">🚩 Događaji: uključeni</button></div>' +
+            '<div class="gg-legenda" data-gg="legenda"></div>' +
+          '</div>' +
+          '<div class="gg-omot">' +
+            '<canvas class="gg-canvas" data-gg="canvas"></canvas>' +
+            '<div class="gg-tooltip" data-gg="tooltip"></div>' +
+            '<div class="gg-dog-tooltip" data-gg="dogTooltip"></div>' +
+          '</div>' +
+          '<div class="gg-napomena">' +
+            '<span>◐ puni kružić = stvarni dnevni podatak (HAK/FRED) · linija raste iz dana u dan otkad je praćenje pokrenuto</span>' +
+            '<span>🚩 događaj — pređi mišem preko zastavice na vrhu grafa</span>' +
+          '</div>' +
+          '<div class="gg-slajder-red">' +
+            '<span class="gg-slajder-ikona">⏱</span>' +
+            '<input type="range" class="gg-slajder" data-gg="slajder" min="0" max="0" value="0" step="1">' +
+            '<span class="gg-slajder-oznaka" data-gg="slajderOznaka">—</span>' +
+          '</div>' +
+        '</div>' +
+      '</div>';
+
+    var elSat = mountEl.querySelector('[data-gg="sat"]');
+    var elPromjena = mountEl.querySelector('[data-gg="promjena"]');
+    var elTrend = mountEl.querySelector('[data-gg="trend"]');
+    var rasponGrupaEl = mountEl.querySelector('[data-gg="rasponGrupa"]');
+    var prikazGrupaEl = mountEl.querySelector('[data-gg="prikazGrupa"]');
+    var dogBtnEl = mountEl.querySelector('[data-gg="dogBtn"]');
+    var legendaEl = mountEl.querySelector('[data-gg="legenda"]');
+    var canvas = mountEl.querySelector('[data-gg="canvas"]');
+    var ctx = canvas.getContext('2d');
+    var tooltipEl = mountEl.querySelector('[data-gg="tooltip"]');
+    var dogTooltipEl = mountEl.querySelector('[data-gg="dogTooltip"]');
+    var slajderEl = mountEl.querySelector('[data-gg="slajder"]');
+    var slajderOznakaEl = mountEl.querySelector('[data-gg="slajderOznaka"]');
+
+    var DANAS = new Date();
+    var GODINA_TEKUCA = DANAS.getFullYear();
+    var krajProzora = new Date(DANAS);
+    var NAJRANIJI_DATUM = null;
+    rasponGrupaEl.innerHTML =
+      '<button type="button" class="gg-btn aktivan" data-raspon="godina">Cijela ' + GODINA_TEKUCA + '.</button>' +
+      '<button type="button" class="gg-btn" data-raspon="6m">Zadnjih 6 mjeseci</button>' +
+      '<button type="button" class="gg-btn" data-raspon="3m">Zadnja 3 mjeseca</button>';
+
+    var SERIJE = [
+      { key:'dizel', label:'Eurodizel', bojaVar:'var(--gg-boja-dizel)', bojaHex:'#131313', os:'eur', jedinica:'€/L', tocke:[] },
+      { key:'eurosuper', label:'Eurosuper95', bojaVar:'var(--gg-boja-eurosuper)', bojaHex:'#1e8449', os:'eur', jedinica:'€/L', tocke:[] },
+      { key:'brent', label:'Brent', bojaVar:'var(--gg-boja-brent)', bojaHex:'#1c4a8a', os:'usd', jedinica:'$/barel', tocke:[] },
+      { key:'wti', label:'WTI', bojaVar:'var(--gg-boja-wti)', bojaHex:'#d9791e', os:'usd', jedinica:'$/barel', tocke:[] }
+    ];
+    var POVIJESNI_ANCHORI = {
+      dizel: [
+        { datum:'2026-01-01', v:1.48 },
+        { datum:'2026-04-07', v:1.85 },
+        { datum:'2026-06-15', v:1.59 },
+        { datum:'2026-09-22', v:1.91 }
+      ],
+      eurosuper: [
+        { datum:'2026-01-01', v:1.54 },
+        { datum:'2026-04-07', v:1.66 },
+        { datum:'2026-06-15', v:1.57 },
+        { datum:'2026-09-22', v:1.74 }
+      ],
+      brent: [
+        { datum:'2026-03-02', v:81 },
+        { datum:'2026-03-31', v:118.35 },
+        { datum:'2026-07-01', v:71.57 },
+        { datum:'2026-07-24', v:96.78 },
+        { datum:'2026-09-22', v:114.89 }
+      ]
+    };
+    var POSTOCI = [];
+    var DOGADJAJI = [];
+    var MJESECI_HR = ['','siječanj','veljača','ožujak','travanj','svibanj','lipanj','srpanj','kolovoz','rujan','listopad','studeni','prosinac'];
+
+    var vidljivo = {dizel:true, eurosuper:true, brent:true, wti:true};
+    var prikaziDodatak = true;
+    var prikaziDogadjaje = true;
+    var nacinPrikaza = 'tocke';
+    var raspon = 'godina';
+    var BOJA_DODATAK = '#229891';
+    var PULS_T0 = performance.now();
+    function pulsFaza(){ var t=(performance.now()-PULS_T0)/1000; return (Math.sin(t*2.85)+1)/2; }
+
+    function normDatum(s) {
+      s = String(s || '').trim();
+      var m = s.match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})\.?$/);
+      if (m) { return m[3] + '-' + (m[1].length<2?'0'+m[1]:m[1]) + '-' + (m[2].length<2?'0'+m[2]:m[2]); }
+      return s.slice(0,10);
+    }
+    function parseD(s){ return new Date(normDatum(s)+'T00:00:00'); }
+    function fmtD(d){ return d.toLocaleDateString('hr-HR', {day:'2-digit', month:'2-digit', year:'numeric'}); }
+
+    function sortiraniPostoci(){ return POSTOCI.slice().sort(function(a,b){ return (a.godina*100+a.mjesec)-(b.godina*100+b.mjesec); }); }
+    function aktivniPostotak(datumMs){
+      var p = sortiraniPostoci(), rez = null;
+      for (var i=0;i<p.length;i++){ var td=new Date(p[i].godina,p[i].mjesec-1,1).getTime(); if (td<=datumMs) rez=p[i]; else break; }
+      return rez;
+    }
+
+    function azurirajKucicu(){
+      var sad = new Date();
+      var optD = {day:'2-digit',month:'2-digit',year:'numeric'}, optV = {hour:'2-digit',minute:'2-digit',second:'2-digit'};
+      if (elSat) elSat.textContent = sad.toLocaleDateString('hr-HR',optD)+'  '+sad.toLocaleTimeString('hr-HR',optV);
+      var sljedeca = new Date(sad.getFullYear(), sad.getMonth()+1, 0, 23, 59, 59);
+      if (elPromjena) elPromjena.textContent = sljedeca.toLocaleDateString('hr-HR',optD)+'  '+sljedeca.toLocaleTimeString('hr-HR',optV);
+      if (!elTrend) return;
+      var pSort = sortiraniPostoci(), trenutni = aktivniPostotak(sad.getTime());
+      if (!trenutni){ elTrend.innerHTML = '<span class="gg-strelica isto">–</span> nema unesenog podatka'; return; }
+      var idx = pSort.indexOf(trenutni), prethodni = idx>0 ? pSort[idx-1] : null;
+      if (!prethodni){ elTrend.innerHTML = trenutni.postotak.toFixed(2)+'%  <span class="gg-strelica isto">–</span>'; }
+      else if (trenutni.postotak < prethodni.postotak){ elTrend.innerHTML = trenutni.postotak.toFixed(2)+'%  <span class="gg-strelica dolje">▼</span>'; }
+      else if (trenutni.postotak > prethodni.postotak){ elTrend.innerHTML = trenutni.postotak.toFixed(2)+'%  <span class="gg-strelica gore">▲</span>'; }
+      else { elTrend.innerHTML = trenutni.postotak.toFixed(2)+'%  <span class="gg-strelica isto">–</span>'; }
+    }
+
+    var DAN_MS = 1000*3600*24;
+    function sirinaProzoraDana(){
+      if (raspon==='3m') return 92;
+      if (raspon==='6m') return 183;
+      return 366;
+    }
+    function rasponDatumi(){
+      var doD = new Date(krajProzora);
+      var od = new Date(doD.getTime() - sirinaProzoraDana()*DAN_MS);
+      return {od:od, doD:doD};
+    }
+
+    function izracunajNajraniji_(){
+      var min = null;
+      SERIJE.forEach(function(s){
+        s.tocke.forEach(function(t){ var d=parseD(t.datum); if (!min || d<min) min=d; });
+      });
+      NAJRANIJI_DATUM = min || new Date(DANAS.getTime() - 366*DAN_MS);
+    }
+
+    function azurirajOznakuSlajdera_(){
+      var rd = rasponDatumi();
+      slajderOznakaEl.textContent = fmtD(rd.od) + '  →  ' + fmtD(rd.doD);
+    }
+
+    function azurirajSlajder_(){
+      izracunajNajraniji_();
+      var maxDani = Math.max(1, Math.round((DANAS.getTime()-NAJRANIJI_DATUM.getTime())/DAN_MS));
+      slajderEl.min = 0; slajderEl.max = maxDani;
+      var trenutnoDani = Math.round((krajProzora.getTime()-NAJRANIJI_DATUM.getTime())/DAN_MS);
+      trenutnoDani = Math.max(0, Math.min(maxDani, trenutnoDani));
+      slajderEl.value = trenutnoDani;
+      azurirajOznakuSlajdera_();
+    }
+
+    slajderEl.addEventListener('input', function(){
+      var dani = parseInt(slajderEl.value, 10) || 0;
+      krajProzora = new Date(NAJRANIJI_DATUM.getTime() + dani*DAN_MS);
+      azurirajOznakuSlajdera_();
+      nacrtaj();
+    });
+
+    function interpoliraj(serija, datum){
+      var t = serija.tocke;
+      if (!t.length) return null;
+      var td = datum.getTime();
+      if (td <= parseD(t[0].datum).getTime()) return {v:t[0].v, real: td===parseD(t[0].datum).getTime()};
+      if (td >= parseD(t[t.length-1].datum).getTime()){ var last=t[t.length-1]; return {v:last.v, real: td===parseD(last.datum).getTime()}; }
+      for (var i=0;i<t.length-1;i++){
+        var a=t[i], b=t[i+1], ta=parseD(a.datum).getTime(), tb=parseD(b.datum).getTime();
+        if (td>=ta && td<=tb){
+          if (td===ta) return {v:a.v, real:true};
+          if (td===tb) return {v:b.v, real:true};
+          var udio=(td-ta)/(tb-ta);
+          return {v:a.v+(b.v-a.v)*udio, real:false};
+        }
+      }
+      return null;
+    }
+
+    function izgradiLegendu(){
+      legendaEl.innerHTML = '';
+      SERIJE.forEach(function(s){
+        var chip = document.createElement('div');
+        chip.className = 'gg-legenda-chip' + (vidljivo[s.key] ? '' : ' skriveno');
+        chip.innerHTML = '<span class="gg-dot" style="background:'+s.bojaVar+';"></span>'+s.label+'<small>'+s.jedinica+'</small>';
+        chip.addEventListener('click', function(){ vidljivo[s.key]=!vidljivo[s.key]; izgradiLegendu(); nacrtaj(); });
+        legendaEl.appendChild(chip);
+      });
+      var chipPct = document.createElement('div');
+      chipPct.className = 'gg-legenda-chip' + (prikaziDodatak ? '' : ' skriveno');
+      chipPct.innerHTML = '<span class="gg-dot" style="background:'+BOJA_DODATAK+';width:14px;height:6px;border-radius:3px;"></span> In Time dodatak na gorivo<small>%</small>';
+      chipPct.addEventListener('click', function(){ prikaziDodatak=!prikaziDodatak; izgradiLegendu(); nacrtaj(); });
+      legendaEl.appendChild(chipPct);
+    }
+
+    rasponGrupaEl.addEventListener('click', function(ev){
+      var btn = ev.target.closest('.gg-btn'); if (!btn) return;
+      raspon = btn.getAttribute('data-raspon');
+      Array.prototype.slice.call(rasponGrupaEl.querySelectorAll('.gg-btn')).forEach(function(b){ b.classList.remove('aktivan'); });
+      btn.classList.add('aktivan');
+      krajProzora = new Date(DANAS);
+      azurirajSlajder_();
+      nacrtaj();
+    });
+    prikazGrupaEl.addEventListener('click', function(ev){
+      var btn = ev.target.closest('.gg-btn'); if (!btn) return;
+      nacinPrikaza = btn.getAttribute('data-prikaz');
+      Array.prototype.slice.call(prikazGrupaEl.querySelectorAll('.gg-btn')).forEach(function(b){ b.classList.remove('aktivan'); });
+      btn.classList.add('aktivan'); nacrtaj();
+    });
+    dogBtnEl.addEventListener('click', function(){
+      prikaziDogadjaje = !prikaziDogadjaje;
+      dogBtnEl.textContent = '🚩 Događaji: ' + (prikaziDogadjaje?'uključeni':'isključeni');
+      dogBtnEl.classList.toggle('aktivan', prikaziDogadjaje);
+      nacrtaj();
+    });
+
+    var PAD = {l:52, r:112, t:90, b:36};
+    var zadnjiLayout = null;
+
+    function pripremiCanvas(){
+      var rect = canvas.getBoundingClientRect();
+      var dpr = window.devicePixelRatio || 1;
+      canvas.width = rect.width*dpr; canvas.height = rect.height*dpr;
+      ctx.setTransform(dpr,0,0,dpr,0,0);
+      return {w:rect.width, h:rect.height};
+    }
+
+    function nacrtaj(){
+      var dim = pripremiCanvas(), w=dim.w, h=dim.h;
+      ctx.clearRect(0,0,w,h);
+      if (w<10 || h<10) return;
+
+      var rd = rasponDatumi(), odT=rd.od.getTime(), doT=rd.doD.getTime();
+      var plotL=PAD.l, plotR=w-PAD.r, plotT=PAD.t, plotB=h-PAD.b;
+      var plotW=plotR-plotL, plotH=plotB-plotT;
+      function x(ms){ return plotL + (ms-odT)/(doT-odT)*plotW; }
+
+      var eurVals=[], usdVals=[];
+      SERIJE.forEach(function(s){
+        if (!vidljivo[s.key]) return;
+        s.tocke.forEach(function(t){
+          var tt = parseD(t.datum).getTime();
+          if (tt<odT-1000*3600*24*40 || tt>doT+1000*3600*24*5) return;
+          (s.os==='eur'?eurVals:usdVals).push(t.v);
+        });
+      });
+      var imaPodataka = eurVals.length>0 || usdVals.length>0;
+      if (!eurVals.length) eurVals=[1.2,2.2];
+      if (!usdVals.length) usdVals=[60,130];
+      var eurMin=Math.min.apply(null,eurVals), eurMax=Math.max.apply(null,eurVals);
+      var usdMin=Math.min.apply(null,usdVals), usdMax=Math.max.apply(null,usdVals);
+      var eurPad=(eurMax-eurMin)*0.18||0.1; eurMin-=eurPad; eurMax+=eurPad;
+      var usdPad=(usdMax-usdMin)*0.18||5; usdMin-=usdPad; usdMax+=usdPad;
+      function yEur(v){ return plotB-(v-eurMin)/(eurMax-eurMin)*plotH; }
+      function yUsd(v){ return plotB-(v-usdMin)/(usdMax-usdMin)*plotH; }
+
+      var pctVals = POSTOCI.map(function(p){ return p.postotak; });
+      var pctMin = pctVals.length?Math.min.apply(null,pctVals):15, pctMax = pctVals.length?Math.max.apply(null,pctVals):25;
+      var pctPad=(pctMax-pctMin)*0.3||3; pctMin-=pctPad; pctMax+=pctPad;
+      function yPct(v){ return plotB-(v-pctMin)/(pctMax-pctMin)*plotH; }
+
+      ctx.strokeStyle='#eef1f3'; ctx.lineWidth=1; ctx.font='11px Segoe UI, Arial'; ctx.fillStyle='#8a8f98';
+      var cur = new Date(rd.od.getFullYear(), rd.od.getMonth(), 1);
+      while (cur.getTime()<=doT){
+        var xx=x(cur.getTime());
+        if (xx>=plotL && xx<=plotR){
+          ctx.beginPath(); ctx.moveTo(xx,plotT); ctx.lineTo(xx,plotB); ctx.stroke();
+          ctx.fillText(cur.toLocaleDateString('hr-HR',{month:'short'}), xx-10, plotB+18);
+        }
+        cur.setMonth(cur.getMonth()+1);
+      }
+
+      ctx.strokeStyle='#eef1f3'; ctx.fillStyle='#8a8f98';
+      for (var i=0;i<=4;i++){
+        var ev=eurMin+(eurMax-eurMin)*i/4, yy=yEur(ev);
+        ctx.beginPath(); ctx.moveTo(plotL,yy); ctx.lineTo(plotR,yy); ctx.stroke();
+        ctx.fillText(ev.toFixed(2)+' €', 6, yy+4);
+        var uv=usdMin+(usdMax-usdMin)*i/4;
+        ctx.fillText('$'+uv.toFixed(0), plotR+8, yUsd(uv)+4);
+      }
+      if (prikaziDodatak){
+        ctx.fillStyle=BOJA_DODATAK; ctx.font='700 11px Segoe UI, Arial';
+        for (var ip=0; ip<=4; ip++){ var pv=pctMin+(pctMax-pctMin)*ip/4; ctx.fillText(pv.toFixed(1)+'%', plotR+58, yPct(pv)+4); }
+        ctx.font='11px Segoe UI, Arial';
+      }
+
+      ctx.save(); ctx.beginPath(); ctx.rect(plotL,plotT,plotW,plotH); ctx.clip();
+      SERIJE.forEach(function(s){
+        if (!vidljivo[s.key]) return;
+        if (nacinPrikaza==='linije' || nacinPrikaza==='isprekidano'){
+          for (var i=0;i<s.tocke.length-1;i++){
+            var a=s.tocke[i], b=s.tocke[i+1], ta=parseD(a.datum).getTime(), tb=parseD(b.datum).getTime();
+            if (tb<odT || ta>doT) continue;
+            var pax=x(ta), pbx=x(tb), pay=(s.os==='eur')?yEur(a.v):yUsd(a.v), pby=(s.os==='eur')?yEur(b.v):yUsd(b.v);
+            ctx.beginPath(); ctx.setLineDash(nacinPrikaza==='isprekidano'?[7,5]:[]);
+            ctx.strokeStyle=s.bojaHex; ctx.lineWidth=2.2;
+            ctx.moveTo(pax,pay); ctx.lineTo(pbx,pby); ctx.stroke();
+          }
+          ctx.setLineDash([]);
+        }
+        s.tocke.forEach(function(t){
+          var tt=parseD(t.datum).getTime();
+          if (tt<odT || tt>doT) return;
+          var px=x(tt), py=(s.os==='eur')?yEur(t.v):yUsd(t.v);
+          var r=(nacinPrikaza==='tocke')?5:3.8;
+          ctx.beginPath(); ctx.arc(px,py,r,0,Math.PI*2);
+          ctx.fillStyle=s.bojaHex; ctx.fill();
+          ctx.lineWidth=2; ctx.strokeStyle='#fff'; ctx.stroke();
+        });
+      });
+      ctx.restore();
+
+      if (prikaziDodatak && POSTOCI.length){
+        ctx.save(); ctx.beginPath(); ctx.rect(plotL,plotT,plotW,plotH); ctx.clip();
+        var pSort = sortiraniPostoci();
+        function nacrtajStepLiniju(){
+          ctx.beginPath();
+          var zapoceto=false, zadnjaY=null;
+          for (var ip2=0; ip2<pSort.length; ip2++){
+            var od1=new Date(pSort[ip2].godina,pSort[ip2].mjesec-1,1).getTime();
+            var doSlj=(ip2+1<pSort.length)?new Date(pSort[ip2+1].godina,pSort[ip2+1].mjesec-1,1).getTime():doT+1000*3600*24*3;
+            var segOd=Math.max(od1,odT), segDo=Math.min(doSlj,doT);
+            if (segDo<segOd) continue;
+            var py=yPct(pSort[ip2].postotak), pxOd=x(segOd), pxDo=x(segDo);
+            if (!zapoceto){ ctx.moveTo(pxOd,py); zapoceto=true; }
+            else if (zadnjaY!==null && Math.abs(zadnjaY-py)>0.01){ ctx.lineTo(pxOd,py); }
+            ctx.lineTo(pxDo,py); zadnjaY=py;
+          }
+          ctx.stroke();
+        }
+        ctx.lineJoin='miter'; ctx.lineCap='round';
+        var puls=pulsFaza(), blurJak=9+puls*14, blurTocke=5+puls*11;
+        ctx.strokeStyle=BOJA_DODATAK; ctx.lineWidth=4.5; ctx.shadowColor=BOJA_DODATAK; ctx.shadowBlur=blurJak;
+        nacrtajStepLiniju(); nacrtajStepLiniju();
+        ctx.shadowBlur=0; ctx.lineWidth=3; ctx.strokeStyle='#5fd4c4'; nacrtajStepLiniju();
+        ctx.shadowColor=BOJA_DODATAK; ctx.shadowBlur=blurTocke;
+        pSort.forEach(function(p){
+          var td=new Date(p.godina,p.mjesec-1,1).getTime();
+          if (td<odT || td>doT) return;
+          var px=x(td), py=yPct(p.postotak);
+          ctx.beginPath(); ctx.arc(px,py,5,0,Math.PI*2); ctx.fillStyle=BOJA_DODATAK; ctx.fill();
+          ctx.shadowBlur=0; ctx.lineWidth=2; ctx.strokeStyle='#fff'; ctx.stroke(); ctx.shadowBlur=blurTocke;
+        });
+        ctx.shadowBlur=0; ctx.restore();
+      }
+
+      var dogLayout = [];
+      DOGADJAJI.forEach(function(dg){
+        if (!prikaziDogadjaje) return;
+        var tt=parseD(dg.datum).getTime();
+        if (tt<odT || tt>doT) return;
+        var px=x(tt);
+        ctx.strokeStyle='#c0392b55'; ctx.setLineDash([3,3]);
+        ctx.beginPath(); ctx.moveTo(px,plotT); ctx.lineTo(px,plotB); ctx.stroke(); ctx.setLineDash([]);
+        ctx.fillStyle='#c0392b';
+        ctx.beginPath(); ctx.moveTo(px,plotT-22); ctx.lineTo(px+13,plotT-13); ctx.lineTo(px,plotT-4); ctx.closePath(); ctx.fill();
+        ctx.strokeStyle='#c0392b'; ctx.lineWidth=2;
+        ctx.beginPath(); ctx.moveTo(px,plotT-22); ctx.lineTo(px,plotB); ctx.stroke();
+        var naziv = dg.naziv.length>34 ? dg.naziv.slice(0,33)+'…' : dg.naziv;
+        ctx.save(); ctx.translate(px+15, plotT-14); ctx.rotate(-16*Math.PI/180);
+        ctx.font='10.5px Segoe UI, Arial'; ctx.fillStyle='#922b21'; ctx.textAlign='left';
+        ctx.fillText(naziv, 0, 0); ctx.restore();
+        dogLayout.push({px:px, dg:dg});
+      });
+
+      if (!imaPodataka){
+        ctx.fillStyle = '#8a8f98'; ctx.font = '13px Segoe UI, Arial'; ctx.textAlign = 'center';
+        ctx.fillText('Još nema dnevnih podataka za odabrani raspon — baza raste iz dana u dan.', (plotL+plotR)/2, (plotT+plotB)/2);
+        ctx.textAlign = 'left';
+      }
+
+      zadnjiLayout = {plotL:plotL,plotR:plotR,plotT:plotT,plotB:plotB,odT:odT,doT:doT,x:x,dogLayout:dogLayout};
+    }
+
+    canvas.addEventListener('mousemove', function(ev){
+      if (!zadnjiLayout) return;
+      var rect = canvas.getBoundingClientRect();
+      var mx = ev.clientX-rect.left, my = ev.clientY-rect.top;
+      var nadDog = zadnjiLayout.dogLayout.filter(function(d){ return Math.abs(d.px-mx)<9 && my>zadnjiLayout.plotT-24 && my<zadnjiLayout.plotT+2; })[0];
+      if (nadDog){
+        dogTooltipEl.style.opacity=1; dogTooltipEl.style.left=nadDog.px+'px'; dogTooltipEl.style.top=(zadnjiLayout.plotT-24)+'px';
+        dogTooltipEl.innerHTML = '<div class="gg-dt-datum">'+fmtD(parseD(nadDog.dg.datum))+'</div>'+nadDog.dg.naziv;
+        tooltipEl.style.opacity=0; return;
+      }
+      dogTooltipEl.style.opacity=0;
+      if (mx<zadnjiLayout.plotL || mx>zadnjiLayout.plotR){ tooltipEl.style.opacity=0; return; }
+      var td = zadnjiLayout.odT + (mx-zadnjiLayout.plotL)/(zadnjiLayout.plotR-zadnjiLayout.plotL)*(zadnjiLayout.doT-zadnjiLayout.odT);
+      var DAN_MS2 = 1000*3600*24;
+      var td_zaokruzen = zadnjiLayout.odT + Math.round((td-zadnjiLayout.odT)/DAN_MS2)*DAN_MS2;
+      var datum = new Date(td_zaokruzen);
+      var linije = ['<b>'+fmtD(datum)+'</b>'];
+      SERIJE.forEach(function(s){
+        if (!vidljivo[s.key]) return;
+        var val = interpoliraj(s, datum);
+        if (!val) return;
+        linije.push('<div class="gg-tt-red"><span class="gg-dot" style="background:'+s.bojaHex+';"></span>'+
+          s.label+': '+val.v.toFixed(2)+(s.os==='eur'?' €':' $')+'</div>');
+      });
+      if (prikaziDodatak){
+        var aktivan = aktivniPostotak(td_zaokruzen);
+        if (aktivan){
+          linije.push('<div class="gg-tt-red"><span class="gg-dot" style="background:'+BOJA_DODATAK+';"></span>'+
+            'In Time dodatak na gorivo: '+aktivan.postotak.toFixed(2)+'%</div>');
+        }
+      }
+      tooltipEl.innerHTML = linije.join('');
+      tooltipEl.style.opacity=1; tooltipEl.style.left=mx+'px'; tooltipEl.style.top=(my-4)+'px';
+    });
+    canvas.addEventListener('mouseleave', function(){ tooltipEl.style.opacity=0; dogTooltipEl.style.opacity=0; });
+    window.addEventListener('resize', nacrtaj);
+
+    function primijeniPodatke(podaci){
+      POSTOCI = (podaci.postotci || []).map(function(p){ return {godina:parseInt(p.godina,10), mjesec:parseInt(p.mjesec,10), postotak:parseFloat(p.postotak)}; });
+      DOGADJAJI = (podaci.dogadjaji || []).map(function(d){ return {datum: normDatum(d.datum), naziv: d.naziv}; });
+      var cijene = (podaci.cijene || []).slice().sort(function(a,b){ return parseD(a.datum)-parseD(b.datum); });
+      var mapKljuc = {dizel:'eurodizel', eurosuper:'eurosuper95', brent:'brent', wti:'wti'};
+      SERIJE.forEach(function(s){
+        var poDatumu = {};
+        (POVIJESNI_ANCHORI[s.key] || []).forEach(function(t){ poDatumu[t.datum] = t.v; });
+        cijene.forEach(function(row){
+          var v = row[mapKljuc[s.key]];
+          if (v === null || v === undefined || v === '') return;
+          poDatumu[normDatum(row.datum)] = parseFloat(v);
+        });
+        s.tocke = Object.keys(poDatumu).sort().map(function(d){ return {datum:d, v:poDatumu[d]}; });
+      });
+      izgradiLegendu();
+      azurirajSlajder_();
+      nacrtaj();
+      azurirajKucicu();
+    }
+
+    mountEl.querySelector('.gg-wrap').style.opacity = '.5';
+    dohvatiPodatke().then(function(podaci){
+      mountEl.querySelector('.gg-wrap').style.opacity = '';
+      primijeniPodatke(podaci || {});
+    }).catch(function(){
+      mountEl.querySelector('.gg-wrap').style.opacity = '';
+      izgradiLegendu();
+      nacrtaj();
+    });
+
+    izgradiLegendu();
+    azurirajSlajder_();
+    nacrtaj();
+    azurirajKucicu();
+    var intervalSat = setInterval(azurirajKucicu, 1000);
+    var intervalPuls = setInterval(function(){ if (prikaziDodatak) nacrtaj(); }, 60);
+
+    return {
+      osvjezi: function(){ dohvatiPodatke().then(function(p){ primijeniPodatke(p||{}); }); },
+      unisti: function(){ clearInterval(intervalSat); clearInterval(intervalPuls); }
+    };
+  }
+
+  // Ova stranica nema zajednički gasCall() helper (ostale InTime_* datoteke
+  // imaju ga, ova umjesto toga poziva fetch(GAS_WEB_APP_URL,...) izravno na
+  // svakom mjestu, npr. dohvatiGaleriju_ iznad) — pa je ovdje dodan mali
+  // helper isključivo za Gorivo graf, isti obrazac kao dohvatiGaleriju_.
+  function gorivoGasCall_(payload) {
+    return fetch(GAS_WEB_APP_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(payload)
+    }).then(function(res){ return res.json(); });
+  }
+
+  var gorivoNaslovnicaGrafInstanca_ = null;
+  function osiguirajGorivoGraf_() {
+    if (gorivoNaslovnicaGrafInstanca_) { return; }
+    var mount = document.getElementById('gorivo-graf-mount');
+    if (!mount) { return; }
+    gorivoNaslovnicaGrafInstanca_ = pokreniGorivoGraf(mount, {
+      dohvatiPodatke: function() { return gorivoGasCall_({ action: 'gorivoJavniPodaci' }); }
+    });
   }
 
   // Prikazuje/skriva pripadajuće tekstualno polje ovisno o tome je li u
