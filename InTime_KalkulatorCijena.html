@@ -704,6 +704,52 @@
   .live-fee-box-dual .live-fee-value{
     font-size:14.5px;
   }
+  /* Mali trendovi uz "Dodatak za gorivo" (25.9.2026., Sašin izričit
+     zahtjev — dnevna baza za dizel/Brent/WTI kao i u Gorivo grafu, mjesečna
+     za sam postotak dodatka) — samo informativno obavještava korisnika o
+     smjeru kretanja, ne mijenja automatski postotak. Podaci se preuzimaju s
+     admina (gorivoJavniPodaci), vidi ucitajZivDodatakNaGorivo_() na dnu
+     <script>-a. Red s chipovima je "sa strane, dolje" uz sâmo polje —
+     dizel/Brent/WTI su dnevni podaci (HAK/FRED), dodatak (mj.) uspoređuje
+     prošli i ovaj mjesec (isti postotak koji admin ručno unosi). */
+  .gorivo-trend-row{
+    display:flex;
+    flex-wrap:wrap;
+    gap:6px;
+    margin-top:8px;
+  }
+  .gorivo-trend-mini{
+    display:none;
+    align-items:center;
+    gap:4px;
+    padding:2px 8px;
+    border-radius:12px;
+    font-size:11px;
+    font-weight:700;
+    vertical-align:middle;
+    white-space:nowrap;
+  }
+  .gorivo-trend-mini.gore{ background:#fdecea; color:#c0392b; }
+  .gorivo-trend-mini.dolje{ background:#eafaf1; color:#1e8449; }
+  .gorivo-trend-mini.isto{ background:#eef6f5; color:var(--teal-dark); }
+  /* "dodatak" chip malo veći/deblji od ostala 4 — Sašin izričit zahtjev,
+     25.9.2026. ("dodatak na gorivo neka bude malo večim slovima") — on je
+     jedini koji stvarno utječe na izračun, ostali su samo informativni. */
+  .gorivo-trend-mini-veci{ font-size:13px; padding:3px 10px; }
+  .gorivo-test-badge{
+    display:none;
+    margin-left:8px;
+    padding:2px 8px;
+    border-radius:12px;
+    font-size:10px;
+    font-weight:800;
+    letter-spacing:.03em;
+    text-transform:uppercase;
+    background:#fff3cd;
+    color:#8a6300;
+    border:1px solid #f0c14b;
+    vertical-align:middle;
+  }
   .fee-box-red{
     background:#fdecea !important;
     border-color:#c0392b !important;
@@ -1274,13 +1320,14 @@
 
       <div class="chk gorivo-field">
         <div style="width:100%;">
-          <label for="dodatakGorivoPct">Dodatak za gorivo (%)</label>
+          <label for="dodatakGorivoPct">Dodatak za gorivo (%)<span class="gorivo-test-badge" id="gorivoTestBadge">TESTNI PRIKAZ</span></label>
           <span class="price-tag">Dodatak na gorivo: primjenjuje se na osnovnu cijenu usluge, uz pravo jednostrane korekcije iznosa od strane IN TIME. Visina dodatka na gorivo definira se svaki mjesec, u ovisnosti o maloprodajnoj cijeni goriva. Iznos istog možete provjeriti na <a href="https://www.in-time.hr" target="_blank" rel="noopener">www.in-time.hr</a>.</span>
           <input type="number" id="dodatakGorivoPct" min="0" step="0.01" value="21.50" style="margin-top:8px; max-width:120px;" disabled>
           <div class="live-fee-box" id="dodatakGorivoFeeBox">
             <span class="live-fee-label">Iznos dodatka:</span>
             <span class="live-fee-value" id="dodatakGorivoFeeValue">—</span>
           </div>
+          <div class="gorivo-trend-row" id="gorivoTrendRow"></div>
         </div>
       </div>
 
@@ -4008,6 +4055,156 @@ document.getElementById('resetObracunaBtn').addEventListener('click', function()
     location.reload();
   }
 });
+
+// ---------- Živi dodatak na gorivo + trend cijene dizela (25.9.2026.,
+// Sašin izričit zahtjev: "poveži dodatak na gorivo s dodatkom na gorivo u
+// administratoru...da kad se tamo promjeni automatski se mjenja i tu",
+// plus mali trend kretanja cijene dizela i test-pregled tipka u adminu).
+// #dodatakGorivoPct ostaje "disabled" (korisnik ga i dalje ne može ručno
+// mijenjati) — ovdje mu se samo automatski postavlja vrijednost s admina,
+// umjesto ranije trajno hardkodirane "21.50". Ako dohvat ne uspije (npr.
+// nema interneta, GAS privremeno nedostupan), ostaje zadana/zadnja
+// vrijednost upisana u HTML-u — kalkulator i dalje normalno radi.
+// Isti GAS_WEB_APP_URL kao i ostale InTime_* stranice (vidi
+// InTime_PismoNamjere.html, gorivoGasCall_ helper — isti obrazac ovdje).
+var GAS_WEB_APP_URL_GORIVO_ = "https://script.google.com/macros/s/AKfycbz73zkx72GhrDZ-t3CamF5wuz-9V7Uxe5z9IkFxHA8F5FBlrIlc7zMUd4_EHTILD9FTAw/exec";
+
+function gorivoGasCall_(payload){
+  return fetch(GAS_WEB_APP_URL_GORIVO_, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify(payload)
+  }).then(function(res){ return res.json(); });
+}
+
+// Ista logika kao aktivniPostotak() u pokreniGorivoGraf modulu
+// (InTime_Admin.html / InTime_PismoNamjere.html) — "trenutno važeći"
+// postotak je zadnji uneseni mjesec čiji je 1. u mjesecu <= danas.
+function gorivoAktivniPostotak_(postotci, datumMs){
+  var sortirano = (postotci || []).slice().sort(function(a, b){ return (a.godina * 100 + a.mjesec) - (b.godina * 100 + b.mjesec); });
+  var rez = null;
+  for(var i = 0; i < sortirano.length; i++){
+    var td = new Date(sortirano[i].godina, sortirano[i].mjesec - 1, 1).getTime();
+    if(td <= datumMs){ rez = sortirano[i]; } else { break; }
+  }
+  return rez;
+}
+
+// Mali, namjerno jednostavan trend — DNEVNA baza za dizel/Brent/WTI
+// (25.9.2026., Saša: "neka trend bude na dnevnoj bazi, jer cijenu dizela
+// dobivamo isto na dnevnoj bazi" — točno tako, gorivoDohvatiCijene/HAK-FRED
+// triger upisuje po jedan redak dnevno, vidi postaviTrigerZaGorivoCijene u
+// InTime_Code.gs; isti "dnevniTrend" princip kao u pokreniGorivoGraf
+// legendi u InTime_Admin.html/InTime_PismoNamjere.html). Uspoređuje zadnju
+// poznatu dnevnu vrijednost s vrijednosti iz dana PRIJE nje (bez obzira je
+// li ta dva dana uzastopna kalendarski). Ako postoji samo 1 dnevni zapis,
+// trend se još ne prikazuje (isto pravilo kao dnevni trend u grafu — treba
+// pričekati sljedeći dnevni dohvat). `poljeKljuc` je 'eurodizel'/'brent'/
+// 'wti' — ključ retka iz gorivoJavniPodaci().cijene.
+function gorivoIzracunajDnevniTrend_(cijene, poljeKljuc){
+  function parsirajDatum(s){
+    var m = String(s || '').match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})\.?$/);
+    if(!m){ return null; }
+    return new Date(parseInt(m[3], 10), parseInt(m[2], 10) - 1, parseInt(m[1], 10));
+  }
+  var sortirano = (cijene || [])
+    .map(function(r){ return { datum: parsirajDatum(r.datum), v: r[poljeKljuc] }; })
+    .filter(function(r){ return r.datum && r.v != null; })
+    .sort(function(a, b){ return a.datum - b.datum; });
+  if(sortirano.length < 2){ return null; }
+  var zadnji = sortirano[sortirano.length - 1];
+  var prethodni = sortirano[sortirano.length - 2];
+  return { zadnja: zadnji.v, prethodna: prethodni.v, delta: r2(zadnji.v - prethodni.v) };
+}
+
+// Trend SAMOG postotka dodatka na gorivo — MJESEČNA baza (Saša: "prošli
+// mjesec, ovaj mjesec...odnos"), isti princip kao "Trend naspram prošlog
+// mjeseca" u pokreniGorivoGraf (azurirajKucicu(): trenutno važeći mjesec
+// naspram mjeseca prije njega, po redoslijedu UNOSA, ne kalendarski).
+function gorivoIzracunajPostotakTrend_(postotci){
+  var sortirano = (postotci || []).slice().sort(function(a, b){ return (a.godina * 100 + a.mjesec) - (b.godina * 100 + b.mjesec); });
+  var aktivni = gorivoAktivniPostotak_(postotci, Date.now());
+  if(!aktivni){ return null; }
+  var idx = sortirano.indexOf(aktivni);
+  var prethodni = idx > 0 ? sortirano[idx - 1] : null;
+  if(!prethodni){ return null; }
+  return { zadnja: aktivni.postotak, prethodna: prethodni.postotak, delta: r2(aktivni.postotak - prethodni.postotak) };
+}
+
+// Gradi jedan mali chip (isti vizualni obrazac za sve — dizel/Brent/WTI/
+// dodatak) i vraća ga kao DOM element, spreman za appendChild u
+// #gorivoTrendRow. `trend` može biti null (npr. čeka se sutrašnji dnevni
+// dohvat, ili tek 1 mjesec unesen) — u tom slučaju vraća null (chip se
+// jednostavno ne prikazuje, bez praznog/dosadnog "—" reda).
+function gorivoIzgradiTrendChip_(trend, naziv, jedinica, decimale, naslov, dodatnaKlasa){
+  if(!trend){ return null; }
+  var smjer = 'isto', strelica = '–';
+  if(trend.delta > 0){ smjer = 'gore'; strelica = '▲'; }
+  else if(trend.delta < 0){ smjer = 'dolje'; strelica = '▼'; }
+  var el = document.createElement('span');
+  el.className = 'gorivo-trend-mini ' + smjer + (dodatnaKlasa ? ' ' + dodatnaKlasa : '');
+  el.style.display = 'inline-flex';
+  el.textContent = strelica + ' ' + naziv + ' ' + (trend.delta > 0 ? '+' : '') + trend.delta.toFixed(decimale) + jedinica;
+  el.title = naslov;
+  return el;
+}
+
+// 25.9.2026., Sašin izričit zahtjev: dodan i "obično gorivo" (Eurosuper95)
+// kao 4. dnevni trend uz dizel/Brent/WTI — isti obrazac kao ostala tri
+// (gorivoIzracunajDnevniTrend_ je generički, radi za bilo koji ključ iz
+// cijene retka). "Dodatak" chip (postotak, mjesečno) dobiva malo veći font
+// (.gorivo-trend-mini-veci) da se vizualno izdvoji kao najvažniji od pet —
+// on je jedini koji stvarno utječe na izračun cijene, ostali su samo
+// informativni pokazatelji tržišta.
+function gorivoPrikaziTrend_(trendovi){
+  var red = document.getElementById('gorivoTrendRow');
+  if(!red){ return; }
+  red.innerHTML = '';
+  var chipovi = [
+    gorivoIzgradiTrendChip_(trendovi.dizel, 'dizel', ' €/L', 2, 'Cijena eurodizela u Hrvatskoj, u odnosu na prethodni dan (dnevni podatak s HAK-a) — informativno.'),
+    gorivoIzgradiTrendChip_(trendovi.eurosuper, 'benzin', ' €/L', 2, 'Cijena Eurosuper95 (obično gorivo) u Hrvatskoj, u odnosu na prethodni dan (dnevni podatak s HAK-a) — informativno.'),
+    gorivoIzgradiTrendChip_(trendovi.brent, 'Brent', ' $', 2, 'Cijena nafte Brent, u odnosu na prethodni dan (dnevni podatak s FRED-a) — informativno.'),
+    gorivoIzgradiTrendChip_(trendovi.wti, 'WTI', ' $', 2, 'Cijena nafte WTI, u odnosu na prethodni dan (dnevni podatak s FRED-a) — informativno.'),
+    gorivoIzgradiTrendChip_(trendovi.postotak, 'dodatak', ' p.b.', 2, 'Postotak dodatka na gorivo, ovaj mjesec u odnosu na prethodni uneseni mjesec.', 'gorivo-trend-mini-veci')
+  ];
+  chipovi.forEach(function(chip){ if(chip){ red.appendChild(chip); } });
+}
+
+function ucitajZivDodatakNaGorivo_(){
+  gorivoGasCall_({ action: 'gorivoJavniPodaci' }).then(function(res){
+    if(!res || res.status !== 'ok'){ return; }
+    var input = document.getElementById('dodatakGorivoPct');
+    var testBadge = document.getElementById('gorivoTestBadge');
+    if(!input){ return; }
+    var noviPostotak = null;
+    if(res.testPregled && res.testPregled.postotak != null && isFinite(res.testPregled.postotak)){
+      noviPostotak = res.testPregled.postotak;
+      if(testBadge){ testBadge.style.display = 'inline-block'; }
+      var preostaloMs = res.testPregled.istice - Date.now();
+      if(preostaloMs > 0){
+        // Osvježi ponovno točno kad testni pregled istekne, da se
+        // kalkulator sam vrati na stvarni postotak (ne treba reload).
+        setTimeout(ucitajZivDodatakNaGorivo_, Math.min(preostaloMs + 1000, 6 * 60 * 1000));
+      }
+    } else {
+      if(testBadge){ testBadge.style.display = 'none'; }
+      var aktivni = gorivoAktivniPostotak_(res.postotci, Date.now());
+      if(aktivni && isFinite(aktivni.postotak)){ noviPostotak = aktivni.postotak; }
+    }
+    if(noviPostotak != null && isFinite(noviPostotak)){
+      input.value = noviPostotak;
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+    gorivoPrikaziTrend_({
+      dizel: gorivoIzracunajDnevniTrend_(res.cijene, 'eurodizel'),
+      eurosuper: gorivoIzracunajDnevniTrend_(res.cijene, 'eurosuper95'),
+      brent: gorivoIzracunajDnevniTrend_(res.cijene, 'brent'),
+      wti: gorivoIzracunajDnevniTrend_(res.cijene, 'wti'),
+      postotak: gorivoIzracunajPostotakTrend_(res.postotci)
+    });
+  }).catch(function(){ /* tiho — kalkulator i dalje radi sa zadanom vrijednosti upisanom u HTML-u */ });
+}
+ucitajZivDodatakNaGorivo_();
 </script>
 
 </body>

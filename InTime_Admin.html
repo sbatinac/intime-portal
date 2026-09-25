@@ -952,6 +952,11 @@
   .zone-arhiva-naziv{font-weight:700;font-size:13px;color:var(--graphite);}
   .zone-arhiva-meta{font-size:12px;color:var(--grey);margin-top:2px;}
   .zone-arhiva-vrati-btn{flex-shrink:0;}
+  /* Sakriveni događaj na grafu goriva (25.9.2026.) — isti prigušen izgled
+     kao skriveni kontakt u Imeniku (.entry-card.imenik-skriven), i ista
+     "SKRIVENO" značka (.imenik-hidden-badge, ponovno iskorištena ovdje). */
+  .zone-arhiva-item.gorivo-dog-skriven{opacity:.65;}
+  .gorivo-dog-select-wrap{flex-shrink:0;}
 
   /* Kartica "⛽ Gorivo" (25.9.2026.) — red za unos mjesečnog postotka; popis
      unosa ispod ponovno koristi .zone-arhiva-item (isti vizualni obrazac kao
@@ -4000,6 +4005,7 @@
   var gorivoEmailCache_ = { email: '', zakljucano: false };
   var gorivoDogadjajiCache_ = [];
   var gorivoGrafInstanca_ = null;
+  var gorivoTestIntervalId_ = null;
 
   function primijeniGorivoPostotci_(res) {
     if (res.status !== 'ok') { return; }
@@ -4028,7 +4034,16 @@
   function primijeniGorivoDogadjaje_(res) {
     if (res.status !== 'ok') { return; }
     gorivoDogadjajiCache_ = res.redovi || [];
-    if (activeTab === 'Gorivo') { renderEntries(); }
+    // NE zvati renderEntries() ovdje (25.9.2026., ispravak) — to bi iznova
+    // izgradilo CIJELI Gorivo panel (graf + sve gumbe + status poruke), pa
+    // bi npr. poruka "Dodano: X" iz gumba iznad nestala prije nego je
+    // vidljiva. Umjesto toga, osvježi SAMO listu događaja in-place
+    // (#gorivo-dogadjaji-lista je jedinstven id na stranici, pa
+    // document.querySelector unutar renderGorivoDogadjajiLista_ pogađa isti
+    // element bez potrebe za punim 'wrap'-om).
+    if (activeTab === 'Gorivo' && document.getElementById('gorivo-dogadjaji-lista')) {
+      renderGorivoDogadjajiLista_(document);
+    }
   }
   function loadGorivoDogadjaje_() {
     gasCall({ action: 'gorivoDohvatiDogadjaje', token: adminToken }).then(function(res) {
@@ -4045,9 +4060,14 @@
       gasCall({ action: 'gorivoDohvatiDogadjaje', token: adminToken }),
       gasCall({ action: 'gorivoDohvatiCijene', token: adminToken })
     ]).then(function(rez) {
+      var sviDogadjaji_ = (rez[1].status === 'ok' ? rez[1].redovi : []) || [];
       return {
         postotci: (rez[0].status === 'ok' ? rez[0].redovi : []) || [],
-        dogadjaji: (rez[1].status === 'ok' ? rez[1].redovi : []) || [],
+        // Graf (i u adminu i na naslovnici) prikazuje SAMO vidljive događaje
+        // (25.9.2026., Sašin izričit zahtjev) — lista za uređivanje ispod
+        // grafa (renderGorivoDogadjajiLista_) i dalje prikazuje SVE, sa
+        // značkom "SKRIVENO", preko gorivoDogadjajiCache_ (nefiltrirano).
+        dogadjaji: sviDogadjaji_.filter(function(d) { return d.vidljivo !== false; }),
         cijene: (rez[2].status === 'ok' ? rez[2].redovi : []) || []
       };
     });
@@ -4070,8 +4090,21 @@
       '</div>' +
       '<span class="faq-admin-status" id="gorivo-postotak-status"></span>' +
       '<div id="gorivo-postotci-lista"></div>' +
+      '<h3 class="zone-arhiva-naslov">🧪 Test-pregled dodatka na kalkulatoru</h3>' +
+      '<p class="faq-admin-hint">Privremeno prikaži ODABRANI postotak na živom kalkulatoru cijena (polje "Dodatak za gorivo"), bez da stvarno mijenjaš postotak za tekući mjesec — korisno da provjeriš kako izgleda prije nego stvarno upišeš. Test se sam gasi nakon 5 minuta ako ga prije ne ugasiš ručno; dok je aktivan, na kalkulatoru se uz polje vidi znak "TESTNI PRIKAZ".</p>' +
+      '<div class="gorivo-unos-red">' +
+        '<input type="number" id="gorivo-test-postotak-input" placeholder="npr. 20" step="0.01" min="0" max="100" style="max-width:120px;">' +
+        '<button type="button" class="btn btn-small" id="gorivo-test-pregled-btn">🧪 Testiraj na kalkulatoru</button>' +
+        '<button type="button" class="btn btn-outline btn-small" id="gorivo-test-ugasi-btn" style="display:none;">⏹ Ugasi test</button>' +
+      '</div>' +
+      '<span class="faq-admin-status" id="gorivo-test-pregled-status"></span>' +
       '<h3 class="zone-arhiva-naslov">🚩 Događaji (zastavice na grafu)</h3>' +
-      '<p class="faq-admin-hint">Kratke referentne točke koje se prikazuju kao crvene zastavice na grafu iznad (npr. "Brent na vrhuncu krize") — korisno za obilježiti trenutke koji objašnjavaju nagli skok/pad cijene.</p>' +
+      '<p class="faq-admin-hint">Kratke referentne točke koje se prikazuju kao crvene zastavice na grafu iznad (npr. "Brent na vrhuncu krize") — korisno za obilježiti trenutke koji objašnjavaju nagli skok/pad cijene. Svaki događaj se checkboxom može označiti i skupno sakriti/otkriti, ili pojedinačno gumbom "Sakrij"/"Otkrij" — sakriveni događaj nestaje s grafa ODMAH, i u ovom adminu i na naslovnici (ništa se ne briše, može se kasnije opet otkriti).</p>' +
+      '<div class="faq-admin-card-actions">' +
+        '<button type="button" class="btn btn-outline btn-small" id="gorivo-dogadjaji-ucitaj-zadane-btn">📋 Učitaj početne događaje (Iran kriza 2026.)</button>' +
+        '<button type="button" class="btn btn-outline btn-small" id="gorivo-dogadjaji-sakrij-sve-btn">🙈 Sakrij sve</button>' +
+        '<span class="faq-admin-status" id="gorivo-dogadjaji-akcije-status"></span>' +
+      '</div>' +
       '<div class="gorivo-unos-red">' +
         '<input type="date" id="gorivo-dogadjaj-datum-input">' +
         '<input type="text" id="gorivo-dogadjaj-naziv-input" placeholder="Naziv događaja" style="flex:1;">' +
@@ -4114,6 +4147,81 @@
     wrap.querySelector('#gorivo-spremi-btn').addEventListener('click', function() {
       gorivoSpremiPostotakKlik_(wrap);
     });
+
+    // "🧪 Test-pregled dodatka na kalkulatoru" (25.9.2026., Sašin izričit
+    // zahtjev) — vidi gorivoPostaviTestPregled_/gorivoUgasiTestPregled_ u
+    // InTime_Code.gs. Odbrojavanje se osvježava svake sekunde lokalno (bez
+    // dodatnih poziva poslužitelju) sve dok test ne istekne (5 min) ili dok
+    // admin ne klikne "Ugasi test".
+    (function() {
+      function osvjeziTestOdbrojavanje(isticeMs) {
+        var statusEl = wrap.querySelector('#gorivo-test-pregled-status');
+        var ugasiBtn = wrap.querySelector('#gorivo-test-ugasi-btn');
+        if (gorivoTestIntervalId_) { clearInterval(gorivoTestIntervalId_); gorivoTestIntervalId_ = null; }
+        function azuriraj() {
+          var preostaloSek = Math.round((isticeMs - Date.now()) / 1000);
+          if (preostaloSek <= 0) {
+            statusEl.textContent = 'Test-pregled je istekao — kalkulator opet prikazuje stvarni postotak.';
+            statusEl.className = 'faq-admin-status';
+            ugasiBtn.style.display = 'none';
+            clearInterval(gorivoTestIntervalId_);
+            gorivoTestIntervalId_ = null;
+            return;
+          }
+          var min = Math.floor(preostaloSek / 60), sek = preostaloSek % 60;
+          statusEl.textContent = '🧪 Test-pregled aktivan na kalkulatoru — ističe za ' + min + ':' + (sek < 10 ? '0' : '') + sek + '.';
+          statusEl.className = 'faq-admin-status';
+        }
+        ugasiBtn.style.display = '';
+        azuriraj();
+        gorivoTestIntervalId_ = setInterval(azuriraj, 1000);
+      }
+
+      wrap.querySelector('#gorivo-test-pregled-btn').addEventListener('click', function() {
+        var statusEl = wrap.querySelector('#gorivo-test-pregled-status');
+        var val = wrap.querySelector('#gorivo-test-postotak-input').value;
+        if (val === '' || isNaN(parseFloat(val))) {
+          statusEl.textContent = 'Upišite postotak (npr. 20).';
+          statusEl.className = 'faq-admin-status error';
+          return;
+        }
+        gasCall({ action: 'gorivoPostaviTestPregled', token: adminToken, postotak: val }).then(function(res) {
+          if (handleAuthError(res)) { return; }
+          if (res.status !== 'ok') { statusEl.textContent = res.message || 'Nije uspjelo.'; statusEl.className = 'faq-admin-status error'; return; }
+          osvjeziTestOdbrojavanje(res.istice);
+        }).catch(function() {
+          statusEl.textContent = 'Greška u komunikaciji s poslužiteljem.';
+          statusEl.className = 'faq-admin-status error';
+        });
+      });
+
+      wrap.querySelector('#gorivo-test-ugasi-btn').addEventListener('click', function() {
+        gasCall({ action: 'gorivoUgasiTestPregled', token: adminToken }).then(function(res) {
+          if (handleAuthError(res)) { return; }
+          var statusEl = wrap.querySelector('#gorivo-test-pregled-status');
+          var ugasiBtn = wrap.querySelector('#gorivo-test-ugasi-btn');
+          if (gorivoTestIntervalId_) { clearInterval(gorivoTestIntervalId_); gorivoTestIntervalId_ = null; }
+          statusEl.textContent = res.status === 'ok' ? 'Test-pregled ugašen — kalkulator opet prikazuje stvarni postotak.' : (res.message || 'Nije uspjelo.');
+          statusEl.className = res.status === 'ok' ? 'faq-admin-status' : 'faq-admin-status error';
+          ugasiBtn.style.display = 'none';
+        }).catch(function() {
+          var statusEl = wrap.querySelector('#gorivo-test-pregled-status');
+          statusEl.textContent = 'Greška u komunikaciji s poslužiteljem.';
+          statusEl.className = 'faq-admin-status error';
+        });
+      });
+
+      // Ako je test-pregled već aktivan (npr. admin je osvježio stranicu
+      // dok je test trajao), pri otvaranju taba odmah pokaži odbrojavanje —
+      // koristi isti javni gorivoJavniPodaci() (bez tokena) kojeg čita i
+      // kalkulator.
+      gasCall({ action: 'gorivoJavniPodaci' }).then(function(res) {
+        if (res && res.status === 'ok' && res.testPregled && res.testPregled.istice > Date.now()) {
+          wrap.querySelector('#gorivo-test-postotak-input').value = res.testPregled.postotak;
+          osvjeziTestOdbrojavanje(res.testPregled.istice);
+        }
+      }).catch(function() { /* tiho */ });
+    })();
 
     var emailInput = wrap.querySelector('#gorivo-email-input');
     var potvrdiBtn = wrap.querySelector('#gorivo-email-potvrdi-btn');
@@ -4223,11 +4331,50 @@
       gorivoSpremiDogadjajKlik_(wrap);
     });
 
+    // "📋 Učitaj početne događaje" + "🙈 Sakrij sve" (25.9.2026., Sašin
+    // izričit zahtjev) — vidi gorivoUcitajZadaneDogadjaje()/
+    // gorivoSakrijSveDogadjaje() u InTime_Code.gs za punu napomenu.
+    wrap.querySelector('#gorivo-dogadjaji-ucitaj-zadane-btn').addEventListener('click', function() {
+      if (!confirm('Učitati 11 unaprijed pripremljenih događaja (kriza s cijenama goriva 2026.)? Postojeći događaji ostaju netaknuti — duplikati (isti datum i naziv) se automatski preskaču.')) { return; }
+      var statusEl = wrap.querySelector('#gorivo-dogadjaji-akcije-status');
+      statusEl.textContent = 'Učitavanje...';
+      statusEl.className = 'faq-admin-status';
+      gasCall({ action: 'gorivoUcitajZadaneDogadjaje', token: adminToken }).then(function(res) {
+        if (handleAuthError(res)) { return; }
+        if (res.status !== 'ok') { statusEl.textContent = res.message || 'Učitavanje nije uspjelo.'; statusEl.className = 'faq-admin-status error'; return; }
+        statusEl.textContent = 'Dodano: ' + res.dodano + (res.preskoceno ? ' · preskočeno (već postoje): ' + res.preskoceno : '') + '.';
+        statusEl.className = 'faq-admin-status';
+        loadGorivoDogadjaje_();
+        if (gorivoGrafInstanca_) { gorivoGrafInstanca_.osvjezi(); }
+      }).catch(function() {
+        statusEl.textContent = 'Greška u komunikaciji s poslužiteljem.';
+        statusEl.className = 'faq-admin-status error';
+      });
+    });
+    wrap.querySelector('#gorivo-dogadjaji-sakrij-sve-btn').addEventListener('click', function() {
+      if (!confirm('Sakriti SVE događaje s grafa (i u ovom adminu i na naslovnici)? Ništa se ne briše — kasnije ih možeš pojedinačno ili skupno ponovno otkriti.')) { return; }
+      var statusEl = wrap.querySelector('#gorivo-dogadjaji-akcije-status');
+      statusEl.textContent = 'Sakrivanje...';
+      statusEl.className = 'faq-admin-status';
+      gasCall({ action: 'gorivoSakrijSveDogadjaje', token: adminToken }).then(function(res) {
+        if (handleAuthError(res)) { return; }
+        if (res.status !== 'ok') { statusEl.textContent = res.message || 'Nije uspjelo.'; statusEl.className = 'faq-admin-status error'; return; }
+        statusEl.textContent = 'Skriveno događaja: ' + res.primijenjeno + '.';
+        statusEl.className = 'faq-admin-status';
+        loadGorivoDogadjaje_();
+        if (gorivoGrafInstanca_) { gorivoGrafInstanca_.osvjezi(); }
+      }).catch(function() {
+        statusEl.textContent = 'Greška u komunikaciji s poslužiteljem.';
+        statusEl.className = 'faq-admin-status error';
+      });
+    });
+
     // Graf se ponovno montira svaki put kad se kartica ponovno iscrta
     // (renderEntries() zove buildGorivoPanel_() iznova pri svakom osvježavanju
     // taba) — prije montiranja novog, uništi prethodnu instancu (interval sat
     // + puls) da se ne gomilaju u pozadini.
     if (gorivoGrafInstanca_) { gorivoGrafInstanca_.unisti(); gorivoGrafInstanca_ = null; }
+    if (gorivoTestIntervalId_) { clearInterval(gorivoTestIntervalId_); gorivoTestIntervalId_ = null; }
     gorivoGrafInstanca_ = pokreniGorivoGraf(wrap.querySelector('#gorivo-graf-mount'), {
       dohvatiPodatke: gorivoDohvatiPodatkeZaGraf_
     });
@@ -4301,24 +4448,86 @@
       container.appendChild(hint);
       return;
     }
+
+    // Traka masovnih akcija (25.9.2026., Sašin izričit zahtjev: checkbox
+    // pored svakog događaja + "Sakrij odabrano"/"Otkrij odabrano") —
+    // LOKALNA, samostalna (namjerno NE dijeli globalni selectedRowIndexes/
+    // #bulk-actions-bar mehanizam gore u datoteci, koji je vezan uz glavne
+    // tabove Zainteresirani/Ponude/Imenik/Ankete; ova je ugniježđena lista
+    // unutar Gorivo taba pa ima vlastito, jednostavnije stanje). Odabir se
+    // prirodno resetira pri svakom ponovnom iscrtavanju liste — isto kao i
+    // drugdje u adminu, nakon svake akcije podaci se ponovno učitaju pa se
+    // cijela lista ionako iznova gradi.
+    var odabrani_ = {};
+    var bulkBar = document.createElement('div');
+    bulkBar.className = 'bulk-actions-bar';
+    bulkBar.hidden = true;
+    bulkBar.innerHTML =
+      '<span><strong class="gorivo-dog-bulk-count">0</strong> odabrano</span>' +
+      '<div class="bulk-actions-buttons">' +
+        '<button type="button" class="btn btn-outline btn-small gorivo-dog-bulk-otkrij-btn">👁 Otkrij odabrano</button>' +
+        '<button type="button" class="btn btn-outline btn-small gorivo-dog-bulk-sakrij-btn">🙈 Sakrij odabrano</button>' +
+      '</div>';
+    container.appendChild(bulkBar);
+
+    function azurirajBulkBar_() {
+      var brojOdabranih = Object.keys(odabrani_).length;
+      bulkBar.hidden = brojOdabranih === 0;
+      bulkBar.querySelector('.gorivo-dog-bulk-count').textContent = brojOdabranih;
+    }
+
+    function primijeniVidljivostOdabranih_(vidljivo) {
+      var rowIndexes = Object.keys(odabrani_).map(function(s) { return parseInt(s, 10); });
+      if (!rowIndexes.length) { return; }
+      gasCall({ action: 'gorivoPostaviVidljivostDogadjaja', token: adminToken, rowIndexes: rowIndexes, vidljivo: vidljivo }).then(function(res) {
+        if (handleAuthError(res)) { return; }
+        if (res.status !== 'ok') { alert(res.message || 'Nije uspjelo.'); return; }
+        loadGorivoDogadjaje_();
+        if (gorivoGrafInstanca_) { gorivoGrafInstanca_.osvjezi(); }
+      }).catch(function() { alert('Greška u komunikaciji s poslužiteljem.'); });
+    }
+
+    bulkBar.querySelector('.gorivo-dog-bulk-otkrij-btn').addEventListener('click', function() { primijeniVidljivostOdabranih_(true); });
+    bulkBar.querySelector('.gorivo-dog-bulk-sakrij-btn').addEventListener('click', function() { primijeniVidljivostOdabranih_(false); });
+
     var sortirano = gorivoDogadjajiCache_.slice().sort(function(a, b) { return a.datum < b.datum ? 1 : (a.datum > b.datum ? -1 : 0); });
     sortirano.forEach(function(r) {
       var row = document.createElement('div');
-      row.className = 'zone-arhiva-item';
+      row.className = 'zone-arhiva-item' + (r.vidljivo === false ? ' gorivo-dog-skriven' : '');
       var datumPrikaz = '';
       try { datumPrikaz = new Date(r.datum + 'T00:00:00').toLocaleDateString('hr-HR'); } catch (eDatum) { datumPrikaz = r.datum; }
+      var skrivenoBadge = r.vidljivo === false ? '<span class="imenik-hidden-badge">SKRIVENO</span>' : '';
       row.innerHTML =
-        '<div>' +
-          '<div class="zone-arhiva-naziv">' + esc(datumPrikaz) + ' — ' + esc(r.naziv) + '</div>' +
+        '<div class="entry-select-wrap gorivo-dog-select-wrap"><input type="checkbox" class="gorivo-dog-select-cb"></div>' +
+        '<div style="flex:1;">' +
+          '<div class="zone-arhiva-naziv">' + esc(datumPrikaz) + ' — ' + esc(r.naziv) + skrivenoBadge + '</div>' +
         '</div>' +
+        '<button type="button" class="btn btn-outline btn-small gorivo-dog-toggle-btn">' + (r.vidljivo === false ? '👁 Otkrij' : '🙈 Sakrij') + '</button>' +
         '<button type="button" class="btn btn-outline btn-small zone-arhiva-vrati-btn gorivo-dogadjaj-obrisi-btn">Obriši</button>';
+
+      row.querySelector('.gorivo-dog-select-cb').addEventListener('change', function(ev) {
+        if (ev.target.checked) { odabrani_[r.rowIndex] = true; } else { delete odabrani_[r.rowIndex]; }
+        azurirajBulkBar_();
+      });
+
+      row.querySelector('.gorivo-dog-toggle-btn').addEventListener('click', function() {
+        var noviVidljivo = r.vidljivo === false;
+        gasCall({ action: 'gorivoPostaviVidljivostDogadjaja', token: adminToken, rowIndexes: [r.rowIndex], vidljivo: noviVidljivo }).then(function(res) {
+          if (handleAuthError(res)) { return; }
+          if (res.status !== 'ok') { alert(res.message || 'Nije uspjelo.'); return; }
+          loadGorivoDogadjaje_();
+          if (gorivoGrafInstanca_) { gorivoGrafInstanca_.osvjezi(); }
+        }).catch(function() { alert('Greška u komunikaciji s poslužiteljem.'); });
+      });
+
       row.querySelector('.gorivo-dogadjaj-obrisi-btn').addEventListener('click', function() {
         if (!confirm('Obrisati događaj "' + r.naziv + '"?')) { return; }
         gasCall({ action: 'gorivoObrisiDogadjaj', token: adminToken, rowIndex: r.rowIndex }).then(function(res) {
           if (handleAuthError(res)) { return; }
-          if (res.status === 'ok') { loadGorivoDogadjaje_(); } else { alert(res.message || 'Brisanje nije uspjelo.'); }
+          if (res.status === 'ok') { loadGorivoDogadjaje_(); if (gorivoGrafInstanca_) { gorivoGrafInstanca_.osvjezi(); } } else { alert(res.message || 'Brisanje nije uspjelo.'); }
         }).catch(function() { alert('Greška u komunikaciji s poslužiteljem.'); });
       });
+
       container.appendChild(row);
     });
   }
@@ -5675,10 +5884,10 @@
         '<div><label>Interna In Time šifra ponude (INTRIX)</label>' +
           '<div class="af-sifra-red">' +
             '<input type="text" class="af-sifra-ponude" placeholder="npr. šifra ponude iz INTRIX-a" value="' + esc(fieldVal(entry, 'Šifra ponude (admin)')) + '"' + (fieldVal(entry, 'Šifra ponude (admin)') ? ' readonly' : '') + '>' +
-            '<button type="button" class="af-sifra-btn af-sifra-potvrdi-btn"' + (fieldVal(entry, 'Šifra ponude (admin)') ? ' style="display:none"' : '') + '>✓ Potvrdi</button>' +
-            '<button type="button" class="af-sifra-btn af-sifra-promijeni-btn"' + (fieldVal(entry, 'Šifra ponude (admin)') ? '' : ' style="display:none"') + '>✎ Promijeni</button>' +
+            '<button type="button" class="af-sifra-btn af-sifra-potvrdi-btn af-intrix-potvrdi-btn"' + (fieldVal(entry, 'Šifra ponude (admin)') ? ' style="display:none"' : '') + '>✓ Potvrdi</button>' +
+            '<button type="button" class="af-sifra-btn af-sifra-promijeni-btn af-intrix-promijeni-btn"' + (fieldVal(entry, 'Šifra ponude (admin)') ? '' : ' style="display:none"') + '>✎ Promijeni</button>' +
           '</div>' +
-          '<p class="af-sifra-status"></p>' +
+          '<p class="af-sifra-status af-intrix-status"></p>' +
           // Sašin izričit zahtjev (20.9.2026., dvadeset i osmi krug): ručni
           // "-IZMJENA" podsjetnik (dvadeset i sedmi krug) zamijenjen
           // automatskim dodatkom "-P{N}" u predmetu/tekstu maila (vidi
@@ -6441,10 +6650,20 @@
     // markup gore (buildAdminFieldsBlock, blok "Interna In Time šifra
     // ponude"). Zaseban, mali gasCall (samo ovo jedno polje) — ne dira ni ne
     // čeka veliki "Spremi" obrazac iznad.
+    // ISPRAVAK (25.9.2026., Sašin bug report "kad kliknem na potvrdi on ne
+    // potvrđuje"): .af-sifra-potvrdi-btn/.af-sifra-promijeni-btn/
+    // .af-sifra-status su OPĆENITE CSS klase koje unutar ISTOG wrap-a dijele
+    // i "Nadležna poslovnica" (af-poslovnica-*) i TM broj (af-tm-*) i sve
+    // Online Booking gumbe (af-ob-polje-*) — bare wrap.querySelector(...) je
+    // hvatao PRVI takav element u DOM-u (poslovnicu, jer je renderirana
+    // prije INTRIX bloka), pa se listener kačio na TUĐI (skriveni) gumb dok
+    // je vidljivi INTRIX gumb ostajao bez ijednog handlera. Sad koristi
+    // vlastite, jedinstvene af-intrix-* klase (isti obrazac kao kod
+    // poslovnice/TM/OB gore).
     var sifraInput = wrap.querySelector('.af-sifra-ponude');
-    var sifraPotvrdiBtn = wrap.querySelector('.af-sifra-potvrdi-btn');
-    var sifraPromijeniBtn = wrap.querySelector('.af-sifra-promijeni-btn');
-    var sifraStatusEl = wrap.querySelector('.af-sifra-status');
+    var sifraPotvrdiBtn = wrap.querySelector('.af-intrix-potvrdi-btn');
+    var sifraPromijeniBtn = wrap.querySelector('.af-intrix-promijeni-btn');
+    var sifraStatusEl = wrap.querySelector('.af-intrix-status');
     // Sašin izričit zahtjev (21.9.2026.): INTRIX šifra ponude ide SAMO
     // velikim slovima — pretvara se automatski dok admin tipka (a ne tek
     // kod potvrde), tako da i sam upisani tekst u polju odmah izgleda kako
