@@ -3598,7 +3598,8 @@
     rasponGrupaEl.innerHTML =
       '<button type="button" class="gg-btn aktivan" data-raspon="godina">Cijela ' + GODINA_TEKUCA + '.</button>' +
       '<button type="button" class="gg-btn" data-raspon="6m">Zadnjih 6 mjeseci</button>' +
-      '<button type="button" class="gg-btn" data-raspon="3m">Zadnja 3 mjeseca</button>';
+      '<button type="button" class="gg-btn" data-raspon="3m">Zadnja 3 mjeseca</button>' +
+      '<button type="button" class="gg-btn" data-raspon="30d">Zadnjih 30 dana</button>';
 
     var SERIJE = [
       { key:'dizel', label:'Eurodizel', bojaVar:'var(--gg-boja-dizel)', bojaHex:'#131313', os:'eur', jedinica:'€/L', tocke:[] },
@@ -3674,6 +3675,7 @@
 
     var DAN_MS = 1000*3600*24;
     function sirinaProzoraDana(){
+      if (raspon==='30d') return 30;
       if (raspon==='3m') return 92;
       if (raspon==='6m') return 183;
       return 366;

@@ -913,9 +913,9 @@
   .faq-admin-card h3{margin:0 0 12px;font-size:14px;color:var(--purple-dark);}
   .faq-admin-card label{display:block;font-size:12px;font-weight:700;color:var(--graphite);margin:10px 0 4px;}
   .faq-admin-card label:first-of-type{margin-top:0;}
-  .faq-admin-card input[type=text], .faq-admin-card input[type=number], .faq-admin-card textarea{
+  .faq-admin-card input[type=text], .faq-admin-card input[type=number], .faq-admin-card textarea, .faq-admin-card select{
     width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:6px;
-    font-size:13px;font-family:inherit;box-sizing:border-box;
+    font-size:13px;font-family:inherit;box-sizing:border-box;background:#fff;
   }
   .faq-admin-card textarea{min-height:80px;resize:vertical;}
   .faq-admin-media-row{display:flex;flex-wrap:wrap;gap:14px;margin-top:6px;}
@@ -981,6 +981,26 @@
   .lc-osobe-sekcija{background:#fbfcfc;border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin-bottom:18px;}
   .lc-osobe-sekcija h3{margin-top:0;}
   .lc-broj-dodjela{font-size:11px;color:var(--grey);margin-left:6px;font-weight:400;}
+  /* Pod-kartice "👤 Osobe" / "🏭 Centri i servisi" (26.9.2026., Sašin
+     izričit zahtjev) — isti vizualni obrazac kao glavni .tabs/.tab-btn
+     gore, samo jedna razina niže (unutar kartice "Logistički centri i
+     servisi"). */
+  .lc-podtabs{display:flex;gap:6px;margin-bottom:16px;border-bottom:2px solid var(--line);}
+  .lc-podtab-btn{
+    padding:8px 14px;background:none;border:none;border-bottom:2px solid transparent;
+    margin-bottom:-2px;font-size:13px;font-weight:600;color:var(--grey);cursor:pointer;
+  }
+  .lc-podtab-btn.active{color:var(--purple-dark);border-bottom-color:var(--purple);}
+  /* Zatvorene/otvorene kartice centara i servisa (26.9.2026., Sašin
+     izričit zahtjev — "neka kartice budu zatvorene dok se ne klikne").
+     .lc-centar-detalji nosi SVE uređivo polje i akcije, skriveno dok
+     .lc-centar-card nema klasu "expanded" (dodaje se klikom na
+     .lc-centar-head, ili odmah kod "+ Novi centar / servis"). */
+  .lc-centar-head{display:flex;justify-content:space-between;align-items:center;gap:10px;cursor:pointer;}
+  .lc-centar-head .chevron{color:var(--grey);font-size:13px;flex-shrink:0;transition:transform .15s;}
+  .lc-centar-card.expanded .lc-centar-head .chevron{transform:rotate(180deg);}
+  .lc-centar-detalji{display:none;}
+  .lc-centar-card.expanded .lc-centar-detalji{display:block;margin-top:14px;}
   .zone-admin-status-line{font-size:13px;color:var(--graphite);background:#f5f7f8;border:1px solid var(--line);border-radius:8px;padding:10px 12px;margin-bottom:6px;}
   .zone-arhiva-naslov{margin:22px 0 4px;font-size:15px;}
   .zone-arhiva-item{
@@ -3549,6 +3569,10 @@
   // Izmjena osobe (npr. novi telefon) u odjeljku "👤 Osobe" ispod odmah
   // vrijedi svugdje gdje je ta osoba dodijeljena, bez ručnog ponavljanja.
   var logistickiOsobeCache_ = null; // null = još nedohvaćeno; niz nakon prvog dohvata
+  // Koja je od dvije pod-kartice trenutno odabrana ("Osobe" ili "Centri") —
+  // vidi buildLogistickiCentriPanel_ niže. Modul-varijabla (ne resetira se
+  // renderiranjem) da odabir preživi Spremi/Obriši osvježavanja panela.
+  var logistickiPodTab_ = 'Centri';
 
   function logistickiKontaktRedHtml_(k) {
     k = k || {};
@@ -3573,22 +3597,42 @@
     });
   }
 
+  // "Vrsta" centra/servisa (26.9.2026., Sašin izričit zahtjev — zatvorena
+  // kartica mora pisati npr. "OSIJEK - LOGISTIČKI CENTAR" ili "DUBROVNIK -
+  // VANJSKI IZVRŠITELJI"). Treća vrijednost "servis" pokriva funkcionalne
+  // servise/odjele (Računovodstvo i sl.) koji nisu ni jedno ni drugo.
+  var LOGISTICKI_VRSTA_LABELE_ = { centar: 'Logistički centar', vanjski: 'Vanjski izvršitelji', servis: 'Servis / odjel' };
+  var LOGISTICKI_VRSTA_NASLOV_ = { centar: 'LOGISTIČKI CENTAR', vanjski: 'VANJSKI IZVRŠITELJI', servis: 'SERVIS' };
+
   function buildLogistickiCentarCard_(centar) {
-    centar = centar || { rowIndex: 0, grad: '', adresa: '', telefon: '', email: '', pokriva: [], kontakti: [] };
+    centar = centar || { rowIndex: 0, grad: '', adresa: '', telefon: '', email: '', vrsta: 'centar', pokriva: [], kontakti: [] };
     var wrap = document.createElement('div');
-    wrap.className = 'faq-admin-card lc-centar-card';
     var jeNovi = !centar.rowIndex;
+    wrap.className = 'faq-admin-card lc-centar-card' + (jeNovi ? ' expanded' : '');
+    var vrsta = centar.vrsta || 'centar';
+    var naslovZatvoren = jeNovi
+      ? 'Novi centar / servis'
+      : esc((centar.grad || '(bez naziva)').toUpperCase()) + ' - ' + (LOGISTICKI_VRSTA_NASLOV_[vrsta] || LOGISTICKI_VRSTA_NASLOV_.centar);
     wrap.innerHTML =
-      '<h3>' + (jeNovi ? 'Novi centar / servis' : esc(centar.grad || '(bez naziva)')) + '</h3>' +
+      '<div class="lc-centar-head">' +
+        '<h3 style="margin:0;">' + naslovZatvoren + '</h3>' +
+        '<span class="chevron">▾</span>' +
+      '</div>' +
+      '<div class="lc-centar-detalji">' +
       '<div class="centar-grid-2">' +
         '<div><label>Naziv centra ili servisa</label><input type="text" class="lc-grad" placeholder="npr. Rijeka, Split, Računovodstvo, Knjiženja, Računi, Ispravak računa…" value="' + esc(centar.grad || '') + '"></div>' +
+        '<div><label>Vrsta</label><select class="lc-vrsta">' +
+          '<option value="centar"' + (vrsta === 'centar' ? ' selected' : '') + '>Logistički centar</option>' +
+          '<option value="vanjski"' + (vrsta === 'vanjski' ? ' selected' : '') + '>Vanjski izvršitelji</option>' +
+          '<option value="servis"' + (vrsta === 'servis' ? ' selected' : '') + '>Servis / odjel</option>' +
+        '</select></div>' +
         '<div><label>Adresa</label><input type="text" class="lc-adresa" value="' + esc(centar.adresa || '') + '"></div>' +
         '<div><label>Telefon</label><input type="text" class="lc-telefon" value="' + esc(centar.telefon || '') + '"></div>' +
         '<div><label>Email (opći, za slanje)</label><input type="text" class="lc-email" value="' + esc(centar.email || '') + '"></div>' +
       '</div>' +
       '<label>Pokriva dodatne gradove (odvojeno zarezom — samo za logističke centre koji pokrivaju šire područje; za servise/odjele ostavite prazno)</label>' +
       '<input type="text" class="lc-pokriva" value="' + esc((centar.pokriva || []).join(', ')) + '">' +
-      '<div class="centar-kontakti-naslov">Kontakt osobe (iz zajedničke baze "👤 Osobe" gore)</div>' +
+      '<div class="centar-kontakti-naslov">Kontakt osobe (iz zajedničke baze "👤 Osobe")</div>' +
       '<div class="lc-kontakti-lista"></div>' +
       '<div class="lc-dodaj-osobu-red">' +
         '<select class="lc-osoba-select"></select>' +
@@ -3619,7 +3663,11 @@
           (jeNovi ? '' : '<button type="button" class="btn btn-danger btn-small lc-delete-btn">Obriši centar</button> ') +
           '<button type="button" class="btn btn-small lc-save-btn">Spremi</button>' +
         '</div>' +
+      '</div>' +
       '</div>';
+    wrap.querySelector('.lc-centar-head').addEventListener('click', function() {
+      wrap.classList.toggle('expanded');
+    });
     var kontaktiLista = wrap.querySelector('.lc-kontakti-lista');
     var select = wrap.querySelector('.lc-osoba-select');
     var funkcijaInput = wrap.querySelector('.lc-osoba-funkcija');
@@ -3740,6 +3788,7 @@
     var podaci = {
       rowIndex: rowIndex || undefined,
       grad: grad,
+      vrsta: cardEl.querySelector('.lc-vrsta').value,
       adresa: cardEl.querySelector('.lc-adresa').value.trim(),
       telefon: cardEl.querySelector('.lc-telefon').value.trim(),
       email: cardEl.querySelector('.lc-email').value.trim(),
@@ -3943,13 +3992,27 @@
       if (logistickiCentriCache_ === null) { loadLogistickiCentri_(false); }
       return outer;
     }
-    outer.appendChild(buildLogistickiOsobeSekcija_());
+    // Pod-kartice "👤 Osobe" / "🏭 Centri i servisi" (26.9.2026., Sašin
+    // izričit zahtjev) — prikazuje se SAMO ono što je odabrano, umjesto da
+    // oba odjeljka stoje jedan ispod drugog. `logistickiPodTab_` pamti
+    // odabir dok je admin na ovoj kartici (vidi modul-varijablu iznad).
+    var podTabs = document.createElement('div');
+    podTabs.className = 'lc-podtabs';
+    podTabs.innerHTML =
+      '<button type="button" class="lc-podtab-btn' + (logistickiPodTab_ === 'Osobe' ? ' active' : '') + '" data-podtab="Osobe">👤 Osobe</button>' +
+      '<button type="button" class="lc-podtab-btn' + (logistickiPodTab_ === 'Centri' ? ' active' : '') + '" data-podtab="Centri">🏭 Centri i servisi</button>';
+    Array.prototype.slice.call(podTabs.querySelectorAll('.lc-podtab-btn')).forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        logistickiPodTab_ = btn.getAttribute('data-podtab');
+        renderEntries();
+      });
+    });
+    outer.appendChild(podTabs);
 
-    var naslovCentri = document.createElement('div');
-    naslovCentri.className = 'centar-kontakti-naslov';
-    naslovCentri.style.margin = '0 0 6px';
-    naslovCentri.textContent = 'Centri i servisi';
-    outer.appendChild(naslovCentri);
+    if (logistickiPodTab_ === 'Osobe') {
+      outer.appendChild(buildLogistickiOsobeSekcija_());
+      return outer;
+    }
 
     var dodajBtn = document.createElement('button');
     dodajBtn.type = 'button';
@@ -3964,7 +4027,7 @@
     var hint = document.createElement('p');
     hint.className = 'faq-admin-hint';
     hint.style.marginTop = '0';
-    hint.textContent = 'Ovdje mogu biti i geografski logistički centri (Zagreb, Rijeka, Split…) i funkcionalni servisi/odjeli (Računovodstvo, Knjiženja, Računi, Ispravak računa…) — svakom dodajte kontakt osobe iz baze iznad.';
+    hint.textContent = 'Ovdje mogu biti i geografski logistički centri (Zagreb, Rijeka, Split…), gradovi koje pokrivate preko vanjskih izvršitelja, i funkcionalni servisi/odjeli (Računovodstvo, Knjiženja, Računi, Ispravak računa…) — vrsta se bira po centru/servisu i piše na zatvorenoj kartici. Kontakt osobe dodajete iz baze na kartici "👤 Osobe".';
     outer.appendChild(hint);
     outer.appendChild(dodajBtn);
     if (!logistickiCentriCache_.length) {
@@ -4137,7 +4200,8 @@
     rasponGrupaEl.innerHTML =
       '<button type="button" class="gg-btn aktivan" data-raspon="godina">Cijela ' + GODINA_TEKUCA + '.</button>' +
       '<button type="button" class="gg-btn" data-raspon="6m">Zadnjih 6 mjeseci</button>' +
-      '<button type="button" class="gg-btn" data-raspon="3m">Zadnja 3 mjeseca</button>';
+      '<button type="button" class="gg-btn" data-raspon="3m">Zadnja 3 mjeseca</button>' +
+      '<button type="button" class="gg-btn" data-raspon="30d">Zadnjih 30 dana</button>';
 
     var SERIJE = [
       { key:'dizel', label:'Eurodizel', bojaVar:'var(--gg-boja-dizel)', bojaHex:'#131313', os:'eur', jedinica:'€/L', tocke:[] },
@@ -4218,6 +4282,7 @@
 
     var DAN_MS = 1000*3600*24;
     function sirinaProzoraDana(){
+      if (raspon==='30d') return 30;
       if (raspon==='3m') return 92;
       if (raspon==='6m') return 183;
       return 366; // 'godina' — okvirno godina dana, ali sada kao klizni prozor (ne fiksno 1.1.-danas)
