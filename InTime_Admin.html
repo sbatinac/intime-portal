@@ -363,6 +363,13 @@
      ta traka postoji SAMO kad je već nešto označeno — ova je vidljiva čim
      tab ima barem jednu karticu, bez obzira je li išta označeno. */
   .select-all-row{display:flex;gap:8px;margin:0 0 14px;}
+  /* Gumbić "nazovi" (tel:) uz svaki broj u Imeniku (26.9.2026., Sašin izričit zahtjev). */
+  .poziv-btn{
+    display:inline-flex;align-items:center;justify-content:center;
+    width:20px;height:20px;margin-left:5px;background:var(--green);color:#fff;
+    border-radius:4px;text-decoration:none;font-size:11px;vertical-align:middle;line-height:1;
+  }
+  .poziv-btn:hover{opacity:0.85;}
   /* "👁 Prikaži skrivene" prekidač u Imeniku (Sašin izričit zahtjev, 21.9.2026.) */
   .imenik-prikazi-skrivene-red{display:flex;align-items:center;gap:7px;font-size:12.5px;color:var(--grey);cursor:pointer;margin:0 0 12px;user-select:none;}
   /* Brojač otkriveni/skriveni na vrhu Imenika (Sašin izričit zahtjev,
@@ -942,6 +949,38 @@
   .faq-admin-ocjene{font-size:13px;color:var(--graphite);margin:0 0 12px;font-weight:700;}
   .faq-admin-ocjene .faq-ocjena-like{color:var(--green);}
   .faq-admin-ocjene .faq-ocjena-dislike{color:var(--red);}
+
+  /* Kartica "Logistički centri" (26.9.2026., Sašin izričit zahtjev) —
+     svaki centar je jedna .faq-admin-card (isti izgled kao FAQ/Gorivo radi
+     dosljednosti), s ponavljajućim ".centar-kontakt-red" blokovima za
+     kontakt osobe unutar. */
+  .centar-banner{width:100%;border-radius:8px;margin-bottom:18px;display:block;}
+  .centar-grid-2{display:flex;flex-wrap:wrap;gap:0 14px;}
+  .centar-grid-2 > div{flex:1 1 220px;min-width:220px;}
+  .centar-kontakti-naslov{font-size:12px;font-weight:700;color:var(--graphite);margin:16px 0 6px;}
+  .centar-kontakt-red{
+    background:#f7fafb;border:1px solid var(--line);border-radius:8px;
+    padding:10px 12px 4px;margin-bottom:10px;position:relative;
+  }
+  .centar-kontakt-red .centar-grid-2 > div{flex:1 1 160px;min-width:160px;}
+  .centar-kontakt-red label{margin-top:8px !important;}
+  .centar-kontakt-ukloni-btn{
+    position:absolute;top:8px;right:10px;font-size:11px;background:none;
+    border:none;color:var(--red);cursor:pointer;text-decoration:underline;padding:0;
+  }
+  .centar-dodaj-kontakt-btn{margin-top:2px;}
+  /* "Pametniji" imenik osoba (26.9.2026., Sašin izričit zahtjev: "napravi
+     pametnije" — jedna osoba, dijeljena preko više centara/servisa,
+     umjesto dupliciranih podataka po centru). */
+  .centar-kontakt-osoba-info{font-size:13px;color:var(--graphite);padding-right:70px;}
+  .lc-dodaj-osobu-red{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:8px 0 4px;}
+  .lc-dodaj-osobu-red select.lc-osoba-select{flex:1 1 200px;min-width:180px;padding:7px 8px;border:1px solid var(--line);border-radius:6px;font-size:13px;}
+  .lc-dodaj-osobu-red input.lc-osoba-funkcija{flex:1 1 160px;min-width:140px;padding:7px 8px;border:1px solid var(--line);border-radius:6px;font-size:13px;}
+  .lc-nova-osoba-form{background:#f7fafb;border:1px dashed var(--line);border-radius:8px;padding:12px 12px 4px;margin:6px 0 10px;}
+  .lc-nova-osoba-form-naslov{font-size:12px;font-weight:700;color:var(--graphite);margin-bottom:6px;}
+  .lc-osobe-sekcija{background:#fbfcfc;border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin-bottom:18px;}
+  .lc-osobe-sekcija h3{margin-top:0;}
+  .lc-broj-dodjela{font-size:11px;color:var(--grey);margin-left:6px;font-weight:400;}
   .zone-admin-status-line{font-size:13px;color:var(--graphite);background:#f5f7f8;border:1px solid var(--line);border-radius:8px;padding:10px 12px;margin-bottom:6px;}
   .zone-arhiva-naslov{margin:22px 0 4px;font-size:15px;}
   .zone-arhiva-item{
@@ -1098,6 +1137,13 @@
            InTime_Gorivo_Graf.html) i unos događaja dolaze ovdje sljedeći
            krug, zajedno s izgledom na naslovnici. -->
       <button type="button" class="tab-btn" id="tab-btn-gorivo" onclick="switchTab('Gorivo')">⛽ Gorivo</button>
+      <!-- NOVO (26.9.2026., Sašin izričit zahtjev — "trebamo počet raditi na
+           novoj kartici koja će biti unutar admina samo... LOGISTIČKI
+           CENTRI") — popis centara/poslovnica s kontaktima, admin-uredivo
+           (vidi InTime_Logisticki_Centri Sheet i buildLogistickiCentriPanel_
+           niže). Preduvjet za sljedeći najavljeni korak: automatski mail
+           centru kod otvaranja klijenta. -->
+      <button type="button" class="tab-btn" id="tab-btn-logisticki-centri" onclick="switchTab('LogistickiCentri')">🏭 Logistički centri i servisi</button>
       <!-- NOVO (19.9.2026., trinaesti krug, Sašin izričit zahtjev): "Imenik" —
            objedinjeni kontakti iz sva tri obrasca (Upitnik/Odbijenica/Ocjena
            kvalitete), s malom ikonom telefona uz naziv kartice. -->
@@ -2752,6 +2798,7 @@
     document.getElementById('tab-btn-faq').classList.toggle('active', tab === 'FAQ');
     document.getElementById('tab-btn-zone').classList.toggle('active', tab === 'Zone');
     document.getElementById('tab-btn-gorivo').classList.toggle('active', tab === 'Gorivo');
+    document.getElementById('tab-btn-logisticki-centri').classList.toggle('active', tab === 'LogistickiCentri');
     document.getElementById('tab-btn-imenik').classList.toggle('active', tab === 'Imenik');
     var statPanel = document.getElementById('anketa-statistika-panel');
     if (statPanel) { statPanel.hidden = (tab !== 'Ankete') || !statPanel.innerHTML; }
@@ -2916,6 +2963,11 @@
 
     if (activeTab === 'Gorivo') {
       container.appendChild(buildGorivoPanel_());
+      return;
+    }
+
+    if (activeTab === 'LogistickiCentri') {
+      container.appendChild(buildLogistickiCentriPanel_());
       return;
     }
 
@@ -3445,6 +3497,487 @@
       statusEl.className = 'faq-admin-status error';
     };
     reader.readAsDataURL(file);
+  }
+
+  // ============================================================
+  // LOGISTIČKI CENTRI I SERVISI — kartica "🏭 Logistički centri i servisi"
+  // (26.9.2026., Sašin izričit zahtjev: prvo "trebamo počet raditi na novoj
+  // kartici koja će biti unutar admina samo... LOGISTIČKI CENTRI", potom
+  // isti dan proširenje: "tu bih stavio i još neke druge funkcije
+  // računovodstvo, knjiženja, računi, ispravak računa itd, tj mogućnost da
+  // mogu dodati druge osobe koje će mi kasnije trebati u povezivanju
+  // mailova s problemima, onda nek se zove Logistički centri i servisi" —
+  // odatle naziv kartice/gumba u sučelju). Popis centara/poslovnica I
+  // funkcionalnih servisa/odjela (grad ILI naziv servisa, adresa, opći
+  // mail/telefon) s ponavljajućim popisom kontakt osoba po redu (ime,
+  // prezime, funkcija, email, telefon — TOČNO Sašinim riječima, isti dan:
+  // "kasnije tu će biti svi kontakti u firmi ime prezime maila adresa
+  // funkcija telefonski broj" — polje "adresa" po kontaktu je tu zbog toga,
+  // iako trenutno svi postojeći podaci imaju adresu samo na razini centra).
+  // NAPOMENA (tehnički dug, namjerno): interni nazivi varijabli/funkcija/
+  // Sheet stupaca i dalje koriste "grad"/"Logisticki_Centri" iz prvobitne,
+  // uže zamišljene verzije (samo geografski centri) — preimenovanje bi
+  // dotaklo puno kôda za čisto kozmetičku promjenu, pa je promijenjen samo
+  // ono što Saša i admin stvarno VIDE (naziv kartice, natpisi na poljima,
+  // poruke), a polje "grad" u praksi sad prima bilo koji naziv centra ILI
+  // servisa (npr. "Računovodstvo", "Knjiženja", "Računi", "Ispravak
+  // računa") jer je od početka bilo slobodan tekst, ne padajući popis
+  // gradova. Podaci žive u zasebnom Sheetu (InTime_Logisticki_Centri, vidi
+  // InTime_Code.gs) — prvi ikad poziv ga sam-po-sebi napuni iz dosad
+  // hardkodiranog DISTRIBUCIJSKI_CENTRI. Predviđeno kao temelj za sljedeći
+  // korak koji je Saša odmah i najavio — automatski mail centru/servisu
+  // čim se klijent otvori u sustavu (JOŠ NIJE ugrađeno, čeka da ova
+  // kartica prvo "sjedne").
+  //
+  // Cache na razini modula (isti razlog i obrazac kao gorivoCijeneCache_
+  // gore, Sašin stalni zahtjev "ne želim da se non-stop povlače podaci") —
+  // podaci se dohvate JEDNOM po otvaranju admina, i ostaju iscrtani pri
+  // svakom povratku na ovaj tab bez novog gasCall-a; spremanje/brisanje
+  // centra/servisa osvježi cache lokalno (bez punog re-fetcha).
+  // ============================================================
+  var logistickiCentriCache_ = null; // null = još nedohvaćeno; niz nakon prvog dohvata
+  // NOVO (26.9.2026., Sašin izričit zahtjev — "mogu li dodati jednu osobu
+  // unutar više servisa... napravi pametnije"): zajednička baza OSOBA,
+  // odvojena od centara/servisa. Prije je svaki centar imao SVOJU kopiju
+  // kontakt podataka (ime/telefon/email upisani izravno u kontakt-redu),
+  // pa bi ista osoba na dva centra značila dva odvojena, nepovezana zapisa
+  // — izmjena telefona bi se morala ručno ponoviti na svakom mjestu.
+  // Sada: jedna osoba = jedan zapis u InTime_Logisticki_Osobe (backend), a
+  // centar/servis samo REFERENCIRA osobu (osobaId) + čuva funkciju KOJU
+  // osoba ima baš na tom centru/servisu (funkcija se svjesno ne dijeli —
+  // ista osoba može biti "Voditelj" na jednom, a "Zamjena" na drugom).
+  // Izmjena osobe (npr. novi telefon) u odjeljku "👤 Osobe" ispod odmah
+  // vrijedi svugdje gdje je ta osoba dodijeljena, bez ručnog ponavljanja.
+  var logistickiOsobeCache_ = null; // null = još nedohvaćeno; niz nakon prvog dohvata
+
+  function logistickiKontaktRedHtml_(k) {
+    k = k || {};
+    var imePrezime = ((k.ime || '') + ' ' + (k.prezime || '')).trim() || '(bez imena)';
+    var kontaktInfo = [k.telefon, k.email].filter(function(x) { return x; }).join(' · ');
+    return '' +
+      '<div class="centar-kontakt-red" data-osoba-id="' + esc(k.osobaId || '') + '">' +
+        '<button type="button" class="centar-kontakt-ukloni-btn">✕ Ukloni</button>' +
+        '<div class="centar-kontakt-osoba-info"><strong>' + esc(imePrezime) + '</strong>' + (kontaktInfo ? ' — ' + esc(kontaktInfo) : '') + '</div>' +
+        '<div><label>Funkcija (za ovaj centar/servis)</label><input type="text" class="ck-funkcija" value="' + esc(k.funkcija || '') + '"></div>' +
+      '</div>';
+  }
+
+  // `onUkloni` (opcionalno) — poziva se nakon uklanjanja SAMO dodjele s
+  // ovog centra/servisa; osoba i dalje postoji u zajedničkoj bazi i na
+  // ostalim centrima/servisima gdje je dodijeljena (koristi se za
+  // osvježavanje padajućeg izbornika "dodaj osobu" na kartici).
+  function wireLogistickiKontaktRed_(redEl, onUkloni) {
+    redEl.querySelector('.centar-kontakt-ukloni-btn').addEventListener('click', function() {
+      redEl.remove();
+      if (onUkloni) { onUkloni(); }
+    });
+  }
+
+  function buildLogistickiCentarCard_(centar) {
+    centar = centar || { rowIndex: 0, grad: '', adresa: '', telefon: '', email: '', pokriva: [], kontakti: [] };
+    var wrap = document.createElement('div');
+    wrap.className = 'faq-admin-card lc-centar-card';
+    var jeNovi = !centar.rowIndex;
+    wrap.innerHTML =
+      '<h3>' + (jeNovi ? 'Novi centar / servis' : esc(centar.grad || '(bez naziva)')) + '</h3>' +
+      '<div class="centar-grid-2">' +
+        '<div><label>Naziv centra ili servisa</label><input type="text" class="lc-grad" placeholder="npr. Rijeka, Split, Računovodstvo, Knjiženja, Računi, Ispravak računa…" value="' + esc(centar.grad || '') + '"></div>' +
+        '<div><label>Adresa</label><input type="text" class="lc-adresa" value="' + esc(centar.adresa || '') + '"></div>' +
+        '<div><label>Telefon</label><input type="text" class="lc-telefon" value="' + esc(centar.telefon || '') + '"></div>' +
+        '<div><label>Email (opći, za slanje)</label><input type="text" class="lc-email" value="' + esc(centar.email || '') + '"></div>' +
+      '</div>' +
+      '<label>Pokriva dodatne gradove (odvojeno zarezom — samo za logističke centre koji pokrivaju šire područje; za servise/odjele ostavite prazno)</label>' +
+      '<input type="text" class="lc-pokriva" value="' + esc((centar.pokriva || []).join(', ')) + '">' +
+      '<div class="centar-kontakti-naslov">Kontakt osobe (iz zajedničke baze "👤 Osobe" gore)</div>' +
+      '<div class="lc-kontakti-lista"></div>' +
+      '<div class="lc-dodaj-osobu-red">' +
+        '<select class="lc-osoba-select"></select>' +
+        '<input type="text" class="lc-osoba-funkcija" placeholder="Funkcija ovdje (npr. Voditelj) — prazno = zadana funkcija osobe">' +
+        '<button type="button" class="btn btn-outline btn-small lc-dodaj-osobu-btn">+ Dodaj</button>' +
+      '</div>' +
+      '<div class="lc-nova-osoba-form" hidden>' +
+        '<div class="lc-nova-osoba-form-naslov">Nova osoba (dodaje se u zajedničku bazu i odmah u ovaj centar/servis)</div>' +
+        '<div class="centar-grid-2">' +
+          '<div><label>Ime</label><input type="text" class="no-ime"></div>' +
+          '<div><label>Prezime</label><input type="text" class="no-prezime"></div>' +
+          '<div><label>Funkcija</label><input type="text" class="no-funkcija"></div>' +
+          '<div><label>Telefon</label><input type="text" class="no-telefon"></div>' +
+          '<div><label>Email</label><input type="text" class="no-email"></div>' +
+          '<div><label>Adresa</label><input type="text" class="no-adresa"></div>' +
+        '</div>' +
+        '<div class="faq-admin-card-actions">' +
+          '<span class="faq-admin-status lc-nova-osoba-status"></span>' +
+          '<div>' +
+            '<button type="button" class="btn btn-outline btn-small lc-nova-osoba-odustani">Odustani</button> ' +
+            '<button type="button" class="btn btn-small lc-nova-osoba-spremi">Spremi novu osobu i dodaj</button>' +
+          '</div>' +
+        '</div>' +
+      '</div>' +
+      '<div class="faq-admin-card-actions">' +
+        '<span class="faq-admin-status"></span>' +
+        '<div>' +
+          (jeNovi ? '' : '<button type="button" class="btn btn-danger btn-small lc-delete-btn">Obriši centar</button> ') +
+          '<button type="button" class="btn btn-small lc-save-btn">Spremi</button>' +
+        '</div>' +
+      '</div>';
+    var kontaktiLista = wrap.querySelector('.lc-kontakti-lista');
+    var select = wrap.querySelector('.lc-osoba-select');
+    var funkcijaInput = wrap.querySelector('.lc-osoba-funkcija');
+    var novaOsobaForm = wrap.querySelector('.lc-nova-osoba-form');
+
+    function dodijeljeniIdovi_() {
+      return Array.prototype.slice.call(kontaktiLista.querySelectorAll('.centar-kontakt-red')).map(function(el) {
+        return el.getAttribute('data-osoba-id');
+      });
+    }
+    function osviježiSelect_() {
+      var dodijeljeni = dodijeljeniIdovi_();
+      var opcije = '<option value="">— odaberi osobu —</option>';
+      (logistickiOsobeCache_ || []).forEach(function(o) {
+        if (dodijeljeni.indexOf(o.id) !== -1) { return; }
+        var naziv = ((o.ime || '') + ' ' + (o.prezime || '')).trim() || '(bez imena)';
+        opcije += '<option value="' + esc(o.id) + '">' + esc(naziv) + (o.funkcija ? ' — ' + esc(o.funkcija) : '') + '</option>';
+      });
+      opcije += '<option value="__nova__">+ Nova osoba…</option>';
+      select.innerHTML = opcije;
+    }
+    function dodajRed_(k) {
+      var div = document.createElement('div');
+      div.innerHTML = logistickiKontaktRedHtml_(k);
+      var redEl = div.firstElementChild;
+      kontaktiLista.appendChild(redEl);
+      wireLogistickiKontaktRed_(redEl, osviježiSelect_);
+    }
+
+    (centar.kontakti || []).forEach(function(k) { dodajRed_(k); });
+    osviježiSelect_();
+
+    select.addEventListener('change', function() {
+      novaOsobaForm.hidden = (select.value !== '__nova__');
+      if (select.value === '__nova__') { select.value = ''; }
+    });
+
+    wrap.querySelector('.lc-dodaj-osobu-btn').addEventListener('click', function() {
+      var val = select.value;
+      if (!val || val === '__nova__') { return; }
+      var osoba = (logistickiOsobeCache_ || []).filter(function(o) { return o.id === val; })[0];
+      if (!osoba) { return; }
+      dodajRed_({ osobaId: osoba.id, ime: osoba.ime, prezime: osoba.prezime, telefon: osoba.telefon, email: osoba.email, funkcija: funkcijaInput.value.trim() || osoba.funkcija || '' });
+      funkcijaInput.value = '';
+      osviježiSelect_();
+    });
+
+    wrap.querySelector('.lc-nova-osoba-odustani').addEventListener('click', function() {
+      novaOsobaForm.hidden = true;
+      Array.prototype.slice.call(novaOsobaForm.querySelectorAll('input')).forEach(function(inp) { inp.value = ''; });
+    });
+
+    wrap.querySelector('.lc-nova-osoba-spremi').addEventListener('click', function() {
+      var statusEl = novaOsobaForm.querySelector('.lc-nova-osoba-status');
+      var ime = novaOsobaForm.querySelector('.no-ime').value.trim();
+      var prezime = novaOsobaForm.querySelector('.no-prezime').value.trim();
+      if (!ime && !prezime) {
+        statusEl.textContent = 'Ime ili prezime je obavezno.';
+        statusEl.className = 'faq-admin-status error lc-nova-osoba-status';
+        return;
+      }
+      var podaciOsoba = {
+        ime: ime,
+        prezime: prezime,
+        funkcija: novaOsobaForm.querySelector('.no-funkcija').value.trim(),
+        telefon: novaOsobaForm.querySelector('.no-telefon').value.trim(),
+        email: novaOsobaForm.querySelector('.no-email').value.trim(),
+        adresa: novaOsobaForm.querySelector('.no-adresa').value.trim()
+      };
+      statusEl.textContent = 'Spremanje…';
+      statusEl.className = 'faq-admin-status lc-nova-osoba-status';
+      gasCall({ action: 'adminLogistickiOsobaSpremi', token: adminToken, podaci: podaciOsoba }).then(function(res) {
+        if (handleAuthError(res)) { return; }
+        if (res.status !== 'ok') {
+          statusEl.textContent = res.message || 'Spremanje nije uspjelo.';
+          statusEl.className = 'faq-admin-status error lc-nova-osoba-status';
+          return;
+        }
+        var novaOsoba = { id: res.id, ime: ime, prezime: prezime, funkcija: podaciOsoba.funkcija, telefon: podaciOsoba.telefon, email: podaciOsoba.email, adresa: podaciOsoba.adresa, brojDodjela: 0 };
+        logistickiOsobeCache_ = (logistickiOsobeCache_ || []).concat([novaOsoba]);
+        dodajRed_({ osobaId: novaOsoba.id, ime: ime, prezime: prezime, telefon: podaciOsoba.telefon, email: podaciOsoba.email, funkcija: podaciOsoba.funkcija });
+        Array.prototype.slice.call(novaOsobaForm.querySelectorAll('input')).forEach(function(inp) { inp.value = ''; });
+        novaOsobaForm.hidden = true;
+        statusEl.textContent = '';
+        osviježiSelect_();
+      }).catch(function() {
+        statusEl.textContent = 'Greška u komunikaciji s poslužiteljem.';
+        statusEl.className = 'faq-admin-status error lc-nova-osoba-status';
+      });
+    });
+
+    wrap.querySelector('.lc-save-btn').addEventListener('click', function() {
+      submitLogistickiCentarSpremi_(wrap, centar.rowIndex);
+    });
+    if (!jeNovi) {
+      wrap.querySelector('.lc-delete-btn').addEventListener('click', function() {
+        openDeleteModal(centar.rowIndex, centar.grad || '(bez naziva)', 'adminLogistickiCentarObrisi');
+      });
+    }
+    return wrap;
+  }
+
+  function submitLogistickiCentarSpremi_(cardEl, rowIndex) {
+    var statusEl = cardEl.querySelector('.faq-admin-status');
+    var grad = cardEl.querySelector('.lc-grad').value.trim();
+    if (!grad) {
+      statusEl.textContent = 'Naziv centra/servisa je obavezan.';
+      statusEl.className = 'faq-admin-status error';
+      return;
+    }
+    var kontakti = Array.prototype.slice.call(cardEl.querySelectorAll('.lc-kontakti-lista .centar-kontakt-red')).map(function(redEl) {
+      return {
+        osobaId: redEl.getAttribute('data-osoba-id') || '',
+        funkcija: redEl.querySelector('.ck-funkcija').value.trim()
+      };
+    }).filter(function(k) { return k.osobaId; });
+    var pokriva = cardEl.querySelector('.lc-pokriva').value.split(',').map(function(g) { return g.trim(); }).filter(function(g) { return g; });
+    var podaci = {
+      rowIndex: rowIndex || undefined,
+      grad: grad,
+      adresa: cardEl.querySelector('.lc-adresa').value.trim(),
+      telefon: cardEl.querySelector('.lc-telefon').value.trim(),
+      email: cardEl.querySelector('.lc-email').value.trim(),
+      pokriva: pokriva,
+      kontakti: kontakti
+    };
+    statusEl.textContent = 'Spremanje…';
+    statusEl.classList.remove('error');
+    gasCall({ action: 'adminLogistickiCentarSpremi', token: adminToken, podaci: podaci }).then(function(res) {
+      if (handleAuthError(res)) { return; }
+      if (res.status !== 'ok') {
+        statusEl.textContent = res.message || 'Spremanje nije uspjelo.';
+        statusEl.className = 'faq-admin-status error';
+        return;
+      }
+      statusEl.textContent = 'Spremljeno.';
+      statusEl.className = 'faq-admin-status';
+      // I centri I broj dodjela po osobi ("dodijeljena X centara/servisa" u
+      // odjeljku Osobe) ovise o ovom spremanju — oba se moraju osvježiti.
+      logistickiCentriCache_ = null;
+      logistickiOsobeCache_ = null;
+      loadLogistickiCentri_(true);
+      loadLogistickiOsobe_(true);
+    }).catch(function() {
+      statusEl.textContent = 'Greška u komunikaciji s poslužiteljem.';
+      statusEl.className = 'faq-admin-status error';
+    });
+  }
+
+  // Zastavice "u tijeku" (26.9.2026.) — buildLogistickiCentriPanel_ pokreće
+  // OBA dohvata (centri + osobe) odjednom kad su oba cachea null; kad jedan
+  // od njih stigne prvi, njegov re-render (renderEntries()) poziva
+  // buildLogistickiCentriPanel_ iznova DOK je drugi još u letu, što bi bez
+  // ove zastavice pokrenulo DRUGI, suvišan gasCall za isti podatak (uhvaćeno
+  // vlastitim testom — vidi test_logisticki_osobe.js, korak 1).
+  var logistickiCentriUcitavaSe_ = false;
+  var logistickiOsobeUcitavaSe_ = false;
+
+  function loadLogistickiCentri_(forsirajOsvjezavanje) {
+    if (forsirajOsvjezavanje) { logistickiCentriCache_ = null; }
+    if (logistickiCentriCache_ !== null) {
+      if (activeTab === 'LogistickiCentri') { renderEntries(); }
+      return;
+    }
+    if (logistickiCentriUcitavaSe_) { return; }
+    logistickiCentriUcitavaSe_ = true;
+    gasCall({ action: 'adminLogistickiCentriList', token: adminToken }).then(function(res) {
+      logistickiCentriUcitavaSe_ = false;
+      if (handleAuthError(res)) { return; }
+      if (res.status !== 'ok') { return; }
+      logistickiCentriCache_ = res.centri || [];
+      if (activeTab === 'LogistickiCentri') { renderEntries(); }
+    }).catch(function() { logistickiCentriUcitavaSe_ = false; /* tiho — panel prikazuje "Učitavanje..." dok se ne uspije */ });
+  }
+
+  function loadLogistickiOsobe_(forsirajOsvjezavanje) {
+    if (forsirajOsvjezavanje) { logistickiOsobeCache_ = null; }
+    if (logistickiOsobeCache_ !== null) {
+      if (activeTab === 'LogistickiCentri') { renderEntries(); }
+      return;
+    }
+    if (logistickiOsobeUcitavaSe_) { return; }
+    logistickiOsobeUcitavaSe_ = true;
+    gasCall({ action: 'adminLogistickiOsobeList', token: adminToken }).then(function(res) {
+      logistickiOsobeUcitavaSe_ = false;
+      if (handleAuthError(res)) { return; }
+      if (res.status !== 'ok') { return; }
+      logistickiOsobeCache_ = res.osobe || [];
+      if (activeTab === 'LogistickiCentri') { renderEntries(); }
+    }).catch(function() { logistickiOsobeUcitavaSe_ = false; /* tiho — panel prikazuje "Učitavanje..." dok se ne uspije */ });
+  }
+
+  function buildLogistickiOsobaCard_(osoba) {
+    osoba = osoba || { id: '', ime: '', prezime: '', funkcija: '', telefon: '', email: '', adresa: '', brojDodjela: 0 };
+    var wrap = document.createElement('div');
+    wrap.className = 'faq-admin-card lc-osoba-card';
+    var jeNova = !osoba.id;
+    var naslov = ((osoba.ime || '') + ' ' + (osoba.prezime || '')).trim();
+    var naslovPrikaz = naslov || (jeNova ? 'Nova osoba' : '(bez imena)');
+    wrap.innerHTML =
+      '<h3>' + esc(naslovPrikaz) + (osoba.brojDodjela ? '<span class="lc-broj-dodjela">dodijeljena ' + osoba.brojDodjela + ' centara/servisa</span>' : '') + '</h3>' +
+      '<div class="centar-grid-2">' +
+        '<div><label>Ime</label><input type="text" class="lo-ime" value="' + esc(osoba.ime || '') + '"></div>' +
+        '<div><label>Prezime</label><input type="text" class="lo-prezime" value="' + esc(osoba.prezime || '') + '"></div>' +
+        '<div><label>Funkcija (zadana)</label><input type="text" class="lo-funkcija" value="' + esc(osoba.funkcija || '') + '"></div>' +
+        '<div><label>Telefon</label><input type="text" class="lo-telefon" value="' + esc(osoba.telefon || '') + '"></div>' +
+        '<div><label>Email</label><input type="text" class="lo-email" value="' + esc(osoba.email || '') + '"></div>' +
+        '<div><label>Adresa</label><input type="text" class="lo-adresa" value="' + esc(osoba.adresa || '') + '"></div>' +
+      '</div>' +
+      '<div class="faq-admin-card-actions">' +
+        '<span class="faq-admin-status"></span>' +
+        '<div>' +
+          (jeNova ? '' : '<button type="button" class="btn btn-danger btn-small lo-delete-btn">Obriši osobu</button> ') +
+          '<button type="button" class="btn btn-small lo-save-btn">Spremi</button>' +
+        '</div>' +
+      '</div>';
+    wrap.querySelector('.lo-save-btn').addEventListener('click', function() {
+      submitLogistickiOsobaSpremi_(wrap, osoba.id);
+    });
+    if (!jeNova) {
+      wrap.querySelector('.lo-delete-btn').addEventListener('click', function() {
+        var brojTxt = osoba.brojDodjela ? (' — dodijeljena ' + osoba.brojDodjela + ' centara/servisa') : '';
+        openDeleteModal(osoba.id, naslovPrikaz + brojTxt, 'adminLogistickiOsobaObrisi');
+      });
+    }
+    return wrap;
+  }
+
+  function submitLogistickiOsobaSpremi_(cardEl, id) {
+    var statusEl = cardEl.querySelector('.faq-admin-status');
+    var ime = cardEl.querySelector('.lo-ime').value.trim();
+    var prezime = cardEl.querySelector('.lo-prezime').value.trim();
+    if (!ime && !prezime) {
+      statusEl.textContent = 'Ime ili prezime je obavezno.';
+      statusEl.className = 'faq-admin-status error';
+      return;
+    }
+    var podaci = {
+      id: id || undefined,
+      ime: ime,
+      prezime: prezime,
+      funkcija: cardEl.querySelector('.lo-funkcija').value.trim(),
+      telefon: cardEl.querySelector('.lo-telefon').value.trim(),
+      email: cardEl.querySelector('.lo-email').value.trim(),
+      adresa: cardEl.querySelector('.lo-adresa').value.trim()
+    };
+    statusEl.textContent = 'Spremanje…';
+    statusEl.classList.remove('error');
+    gasCall({ action: 'adminLogistickiOsobaSpremi', token: adminToken, podaci: podaci }).then(function(res) {
+      if (handleAuthError(res)) { return; }
+      if (res.status !== 'ok') {
+        statusEl.textContent = res.message || 'Spremanje nije uspjelo.';
+        statusEl.className = 'faq-admin-status error';
+        return;
+      }
+      statusEl.textContent = 'Spremljeno.';
+      statusEl.className = 'faq-admin-status';
+      logistickiOsobeCache_ = null;
+      // Ime/telefon/email na karticama centara/servisa dolaze iz ove baze —
+      // nakon izmjene osobe kartice centara moraju povući svježe podatke.
+      logistickiCentriCache_ = null;
+      loadLogistickiOsobe_(true);
+      loadLogistickiCentri_(true);
+    }).catch(function() {
+      statusEl.textContent = 'Greška u komunikaciji s poslužiteljem.';
+      statusEl.className = 'faq-admin-status error';
+    });
+  }
+
+  function buildLogistickiOsobeSekcija_() {
+    var sekcija = document.createElement('div');
+    sekcija.className = 'lc-osobe-sekcija';
+    var naslov = document.createElement('h3');
+    naslov.textContent = '👤 Osobe (zajednička baza)';
+    sekcija.appendChild(naslov);
+    var hint = document.createElement('p');
+    hint.className = 'faq-admin-hint';
+    hint.textContent = 'Svaka osoba je jedan zapis — dodijelite je jednom ili više centara/servisa niže ("+ Dodaj" na kartici centra/servisa). Izmjena ovdje (npr. novi telefon) odmah vrijedi svugdje gdje je osoba dodijeljena.';
+    sekcija.appendChild(hint);
+    var dodajBtn = document.createElement('button');
+    dodajBtn.type = 'button';
+    dodajBtn.className = 'btn btn-outline btn-small';
+    dodajBtn.style.marginBottom = '12px';
+    dodajBtn.textContent = '+ Nova osoba';
+    dodajBtn.addEventListener('click', function() {
+      var praznoHint = sekcija.querySelector('.empty-hint');
+      if (praznoHint) { praznoHint.remove(); }
+      sekcija.insertBefore(buildLogistickiOsobaCard_(null), sekcija.querySelector('.lc-osoba-card'));
+    });
+    sekcija.appendChild(dodajBtn);
+    if (!logistickiOsobeCache_.length) {
+      var prazno = document.createElement('div');
+      prazno.className = 'empty-hint';
+      prazno.textContent = 'Još nema dodanih osoba.';
+      sekcija.appendChild(prazno);
+    } else {
+      logistickiOsobeCache_.forEach(function(osoba) {
+        sekcija.appendChild(buildLogistickiOsobaCard_(osoba));
+      });
+    }
+    return sekcija;
+  }
+
+  function buildLogistickiCentriPanel_() {
+    var outer = document.createElement('div');
+    // Banner (26.9.2026., Sašin izričit zahtjev — slika koju je poslao) —
+    // isti obrazac kao .login-banner/.dashboard-banner iznad (izravan
+    // imgur link u <img src>, bez base64 ugrađivanja). Prikazuje se ČIM se
+    // kartica otvori, i prije nego što se podaci učitaju.
+    var banner = document.createElement('img');
+    banner.src = 'https://i.imgur.com/QWOPK7p.png';
+    banner.alt = 'In Time Express — logistički centri diljem Hrvatske';
+    banner.className = 'centar-banner';
+    outer.appendChild(banner);
+    if (logistickiOsobeCache_ === null || logistickiCentriCache_ === null) {
+      var ucitavanje = document.createElement('div');
+      ucitavanje.className = 'empty-hint';
+      ucitavanje.textContent = 'Učitavanje...';
+      outer.appendChild(ucitavanje);
+      if (logistickiOsobeCache_ === null) { loadLogistickiOsobe_(false); }
+      if (logistickiCentriCache_ === null) { loadLogistickiCentri_(false); }
+      return outer;
+    }
+    outer.appendChild(buildLogistickiOsobeSekcija_());
+
+    var naslovCentri = document.createElement('div');
+    naslovCentri.className = 'centar-kontakti-naslov';
+    naslovCentri.style.margin = '0 0 6px';
+    naslovCentri.textContent = 'Centri i servisi';
+    outer.appendChild(naslovCentri);
+
+    var dodajBtn = document.createElement('button');
+    dodajBtn.type = 'button';
+    dodajBtn.className = 'btn btn-small';
+    dodajBtn.style.marginBottom = '14px';
+    dodajBtn.textContent = '+ Novi centar / servis';
+    dodajBtn.addEventListener('click', function() {
+      var praznoHint = outer.querySelector('.empty-hint');
+      if (praznoHint) { praznoHint.remove(); }
+      outer.insertBefore(buildLogistickiCentarCard_(null), outer.querySelector('.lc-centar-card'));
+    });
+    var hint = document.createElement('p');
+    hint.className = 'faq-admin-hint';
+    hint.style.marginTop = '0';
+    hint.textContent = 'Ovdje mogu biti i geografski logistički centri (Zagreb, Rijeka, Split…) i funkcionalni servisi/odjeli (Računovodstvo, Knjiženja, Računi, Ispravak računa…) — svakom dodajte kontakt osobe iz baze iznad.';
+    outer.appendChild(hint);
+    outer.appendChild(dodajBtn);
+    if (!logistickiCentriCache_.length) {
+      var prazno = document.createElement('div');
+      prazno.className = 'empty-hint';
+      prazno.textContent = 'Još nema dodanih centara/servisa — dodajte prvi gore.';
+      outer.appendChild(prazno);
+      return outer;
+    }
+    logistickiCentriCache_.forEach(function(centar) {
+      outer.appendChild(buildLogistickiCentarCard_(centar));
+    });
+    return outer;
   }
 
   // ============================================================
@@ -5399,6 +5932,27 @@
     });
   }
 
+  // Gumbići "nazovi" u Imeniku (26.9.2026., Sašin izričit zahtjev: "kad
+  // kliknem odmah zove... uz svaki kontakt neki button... da mogu ući u
+  // imenik i samo kliknuti"). `tel:` poveznica je standardni način —
+  // Android (i iOS) je sam prepoznaje i odmah otvara birač brojeva s tim
+  // brojem, bez ikakve dodatne aplikacije/dozvole. entry.telefoni može
+  // sadržavati VIŠE brojeva odvojenih zarezom (isti format kao svugdje
+  // drugdje u Imeniku, vidi IMENIK_COL.TELEFONI parsiranje u
+  // InTime_Code.gs) — svaki broj dobiva svoj kvadratić 📞. Broj za `tel:`
+  // se čisti na same znamenke/+ (razmaci/kose crte u ispisu ostaju kakve
+  // jesu, samo se poveznica čisti) jer neki preglednici na Androidu znaju
+  // biti hiroviti s razmacima u tel: poveznici.
+  function generirajPozivneGumbeHtml_(sirovoTelefoni) {
+    if (!sirovoTelefoni) { return ''; }
+    var brojevi = String(sirovoTelefoni).split(',').map(function(b) { return b.trim(); }).filter(function(b) { return b; });
+    return brojevi.map(function(b) {
+      var zaPoziv = b.replace(/[^\d+]/g, '');
+      if (!zaPoziv) { return ''; }
+      return '<a href="tel:' + esc(zaPoziv) + '" class="poziv-btn" title="Nazovi ' + esc(b) + '" onclick="event.stopPropagation();">📞</a>';
+    }).join('');
+  }
+
   function buildImenikEntryCard_(entry) {
     var card = document.createElement('div');
     card.className = 'entry-card' + (entry.skriveno ? ' imenik-skriven' : '');
@@ -5410,7 +5964,7 @@
     var subParts = [];
     if (entry.oib) { subParts.push('OIB: ' + esc(entry.oib)); }
     if (entry.grad) { subParts.push('Grad: ' + esc(entry.grad)); }
-    if (entry.telefoni) { subParts.push('Telefon: ' + esc(entry.telefoni)); }
+    if (entry.telefoni) { subParts.push('Telefon: ' + esc(entry.telefoni) + generirajPozivneGumbeHtml_(entry.telefoni)); }
     if (entry.emailovi) { subParts.push('Mail: ' + esc(entry.emailovi)); }
     if (entry.funkcije) { subParts.push('Funkcija: ' + esc(entry.funkcije)); }
     if (entry.napomena) { subParts.push('<span style="color:var(--purple);font-weight:600;">Napomena: ' + esc(entry.napomena) + '</span>'); }
@@ -9076,6 +9630,10 @@
       ? 'Trajno brišete anketu o kvaliteti usluge: "' + naziv + '". Ova radnja se odnosi na cijeli redak u tablici (sve odgovore te ankete).'
       : pendingDeleteAction === 'adminFaqDelete'
       ? 'Trajno brišete FAQ pitanje: "' + naziv + '". Odmah nestaje i s javne stranice.'
+      : pendingDeleteAction === 'adminLogistickiCentarObrisi'
+      ? 'Trajno brišete centar/servis: "' + naziv + '", zajedno sa svim dodijeljenim kontaktima (osobe same ostaju u zajedničkoj bazi).'
+      : pendingDeleteAction === 'adminLogistickiOsobaObrisi'
+      ? 'Trajno brišete osobu: "' + naziv + '". Osoba odmah nestaje iz svih centara/servisa gdje je bila dodijeljena.'
       : 'Trajno brišete upit: "' + naziv + '". Ova radnja se odnosi na cijeli redak u tablici (sve podatke tog upita).';
     document.getElementById('delete-modal-desc').textContent = opis;
     document.getElementById('delete-confirm-input').value = '';
@@ -9101,6 +9659,16 @@
       if (handleAuthError(res)) { return; }
       if (res.status === 'ok') {
         closeDeleteModal();
+        // "Logistički centri" ima svoju predmemoriju (logistickiCentriCache_,
+        // vidi napomenu uz buildLogistickiCentriPanel_) koju loadAll() niže
+        // NE dira (nije dio adminUcitajPocetno) — bez izravnog poziva ovdje
+        // bi obrisani centar ostao vidljiv na kartici sve dok admin ručno
+        // ne ode na drugi tab i vrati se (ili ponovno učita stranicu).
+        if (action === 'adminLogistickiCentarObrisi') { loadLogistickiCentri_(true); }
+        // Brisanje osobe briše i sve njene dodjele na centrima/servisima
+        // (backend to čisti, vidi ukloniOsobuIzSvihCentara_) — oba cachea
+        // moraju povući svježe da to odmah nestane s ekrana.
+        if (action === 'adminLogistickiOsobaObrisi') { loadLogistickiOsobe_(true); loadLogistickiCentri_(true); }
         loadAll();
       } else {
         var errEl = document.getElementById('delete-modal-error');
