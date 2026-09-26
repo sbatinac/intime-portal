@@ -4165,7 +4165,7 @@ function gorivoPrikaziTrend_(trendovi){
     gorivoIzgradiTrendChip_(trendovi.eurosuper, 'benzin', ' €/L', 2, 'Cijena Eurosuper95 (obično gorivo) u Hrvatskoj, u odnosu na prethodni dan (dnevni podatak s HAK-a) — informativno.'),
     gorivoIzgradiTrendChip_(trendovi.brent, 'Brent', ' $', 2, 'Cijena nafte Brent, u odnosu na prethodni dan (dnevni podatak s FRED-a) — informativno.'),
     gorivoIzgradiTrendChip_(trendovi.wti, 'WTI', ' $', 2, 'Cijena nafte WTI, u odnosu na prethodni dan (dnevni podatak s FRED-a) — informativno.'),
-    gorivoIzgradiTrendChip_(trendovi.postotak, 'dodatak', ' p.b.', 2, 'Postotak dodatka na gorivo, ovaj mjesec u odnosu na prethodni uneseni mjesec.', 'gorivo-trend-mini-veci')
+    gorivoIzgradiTrendChip_(trendovi.postotak, 'dodatak', ' %', 2, 'Postotak dodatka na gorivo, ovaj mjesec u odnosu na prethodni uneseni mjesec.', 'gorivo-trend-mini-veci')
   ];
   chipovi.forEach(function(chip){ if(chip){ red.appendChild(chip); } });
 }

@@ -405,6 +405,21 @@
   </div>
 </div>
 
+<!-- NOVO (26.9.2026., Sašin izričit zahtjev — bug uočen kod testnog slanja
+     ponude): dok ponuda za tu poveznicu još nije STVARNO poslana klijentu
+     (potvrdaPonudeInfo() u InTime_Code.gs vraća testnaPonuda:true), obrazac
+     se ne prikazuje — poveznica se već pojavljuje u testnom mailu (naslov
+     "- TESTNA PONUDA -"), pa bi bez ovog ekrana bilo moguće (nesvjesno)
+     "prihvatiti" ponudu prije stvarnog slanja klijentu. -->
+<div id="test-screen" class="screen" hidden>
+  <div class="card">
+    <img class="card-banner" src="InTime_PotvrdaPonude_banner.jpg" alt="In Time Express">
+    <div class="status-icon info">ⓘ</div>
+    <h1>Testni pregled ponude</h1>
+    <p class="hint">Ovo je poveznica iz TESTNOG maila (ponuda za tvrtku <strong id="test-naziv"></strong> još nije stvarno poslana klijentu) — prihvaćanje i odbijanje ovdje su onemogućeni. Poveznica postaje aktivna tek kad se ponuda stvarno pošalje klijentu.</p>
+  </div>
+</div>
+
 <div id="form-screen" class="screen" hidden>
   <div class="card">
     <img class="card-banner" src="InTime_PotvrdaPonude_banner.jpg" alt="In Time Express">
@@ -531,7 +546,7 @@
   }
 
   function showScreen(id) {
-    ['loading-screen', 'no-token-screen', 'already-screen', 'expired-screen', 'rejected-screen', 'voided-screen', 'form-screen', 'success-screen'].forEach(function(s) {
+    ['loading-screen', 'no-token-screen', 'already-screen', 'expired-screen', 'rejected-screen', 'voided-screen', 'test-screen', 'form-screen', 'success-screen'].forEach(function(s) {
       document.getElementById(s).hidden = (s !== id);
     });
   }
@@ -846,6 +861,12 @@
           document.getElementById('expired-naziv').textContent = document.getElementById('form-naziv').textContent;
           document.getElementById('expired-datum').textContent = '';
           showScreen('expired-screen');
+        } else if (res.testnaPonuda) {
+          // Ne bi se trebalo dogoditi (potvrdaPonudeInfo već sprječava da se
+          // obrazac uopće prikaže dok je ponuda 'nije_poslano'), ali server
+          // je autoritet — ako se ipak dogodi, isti "testni pregled" ekran.
+          document.getElementById('test-naziv').textContent = document.getElementById('form-naziv').textContent;
+          showScreen('test-screen');
         }
       } else {
         errEl.textContent = 'Greška u komunikaciji s poslužiteljem. Provjerite internetsku vezu i pokušajte ponovno.';
@@ -897,6 +918,11 @@
       if (res.ponistena) {
         document.getElementById('voided-naziv').textContent = res.nazivTvrtke || '';
         showScreen('voided-screen');
+        return;
+      }
+      if (res.testnaPonuda) {
+        document.getElementById('test-naziv').textContent = res.nazivTvrtke || '';
+        showScreen('test-screen');
         return;
       }
       if (res.istekla) {

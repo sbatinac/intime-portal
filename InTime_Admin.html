@@ -2669,6 +2669,60 @@
     return ' <span style="color:' + info.boja + ';font-weight:800;font-size:11px;letter-spacing:.03em;">' + esc(info.tekst) + '</span>';
   }
 
+  // Status ponude na SAŽETKU kartice dok je klijent u "Ponude" tabu (Sašin
+  // izričit zahtjev, 25.9.2026.: "želim status prihvaćena/odbijena/čeka se/
+  // poništena tu na kartici dok je u ponudama... znam da smo definirali dok
+  // je u arhivi, ali i tu mi je bitno da vidim odmah što je prihvaćeno, što
+  // je odbijeno... na kraju, iznad mobitel, istim pravilima kao u arhivi").
+  // NAMJERNO odvojena, malena kopija istog računanja statusa kao
+  // izracunajStatusPonude_ unutar punog bloka kartice ("Ponuda — slanje i
+  // status", vidi niže) — ta funkcija je lokalna (postoji samo dok je
+  // kartica otvorena i puni blok izgrađen), a OVDJE treba prikaz i dok je
+  // kartica ZATVORENA (sažetak se gradi prije otvaranja). Ako se ikad
+  // promijeni redoslijed/pravila u izracunajStatusPonude_, treba zrcaliti
+  // ovdje.
+  var STATUS_PONUDE_SAZETAK_LABEL_ = {
+    nije_poslano: 'Nije poslano',
+    na_cekanju: 'Čeka se odgovor',
+    potvrdjena: 'Prihvaćena',
+    odbijena: 'Odbijena',
+    ponistena: 'Poništena',
+    istekla: 'Istekla',
+    ponistena_nakon_prihvata: 'Poništena nakon prihvaćanja'
+  };
+  var STATUS_PONUDE_SAZETAK_BOJA_ = {
+    nije_poslano: '#6b6b6b',
+    na_cekanju: '#b8860b',
+    potvrdjena: '#1e8449',
+    odbijena: '#c0392b',
+    ponistena: '#8e44ad',
+    istekla: '#6b6b6b',
+    ponistena_nakon_prihvata: '#8e44ad'
+  };
+  // Mali datumski parser ("dd.MM.yyyy. HH:mm" → Date), samo za provjeru
+  // isteka roka ovdje — zrcali parsirajHrvatskiDatum_ unutar punog bloka
+  // (vidi napomenu gore).
+  function parsirajHrvatskiDatumSazetak_(s) {
+    if (!s) { return null; }
+    var m = String(s).match(/^(\d{2})\.(\d{2})\.(\d{4})\.?\s+(\d{2}):(\d{2})(?::(\d{2}))?/);
+    if (!m) { return null; }
+    return new Date(parseInt(m[3], 10), parseInt(m[2], 10) - 1, parseInt(m[1], 10), parseInt(m[4], 10), parseInt(m[5], 10), m[6] ? parseInt(m[6], 10) : 0);
+  }
+  function ponudaStatusSazetak_(entry) {
+    if (fieldVal(entry, 'Datum poništenja prihvaćene ponude (admin)')) { return 'ponistena_nakon_prihvata'; }
+    if (fieldVal(entry, 'Datum prihvaćanja ponude (admin)')) { return 'potvrdjena'; }
+    if (fieldVal(entry, 'Datum odbijanja ponude (admin)')) { return 'odbijena'; }
+    if (fieldVal(entry, 'Datum poništenja ponude (admin)')) { return 'ponistena'; }
+    if (!fieldVal(entry, 'Datum slanja aktivne ponude (admin)')) { return 'nije_poslano'; }
+    var istekObj = parsirajHrvatskiDatumSazetak_(fieldVal(entry, 'Datum isteka ponude (admin)'));
+    if (istekObj && istekObj.getTime() < Date.now()) { return 'istekla'; }
+    return 'na_cekanju';
+  }
+  function ponudaStatusSazetakHtml_(entry) {
+    var kljuc = ponudaStatusSazetak_(entry);
+    return 'Status ponude: <b style="color:' + STATUS_PONUDE_SAZETAK_BOJA_[kljuc] + '">' + esc(STATUS_PONUDE_SAZETAK_LABEL_[kljuc]) + '</b>';
+  }
+
   function renderTabCounts() {
     var interesCount = allEntries.filter(function(e){ return e.status === 'Interes' && !jeOtvorenKlijent(e) && !jePonuda(e) && !jeArhiva(e); }).length;
     var odbijenicaCount = allEntries.filter(function(e){ return e.status === 'Odbijenica'; }).length;
@@ -4006,6 +4060,18 @@
   var gorivoDogadjajiCache_ = [];
   var gorivoGrafInstanca_ = null;
   var gorivoTestIntervalId_ = null;
+  // Baza kretanja cijena goriva (26.9.2026., Sašin izričit zahtjev: "neka
+  // non-stop bude prikazana... neka ima opciju sakrij... jer kad odem iz
+  // goriva i vratim se uvijek moram povlačiti podatke") — cache na razini
+  // MODULA (ne unutar buildGorivoPanel_), da podaci prežive prelazak na
+  // drugi tab i povratak na Gorivo (panel se inače u cijelosti iznova
+  // gradi pri svakom renderEntries(), pa bi lokalna varijabla unutar te
+  // funkcije uvijek krenula iznova). null = još nikad dohvaćeno u ovoj
+  // sjednici admina; niz (može biti i prazan) nakon prvog dohvata.
+  var gorivoCijeneCache_ = null;
+  // Korisnički odabir prikazano/sakriveno — isto tako na razini modula, da
+  // preživi prelazak taba. Default FALSE (prikazano), po Sašinom zahtjevu.
+  var gorivoCijeneSakrivena_ = false;
 
   function primijeniGorivoPostotci_(res) {
     if (res.status !== 'ok') { return; }
@@ -4125,13 +4191,13 @@
         '<button type="button" class="btn btn-outline btn-small" id="gorivo-test-podsjetnik-btn">Pošalji test podsjetnik sada</button>' +
       '</div>' +
       '<h3 class="zone-arhiva-naslov">📊 Baza kretanja cijena goriva</h3>' +
-      '<p class="faq-admin-hint">Eurodizel i Eurosuper95 se svaki dan automatski očitavaju s <a href="https://www.hak.hr/info/cijene-goriva/" target="_blank" rel="noopener">HAK stranice</a> (najčešća/medijan cijena među svim ponuđačima), Brent i WTI s FRED-a (javni podaci, DCOILBRENTEU/DCOILWTICO). Triger za automatski dnevni dohvat treba postaviti jednom u Apps Script editoru (funkcija <code>postaviTrigerZaGorivoCijene</code>).</p>' +
+      '<p class="faq-admin-hint">Eurodizel i Eurosuper95 se svaki dan automatski očitavaju s <a href="https://www.hak.hr/info/cijene-goriva/" target="_blank" rel="noopener">HAK stranice</a> (najčešća/medijan cijena među svim ponuđačima), Brent i WTI s Yahoo Finance (cijena zadnje trgovine, simboli BZ=F/CL=F) — FRED (DCOILBRENTEU/DCOILWTICO) ostaje kao pomoćni izvor samo ako Yahoo zakaže. Triger za automatski dnevni dohvat treba postaviti jednom u Apps Script editoru (funkcija <code>postaviTrigerZaGorivoCijene</code>).</p>' +
       '<div class="faq-admin-card-actions">' +
-        '<button type="button" class="btn btn-outline btn-small" id="gorivo-cijene-toggle-btn">Prikaži/sakrij bazu cijena</button>' +
+        '<button type="button" class="btn btn-outline btn-small" id="gorivo-cijene-toggle-btn">' + (gorivoCijeneSakrivena_ ? 'Prikaži bazu cijena' : 'Sakrij bazu cijena') + '</button>' +
         '<button type="button" class="btn btn-outline btn-small" id="gorivo-cijene-dohvati-btn">Dohvati cijene sada (test)</button>' +
         '<span class="faq-admin-status" id="gorivo-cijene-status"></span>' +
       '</div>' +
-      '<div id="gorivo-cijene-lista" hidden></div>';
+      '<div id="gorivo-cijene-lista"' + (gorivoCijeneSakrivena_ ? ' hidden' : '') + '></div>';
 
     var mjesecSelect = wrap.querySelector('#gorivo-mjesec-select');
     GORIVO_MJESECI_HR_.forEach(function(naziv, idx) {
@@ -4283,23 +4349,45 @@
       });
     });
 
-    // "📊 Baza kretanja cijena goriva" (25.9.2026., Sašin izričit zahtjev:
-    // "negdje na kartici gorivo... skrivena podkartica ili button prema
-    // bazi kretanja cijena goriva") — sakriveno po defaultu (hidden), učita
-    // se lijeno tek pri prvom otvaranju, da se ne opterećuje svako
-    // učitavanje admina.
-    var gorivoCijeneUcitane_ = false;
+    // "📊 Baza kretanja cijena goriva" (25.9.2026., proširen 26.9.2026. —
+    // Sašin izričit zahtjev: "neka non-stop bude prikazana baza kretanja
+    // cijena goriva... neka ima opciju sakrij... ali neka bude non-stop
+    // ispisano ono što je prošlo... jer kad odem iz goriva i vratim se
+    // uvijek moram povlačiti podatke"). Ranije: sakriveno po defaultu,
+    // lijeno se učitavalo tek na klik, i lokalna zastavica "već učitano" se
+    // gubila (pa i podaci "gubili") pri svakom povratku na Gorivo tab, jer
+    // se cijeli panel iznova gradi. Sad: PRIKAZANO po defaultu, podaci idu
+    // u gorivoCijeneCache_ (na razini modula, vidi deklaraciju gore) — pa
+    // se pri povratku na tab samo iznova iscrtavaju iz predmemorije, BEZ
+    // novog poziva na server. Gumb sad SAKRIVA/PRIKAZUJE (umjesto "učitaj
+    // prvi put"), a odabir prikazano/sakriveno isto pamti gorivoCijeneSakrivena_.
+    var listaEl0_ = wrap.querySelector('#gorivo-cijene-lista');
+    var ucitajBazuCijena_ = function(elZaIscrtati) {
+      elZaIscrtati.textContent = 'Učitavanje...';
+      return gasCall({ action: 'gorivoDohvatiCijene', token: adminToken }).then(function(res) {
+        if (handleAuthError(res)) { return; }
+        if (res.status !== 'ok') { elZaIscrtati.textContent = res.message || 'Učitavanje nije uspjelo.'; return; }
+        gorivoCijeneCache_ = res.redovi || [];
+        // Panel se u međuvremenu možda ponovno izgradio (npr. korisnik je
+        // otišao na drugi tab i vratio se dok je dohvat u tijeku) — uzmi
+        // TRENUTNI element iz DOM-a, ne stari (odspojeni) iz zatvorenja.
+        var trenutniEl = document.getElementById('gorivo-cijene-lista');
+        if (trenutniEl) { renderGorivoCijeneLista_(trenutniEl, gorivoCijeneCache_); }
+      }).catch(function() { elZaIscrtati.textContent = 'Greška u komunikaciji s poslužiteljem.'; });
+    };
+    if (gorivoCijeneCache_ !== null) {
+      renderGorivoCijeneLista_(listaEl0_, gorivoCijeneCache_);
+    } else if (!gorivoCijeneSakrivena_) {
+      ucitajBazuCijena_(listaEl0_);
+    }
     wrap.querySelector('#gorivo-cijene-toggle-btn').addEventListener('click', function() {
       var listaEl = wrap.querySelector('#gorivo-cijene-lista');
+      var sadPrikazano_ = listaEl.hidden; // upravo se otvara
       listaEl.hidden = !listaEl.hidden;
-      if (!listaEl.hidden && !gorivoCijeneUcitane_) {
-        gorivoCijeneUcitane_ = true;
-        listaEl.textContent = 'Učitavanje...';
-        gasCall({ action: 'gorivoDohvatiCijene', token: adminToken }).then(function(res) {
-          if (handleAuthError(res)) { return; }
-          if (res.status !== 'ok') { listaEl.textContent = res.message || 'Učitavanje nije uspjelo.'; return; }
-          renderGorivoCijeneLista_(listaEl, res.redovi || []);
-        }).catch(function() { listaEl.textContent = 'Greška u komunikaciji s poslužiteljem.'; });
+      gorivoCijeneSakrivena_ = listaEl.hidden;
+      this.textContent = gorivoCijeneSakrivena_ ? 'Prikaži bazu cijena' : 'Sakrij bazu cijena';
+      if (sadPrikazano_ && gorivoCijeneCache_ === null) {
+        ucitajBazuCijena_(listaEl);
       }
     });
     wrap.querySelector('#gorivo-cijene-dohvati-btn').addEventListener('click', function() {
@@ -4312,13 +4400,17 @@
         btn.disabled = false;
         if (handleAuthError(res)) { return; }
         if (res.status !== 'ok') { statusEl.textContent = res.message || 'Dohvat nije uspio.'; statusEl.className = 'faq-admin-status error'; return; }
-        statusEl.textContent = 'Dohvaćeno — otvori bazu cijena ispod za pregled.';
-        statusEl.className = 'faq-admin-status';
-        gorivoCijeneUcitane_ = false;
+        // Poništi predmemoriju — sljedeći prikaz (odmah ispod, ako baza
+        // nije sakrivena) mora povući stvarno SVJEŽE podatke, ne stare.
+        gorivoCijeneCache_ = null;
         var listaEl = wrap.querySelector('#gorivo-cijene-lista');
-        if (!listaEl.hidden) {
-          listaEl.hidden = true;
-          wrap.querySelector('#gorivo-cijene-toggle-btn').click();
+        if (listaEl.hidden) {
+          statusEl.textContent = 'Dohvaćeno — baza je trenutno sakrivena, prikaži je za pregled svježih podataka.';
+          statusEl.className = 'faq-admin-status';
+        } else {
+          statusEl.textContent = 'Dohvaćeno.';
+          statusEl.className = 'faq-admin-status';
+          ucitajBazuCijena_(listaEl);
         }
       }).catch(function() {
         btn.disabled = false;
@@ -4621,6 +4713,12 @@
       var kontakt = fieldVal(entry, 'Kontakt osoba');
       var mobitel = fieldVal(entry, 'Mobitel');
       if (kontakt) { subParts.push('Kontakt osoba: ' + esc(kontakt)); }
+      // Status ponude na sažetku, SAMO dok je klijent u "Ponude" (ne i
+      // Arhiva, koja već ima svoj bedž — arhivaKategorijaBadgeHtml_ — uz
+      // naslov) — Sašin izričit zahtjev (25.9.2026.), pozicionirano
+      // namjerno neposredno IZNAD "Mobitel" (vidi ponudaStatusSazetakHtml_
+      // gore za pravila/oznake).
+      if (jePonuda(entry) && !jeArhiva(entry)) { subParts.push(ponudaStatusSazetakHtml_(entry)); }
       if (mobitel) { subParts.push('Mobitel: ' + esc(mobitel)); }
     } else {
       var tel = fieldVal(entry, 'Telefon (odbijenica)');
@@ -8410,7 +8508,19 @@
           };
         });
 
-        if (slanje) {
+        // ISPRAVAK (Sašin izričit zahtjev, 25.9.2026.): prije se ovaj blok
+        // (trenutna/živa stavka povijesti, uključujući "Prihvaćeno: ...")
+        // pokazivao SAMO ako postoji 'Datum slanja aktivne ponude (admin)'
+        // (var slanje) — pa ako je PRVA ponuda prihvaćena a to polje iz bilo
+        // kojeg razloga nije bilo popunjeno, gornji bedž ("Ponuda — slanje i
+        // status") je već pokazivao "Prihvaćena", ali "Povijest slanja
+        // ponude" ispod je ostajala prazna sve dok se ponuda kasnije ne
+        // poništi (tad se negdje popuni 'slanje' pa se odjednom pojavi).
+        // Sad se stavka prikazuje čim je ponuda uopće izašla iz stanja
+        // 'nije_poslano' (poslana, na čekanju, prihvaćena, odbijena,
+        // istekla ili poništena) — datum slanja nije više uvjet, samo se
+        // red "Poslano: ..." izostavlja ako taj podatak stvarno nedostaje.
+        if (slanje || status !== 'nije_poslano') {
           var odbSekLive = fieldVal(entry, 'Datum odbijanja ponude (admin) (sek)') || fieldVal(entry, 'Datum odbijanja ponude (admin)');
           var prihvSekLive = fieldVal(entry, 'Datum prihvaćanja ponude (admin) (sek)') || fieldVal(entry, 'Datum prihvaćanja ponude (admin)');
           var ponistSekLive = fieldVal(entry, 'Datum poništenja ponude (admin) (sek)') || fieldVal(entry, 'Datum poništenja ponude (admin)');
