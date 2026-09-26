@@ -6649,6 +6649,15 @@
             entry.fields['Nadležna poslovnica (admin)'] = odabrane.join(',');
             entry.fields['Nadležna poslovnica potvrđena (admin)'] = 'da';
             poslovnicaToggle.disabled = true;
+            // ISPRAVAK (26.9.2026., Sašin bug report — "kad potvrdim nadležnu
+            // poslovnicu uvijek se zaglavi padajući, ne mogu ga zatvoriti,
+            // zatvori se samo kod refresha"): "Potvrdi" je gasio toggle gumb
+            // (disabled), ali NIKAD nije zatvorio sam padajući panel ako je
+            // ostao otvoren u trenutku klika — a ugašen gumb više ne prima
+            // klikove, pa panel ostaje trajno otvoren dok se stranica ne
+            // ponovno učita. Sad se panel ovdje EKSPLICITNO zatvara odmah
+            // nakon uspješne potvrde, bez obzira je li bio otvoren ili ne.
+            poslovnicaPanel.style.display = 'none';
             poslovnicaPotvrdiBtn.style.display = 'none';
             poslovnicaPromijeniBtn.style.display = '';
             poslovnicaStatusEl.textContent = 'Potvrđeno.';
