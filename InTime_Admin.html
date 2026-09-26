@@ -3604,6 +3604,64 @@
   var LOGISTICKI_VRSTA_LABELE_ = { centar: 'Logistički centar', vanjski: 'Vanjski izvršitelji', servis: 'Servis / odjel' };
   var LOGISTICKI_VRSTA_NASLOV_ = { centar: 'LOGISTIČKI CENTAR', vanjski: 'VANJSKI IZVRŠITELJI', servis: 'SERVIS' };
 
+  // Popis radnih mjesta za "Funkcija" osobe (26.9.2026., Sašin popis) — grupiran
+  // u optgroup-ove; zadnja opcija "Ostalo" otvara slobodan unos za sve što nije
+  // na popisu (i za postojeće/staro slobodno upisane vrijednosti iz sjemena).
+  var RADNA_MJESTA_GRUPE_ = [
+    { naziv: 'Uprava i vodstvo', stavke: [
+      'Vlasnik/ica tvrtke', 'Direktor/ica', 'Izvršni direktor/ica', 'Član/ica uprave', 'Prokurist/ica',
+      'Voditelj/ica poslovanja', 'Operativni direktor/ica', 'Komercijalni direktor/ica', 'Voditelj/ica podružnice', 'Voditelj/ica poslovnice'
+    ] },
+    { naziv: 'Logistika, transport i distribucija', stavke: [
+      'Direktor/ica logistike', 'Voditelj/ica logistike', 'Koordinator/ica logistike', 'Referent/ica logistike', 'Administrator/ica logistike',
+      'Logistički disponent/ica', 'Prometni disponent/ica', 'Transportni disponent/ica', 'Voditelj/ica transporta', 'Koordinator/ica transporta',
+      'Referent/ica transporta', 'Organizator/ica prijevoza', 'Voditelj/ica distribucije', 'Koordinator/ica distribucije', 'Referent/ica distribucije',
+      'Voditelj/ica otpreme', 'Referent/ica otpreme', 'Administrator/ica otpreme', 'Voditelj/ica dostave', 'Koordinator/ica dostave',
+      'Dispečer/ica dostave', 'Koordinator/ica kurirskih službi', 'Administrator/ica kurirskih pošiljaka', 'Koordinator/ica domaćeg transporta', 'Koordinator/ica međunarodnog transporta',
+      'Referent/ica za uvoz i izvoz', 'Špediter/ka', 'Carinski referent/ica', 'Voditelj/ica voznog parka', 'Administrator/ica voznog parka'
+    ] },
+    { naziv: 'Skladište, pakiranje i roba', stavke: [
+      'Voditelj/ica skladišta', 'Zamjenik/ica voditelja skladišta', 'Koordinator/ica skladišta', 'Administrator/ica skladišta', 'Skladišni referent/ica',
+      'Skladištar/ka', 'Voditelj/ica prijema robe', 'Referent/ica prijema robe', 'Kontrolor/ica prijema robe', 'Voditelj/ica izdavanja robe',
+      'Referent/ica izdavanja robe', 'Voditelj/ica pakiranja', 'Koordinator/ica pakiranja', 'Djelatnik/ica pakiranja', 'Kontrolor/ica pakiranja',
+      'Voditelj/ica komisioniranja', 'Komisionar/ka', 'Kontrolor/ica zaliha', 'Voditelj/ica robnog poslovanja', 'Referent/ica robnog poslovanja'
+    ] },
+    { naziv: 'Računi, otkupnine i financije', stavke: [
+      'Financijski direktor/ica', 'Voditelj/ica financija', 'Voditelj/ica računovodstva', 'Glavni računovođa/tkinja', 'Računovođa/tkinja',
+      'Knjigovođa/tkinja', 'Voditelj/ica knjigovodstva', 'Referent/ica ulaznih računa', 'Knjigovođa ulaznih računa', 'Likvidator/ica računa',
+      'Kontrolor/ica računa dobavljača', 'Referent/ica za platni promet', 'Referent/ica za bankovne izvode', 'Referent/ica za usklađivanje računa', 'Referent/ica salda kontija dobavljača',
+      'Referent/ica za dospjele obveze', 'Referent/ica za povrate novca', 'Referent/ica za povratne uplate', 'Referent/ica za otkupnine', 'Administrator/ica otkupnina',
+      'Kontrolor/ica uplata otkupnina', 'Referent/ica za usklađivanje otkupnina', 'Referent/ica za kartično plaćanje otkupnina', 'Financijski kontrolor/ica', 'Kontrolor/ica troškova transporta'
+    ] },
+    { naziv: 'Prigovori, štete, razbijena roba i povrati', stavke: [
+      'Voditelj/ica reklamacija', 'Referent/ica reklamacija', 'Administrator/ica reklamacija', 'Voditelj/ica prigovora', 'Referent/ica za prigovore',
+      'Referent/ica za oštećene pošiljke', 'Referent/ica za izgubljene pošiljke', 'Referent/ica za zakašnjele pošiljke', 'Referent/ica za naknadu štete', 'Administrator/ica odštetnih zahtjeva',
+      'Voditelj/ica kontrole kvalitete', 'Kontrolor/ica kvalitete robe', 'Voditelj/ica povrata robe', 'Referent/ica za povrat robe', 'Koordinator/ica korisničke podrške'
+    ] }
+  ];
+  var RADNO_MJESTO_OSTALO_ = '__ostalo__';
+
+  // Grupirani <option>-i + "Ostalo" na kraju. Ako trenutna vrijednost NIJE na
+  // popisu (npr. staro slobodno upisano "Voditelj i Operativac" iz sjemena),
+  // automatski odabire "Ostalo" i vraća jeOstalo=true da pozivatelj prikaže
+  // i popuni slobodno polje — ništa se ne gubi.
+  function generirajRadnoMjestoSelectHtml_(trenutnaFunkcija) {
+    var poznato = false;
+    var opts = '<option value="">— odaberite radno mjesto —</option>';
+    RADNA_MJESTA_GRUPE_.forEach(function(grupa) {
+      opts += '<optgroup label="' + esc(grupa.naziv) + '">';
+      grupa.stavke.forEach(function(stavka) {
+        var odabrano = (stavka === trenutnaFunkcija);
+        if (odabrano) { poznato = true; }
+        opts += '<option value="' + esc(stavka) + '"' + (odabrano ? ' selected' : '') + '>' + esc(stavka) + '</option>';
+      });
+      opts += '</optgroup>';
+    });
+    var jeOstalo = !!trenutnaFunkcija && !poznato;
+    opts += '<option value="' + RADNO_MJESTO_OSTALO_ + '"' + (jeOstalo ? ' selected' : '') + '>Ostalo (upišite ručno)…</option>';
+    return { html: opts, jeOstalo: jeOstalo };
+  }
+
   function buildLogistickiCentarCard_(centar) {
     centar = centar || { rowIndex: 0, grad: '', adresa: '', telefon: '', email: '', vrsta: 'centar', pokriva: [], kontakti: [] };
     var wrap = document.createElement('div');
@@ -3868,12 +3926,16 @@
     var jeNova = !osoba.id;
     var naslov = ((osoba.ime || '') + ' ' + (osoba.prezime || '')).trim();
     var naslovPrikaz = naslov || (jeNova ? 'Nova osoba' : '(bez imena)');
+    var radnoMjesto = generirajRadnoMjestoSelectHtml_(osoba.funkcija || '');
     wrap.innerHTML =
       '<h3>' + esc(naslovPrikaz) + (osoba.brojDodjela ? '<span class="lc-broj-dodjela">dodijeljena ' + osoba.brojDodjela + ' centara/servisa</span>' : '') + '</h3>' +
       '<div class="centar-grid-2">' +
         '<div><label>Ime</label><input type="text" class="lo-ime" value="' + esc(osoba.ime || '') + '"></div>' +
         '<div><label>Prezime</label><input type="text" class="lo-prezime" value="' + esc(osoba.prezime || '') + '"></div>' +
-        '<div><label>Funkcija (zadana)</label><input type="text" class="lo-funkcija" value="' + esc(osoba.funkcija || '') + '"></div>' +
+        '<div><label>Radno mjesto (zadano)</label>' +
+          '<select class="lo-funkcija-select">' + radnoMjesto.html + '</select>' +
+          '<input type="text" class="lo-funkcija-ostalo" placeholder="Upišite radno mjesto…" value="' + (radnoMjesto.jeOstalo ? esc(osoba.funkcija || '') : '') + '" style="margin-top:6px;' + (radnoMjesto.jeOstalo ? '' : 'display:none;') + '">' +
+        '</div>' +
         '<div><label>Telefon</label><input type="text" class="lo-telefon" value="' + esc(osoba.telefon || '') + '"></div>' +
         '<div><label>Email</label><input type="text" class="lo-email" value="' + esc(osoba.email || '') + '"></div>' +
         '<div><label>Adresa</label><input type="text" class="lo-adresa" value="' + esc(osoba.adresa || '') + '"></div>' +
@@ -3885,6 +3947,15 @@
           '<button type="button" class="btn btn-small lo-save-btn">Spremi</button>' +
         '</div>' +
       '</div>';
+    wrap.querySelector('.lo-funkcija-select').addEventListener('change', function() {
+      var ostaloInput = wrap.querySelector('.lo-funkcija-ostalo');
+      if (this.value === RADNO_MJESTO_OSTALO_) {
+        ostaloInput.style.display = '';
+        ostaloInput.focus();
+      } else {
+        ostaloInput.style.display = 'none';
+      }
+    });
     wrap.querySelector('.lo-save-btn').addEventListener('click', function() {
       submitLogistickiOsobaSpremi_(wrap, osoba.id);
     });
@@ -3906,11 +3977,15 @@
       statusEl.className = 'faq-admin-status error';
       return;
     }
+    var funkcijaSelectEl = cardEl.querySelector('.lo-funkcija-select');
+    var funkcija = funkcijaSelectEl.value === RADNO_MJESTO_OSTALO_
+      ? cardEl.querySelector('.lo-funkcija-ostalo').value.trim()
+      : funkcijaSelectEl.value;
     var podaci = {
       id: id || undefined,
       ime: ime,
       prezime: prezime,
-      funkcija: cardEl.querySelector('.lo-funkcija').value.trim(),
+      funkcija: funkcija,
       telefon: cardEl.querySelector('.lo-telefon').value.trim(),
       email: cardEl.querySelector('.lo-email').value.trim(),
       adresa: cardEl.querySelector('.lo-adresa').value.trim()
