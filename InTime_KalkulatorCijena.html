@@ -1456,6 +1456,13 @@ const DEFAULT_CJENIK = [
 ];
 
 let CURRENT_CJENIK = DEFAULT_CJENIK.slice();
+// Zadani cjenik postavljen u adminu (kartica "🧮 Kalkulator" → "Postavke osnovnog kalkulatora"), ako postoji —
+// dohvaća se uživo pri učitavanju stranice (vidi ucitajZadaniCjenikSaAdmina_ na dnu datoteke) i zamjenjuje
+// ugrađeni DEFAULT_CJENIK kao polazišnu vrijednost. null = admin još ništa nije postavio.
+let ADMIN_ZADANI_CJENIK_ = null;
+// true čim korisnik SAM učita svoj cjenik na ovoj stranici (postojeća opcija ispod, "TO NE DIRAJ" — Sašin
+// izričit zahtjev) — admin-postavljeni zadani cjenik se tad više ne smije naknadno sam prepisati preko toga.
+let korisnikUcitaoVlastitiCjenik_ = false;
 // Ugovoreni postotak naknade za nestandardnu pošiljku, pročitan iz učitanog cjenika (Excel), ako postoji.
 // null = nije pronađen/nije učitan poseban cjenik -> koristi se zadanih 100% (frakcija 1).
 let cjenikNestandardnaPct = null;
@@ -2194,6 +2201,7 @@ document.getElementById('cjenikFile').addEventListener('change', function(e){
         return;
       }
       CURRENT_CJENIK = parsed;
+      korisnikUcitaoVlastitiCjenik_ = true;
       renderCjenikTable(CURRENT_CJENIK);
       cjenikNestandardnaPct = parseNestandardnaPctFromRows(rows);
       updateNestandardnaPctUI();
@@ -2264,7 +2272,8 @@ document.getElementById('cjenikFile').addEventListener('change', function(e){
 });
 
 function resetCjenik(){
-  CURRENT_CJENIK = DEFAULT_CJENIK.slice();
+  CURRENT_CJENIK = (ADMIN_ZADANI_CJENIK_ || DEFAULT_CJENIK).slice();
+  korisnikUcitaoVlastitiCjenik_ = false;
   renderCjenikTable(CURRENT_CJENIK);
   document.getElementById('cjenikFile').value = '';
   cjenikNestandardnaPct = null;
@@ -4205,6 +4214,22 @@ function ucitajZivDodatakNaGorivo_(){
   }).catch(function(){ /* tiho — kalkulator i dalje radi sa zadanom vrijednosti upisanom u HTML-u */ });
 }
 ucitajZivDodatakNaGorivo_();
+
+// Dohvaća zadani cjenik koji je admin postavio (kartica "🧮 Kalkulator" → "Postavke osnovnog kalkulatora"),
+// isti obrazac otpornosti kao ucitajZivDodatakNaGorivo_() gore: ako poziv ne uspije, kalkulator tiho nastavlja
+// raditi s ugrađenim DEFAULT_CJENIK iz builda. Ako je korisnik u međuvremenu SAM učitao svoj cjenik na ovoj
+// stranici (postojeća opcija, ne dira se), admin-zadani cjenik se ne primjenjuje preko toga.
+function ucitajZadaniCjenikSaAdmina_(){
+  gorivoGasCall_({ action: 'kalkulatorZadaniCjenikJavno' }).then(function(res){
+    if(!res || res.status !== 'ok' || !Array.isArray(res.cjenik) || !res.cjenik.length){ return; }
+    ADMIN_ZADANI_CJENIK_ = res.cjenik;
+    if(korisnikUcitaoVlastitiCjenik_){ return; }
+    CURRENT_CJENIK = res.cjenik.slice();
+    renderCjenikTable(CURRENT_CJENIK);
+    scheduleLiveIzracunaj();
+  }).catch(function(){ /* tiho — kalkulator i dalje radi s ugrađenim zadanim cjenikom iz builda */ });
+}
+ucitajZadaniCjenikSaAdmina_();
 </script>
 
 </body>
