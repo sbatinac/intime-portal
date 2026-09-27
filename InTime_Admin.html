@@ -428,6 +428,20 @@
     box-sizing:border-box;
   }
   .field-table td.v textarea{min-height:44px;resize:vertical;}
+  /* Razdvajanje polja po usluzi (Domaća distribucija / Međunarodna distribucija
+     / FedEx EXPRESS / FedEx ECONOMY) u generičkoj tablici odgovora (27.9.2026.,
+     Sašin izričit zahtjev — "dosta je to izmiješano... svaka usluga u drugoj
+     boji i crta između usluga"): crta na vrhu retka gdje "usluga" u nazivu
+     polja mijenja se u odnosu na prethodni redak (uklj. ulazak/izlazak iz
+     bloka), plus obojen lijevi rub + naziv polja u boji te usluge dok je
+     redak dio nekog prepoznatog bloka. Redoslijed boja isti kao redoslijed
+     usluga u samom upitniku. */
+  .field-table tr.field-row-divider>td{border-top:2px solid var(--line);padding-top:10px;}
+  .field-table tr[data-usluga-grupa]>td.k{border-left:4px solid transparent;padding-left:8px;font-weight:600;}
+  .field-table tr[data-usluga-grupa="domaca"]>td.k{border-left-color:#1b7a74;color:#1b7a74;}
+  .field-table tr[data-usluga-grupa="medjunarodna"]>td.k{border-left-color:#8e44ad;color:#8e44ad;}
+  .field-table tr[data-usluga-grupa="fedexexpress"]>td.k{border-left-color:#2166ac;color:#2166ac;}
+  .field-table tr[data-usluga-grupa="fedexeconomy"]>td.k{border-left-color:#b8860b;color:#b8860b;}
 
   .admin-fields{
     background:var(--bg);
@@ -1015,6 +1029,10 @@
     margin-bottom:-2px;font-size:13px;font-weight:600;color:var(--grey);cursor:pointer;
   }
   .lc-podtab-btn.active{color:var(--purple-dark);border-bottom-color:var(--purple);}
+  /* "🧪 Isprobaj kalkulator" (27.9.2026.) — ugrađeni iframe stvarne javne
+     kalkulator-stranice, dovoljno visok da stane cijeli alat bez previše
+     unutarnjeg scrolla (kalkulator ima dosta polja + cjenik desno). */
+  .kalk-isprobaj-iframe{width:100%;height:1500px;border:1px solid var(--line);border-radius:8px;display:block;}
   /* Zatvorene/otvorene kartice centara i servisa (26.9.2026., Sašin
      izričit zahtjev — "neka kartice budu zatvorene dok se ne klikne").
      .lc-centar-detalji nosi SVE uređivo polje i akcije, skriveno dok
@@ -1624,6 +1642,7 @@
       primijeniZoneArhiva_(res.zoneArhiva || {});
       primijeniKalkulatorCjenikStatus_(res.kalkulatorCjenikStatus || {});
       primijeniKalkulatorCjenikArhiva_(res.kalkulatorCjenikArhiva || {});
+      primijeniKalkulatorNapomene_(res.kalkulatorNapomene || {});
       primijeniBrojStatus_(res.brojStatus || {});
       primijeniImenik_(res.imenik || {});
       primijeniImenikAutoSync_(res.imenikAutoSync || {});
@@ -1643,6 +1662,7 @@
     loadZoneArhiva_();
     loadKalkulatorCjenikStatus_();
     loadKalkulatorCjenikArhiva_();
+    loadKalkulatorNapomene_();
     loadBrojStatus_();
     loadImenik();
     loadImenikAutoSync_();
@@ -2064,11 +2084,37 @@
           '<div class="zone-arhiva-naziv">' + esc(entry.naziv || 'cjenik.xlsx') + '</div>' +
           '<div class="zone-arhiva-meta">' + esc(entry.datum) + ' — ' + esc(String(entry.brojKategorija)) + ' kategorija — razlog: ' + esc(entry.razlog || '—') + '</div>' +
         '</div>' +
-        '<button type="button" class="btn btn-outline btn-small kalk-cjenik-arhiva-vrati-btn">Vrati kao aktivno</button>';
+        '<button type="button" class="btn btn-outline btn-small kalk-cjenik-arhiva-vrati-btn">Vrati kao aktivno</button>' +
+        '<button type="button" class="btn btn-danger btn-small kalk-cjenik-arhiva-obrisi-btn">🗑 Obriši</button>';
       row.querySelector('.kalk-cjenik-arhiva-vrati-btn').addEventListener('click', function() {
         vratiKalkulatorCjenikArhivu_(entry.fileId, entry.naziv);
       });
+      row.querySelector('.kalk-cjenik-arhiva-obrisi-btn').addEventListener('click', function() {
+        obrisiKalkulatorCjenikArhivu_(entry.fileId, entry.naziv);
+      });
       el.appendChild(row);
+    });
+  }
+
+  // Sašin izričit zahtjev (27.9.2026.) — "napravi mogućnost brisanja zapisa
+  // u arhivi kad promijenim cjenik". Trajno briše JEDAN arhivski zapis
+  // (redak u logu + arhiviranu .xlsx kopiju na Disku) — NE dira trenutno
+  // aktivan zadani cjenovnik kalkulatora (taj živi posve neovisno, vidi
+  // napomenu uz adminKalkulatorCjenikArhivaDelete u InTime_Code.gs).
+  function obrisiKalkulatorCjenikArhivu_(fileId, naziv) {
+    if (!confirm('Trajno obrisati arhivirani zapis "' + naziv + '" iz arhive cjenovnika? Ovo se ne može poništiti. (Trenutno aktivan zadani cjenovnik kalkulatora ostaje nepromijenjen.)')) { return; }
+    var statusEl = document.getElementById('kalk-cjenik-admin-status');
+    if (statusEl) { statusEl.textContent = 'Brisanje zapisa iz arhive...'; statusEl.className = 'faq-admin-status'; }
+    gasCall({ action: 'adminKalkulatorCjenikArhivaDelete', token: adminToken, fileId: fileId }).then(function(res) {
+      if (handleAuthError(res)) { return; }
+      if (res.status !== 'ok') {
+        if (statusEl) { statusEl.textContent = res.message || 'Brisanje nije uspjelo.'; statusEl.className = 'faq-admin-status error'; }
+        return;
+      }
+      if (statusEl) { statusEl.textContent = 'Zapis obrisan iz arhive.'; statusEl.className = 'faq-admin-status'; }
+      loadKalkulatorCjenikArhiva_();
+    }).catch(function() {
+      if (statusEl) { statusEl.textContent = 'Greška u komunikaciji s poslužiteljem.'; statusEl.className = 'faq-admin-status error'; }
     });
   }
 
@@ -2090,6 +2136,81 @@
       loadKalkulatorCjenikArhiva_();
     }).catch(function() {
       if (statusEl) { statusEl.textContent = 'Greška u komunikaciji s poslužiteljem.'; statusEl.className = 'faq-admin-status error'; }
+    });
+  }
+
+  // "NAPOMENE" — zadnja pod-kartica kartice "🧮 Kalkulator" (Sašin izričit
+  // zahtjev, 27.9.2026.): slobodne interne bilješke, svaka sa svojom bojom
+  // slova, koje admin sam dodaje i briše (vidi backend uz
+  // adminKalkulatorNapomenaList/Dodaj/Obrisi u InTime_Code.gs). Isti
+  // load/primijeni/render obrazac kao ostale pod-kartice iznad.
+  var kalkulatorNapomeneData = null;
+  function primijeniKalkulatorNapomene_(res) {
+    if (res.status !== 'ok') { return; }
+    kalkulatorNapomeneData = res.entries || [];
+    if (activeTab === 'Kalkulator') { renderKalkulatorNapomene_(); }
+  }
+  function loadKalkulatorNapomene_() {
+    gasCall({ action: 'adminKalkulatorNapomenaList', token: adminToken }).then(function(res) {
+      if (handleAuthError(res)) { return; }
+      primijeniKalkulatorNapomene_(res);
+    }).catch(function() {});
+  }
+
+  function renderKalkulatorNapomene_() {
+    var el = document.getElementById('kalk-napomene-list');
+    if (!el) { return; }
+    if (!kalkulatorNapomeneData) { el.innerHTML = '<div class="faq-admin-hint">Učitavanje napomena...</div>'; return; }
+    if (!kalkulatorNapomeneData.length) { el.innerHTML = '<div class="faq-admin-hint">Još nema napomena — dodajte prvu iznad.</div>'; return; }
+    el.innerHTML = '';
+    kalkulatorNapomeneData.forEach(function(entry) {
+      var row = document.createElement('div');
+      row.className = 'zone-arhiva-item';
+      row.innerHTML =
+        '<div class="zone-arhiva-info">' +
+          '<div class="kalk-napomena-tekst" style="color:' + esc(entry.boja || '#131313') + ';">' + esc(entry.tekst) + '</div>' +
+          '<div class="zone-arhiva-meta">' + esc(entry.datum) + '</div>' +
+        '</div>' +
+        '<button type="button" class="btn btn-danger btn-small kalk-napomena-obrisi-btn">🗑 Obriši</button>';
+      row.querySelector('.kalk-napomena-obrisi-btn').addEventListener('click', function() {
+        obrisiKalkulatorNapomenu_(entry.rowIndex);
+      });
+      el.appendChild(row);
+    });
+  }
+
+  function dodajKalkulatorNapomenu_(cardEl) {
+    var tekstInput = cardEl.querySelector('#kalk-napomena-tekst-input');
+    var bojaInput = cardEl.querySelector('#kalk-napomena-boja-input');
+    var statusEl = cardEl.querySelector('#kalk-napomena-status');
+    var tekst = (tekstInput.value || '').trim();
+    if (!tekst) {
+      if (statusEl) { statusEl.textContent = 'Tekst napomene je obavezan.'; statusEl.className = 'faq-admin-status error'; }
+      return;
+    }
+    if (statusEl) { statusEl.textContent = 'Dodavanje...'; statusEl.className = 'faq-admin-status'; }
+    gasCall({ action: 'adminKalkulatorNapomenaDodaj', token: adminToken, tekst: tekst, boja: bojaInput.value }).then(function(res) {
+      if (handleAuthError(res)) { return; }
+      if (res.status !== 'ok') {
+        if (statusEl) { statusEl.textContent = res.message || 'Dodavanje nije uspjelo.'; statusEl.className = 'faq-admin-status error'; }
+        return;
+      }
+      if (statusEl) { statusEl.textContent = 'Napomena dodana.'; statusEl.className = 'faq-admin-status'; }
+      tekstInput.value = '';
+      loadKalkulatorNapomene_();
+    }).catch(function() {
+      if (statusEl) { statusEl.textContent = 'Greška u komunikaciji s poslužiteljem.'; statusEl.className = 'faq-admin-status error'; }
+    });
+  }
+
+  function obrisiKalkulatorNapomenu_(rowIndex) {
+    if (!confirm('Trajno obrisati ovu napomenu? Ovo se ne može poništiti.')) { return; }
+    gasCall({ action: 'adminKalkulatorNapomenaObrisi', token: adminToken, rowIndex: rowIndex }).then(function(res) {
+      if (handleAuthError(res)) { return; }
+      if (res.status !== 'ok') { alert(res.message || 'Brisanje nije uspjelo.'); return; }
+      loadKalkulatorNapomene_();
+    }).catch(function() {
+      alert('Greška u komunikaciji s poslužiteljem.');
     });
   }
 
@@ -3031,6 +3152,24 @@
     return ostalo.concat(grupaPakiranje, grupaOpseg);
   }
 
+  // Sašin izričit zahtjev (27.9.2026., screenshoti "Usluge koje Vam možemo
+  // ponuditi" / pitanje 9): u generičkoj tablici odgovora upitnika polja za
+  // 4 usluge (Domaća distribucija / Međunarodna distribucija / FedEx
+  // EXPRESS / FedEx ECONOMY) se ponavljaju u istom obliku ("Kategorija N –
+  // naziv (Usluga)", "...cijena (Usluga)" itd.) pa je bilo teško vidjeti
+  // gdje jedna usluga završava a druga počinje. Ova funkcija prepoznaje
+  // kojoj od 4 usluge pripada pojedini label (na temelju točnog imena
+  // usluge koje UPIT_FIELDS umeće u zagradu na kraju labela), a poziva se
+  // u petlji niže da se između skupina ubaci razdjelna crta i da se svaka
+  // skupina oboji drugom bojom (vidi CSS ".field-table tr[data-usluga-grupa]").
+  function odrediUslugaGrupu_(label) {
+    if (/\(Domaća distribucija\)/.test(label)) { return 'domaca'; }
+    if (/\(Međunarodna distribucija\)/.test(label)) { return 'medjunarodna'; }
+    if (/\(FedEx EXPRESS\)/.test(label)) { return 'fedexexpress'; }
+    if (/\(FedEx ECONOMY\)/.test(label)) { return 'fedexeconomy'; }
+    return null;
+  }
+
   function renderEntries() {
     // Popis se u cijelosti ponovno gradi (innerHTML = ''), pa bi stari
     // checkboxovi svejedno nestali iz DOM-a — čistimo i selectedRowIndexes
@@ -3124,6 +3263,7 @@
       container.appendChild(buildKalkulatorPanel_());
       renderKalkulatorCjenikStatus_();
       renderKalkulatorCjenikArhiva_();
+      renderKalkulatorNapomene_();
       return;
     }
 
@@ -3676,7 +3816,10 @@
     var podtabs = document.createElement('div');
     podtabs.className = 'lc-podtabs';
     podtabs.innerHTML =
-      '<button type="button" class="lc-podtab-btn' + (kalkulatorPodTab_ === 'Postavke' ? ' active' : '') + '" data-podtab="Postavke">⚙️ Postavke osnovnog kalkulatora</button>';
+      '<button type="button" class="lc-podtab-btn' + (kalkulatorPodTab_ === 'Korisnici' ? ' active' : '') + '" data-podtab="Korisnici">👥 Korisnici</button>' +
+      '<button type="button" class="lc-podtab-btn' + (kalkulatorPodTab_ === 'Postavke' ? ' active' : '') + '" data-podtab="Postavke">⚙️ Postavke osnovnog kalkulatora</button>' +
+      '<button type="button" class="lc-podtab-btn' + (kalkulatorPodTab_ === 'Isprobaj' ? ' active' : '') + '" data-podtab="Isprobaj">🧪 Isprobaj kalkulator</button>' +
+      '<button type="button" class="lc-podtab-btn' + (kalkulatorPodTab_ === 'Napomene' ? ' active' : '') + '" data-podtab="Napomene">NAPOMENE</button>';
     Array.prototype.forEach.call(podtabs.querySelectorAll('.lc-podtab-btn'), function(btn) {
       btn.addEventListener('click', function() {
         kalkulatorPodTab_ = btn.getAttribute('data-podtab');
@@ -3684,10 +3827,84 @@
       });
     });
     outer.appendChild(podtabs);
-    if (kalkulatorPodTab_ === 'Postavke') {
+    if (kalkulatorPodTab_ === 'Korisnici') {
+      outer.appendChild(buildKalkulatorKorisniciPanel_());
+    } else if (kalkulatorPodTab_ === 'Postavke') {
       outer.appendChild(buildKalkulatorCjenikPanel_());
+    } else if (kalkulatorPodTab_ === 'Isprobaj') {
+      outer.appendChild(buildKalkulatorIsprobajPanel_());
+    } else if (kalkulatorPodTab_ === 'Napomene') {
+      outer.appendChild(buildKalkulatorNapomenePanel_());
     }
     return outer;
+  }
+
+  // "NAPOMENE" (27.9.2026., Sašin izričit zahtjev — "napravi zadnju karticu
+  // u kojoj će biti samo napomene, mogućnost unosa i brisanja, boja slova").
+  // Zadnja pod-kartica kartice "🧮 Kalkulator". Svaka napomena pamti svoju
+  // boju teksta (biran preko standardnog <input type="color">), admin je
+  // slobodno dodaje i briše — vidi backend uz adminKalkulatorNapomenaList/
+  // Dodaj/Obrisi u InTime_Code.gs.
+  function buildKalkulatorNapomenePanel_() {
+    var wrap = document.createElement('div');
+    wrap.className = 'faq-admin-card';
+    wrap.innerHTML =
+      '<h3>Napomene</h3>' +
+      '<p class="faq-admin-hint">Slobodne interne bilješke vezane uz kalkulator — nisu javne, vidljive su samo u adminu.</p>' +
+      '<label>Nova napomena</label>' +
+      '<textarea id="kalk-napomena-tekst-input" rows="3" placeholder="Upišite napomenu..."></textarea>' +
+      '<label>Boja slova</label>' +
+      '<input type="color" id="kalk-napomena-boja-input" value="#131313">' +
+      '<div class="faq-admin-card-actions">' +
+        '<span class="faq-admin-status" id="kalk-napomena-status"></span>' +
+        '<button type="button" class="btn btn-small" id="kalk-napomena-dodaj-btn">Dodaj napomenu</button>' +
+      '</div>' +
+      '<div id="kalk-napomene-list"></div>';
+    wrap.querySelector('#kalk-napomena-dodaj-btn').addEventListener('click', function() {
+      dodajKalkulatorNapomenu_(wrap);
+    });
+    return wrap;
+  }
+
+  // "👥 Korisnici" (27.9.2026., Sašin izričit zahtjev — "napravi prvu
+  // karticu prije osnovnog zadanog cjenika, neka bude prazna za sada").
+  // NAMJERNO prazan placeholder — sadržaj/funkcionalnost dolazi naknadno,
+  // kad Saša javi što točno treba biti ovdje (npr. popis korisnika
+  // kalkulatora, njihovi vlastiti cjenici i sl. — nagađanje unaprijed bi
+  // moglo krenuti u krivom smjeru, pa se namjerno ostavlja otvoreno).
+  function buildKalkulatorKorisniciPanel_() {
+    var wrap = document.createElement('div');
+    wrap.className = 'faq-admin-card';
+    wrap.innerHTML =
+      '<h3>Korisnici</h3>' +
+      '<p class="faq-admin-hint">Ova pod-kartica je tek napravljena, namjerno prazna — sadržaj dolazi naknadno.</p>';
+    return wrap;
+  }
+
+  // "🧪 Isprobaj kalkulator" (27.9.2026., Sašin izričit zahtjev — "napravi u
+  // adminu kopiju kalkulatora sa prednje stranice... da mogu tu isprobavati,
+  // identičan kalkulator s naslovnice"): NAMJERNO nije kopija/duplikat koda
+  // (kalkulator je ~800 KB samostalne HTML/JS datoteke — svaki duplikat bi se
+  // morao ručno održavati sinkroniziran zauvijek, visok rizik razilaženja).
+  // Umjesto toga, ugrađuje se STVARNA javna stranica (InTime_KalkulatorCijena.html)
+  // kao iframe — budući da InTime_Admin.html i InTime_KalkulatorCijena.html
+  // žive na ISTOJ domeni/putanji (GitHub Pages, isti obrazac kao ugradnja u
+  // InTime_PismoNamjere.html, vidi toggleKalkulatorEmbed() ondje), relativna
+  // putanja radi bez ikakvih X-Frame-Options problema. Time je "sve što se
+  // napravi/promijeni" (uklj. admin-postavljeni zadani cjenik iz pod-kartice
+  // "Postavke" iznad) AUTOMATSKI vidljivo i ovdje — jer je to doslovno ISTA
+  // stranica koju vidi i klijent, ne kopija koja bi mogla zastarjeti.
+  function buildKalkulatorIsprobajPanel_() {
+    var wrap = document.createElement('div');
+    wrap.className = 'faq-admin-card';
+    wrap.innerHTML =
+      '<h3>Isprobaj kalkulator</h3>' +
+      '<p class="faq-admin-hint">Ovo je STVARNI kalkulator s naslovnice, ugrađen ovdje radi isprobavanja — nije kopija, pa se svaka promjena (npr. novi zadani cjenik postavljen u pod-kartici "Postavke osnovnog kalkulatora") ovdje odmah vidi, isto kao i klijentima. Osvježite karticu (ili ponovno otvorite ovaj pod-tab) da vidite najsvježije stanje ako ga upravo mijenjate.</p>' +
+      '<div class="faq-admin-card-actions" style="margin-bottom:10px;">' +
+        '<a href="InTime_KalkulatorCijena.html" target="_blank" rel="noopener" class="btn btn-outline btn-small">↗ Otvori u novom prozoru</a>' +
+      '</div>' +
+      '<iframe src="InTime_KalkulatorCijena.html" title="In Time — kalkulator cijene dostave (isprobavanje u adminu)" loading="lazy" class="kalk-isprobaj-iframe"></iframe>';
+    return wrap;
   }
 
   function buildKalkulatorCjenikPanel_() {
@@ -5703,6 +5920,7 @@
     var table = document.createElement('table');
     table.className = 'field-table';
     var editableInputs = [];
+    var zadnjaUslugaGrupa_ = undefined; // vidi odrediUslugaGrupu_ — razdjelna crta + boja po usluzi
     poredajLabeleZaPrikaz_(entry).forEach(function(label) {
       if (label === 'Tip' || label === 'Broj') { return; } // Broj je već prikazan u naslovu kartice, nepromjenjiv je
       // ISPRAVAK (22.9.2026., treći krug, Sašin izričit zahtjev — "curenje 4
@@ -5746,6 +5964,15 @@
       } else {
         tdV.textContent = v;
       }
+      // Razdjelna crta na svakoj promjeni "skupine usluge" (uključujući
+      // prijelaz iz/u polja koja ne pripadaju nijednoj usluzi) + bojanje
+      // labela po skupini — vidi odrediUslugaGrupu_ i pripadajući CSS.
+      var uslugaGrupa = odrediUslugaGrupu_(label);
+      if (uslugaGrupa !== zadnjaUslugaGrupa_ && zadnjaUslugaGrupa_ !== undefined) {
+        tr.classList.add('field-row-divider'); // ne na prvom redu tablice — nema prethodne skupine za razdvojiti
+      }
+      zadnjaUslugaGrupa_ = uslugaGrupa;
+      if (uslugaGrupa) { tr.setAttribute('data-usluga-grupa', uslugaGrupa); }
       tr.appendChild(tdK);
       tr.appendChild(tdV);
       table.appendChild(tr);
@@ -7319,7 +7546,12 @@
           : '<p class="af-sifra-hint af-sifra-hint-info af-ob-lock-hint" style="grid-column:1 / -1;">🔒 Ostala polja ispod otključavaju se tek kad TM broj bude potvrđen.</p>') +
         '<div><label>Datum otvaranja Online Bookinga</label>' +
           '<div class="af-sifra-red">' +
-            '<input type="text" class="af-datum-ob" placeholder="npr. 25.09.2026" value="' + esc(fieldVal(entry, 'Datum otvaranja Online Bookinga (admin)')) + '"' + (fieldVal(entry, 'Datum otvaranja Online Bookinga (admin)') ? ' readonly' : (fieldVal(entry, 'Identifikacijski TM broj klijenta (admin)') ? '' : ' disabled')) + '>' +
+            // Sašin izričit zahtjev (27.9.2026.): ovo polje se više NE upisuje
+            // ručno — uvijek se fiksira na točan trenutak (dan, sat, minuta,
+            // sekunda) klika na "✓ Potvrdi" (vidi poseban slučaj za "datumOb"
+            // u generičkoj OB_POLJA_DEF_ petlji niže), pa je input UVIJEK
+            // readonly, čisto informativan dok se ne potvrdi.
+            '<input type="text" class="af-datum-ob" placeholder="Postavlja se automatski na trenutni datum i vrijeme klikom na Potvrdi" value="' + esc(fieldVal(entry, 'Datum otvaranja Online Bookinga (admin)')) + '" readonly>' +
             (fieldVal(entry, 'Datum otvaranja Online Bookinga (admin)')
               ? '<button type="button" class="af-sifra-btn af-sifra-promijeni-btn af-ob-polje-promijeni-btn" data-polje="datumOb">✎ Promijeni</button>'
               : '<button type="button" class="af-sifra-btn af-sifra-potvrdi-btn af-ob-polje-potvrdi-btn" data-polje="datumOb"' + (fieldVal(entry, 'Identifikacijski TM broj klijenta (admin)') ? '' : ' disabled') + '>✓ Potvrdi</button>') +
@@ -7863,7 +8095,12 @@
       potvrdiBtn.addEventListener('click', function(ev) {
         ev.stopPropagation();
         if (potvrdiBtn.disabled) { return; }
-        var vrijednost = input.value.trim();
+        // Sašin izričit zahtjev (27.9.2026.): "Datum otvaranja Online
+        // Bookinga" se NE upisuje ručno (input je uvijek readonly) — u
+        // trenutku klika na Potvrdi fiksira se na TOČAN trenutak (dan,
+        // sat, minuta, sekunda), isto formatiranje kao za "Prebaci u
+        // ponude/nove klijente" (vidi formatirajDatumOtvaranjaKlijenta_).
+        var vrijednost = (kljuc === 'datumOb') ? formatirajDatumOtvaranjaKlijenta_(new Date()) : input.value.trim();
         if (!vrijednost) { input.focus(); return; }
         potvrdiBtn.disabled = true;
         var fields = {};
@@ -7895,9 +8132,16 @@
       promijeniBtn.addEventListener('click', function(ev) {
         ev.stopPropagation();
         if (!confirm('Sigurno želiš promijeniti ovo polje?\n\nTrenutna vrijednost: "' + input.value + '"')) { return; }
-        input.readOnly = false;
-        input.focus();
-        input.select();
+        // "Datum otvaranja Online Bookinga" se nikad ne upisuje ručno (vidi
+        // napomena kod Potvrdi handlera) — kod "Promijeni" samo se ponovno
+        // otvara mogućnost ponovnog fiksiranja na NOVI trenutni datum/vrijeme
+        // klikom na Potvrdi, input ostaje readonly (nema smisla dopustiti
+        // upisivanje jer bi se pri Potvrdi svejedno prepisalo trenutnim datumom).
+        if (kljuc !== 'datumOb') {
+          input.readOnly = false;
+          input.focus();
+          input.select();
+        }
         promijeniBtn.style.display = 'none';
         if (potvrdiBtn) { potvrdiBtn.style.display = ''; }
       });
