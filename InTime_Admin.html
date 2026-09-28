@@ -632,6 +632,79 @@
   .af-slanje-status{font-size:11px;color:var(--grey);margin-top:8px;min-height:14px;}
   .af-slanje-status.error{color:var(--red);}
   .af-slanje-status.ok{color:var(--green);font-weight:700;}
+  /* Panel "Pošalji zahtjev za Online Booking" (27.9.2026., Sašin izričit
+     zahtjev, odobreno prema mockupu — "integriraj, sviđa mi se"). Smješten
+     između "Potvrda prihvaćanja ponude" i "Online Booking i podaci
+     klijenta" (vidi buildAdminFieldsBlock() u <script> niže). Traka tamno
+     plava (Sašin izričit zahtjev — bila zelena u mockupu, promijenjeno PRIJE
+     stvarnog gradnje), zatvorena dok admin ne klikne na nju (isti mehanizam
+     kao .lc-centar-head/.expanded, samostalan — NE dijeli klase s tim
+     blokom, samo isti obrazac). Panel ispod svijetlo plav — namjerno
+     RAZLIČIT od ljubičastog "Predložak za slanje ponude"/zelenog "Slanje
+     ponude mailom" gore, da se odmah vizualno razlikuje kao sasvim druga,
+     interna svrha (ne mail klijentu). */
+  .af-ob-mail-blok{grid-column:1 / -1;margin-top:4px;margin-bottom:4px;overflow:hidden;border-radius:12px;}
+  .af-ob-mail-traka{display:flex;justify-content:space-between;align-items:center;gap:10px;cursor:pointer;background:#0d3b8c;color:#fff;border-radius:12px;padding:13px 16px;font-size:13px;font-weight:800;letter-spacing:.02em;user-select:none;}
+  .af-ob-mail-traka:hover{opacity:.93;}
+  .af-ob-mail-traka .chevron{font-size:13px;transition:transform .15s;flex-shrink:0;}
+  .af-ob-mail-blok.expanded .af-ob-mail-traka .chevron{transform:rotate(180deg);}
+  .af-ob-mail-blok.expanded .af-ob-mail-traka{border-radius:12px 12px 0 0;}
+  .af-ob-mail-panel{display:none;border:2px solid #aecdf0;border-top:none;border-radius:0 0 12px 12px;padding:14px;background:#eaf3fd;}
+  .af-ob-mail-blok.expanded .af-ob-mail-panel{display:block;}
+  .af-ob-mail-blok.locked .af-ob-mail-traka{background:#8a94a6;cursor:not-allowed;}
+  .af-ob-mail-blok.locked .af-ob-mail-traka:hover{opacity:1;}
+  .af-ob-guard-lock{font-size:13px;flex-shrink:0;}
+  .af-ob-guard-hint{background:#eef1f5;color:#4a5568;font-size:11.5px;line-height:1.6;padding:9px 16px;border:2px solid #d7dbe3;border-top:none;border-radius:0 0 12px 12px;display:flex;flex-wrap:wrap;gap:4px 12px;}
+  .af-ob-guard-stavka{font-weight:800;color:#b3261e;}
+  .af-ob-guard-stavka.ok{color:#1a7a3c;}
+  .af-ob-uvodni-okvir{margin-top:12px;padding-top:12px;border-top:1px dashed #aecdf0;}
+  .af-ob-uvodni-label{display:block;font-size:11.5px;font-weight:700;color:#375a8c;margin-bottom:5px;}
+  .af-ob-uvodni-textarea{width:100%;min-height:56px;resize:vertical;box-sizing:border-box;font-size:13px;font-family:inherit;padding:8px 10px;border:1px solid #b9cfe9;border-radius:8px;margin-bottom:8px;}
+  .af-ob-uvodni-chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;}
+  .af-ob-uvodni-chip{display:inline-flex;align-items:center;gap:6px;background:#e3f3e6;border:1px solid #b7ddbe;color:#1f5c30;font-size:11.5px;border-radius:14px;padding:5px 6px 5px 11px;cursor:pointer;max-width:100%;}
+  .af-ob-uvodni-chip.prilagodjen{background:#fce6e4;border-color:#f0b8b3;color:#8c2b22;}
+  .af-ob-uvodni-chip-tekst{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:260px;}
+  .af-ob-uvodni-chip-x{background:rgba(0,0,0,.08);border:none;border-radius:50%;width:16px;height:16px;line-height:16px;font-size:12px;color:inherit;cursor:pointer;flex-shrink:0;padding:0;}
+  .af-ob-uvodni-chip-x:hover{background:rgba(0,0,0,.18);}
+  .af-ob-uvodni-prazno{font-size:11.5px;color:#8a94a6;}
+  .af-ob-uvodni-alati{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px;}
+  .af-ob-uvodni-status{font-size:11px;min-height:14px;}
+  .af-ob-uvodni-status.ok{color:#1a7a3c;}
+  .af-ob-uvodni-status.error{color:#b3261e;}
+  .af-ob-mail-hint{font-size:11.5px;color:var(--grey);margin:0 0 10px;line-height:1.5;}
+  .af-ob-predlozak-okvir{border:2px solid #cfe0f5;border-radius:14px;padding:10px;background:#fff;margin-bottom:12px;}
+  .af-ob-predlozak-alati{display:flex;flex-wrap:wrap;align-items:center;gap:7px;margin-bottom:9px;}
+  .af-ob-predlozak-select{flex:1;min-width:160px;padding:6px 8px;border:1px solid var(--line);border-radius:6px;font-size:12.5px;font-family:inherit;background:#fff;}
+  .af-ob-predlozak-btn{background:none;border:1px solid var(--line);border-radius:6px;cursor:pointer;font-size:11px;font-weight:600;color:#0d3b8c;padding:5px 9px;white-space:nowrap;}
+  .af-ob-predlozak-btn:hover{color:#fff;background:#0d3b8c;border-color:#0d3b8c;}
+  .af-ob-predlozak-btn:disabled{opacity:.4;cursor:not-allowed;}
+  .af-ob-predlozak-btn:disabled:hover{color:#0d3b8c;background:none;}
+  .af-ob-predlozak-pregled{background:#f8fafc;border:1px solid var(--line);border-radius:8px;padding:12px 14px;}
+  .af-ob-predlozak-predmet{font-size:12.5px;font-weight:700;color:var(--graphite);margin-bottom:8px;padding-bottom:8px;border-bottom:1px dashed var(--line);}
+  .af-ob-predlozak-tijelo{font-size:12.5px;line-height:1.55;color:var(--graphite);white-space:pre-wrap;word-break:break-word;}
+  .af-ob-predlozak-prazno{font-size:11.5px;color:var(--grey);font-style:italic;padding:2px;}
+  .af-ob-predlozak-status{font-size:11px;color:var(--grey);margin-top:6px;min-height:14px;}
+  .af-ob-predlozak-status.error{color:var(--red);}
+  .ob-predlozak-html-pregled{width:100%;border:1px solid var(--line);border-radius:6px;min-height:80px;background:#fff;}
+  .af-ob-slanje-okvir{border:2px solid #cfe0f5;border-radius:14px;padding:10px;background:#fff;}
+  .af-ob-primatelj-red{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:9px;}
+  .af-ob-primatelj-input{flex:1;min-width:200px;padding:6px 8px;border:1px solid var(--line);border-radius:6px;font-size:12.5px;font-family:inherit;background:#fff;}
+  .af-ob-primatelj-input.error{border-color:var(--red);}
+  .af-ob-test-red{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:9px;}
+  .af-ob-test-input{flex:1;min-width:180px;padding:6px 8px;border:1px solid var(--line);border-radius:6px;font-size:12.5px;font-family:inherit;background:#fff;}
+  .af-ob-test-input.error{border-color:var(--red);}
+  .af-ob-kopija-red{display:flex;align-items:center;gap:7px;font-size:12.5px;margin-bottom:10px;cursor:pointer;}
+  .af-ob-btn{padding:7px 12px;border-radius:6px;border:1px solid #0d3b8c;background:#fff;color:#0d3b8c;font-size:12.5px;font-weight:700;cursor:pointer;white-space:nowrap;}
+  .af-ob-btn:hover{background:#0d3b8c;color:#fff;}
+  .af-ob-btn:disabled{opacity:.55;cursor:default;}
+  .af-ob-btn:disabled:hover{background:#fff;color:#0d3b8c;}
+  .af-ob-btn.uspjeh{border-color:var(--green);color:var(--green);}
+  .af-ob-btn.uspjeh:hover{background:var(--green);color:#fff;}
+  .af-ob-btn.uspjeh:disabled:hover{background:#fff;color:var(--green);}
+  .af-ob-posalji-btn{display:block;width:100%;}
+  .af-ob-slanje-status{font-size:11px;color:var(--grey);margin-top:8px;min-height:14px;}
+  .af-ob-slanje-status.error{color:var(--red);}
+  .af-ob-slanje-status.ok{color:var(--green);font-weight:700;}
   /* Modal uređivanja predložaka — vidi mail-predlozak-modal u HTML-u niže. */
   #mail-predlozak-modal .modal-box{max-width:640px;width:92vw;}
   #mail-predlozak-modal textarea{width:100%;box-sizing:border-box;min-height:260px;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:13px;font-family:inherit;line-height:1.5;resize:vertical;}
@@ -1043,6 +1116,24 @@
   .lc-centar-card.expanded .lc-centar-head .chevron{transform:rotate(180deg);}
   .lc-centar-detalji{display:none;}
   .lc-centar-card.expanded .lc-centar-detalji{display:block;margin-top:14px;}
+  /* Sašin izričit zahtjev (27.9.2026.): "traka" (zaglavlje kartice) obojena
+     po vrsti — vanjski izvršitelji roza/crvenkasto, logistički centri
+     svijetlo zeleno (servisi/odjeli ostaju bez boje — obična bijela
+     kartica). Zaglavlje se "izvlači" na negativnu marginu preko roditeljeva
+     paddinga (.faq-admin-card) i dobiva vlastiti, da boja pokrije cijelu
+     širinu kartice kao prava traka, ne samo tekst; overflow:hidden na
+     kartici pazi da obojeni gornji rub prati zaobljene kutove kartice. */
+  .lc-centar-card{overflow:hidden;}
+  .lc-vrsta-vanjski .lc-centar-head,
+  .lc-vrsta-centar .lc-centar-head{
+    margin:-16px -18px 0;padding:14px 18px;border-radius:9px 9px 0 0;
+  }
+  .lc-vrsta-vanjski .lc-centar-head{background:#fbe3ea;}
+  .lc-vrsta-vanjski .lc-centar-head h3{color:#96214a;}
+  .lc-vrsta-vanjski.expanded .lc-centar-detalji{margin-top:14px;}
+  .lc-vrsta-centar .lc-centar-head{background:#e2f5e8;}
+  .lc-vrsta-centar .lc-centar-head h3{color:#1c6b3d;}
+  .lc-vrsta-centar.expanded .lc-centar-detalji{margin-top:14px;}
   .zone-admin-status-line{font-size:13px;color:var(--graphite);background:#f5f7f8;border:1px solid var(--line);border-radius:8px;padding:10px 12px;margin-bottom:6px;}
   .zone-arhiva-naslov{margin:22px 0 4px;font-size:15px;}
   .zone-arhiva-item{
@@ -1151,7 +1242,7 @@
       </div>
     </div>
 
-    <p class="permanent-stat-note">Ukupan broj dolazaka na stranicu od početka rada stranice (trajna statistika, ne može se resetirati): <strong id="stat-posjete-sveukupno">—</strong></p>
+    <p class="permanent-stat-note">Ukupan broj dolazaka na stranicu od početka rada stranice (trajna statistika): <strong id="stat-posjete-sveukupno">—</strong> <button type="button" class="stat-reset-btn" style="margin-top:0;margin-left:6px;vertical-align:middle;" onclick="pokreniResetSveukupnihPosjeta_()" title="Resetiraj trajni brojač — zahtijeva dvostruku potvrdu (riječ + admin lozinka)">↺ Resetiraj</button></p>
 
     <div class="broj-panel">
       <span class="broj-panel-naslov">Numeracija — testni način:</span>
@@ -2430,6 +2521,25 @@
     // pokriva slučaj kad to još nije napravljeno za trenutnu verziju.
     var linkDokumenti = fieldVal(entry, 'Link na direktorij dokumenata ponude (admin)');
     var linkDokumentiPrikaz = linkDokumenti || '[link na dokumente ponude — klikni "📁 Pripremi direktorij i link" u bloku "Dokumenti za ponudu"]';
+    // Tagovi za panel "Pošalji zahtjev za Online Booking" (Sašin izričit
+    // zahtjev, 27.9.2026.). TM_BROJ/OB_EMAIL/ZADNJI_ROK_UNOSA se NAMJERNO
+    // čitaju iz ADMIN polja (isto polje koje "✓ Potvrdi" lanac ispod u
+    // buildAdminFieldsBlock zaključava/otključava) — NE iz klijentovog
+    // izvornog upitnika — Saša ih ručno popuni/potvrdi PRIJE slanja maila.
+    // OB_EMAIL i ZADNJI_ROK_UNOSA ipak imaju fallback na klijentov upitnik/
+    // izračun (isti fallback kao u samom polju iznad) za slučaj pregleda
+    // prije nego što je admin polje potvrđeno.
+    var tmBroj = fieldVal(entry, 'Identifikacijski TM broj klijenta (admin)') || '[TM broj — potvrdi TM broj klijenta]';
+    var obEmail = fieldVal(entry, 'OB korisničko ime (admin)') || fieldVal(entry, 'Preferirana e-mail adresa za prijavu u Online Booking (OB)') || '[e-mail adresa za Online Booking]';
+    var osobaPosiljkeIme = fieldVal(entry, 'Osoba za organizaciju slanja/primanja pošiljaka – ime i prezime') || '[ime i prezime osobe zadužene za pošiljke]';
+    var osobaPosiljkeTelefon = fieldVal(entry, 'Osoba za organizaciju slanja/primanja pošiljaka – telefon') || '[telefon osobe zadužene za pošiljke]';
+    var adresaPrikupaSirova = fieldVal(entry, 'Adresa mjesta prikupa pošiljaka') || fieldVal(entry, 'Adresa sjedišta');
+    var postanskiBrojPrikupaSirov = fieldVal(entry, 'Poštanski broj mjesta prikupa') || fieldVal(entry, 'Poštanski broj');
+    var gradPrikupaSirov = fieldVal(entry, 'Mjesto prikupa pošiljaka') || fieldVal(entry, 'Mjesto');
+    var adresaPrikupa = [adresaPrikupaSirova, postanskiBrojPrikupaSirov, gradPrikupaSirov].filter(function(d) { return d; }).join(', ') || '[adresa prikupa pošiljaka]';
+    var zadnjiRokUnosaAdmin_ = fieldVal(entry, 'Zadnje vrijeme unosa naloga (admin)');
+    var zadnjiRokUnosaIzracunat_ = pomakniVrijeme_(fieldVal(entry, 'Vrijeme prikupa pošiljaka (dolazak vozila)'), -30);
+    var zadnjiRokUnosa = zadnjiRokUnosaAdmin_ || zadnjiRokUnosaIzracunat_ || '[zadnji rok za unos naloga]';
     return String(tekst || '')
       .replace(/\{\{IME_FIRME\}\}/g, imeFirme)
       .replace(/\{\{IME_OSOBE\}\}/g, imeOsobe)
@@ -2439,7 +2549,13 @@
       .replace(/\{\{GRAD\}\}/g, grad)
       .replace(/\{\{LINK_POTVRDE\}\}/g, linkPotvrde)
       .replace(/\{\{ROK_VAZENJA\}\}/g, rokPrikaz)
-      .replace(/\{\{LINK_DOKUMENTI\}\}/g, linkDokumentiPrikaz);
+      .replace(/\{\{LINK_DOKUMENTI\}\}/g, linkDokumentiPrikaz)
+      .replace(/\{\{TM_BROJ\}\}/g, tmBroj)
+      .replace(/\{\{OB_EMAIL\}\}/g, obEmail)
+      .replace(/\{\{OSOBA_POSILJKE_IME\}\}/g, osobaPosiljkeIme)
+      .replace(/\{\{OSOBA_POSILJKE_TELEFON\}\}/g, osobaPosiljkeTelefon)
+      .replace(/\{\{ADRESA_PRIKUPA\}\}/g, adresaPrikupa)
+      .replace(/\{\{ZADNJI_ROK_UNOSA\}\}/g, zadnjiRokUnosa);
   }
 
   function primijeniCounters_(res) {
@@ -2497,14 +2613,56 @@
     });
   }
 
+  // Sašin izričit zahtjev (27.9.2026.): trajni ("sveukupno") brojač
+  // dolazaka na stranicu ipak treba moći resetirati — ali za razliku od
+  // "danas"/"ukupno" gore (jednostavan reset-modal), ovaj traži DVOSTRUKU
+  // potvrdu, isti obrazac koji se koristi svuda drugdje za ozbiljne/
+  // nepovratne radnje (npr. "Prebacivanje u nove klijente"): prvo riječ
+  // superjunaka, tek onda admin lozinka — definicije openSuperheroWordConfirmModal/
+  // openAdminPasswordConfirmModal su niže u ovoj datoteci.
+  function pokreniResetSveukupnihPosjeta_() {
+    openSuperheroWordConfirmModal(
+      'Resetiranje trajne statistike',
+      'Ukupan broj dolazaka na stranicu od početka rada stranice bit će vraćen na 0 — ovo je jedina statistika koja se inače nikad sama ne nulira. Za potvrdu upišite riječ ispod — nakon toga tražit će se i admin lozinka.',
+      function() {
+        openAdminPasswordConfirmModal(
+          'Resetiranje trajne statistike',
+          'Unesite admin lozinku za konačnu potvrdu — trajni brojač dolazaka bit će vraćen na 0.',
+          function() { izvrsiResetSveukupnihPosjeta_(); }
+        );
+      }
+    );
+  }
+  function izvrsiResetSveukupnihPosjeta_() {
+    gasCall({ action: 'adminResetPosjeteSveukupno', token: adminToken }).then(function(res) {
+      if (handleAuthError(res)) { return; }
+      if (res.status === 'ok') {
+        loadCounters();
+      } else {
+        alert(res.message || 'Resetiranje nije uspjelo.');
+      }
+    }).catch(function() {
+      alert('Greška u komunikaciji s poslužiteljem.');
+    });
+  }
+
   // ==== Modal "Predložak za slanje ponude" — vidi #mail-predlozak-modal u
   // HTML-u iznad i buildAdminFieldsBlock() niže (gumbi "+ Novi predložak" i
   // "✎ Uredi" pozivaju openMailPredlozakModal). mpTrenutniRowIndex prati
   // uređuje li se postojeći predložak (broj) ili se stvara nov (null).
   var mpTrenutniRowIndex = null;
-  function openMailPredlozakModal(predlozak) {
+  // Kategorija (27.9.2026.) — 'ponuda' (zadano, blok "Predložak za slanje
+  // ponude") ili 'ob_zahtjev' (novi panel "Pošalji zahtjev za Online
+  // Booking"). Kod uređivanja postojećeg predloška dolazi iz njega samog;
+  // kod NOVOG predloška poziva ga vidi drugi (opcionalni) argument — OB
+  // panel eksplicitno šalje 'ob_zahtjev' da novi predložak ne završi u
+  // izborniku ponude.
+  var mpTrenutnaKategorija_ = 'ponuda';
+  function openMailPredlozakModal(predlozak, kategorija) {
     mpTrenutniRowIndex = predlozak ? predlozak.rowIndex : null;
-    document.getElementById('mail-predlozak-modal-naslov').textContent = predlozak ? 'Uredi predložak' : 'Novi predložak';
+    mpTrenutnaKategorija_ = predlozak ? (predlozak.kategorija || 'ponuda') : (kategorija || 'ponuda');
+    var oznakaKategorije_ = (mpTrenutnaKategorija_ === 'ob_zahtjev') ? ' (zahtjev za Online Booking)' : ' (ponuda)';
+    document.getElementById('mail-predlozak-modal-naslov').textContent = (predlozak ? 'Uredi predložak' : 'Novi predložak') + oznakaKategorije_;
     document.getElementById('mp-naziv').value = predlozak ? predlozak.naziv : '';
     document.getElementById('mp-predmet').value = predlozak ? predlozak.predmet : '';
     document.getElementById('mp-sadrzaj').value = predlozak ? predlozak.sadrzaj : MAIL_PREDLOZAK_PRAZAN_SADRZAJ_;
@@ -2638,7 +2796,8 @@
       predmet: predmet,
       sadrzaj: sadrzaj,
       zadani: document.getElementById('mp-zadani').checked,
-      html: document.getElementById('mp-html').checked
+      html: document.getElementById('mp-html').checked,
+      kategorija: mpTrenutnaKategorija_
     };
     gasCall({ action: 'adminMailPredlozakSpremi', token: adminToken, predlozak: predlozak }).then(function(res) {
       if (handleAuthError(res)) { return; }
@@ -3925,8 +4084,26 @@
       '<h3 class="zone-arhiva-naslov">Arhiva ranijih verzija</h3>' +
       '<p class="faq-admin-hint">Svaka promjena (i svako vraćanje starije verzije) ostaje ovdje zabilježena s točnim datumom, vremenom i razlogom koji ste upisali.</p>' +
       '<div id="kalk-cjenik-arhiva-list"></div>';
+    // Sašin izričit zahtjev (27.9.2026.): promjena OSNOVNOG (zadanog)
+    // cjenika kalkulatora — onog po kojem javni kalkulator radi svim
+    // posjetiteljima dok sami ne učitaju vlastiti — sad traži admin
+    // lozinku PRIJE nego se upload uopće pošalje na server. Isti opći
+    // modal kao svugdje drugdje (openAdminPasswordConfirmModal), samo
+    // JEDNOSTRUKA zaštita (ne i riječ superjunaka) — ovo je često
+    // ponavljana, ne katastrofalna radnja (stara verzija ostaje u arhivi).
     wrap.querySelector('#kalk-cjenik-upload-btn').addEventListener('click', function() {
-      submitKalkulatorCjenikUpload_(wrap);
+      var fileInput = wrap.querySelector('#kalk-cjenik-file-input');
+      var statusEl = wrap.querySelector('#kalk-cjenik-admin-status');
+      if (!fileInput.files || !fileInput.files[0]) {
+        statusEl.textContent = 'Odaberite Excel (.xlsx) datoteku.';
+        statusEl.className = 'faq-admin-status error';
+        return;
+      }
+      openAdminPasswordConfirmModal(
+        'Promjena osnovnog cjenika',
+        'Ovime mijenjate cjenik po kojem kalkulator na naslovnici radi SVIM posjetiteljima. Za potvrdu unesite admin lozinku.',
+        function() { submitKalkulatorCjenikUpload_(wrap); }
+      );
     });
     return wrap;
   }
@@ -4125,12 +4302,45 @@
     return { html: opts, jeOstalo: jeOstalo };
   }
 
+  // Primjenjuje (ili uklanja) boju trake za kartice vrste "servis" — jedina
+  // vrsta kojoj admin sam bira boju (centar/vanjski imaju fiksnu boju iz CSS-a
+  // .lc-vrsta-centar/.lc-vrsta-vanjski). Bez boje (bijela/nepostavljeno) ili
+  // za vrste centar/vanjski, traka ostaje obična (bez inline stila).
+  function primijeniBojuServisa_(wrap, vrsta, boja) {
+    var head = wrap.querySelector('.lc-centar-head');
+    var naslov = head.querySelector('h3');
+    if (vrsta !== 'servis' || !boja || boja.toLowerCase() === '#ffffff') {
+      head.style.margin = '';
+      head.style.padding = '';
+      head.style.borderRadius = '';
+      head.style.background = '';
+      naslov.style.color = '';
+      return;
+    }
+    head.style.margin = '-16px -18px 0';
+    head.style.padding = '14px 18px';
+    head.style.borderRadius = '9px 9px 0 0';
+    head.style.background = boja;
+    naslov.style.color = jeSvijetlaBoja_(boja) ? '#222' : '#fff';
+  }
+  function jeSvijetlaBoja_(hex) {
+    var r = parseInt(hex.substr(1, 2), 16) || 0;
+    var g = parseInt(hex.substr(3, 2), 16) || 0;
+    var b = parseInt(hex.substr(5, 2), 16) || 0;
+    return (0.299 * r + 0.587 * g + 0.114 * b) > 170;
+  }
+
   function buildLogistickiCentarCard_(centar) {
     centar = centar || { rowIndex: 0, grad: '', adresa: '', telefon: '', email: '', vrsta: 'centar', pokriva: [], kontakti: [] };
     var wrap = document.createElement('div');
     var jeNovi = !centar.rowIndex;
-    wrap.className = 'faq-admin-card lc-centar-card' + (jeNovi ? ' expanded' : '');
     var vrsta = centar.vrsta || 'centar';
+    // Sašin izričit zahtjev (27.9.2026.): vizualna razlika po vrsti — vanjski
+    // izvršitelji dobivaju rozu/crvenkastu "traku" (zaglavlje kartice),
+    // logistički centri svijetlo zelenu. Servisi/odjeli ostaju bez posebne
+    // boje (obična bijela kartica, kao dosad) — vidi i CSS .lc-vrsta-*.
+    var vrstaKlasa = (vrsta === 'vanjski') ? ' lc-vrsta-vanjski' : (vrsta === 'centar') ? ' lc-vrsta-centar' : '';
+    wrap.className = 'faq-admin-card lc-centar-card' + vrstaKlasa + (jeNovi ? ' expanded' : '');
     var naslovZatvoren = jeNovi
       ? 'Novi centar / servis'
       : esc((centar.grad || '(bez naziva)').toUpperCase()) + ' - ' + (LOGISTICKI_VRSTA_NASLOV_[vrsta] || LOGISTICKI_VRSTA_NASLOV_.centar);
@@ -4150,6 +4360,13 @@
         '<div><label>Adresa</label><input type="text" class="lc-adresa" value="' + esc(centar.adresa || '') + '"></div>' +
         '<div><label>Telefon</label><input type="text" class="lc-telefon" value="' + esc(centar.telefon || '') + '"></div>' +
         '<div><label>Email (opći, za slanje)</label><input type="text" class="lc-email" value="' + esc(centar.email || '') + '"></div>' +
+        // Sašin izričit zahtjev (27.9.2026.): SAMO servisi/odjeli smiju
+        // sami birati boju trake — logistički centri i vanjski izvršitelji
+        // imaju fiksnu, unaprijed definiranu boju (zelena/roza, vidi
+        // vrstaKlasa gore) i ne prikazuju ovo polje. Skriveno/prikazano se
+        // dinamički mijenja i niže, kad admin promijeni izbornik "Vrsta"
+        // bez spremanja (wireLogistickiVrstaBojaPolje_).
+        '<div class="lc-boja-red"' + (vrsta === 'servis' ? '' : ' hidden') + '><label>Boja trake (samo za servise/odjele)</label><input type="color" class="lc-boja" value="' + esc(centar.boja || '#ffffff') + '"></div>' +
       '</div>' +
       '<label>Pokriva dodatne gradove (odvojeno zarezom — samo za logističke centre koji pokrivaju šire područje; za servise/odjele ostavite prazno)</label>' +
       '<input type="text" class="lc-pokriva" value="' + esc((centar.pokriva || []).join(', ')) + '">' +
@@ -4188,6 +4405,19 @@
       '</div>';
     wrap.querySelector('.lc-centar-head').addEventListener('click', function() {
       wrap.classList.toggle('expanded');
+    });
+    // Sašin izričit zahtjev (27.9.2026.): servisi/odjeli imaju SVOJU,
+    // slobodno odabranu boju trake (na razlici od centar/vanjski koji imaju
+    // fiksnu boju preko CSS klasa .lc-vrsta-centar/.lc-vrsta-vanjski) —
+    // primjenjuje se inline stilom jer nema unaprijed poznatu CSS klasu.
+    primijeniBojuServisa_(wrap, vrsta, centar.boja);
+    wrap.querySelector('.lc-vrsta').addEventListener('change', function() {
+      var novaVrsta = this.value;
+      wrap.querySelector('.lc-boja-red').hidden = (novaVrsta !== 'servis');
+      primijeniBojuServisa_(wrap, novaVrsta, wrap.querySelector('.lc-boja').value);
+    });
+    wrap.querySelector('.lc-boja').addEventListener('input', function() {
+      primijeniBojuServisa_(wrap, wrap.querySelector('.lc-vrsta').value, this.value);
     });
     var kontaktiLista = wrap.querySelector('.lc-kontakti-lista');
     var select = wrap.querySelector('.lc-osoba-select');
@@ -4313,6 +4543,7 @@
       adresa: cardEl.querySelector('.lc-adresa').value.trim(),
       telefon: cardEl.querySelector('.lc-telefon').value.trim(),
       email: cardEl.querySelector('.lc-email').value.trim(),
+      boja: cardEl.querySelector('.lc-boja').value,
       pokriva: pokriva,
       kontakti: kontakti
     };
@@ -4530,15 +4761,18 @@
       if (logistickiCentriCache_ === null) { loadLogistickiCentri_(false); }
       return outer;
     }
-    // Pod-kartice "👤 Osobe" / "🏭 Centri i servisi" (26.9.2026., Sašin
-    // izričit zahtjev) — prikazuje se SAMO ono što je odabrano, umjesto da
-    // oba odjeljka stoje jedan ispod drugog. `logistickiPodTab_` pamti
-    // odabir dok je admin na ovoj kartici (vidi modul-varijablu iznad).
+    // Pod-kartice "👤 Osobe" / "🏭 Logistički centri" / "🔧 Servisi"
+    // (26.9.2026., prošireno 27.9.2026. — Sašin izričit zahtjev: "servisi"
+    // dosad su bili izmiješani s logističkim centrima/vanjskim izvršiteljima
+    // u istom popisu, sad imaju svoju odvojenu pod-karticu). Prikazuje se
+    // SAMO ono što je odabrano. `logistickiPodTab_` pamti odabir dok je
+    // admin na ovoj kartici (vidi modul-varijablu iznad).
     var podTabs = document.createElement('div');
     podTabs.className = 'lc-podtabs';
     podTabs.innerHTML =
       '<button type="button" class="lc-podtab-btn' + (logistickiPodTab_ === 'Osobe' ? ' active' : '') + '" data-podtab="Osobe">👤 Osobe</button>' +
-      '<button type="button" class="lc-podtab-btn' + (logistickiPodTab_ === 'Centri' ? ' active' : '') + '" data-podtab="Centri">🏭 Centri i servisi</button>';
+      '<button type="button" class="lc-podtab-btn' + (logistickiPodTab_ === 'Centri' ? ' active' : '') + '" data-podtab="Centri">🏭 Logistički centri</button>' +
+      '<button type="button" class="lc-podtab-btn' + (logistickiPodTab_ === 'Servisi' ? ' active' : '') + '" data-podtab="Servisi">🔧 Servisi</button>';
     Array.prototype.slice.call(podTabs.querySelectorAll('.lc-podtab-btn')).forEach(function(btn) {
       btn.addEventListener('click', function() {
         logistickiPodTab_ = btn.getAttribute('data-podtab');
@@ -4552,30 +4786,46 @@
       return outer;
     }
 
+    // "Centri" pod-kartica = vrsta 'centar' + 'vanjski' (geografski logistički
+    // centri i vanjski izvršitelji, oboje vezana uz mjesto/regiju).
+    // "Servisi" pod-kartica = vrsta 'servis' (funkcionalni servisi/odjeli,
+    // nisu vezani uz mjesto). Isti podaci (logistickiCentriCache_), samo
+    // filtrirano prikazivanje po pod-kartici — Vrsta se i dalje slobodno
+    // bira u obrascu, pa premještanje između pod-kartica ide jednostavno
+    // promjenom Vrste i spremanjem.
+    var jeServisiTab_ = (logistickiPodTab_ === 'Servisi');
+    var prikazaniCentri_ = logistickiCentriCache_.filter(function(c) {
+      var v = c.vrsta || 'centar';
+      return jeServisiTab_ ? (v === 'servis') : (v !== 'servis');
+    });
+
     var dodajBtn = document.createElement('button');
     dodajBtn.type = 'button';
     dodajBtn.className = 'btn btn-small';
     dodajBtn.style.marginBottom = '14px';
-    dodajBtn.textContent = '+ Novi centar / servis';
+    dodajBtn.textContent = jeServisiTab_ ? '+ Novi servis' : '+ Novi logistički centar';
     dodajBtn.addEventListener('click', function() {
       var praznoHint = outer.querySelector('.empty-hint');
       if (praznoHint) { praznoHint.remove(); }
-      outer.insertBefore(buildLogistickiCentarCard_(null), outer.querySelector('.lc-centar-card'));
+      var novi = { rowIndex: 0, grad: '', adresa: '', telefon: '', email: '', vrsta: jeServisiTab_ ? 'servis' : 'centar', pokriva: [], kontakti: [] };
+      outer.insertBefore(buildLogistickiCentarCard_(novi), outer.querySelector('.lc-centar-card'));
     });
     var hint = document.createElement('p');
     hint.className = 'faq-admin-hint';
     hint.style.marginTop = '0';
-    hint.textContent = 'Ovdje mogu biti i geografski logistički centri (Zagreb, Rijeka, Split…), gradovi koje pokrivate preko vanjskih izvršitelja, i funkcionalni servisi/odjeli (Računovodstvo, Knjiženja, Računi, Ispravak računa…) — vrsta se bira po centru/servisu i piše na zatvorenoj kartici. Kontakt osobe dodajete iz baze na kartici "👤 Osobe".';
+    hint.textContent = jeServisiTab_
+      ? 'Ovdje su funkcionalni servisi/odjeli (Računovodstvo, Knjiženja, Računi, Ispravak računa, IT podrška…) — nisu vezani uz konkretan grad/regiju. Geografski logistički centri i vanjski izvršitelji su na pod-kartici "🏭 Logistički centri". Kontakt osobe dodajete iz baze na kartici "👤 Osobe".'
+      : 'Ovdje su geografski logistički centri (Zagreb, Rijeka, Split…) i gradovi koje pokrivate preko vanjskih izvršitelja — traka kartice je zelena za vlastite logističke centre, roza za vanjske izvršitelje. Funkcionalni servisi/odjeli su na pod-kartici "🔧 Servisi". Kontakt osobe dodajete iz baze na kartici "👤 Osobe".';
     outer.appendChild(hint);
     outer.appendChild(dodajBtn);
-    if (!logistickiCentriCache_.length) {
+    if (!prikazaniCentri_.length) {
       var prazno = document.createElement('div');
       prazno.className = 'empty-hint';
-      prazno.textContent = 'Još nema dodanih centara/servisa — dodajte prvi gore.';
+      prazno.textContent = jeServisiTab_ ? 'Još nema dodanih servisa — dodajte prvi gore.' : 'Još nema dodanih logističkih centara — dodajte prvi gore.';
       outer.appendChild(prazno);
       return outer;
     }
-    logistickiCentriCache_.forEach(function(centar) {
+    prikazaniCentri_.forEach(function(centar) {
       outer.appendChild(buildLogistickiCentarCard_(centar));
     });
     return outer;
@@ -7058,6 +7308,25 @@
     // niže na kartici i pod zasebnim naslovom, ključevi/stupci/spremanje
     // (saveBtn niže) potpuno nepromijenjeni. "Interna napomena" ostaje
     // opća bilješka, prikazana na dnu obje cjeline nepromijenjeno.
+    // Sašin izričit zahtjev (27.9.2026., nastavak — zaključavanje trake
+    // "Pošalji zahtjev za Online Booking"): traka se NE otvara dok TM broj,
+    // OB korisničko ime (e-mail) i Zadnje vrijeme unosa naloga nisu SVI
+    // POTVRĐENI (isto admin polje kao ✓ Potvrdi lanac ispod — NE prijedlog/
+    // fallback vrijednost). Provjera se ponavlja BEZ ponovnog učitavanja
+    // kartice čim se zadnje od ova 3 polja potvrdi — vidi obGuardRecheck_
+    // niže u ovoj funkciji.
+    var obGuardTmBroj_ = !!fieldVal(entry, 'Identifikacijski TM broj klijenta (admin)');
+    var obGuardEmail_ = !!fieldVal(entry, 'OB korisničko ime (admin)');
+    var obGuardZadnjeVrijeme_ = !!zadnjeVrijemeUnosaAdmin;
+    var obGuardSveOtkljucano_ = obGuardTmBroj_ && obGuardEmail_ && obGuardZadnjeVrijeme_;
+    var obGuardStavke_ = [
+      { ok: obGuardTmBroj_, naziv: 'TM broj potvrđen' },
+      { ok: obGuardEmail_, naziv: 'OB e-mail adresa unesena' },
+      { ok: obGuardZadnjeVrijeme_, naziv: 'Zadnji rok za unos naloga unesen' }
+    ];
+    var obGuardListaHtml_ = obGuardStavke_.map(function(s) {
+      return '<span class="af-ob-guard-stavka' + (s.ok ? ' ok' : '') + '">' + (s.ok ? '✓' : '✕') + ' ' + esc(s.naziv) + '</span>';
+    }).join('');
     wrap.innerHTML =
       '<div class="af-puni-blok"' + (prikaziPuniBlok ? '' : ' style="display:none"') + '>' +
       '<h3>Podaci koje popunjava In Time — sastavljanje ponude</h3>' +
@@ -7519,6 +7788,72 @@
               '<p class="af-vrati-link-hint">Nakon odbijanja link automatski postaje privatan za 30 min. Ovim gumbom ga ručno vraćaš — radi samo dok ponuda ostane u stanju "odbijena"; čim pripremiš novu verziju, ovo više ne vrijedi.</p>' +
             '</div>'
           : '') +
+        // Panel "Pošalji zahtjev za Online Booking" (Sašin izričit zahtjev,
+        // 27.9.2026., odobreno prema mockupu — "integriraj, sviđa mi se").
+        // NAMJERNO smješten OVDJE, između "Potvrda prihvaćanja ponude"
+        // iznad i "Online Booking i podaci klijenta" ispod — točno kako je
+        // Saša tražio u mockupu. Zatvoren dok admin ne klikne na traku (vidi
+        // wiring niže u ovoj funkciji, blok "Panel Pošalji zahtjev za
+        // Online Booking"). NIJE mail klijentu — interni mail (npr. IT
+        // službi/distribucijskom centru) da se pokrene otvaranje OB računa
+        // za ovog klijenta; zato posebni, jednostavniji predlošci
+        // (kategorija 'ob_zahtjev', vidi ucitajMailPredloske_/
+        // adminMailPredlosciList) i posebna, mnogo jednostavnija send
+        // funkcija na serveru (adminPosaljiObZahtjevMail/Test u
+        // InTime_Code.gs — NE adminPosaljiPonudaMail, koji nosi ponuda-
+        // specifične nuspojave koje ovdje nemaju smisla).
+        '<div class="af-ob-mail-blok' + (obGuardSveOtkljucano_ ? '' : ' locked') + '">' +
+          '<div class="af-ob-mail-traka"><span>📧 Pošalji zahtjev za Online Booking</span>' +
+            (obGuardSveOtkljucano_ ? '<span class="chevron">▾</span>' : '<span class="af-ob-guard-lock">🔒</span>') +
+          '</div>' +
+          (obGuardSveOtkljucano_ ? '' : '<div class="af-ob-guard-hint">🔒 Otključava se kad bude potvrđeno: ' + obGuardListaHtml_ + '</div>') +
+          '<div class="af-ob-mail-panel">' +
+            '<p class="af-ob-mail-hint">Interni mail (npr. IT službi ili distribucijskom centru) kojim se za ovog klijenta pokreće otvaranje Online Booking računa — ide ODVOJENO od maila klijentu, ne dira ponudu ni njen status.</p>' +
+            '<div class="af-ob-predlozak-okvir">' +
+              '<div class="af-ob-predlozak-alati">' +
+                '<select class="af-ob-predlozak-select"><option value="">Učitavanje…</option></select>' +
+                '<button type="button" class="af-ob-predlozak-btn af-ob-predlozak-novi">+ Novi predložak</button>' +
+                '<button type="button" class="af-ob-predlozak-btn af-ob-predlozak-uredi">✎ Uredi</button>' +
+                '<button type="button" class="af-ob-predlozak-btn af-ob-predlozak-kopiraj">📋 Kopiraj tekst</button>' +
+              '</div>' +
+              '<div class="af-ob-predlozak-pregled"><div class="af-ob-predlozak-prazno">Učitavanje predložaka…</div></div>' +
+              '<div class="af-ob-predlozak-status"></div>' +
+            '</div>' +
+            // Uvodni tekst — Sašin izričit zahtjev (27.9.2026.): kratak,
+            // svaki put drugačiji uvod maila ("Pozdrav dečki kako ste
+            // danas... hitno trebam..."), NIJE dio spremljenog predloška
+            // (uvijek se upisuje/bira zasebno prije slanja) — dodaje se na
+            // POČETAK maila. 10 zadanih prijedloga + do 20 ukupno (uz
+            // dodane), brisanje pojedinačnog prijedloga (default ili
+            // dodani) preko malog "×", dodavanje preko "💾 Zapamti tekst",
+            // reset vraća na Sašinih zadanih 10 (briše dodane). Zadani =
+            // zelena kartica, dodani/prilagođeni = crvenkasta kartica (vidi
+            // CSS .af-ob-uvodni-chip.prilagodjen). Backend: adminObUvodni*
+            // akcije u InTime_Code.gs, PropertiesService spremište.
+            '<div class="af-ob-uvodni-okvir">' +
+              '<label class="af-ob-uvodni-label">Uvodni tekst (dodaje se na početak maila, ne sprema se u predložak)</label>' +
+              '<textarea class="af-ob-uvodni-textarea" placeholder="npr. Pozdrav dečki, kako ste danas... hitno trebam otvaranje OB-a..."></textarea>' +
+              '<div class="af-ob-uvodni-chips"><span class="af-ob-uvodni-prazno">Učitavanje…</span></div>' +
+              '<div class="af-ob-uvodni-alati">' +
+                '<button type="button" class="af-ob-btn af-ob-uvodni-zapamti-btn">💾 Zapamti tekst</button>' +
+                '<button type="button" class="af-ob-btn af-ob-uvodni-reset-btn">↺ Vrati na zadano (10)</button>' +
+              '</div>' +
+              '<div class="af-ob-uvodni-status"></div>' +
+            '</div>' +
+            '<div class="af-ob-slanje-okvir">' +
+              '<div class="af-ob-primatelj-red">' +
+                '<input type="email" class="af-ob-primatelj-input" placeholder="primatelj (e-mail)">' +
+              '</div>' +
+              '<div class="af-ob-test-red">' +
+                '<input type="email" class="af-ob-test-input" placeholder="test adresa za probno slanje">' +
+                '<button type="button" class="af-ob-btn af-ob-test-btn">✉ Pošalji test</button>' +
+              '</div>' +
+              '<label class="af-ob-kopija-red"><input type="checkbox" class="af-ob-kopija-cb"> Pošalji i meni kopiju (sbatinac.intime@gmail.com)</label>' +
+              '<button type="button" class="af-ob-btn af-ob-posalji-btn uspjeh">📧 Pošalji zahtjev</button>' +
+              '<div class="af-ob-slanje-status"></div>' +
+            '</div>' +
+          '</div>' +
+        '</div>' +
         '<div style="grid-column:1 / -1;border-top:1px dashed var(--line);margin:4px 0 2px;padding-top:10px;font-size:11px;font-weight:800;letter-spacing:.02em;text-transform:uppercase;color:var(--purple-dark);">Online Booking i podaci klijenta</div>' +
         // Sašin izričit zahtjev (24.9.2026.): lanac zaključavanja — "jako su
         // bitni podaci". TM broj se otključava (postaje uredljiv) tek kad
@@ -8017,6 +8352,40 @@
       if (typeof azurirajOsiguracSlanja_ === 'function') { azurirajOsiguracSlanja_(); }
     });
 
+    // Otključavanje trake "Pošalji zahtjev za Online Booking" — Sašin
+    // izričit zahtjev (27.9.2026.), vidi opširnu napomenu uz obGuard*
+    // varijable gore (prije wrap.innerHTML). Poziva se iz TM broj Potvrdi
+    // handlera i iz generičke OB polja petlje niže, oba puta NAKON uspješnog
+    // spremanja na server — čim su sva 3 uvjeta (TM broj, OB e-mail, zadnje
+    // vrijeme unosa) potvrđena, traka se lokalno otključava BEZ ponovnog
+    // učitavanja kartice (isti pristup kao otkljucajObPolja_ ispod). Dohvaća
+    // .af-ob-mail-blok svaki put iznova (ne closure varijablu) jer se ovaj
+    // kod izvršava PRIJE nego što je taj element definiran kao JS varijabla
+    // niže u ovoj funkciji (blok "Panel Pošalji zahtjev za Online Booking").
+    var obGuardRecheck_ = function() {
+      var blok = wrap.querySelector('.af-ob-mail-blok');
+      if (!blok || !blok.classList.contains('locked')) { return; }
+      var svi = !!fieldVal(entry, 'Identifikacijski TM broj klijenta (admin)') &&
+        !!fieldVal(entry, 'OB korisničko ime (admin)') &&
+        !!fieldVal(entry, 'Zadnje vrijeme unosa naloga (admin)');
+      if (!svi) { return; }
+      blok.classList.remove('locked');
+      var lockIcon = blok.querySelector('.af-ob-guard-lock');
+      if (lockIcon) { lockIcon.outerHTML = '<span class="chevron">▾</span>'; }
+      var hint = blok.querySelector('.af-ob-guard-hint');
+      if (hint) { hint.remove(); }
+    };
+    // Osvježava pregled OB predloška (tagovi {{TM_BROJ}}/{{OB_EMAIL}}/
+    // {{ZADNJI_ROK_UNOSA}} itd.) nakon što se bilo koje od OB polja potvrdi
+    // — pregled se inače učita SAMO JEDNOM, odmah po otvaranju kartice, pa
+    // bi ostao "zaglavljen" na placeholder tekstu ako se ne pozove ponovno.
+    // wrap._obPregledOsvjezi_ postavlja OB wiring blok niže u ovoj funkciji
+    // (definicija obRenderPregled_ dolazi kasnije u kodu) — ovdje je samo
+    // sigurni, odgođeni poziv.
+    var obOsvjeziPregledAkoPostoji_ = function() {
+      if (typeof wrap._obPregledOsvjezi_ === 'function') { wrap._obPregledOsvjezi_(); }
+    };
+
     // TM broj + 5 polja Online Bookinga — lanac zaključavanja (Sašin
     // izričit zahtjev, 24.9.2026., vidi opširnu napomenu uz markup gore).
     // Definicija PRIJE TM bloka (iako se koristi tek u njegovom Potvrdi
@@ -8063,6 +8432,8 @@
             tmPotvrdiBtn.style.display = 'none';
             if (tmPromijeniBtn) { tmPromijeniBtn.style.display = ''; }
             otkljucajObPolja_();
+            obGuardRecheck_();
+            obOsvjeziPregledAkoPostoji_();
           } else {
             tmPotvrdiBtn.disabled = false;
             alert(res.message || 'Spremanje TM broja nije uspjelo.');
@@ -8113,6 +8484,8 @@
             input.readOnly = true;
             potvrdiBtn.style.display = 'none';
             if (promijeniBtn) { promijeniBtn.style.display = ''; }
+            obGuardRecheck_();
+            obOsvjeziPregledAkoPostoji_();
           } else {
             potvrdiBtn.disabled = false;
             alert(res.message || 'Spremanje nije uspjelo.');
@@ -9085,17 +9458,36 @@
       };
 
       var popuniIzbornik_ = function(predlosci) {
-        predlosciLokalno = predlosci || [];
+        // Filtrirano na kategoriju 'ponuda' (27.9.2026.) — dijeljeni cache
+        // (ucitajMailPredloske_) sad nosi i OB-zahtjev predloške (vidi novi
+        // panel "Pošalji zahtjev za Online Booking" niže u ovoj funkciji);
+        // ovaj izbornik ih ne smije prikazati.
+        predlosciLokalno = (predlosci || []).filter(function(p) { return (p.kategorija || 'ponuda') === 'ponuda'; });
         if (!predlosciLokalno.length) {
           predlozakSelect.innerHTML = '<option value="">— nema predložaka —</option>';
           renderPregled_();
           return;
         }
-        var zadaniId = (predlosciLokalno.filter(function(p) { return p.zadani; })[0] || predlosciLokalno[0]).rowIndex;
+        // Sašin izričit zahtjev (27.9.2026.): kod KORIGIRANE ponude (Redni
+        // broj slanja ponude > 1) izbornik se sam prebaci na predložak čiji
+        // naziv sadrži "korigiran" (npr. "Korigirana ponuda (HTML)") umjesto
+        // na uobičajeni "zadani" predložak — ali ostaje obično uredljiv
+        // izbornik, admin ga i dalje slobodno ručno promijeni prije slanja.
+        // Ako takav predložak ne postoji (npr. obrisan/preimenovan), tiho se
+        // vraća na staro ponašanje (zadani/prvi).
+        var verzijaPonude_ = parseInt(fieldVal(entry, 'Redni broj slanja ponude (admin)'), 10) || 1;
+        var korigiranaPredlozak_ = verzijaPonude_ > 1
+          ? predlosciLokalno.filter(function(p) { return /korigiran/i.test(p.naziv || ''); })[0]
+          : null;
+        var zadaniId = (korigiranaPredlozak_ || predlosciLokalno.filter(function(p) { return p.zadani; })[0] || predlosciLokalno[0]).rowIndex;
         predlozakSelect.innerHTML = predlosciLokalno.map(function(p) {
           return '<option value="' + p.rowIndex + '"' + (p.rowIndex === zadaniId ? ' selected' : '') + '>' + esc(p.naziv) + (p.zadani ? ' (zadani)' : '') + '</option>';
         }).join('');
         renderPregled_();
+        if (korigiranaPredlozak_ && predlozakStatus) {
+          predlozakStatus.textContent = 'Ovo je korigirana ponuda (P' + verzijaPonude_ + ') — automatski odabran predložak "' + korigiranaPredlozak_.naziv + '". Po potrebi ga promijeni u izborniku iznad.';
+          predlozakStatus.classList.remove('error');
+        }
       };
 
       predlozakPregled.innerHTML = '<div class="af-predlozak-prazno">Učitavanje predložaka…</div>';
@@ -9467,6 +9859,367 @@
           });
         });
       }
+    }
+
+    // Panel "Pošalji zahtjev za Online Booking" — vidi CSS/markup napomenu
+    // uz .af-ob-mail-blok gore i opširnu napomenu uz
+    // adminPosaljiObZahtjevMail/Test u InTime_Code.gs. Potpuno samostalan
+    // blok (svoje stanje, svoj wiring) — jedino DIJELI ucitajMailPredloske_
+    // (isti dijeljeni cache kao ponuda-blok gore, filtrirano ovdje na
+    // kategoriju 'ob_zahtjev') i openMailPredlozakModal (isti modal,
+    // uređivanje/stvaranje predloška). NIJE ponuda-specifičan — ne dira
+    // TTD/rok/status/evidenciju.
+    if (prikaziPuniBlok) {
+      var obBlok = wrap.querySelector('.af-ob-mail-blok');
+      var obTraka = wrap.querySelector('.af-ob-mail-traka');
+      obTraka.addEventListener('click', function() {
+        if (obBlok.classList.contains('locked')) { return; }
+        obBlok.classList.toggle('expanded');
+      });
+
+      var obPredlozakSelect = wrap.querySelector('.af-ob-predlozak-select');
+      var obPredlozakPregled = wrap.querySelector('.af-ob-predlozak-pregled');
+      var obPredlozakStatus = wrap.querySelector('.af-ob-predlozak-status');
+      var obPredlozakNoviBtn = wrap.querySelector('.af-ob-predlozak-novi');
+      var obPredlozakUrediBtn = wrap.querySelector('.af-ob-predlozak-uredi');
+      var obPredlozakKopirajBtn = wrap.querySelector('.af-ob-predlozak-kopiraj');
+      var obPrimateljInput = wrap.querySelector('.af-ob-primatelj-input');
+      var obTestInput = wrap.querySelector('.af-ob-test-input');
+      var obTestBtn = wrap.querySelector('.af-ob-test-btn');
+      var obKopijaCb = wrap.querySelector('.af-ob-kopija-cb');
+      var obPosaljiBtn = wrap.querySelector('.af-ob-posalji-btn');
+      var obSlanjeStatus = wrap.querySelector('.af-ob-slanje-status');
+      var obUvodniTextarea = wrap.querySelector('.af-ob-uvodni-textarea');
+      var obUvodniChipsEl = wrap.querySelector('.af-ob-uvodni-chips');
+      var obUvodniZapamtiBtn = wrap.querySelector('.af-ob-uvodni-zapamti-btn');
+      var obUvodniResetBtn = wrap.querySelector('.af-ob-uvodni-reset-btn');
+      var obUvodniStatus = wrap.querySelector('.af-ob-uvodni-status');
+
+      var obPredlosciLokalno = [];
+      var obZadnjiPregled_ = { predmet: '', tijelo: '', html: false };
+      var obPrimateljRucnoPromijenjen_ = false;
+
+      obPrimateljInput.addEventListener('input', function() { obPrimateljRucnoPromijenjen_ = true; });
+      obPrimateljInput.addEventListener('click', function(ev) { ev.stopPropagation(); });
+      obPrimateljInput.addEventListener('keydown', function(ev) { ev.stopPropagation(); });
+      obTestInput.addEventListener('click', function(ev) { ev.stopPropagation(); });
+      obTestInput.addEventListener('keydown', function(ev) { ev.stopPropagation(); });
+
+      var obPostaviStatus_ = function(tekst, vrsta) {
+        obSlanjeStatus.textContent = tekst || '';
+        obSlanjeStatus.className = 'af-ob-slanje-status' + (vrsta === 'error' ? ' error' : vrsta === 'ok' ? ' ok' : '');
+      };
+
+      var obRenderPregled_ = function() {
+        var odabraniId = parseInt(obPredlozakSelect.value, 10);
+        var odabrani = obPredlosciLokalno.filter(function(p) { return p.rowIndex === odabraniId; })[0];
+        if (!odabrani) {
+          obPredlozakPregled.innerHTML = '<div class="af-ob-predlozak-prazno">Nema još nijednog predloška — klikni "+ Novi predložak".</div>';
+          obPredlozakUrediBtn.disabled = true;
+          obPredlozakKopirajBtn.disabled = true;
+          obZadnjiPregled_ = { predmet: '', tijelo: '', html: false };
+          return;
+        }
+        obPredlozakUrediBtn.disabled = false;
+        obPredlozakKopirajBtn.disabled = false;
+        var predmetIzrenderiran = renderMailTekst_(odabrani.predmet, entry);
+        var tijeloIzrenderirano = renderMailTekst_(odabrani.sadrzaj, entry);
+        obZadnjiPregled_ = { predmet: predmetIzrenderiran, tijelo: tijeloIzrenderirano, html: !!odabrani.html };
+        var predmetHtml = predmetIzrenderiran ? '<div class="af-ob-predlozak-predmet">Predmet: ' + esc(predmetIzrenderiran) + '</div>' : '';
+        if (odabrani.html) {
+          obPredlozakPregled.innerHTML = predmetHtml + '<iframe class="ob-predlozak-html-pregled" sandbox="allow-same-origin" srcdoc="' + esc(tijeloIzrenderirano) + '"></iframe>';
+          var obIframeEl = obPredlozakPregled.querySelector('iframe');
+          obIframeEl.addEventListener('load', function() {
+            try {
+              var visina = obIframeEl.contentWindow.document.body.scrollHeight;
+              if (visina > 0) { obIframeEl.style.height = (visina + 16) + 'px'; }
+            } catch (e) { /* zadrži CSS min-height */ }
+          });
+        } else {
+          obPredlozakPregled.innerHTML = predmetHtml + '<div class="af-ob-predlozak-tijelo">' + esc(tijeloIzrenderirano) + '</div>';
+        }
+      };
+      // Vidi obOsvjeziPregledAkoPostoji_ gore u ovoj funkciji (TM broj/OB
+      // polja Potvrdi handleri) — poziva ovu istu funkciju nakon svake
+      // potvrde da tagovi {{TM_BROJ}}/{{OB_EMAIL}}/{{ZADNJI_ROK_UNOSA}} u
+      // pregledu odmah pokažu novu vrijednost, bez čekanja da admin sam
+      // promijeni odabir predloška.
+      wrap._obPregledOsvjezi_ = obRenderPregled_;
+
+      var obPopuniIzbornik_ = function(predlosci) {
+        // Filtrirano na kategoriju 'ob_zahtjev' — dijeljeni cache nosi i
+        // ponuda-predloške (vidi blok "Predložak za slanje ponude" gore).
+        obPredlosciLokalno = (predlosci || []).filter(function(p) { return p.kategorija === 'ob_zahtjev'; });
+        if (!obPredlosciLokalno.length) {
+          obPredlozakSelect.innerHTML = '<option value="">— nema predložaka —</option>';
+          obRenderPregled_();
+          return;
+        }
+        var zadaniId = (obPredlosciLokalno.filter(function(p) { return p.zadani; })[0] || obPredlosciLokalno[0]).rowIndex;
+        obPredlozakSelect.innerHTML = obPredlosciLokalno.map(function(p) {
+          return '<option value="' + p.rowIndex + '"' + (p.rowIndex === zadaniId ? ' selected' : '') + '>' + esc(p.naziv) + (p.zadani ? ' (zadani)' : '') + '</option>';
+        }).join('');
+        obRenderPregled_();
+      };
+
+      obPredlozakPregled.innerHTML = '<div class="af-ob-predlozak-prazno">Učitavanje predložaka…</div>';
+      ucitajMailPredloske_(false).then(obPopuniIzbornik_).catch(function(err) {
+        obPredlozakPregled.innerHTML = '<div class="af-ob-predlozak-prazno">Greška: ' + esc((err && err.message) || 'nepoznata greška') + '</div>';
+      });
+
+      obPredlozakSelect.addEventListener('change', function(ev) { ev.stopPropagation(); obRenderPregled_(); });
+      obPredlozakSelect.addEventListener('click', function(ev) { ev.stopPropagation(); });
+
+      obPredlozakNoviBtn.addEventListener('click', function(ev) { ev.stopPropagation(); openMailPredlozakModal(null, 'ob_zahtjev'); });
+      obPredlozakUrediBtn.addEventListener('click', function(ev) {
+        ev.stopPropagation();
+        var odabraniId = parseInt(obPredlozakSelect.value, 10);
+        var odabrani = obPredlosciLokalno.filter(function(p) { return p.rowIndex === odabraniId; })[0];
+        if (odabrani) { openMailPredlozakModal(odabrani); }
+      });
+      obPredlozakKopirajBtn.addEventListener('click', function(ev) {
+        ev.stopPropagation();
+        var predmet = obZadnjiPregled_.predmet, tijelo = obZadnjiPregled_.tijelo;
+        if (!tijelo.trim()) { return; }
+        if (obZadnjiPregled_.html && window.ClipboardItem && navigator.clipboard && navigator.clipboard.write) {
+          var htmlZaKopiranje = (predmet ? '<p><strong>Predmet: ' + esc(predmet) + '</strong></p>' : '') + tijelo;
+          var plainZaKopiranje = (predmet ? 'Predmet: ' + predmet + '\n\n' : '') + skiniHtmlTagoveZaPregled_(tijelo);
+          var stavka = new ClipboardItem({
+            'text/html': new Blob([htmlZaKopiranje], { type: 'text/html' }),
+            'text/plain': new Blob([plainZaKopiranje], { type: 'text/plain' })
+          });
+          navigator.clipboard.write([stavka]).then(function() {
+            obPredlozakStatus.textContent = 'Kopirano u međuspremnik (HTML formatirano — zalijepi u Gmail s Ctrl+V/Cmd+V).';
+            obPredlozakStatus.classList.remove('error');
+          }).catch(function() {
+            obPredlozakStatus.textContent = 'HTML kopiranje nije uspjelo — označi i kopiraj ručno iz pregleda.';
+            obPredlozakStatus.classList.add('error');
+          });
+          return;
+        }
+        var tekstZaKopiranje = (predmet ? predmet + '\n\n' : '') + tijelo;
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(tekstZaKopiranje).then(function() {
+            obPredlozakStatus.textContent = 'Kopirano u međuspremnik.';
+            obPredlozakStatus.classList.remove('error');
+          }).catch(function() {
+            obPredlozakStatus.textContent = 'Kopiranje nije uspjelo — označi i kopiraj ručno.';
+            obPredlozakStatus.classList.add('error');
+          });
+        } else {
+          obPredlozakStatus.textContent = 'Kopiranje nije podržano u ovom pregledniku — označi i kopiraj ručno.';
+          obPredlozakStatus.classList.add('error');
+        }
+      });
+
+      // Predloženi primatelj — iz "Servisi" (Logistički centri i servisi,
+      // pod-tab "Servisi"): prvo ime koje sadrži "online booking", inače
+      // prvi servis s upisanim mailom. Koristi ISTI dijeljeni cache
+      // (logistickiCentriCache_) kao tab "Logistički centri" — ne diže
+      // nikakav vlastiti, novi cache; ako još nije učitan, dohvaća ga
+      // izravno (bez pozivanja loadLogistickiCentri_, koji bi bespotrebno
+      // pokušao ponovno iscrtati tab "Logistički centri" da je trenutno
+      // aktivan). NIKAD ne prepisuje već ručno upisanu/promijenjenu vrijednost.
+      var obDohvatiServise_ = function() {
+        if (logistickiCentriCache_ !== null) { return Promise.resolve(logistickiCentriCache_); }
+        return gasCall({ action: 'adminLogistickiCentriList', token: adminToken }).then(function(res) {
+          if (res && res.status === 'ok') { logistickiCentriCache_ = res.centri || []; }
+          return logistickiCentriCache_ || [];
+        }).catch(function() { return []; });
+      };
+      obDohvatiServise_().then(function(centri) {
+        if (obPrimateljRucnoPromijenjen_ || obPrimateljInput.value.trim()) { return; }
+        var servisi = (centri || []).filter(function(c) { return (c.vrsta || 'centar') === 'servis' && c.email; });
+        var pogodak = servisi.filter(function(c) { return /online\s*booking/i.test(c.grad || ''); })[0] || servisi[0];
+        if (pogodak && !obPrimateljRucnoPromijenjen_ && !obPrimateljInput.value.trim()) { obPrimateljInput.value = pogodak.email; }
+      });
+
+      // Uvodni tekst — Sašin izričit zahtjev (27.9.2026.): kratak, svaki put
+      // drugačiji uvod maila, NIJE dio spremljenog predloška — dodaje se
+      // klijentski, ovdje, na POČETAK maila u trenutku slanja (vidi
+      // obIzgradiTijeloZaSlanje_ niže, korišten i u testnom i u stvarnom
+      // slanju). Do 20 ukupno spremljenih prijedloga (10 zadanih +
+      // najviše 10 dodanih), brisanje/dodavanje/reset preko backend akcija
+      // adminObUvodniTekstoviList/Dodaj/Obrisi/Reset (PropertiesService
+      // spremište, InTime_Code.gs) — dijeljeno GLOBALNO (isti popis za sve
+      // klijente/kartice), ne po klijentu.
+      var obUvodniTekstoviLokalno_ = [];
+      obUvodniTextarea.addEventListener('click', function(ev) { ev.stopPropagation(); });
+      obUvodniTextarea.addEventListener('keydown', function(ev) { ev.stopPropagation(); });
+
+      var obUvodniRenderChipove_ = function() {
+        if (!obUvodniTekstoviLokalno_.length) {
+          obUvodniChipsEl.innerHTML = '<span class="af-ob-uvodni-prazno">Nema spremljenih prijedloga.</span>';
+          return;
+        }
+        obUvodniChipsEl.innerHTML = obUvodniTekstoviLokalno_.map(function(t) {
+          return '<span class="af-ob-uvodni-chip' + (t.prilagodjen ? ' prilagodjen' : '') + '" data-id="' + esc(t.id) + '">' +
+            '<span class="af-ob-uvodni-chip-tekst">' + esc(t.tekst) + '</span>' +
+            '<button type="button" class="af-ob-uvodni-chip-x" data-id="' + esc(t.id) + '" title="Obriši prijedlog">×</button>' +
+          '</span>';
+        }).join('');
+      };
+
+      var obUvodniPostaviStatus_ = function(tekst, vrsta) {
+        obUvodniStatus.textContent = tekst || '';
+        obUvodniStatus.className = 'af-ob-uvodni-status' + (vrsta === 'error' ? ' error' : vrsta === 'ok' ? ' ok' : '');
+      };
+
+      gasCall({ action: 'adminObUvodniTekstoviList', token: adminToken }).then(function(res) {
+        if (handleAuthError(res)) { return; }
+        if (res.status === 'ok') {
+          obUvodniTekstoviLokalno_ = res.tekstovi || [];
+          obUvodniRenderChipove_();
+        } else {
+          obUvodniChipsEl.innerHTML = '<span class="af-ob-uvodni-prazno">Greška kod učitavanja prijedloga.</span>';
+        }
+      }).catch(function() {
+        obUvodniChipsEl.innerHTML = '<span class="af-ob-uvodni-prazno">Greška u komunikaciji s poslužiteljem.</span>';
+      });
+
+      obUvodniChipsEl.addEventListener('click', function(ev) {
+        ev.stopPropagation();
+        var xBtn = ev.target.closest('.af-ob-uvodni-chip-x');
+        if (xBtn) {
+          var idZaBrisanje = xBtn.getAttribute('data-id');
+          gasCall({ action: 'adminObUvodniTekstObrisi', token: adminToken, id: idZaBrisanje }).then(function(res) {
+            if (handleAuthError(res)) { return; }
+            if (res.status === 'ok') {
+              obUvodniTekstoviLokalno_ = res.tekstovi || [];
+              obUvodniRenderChipove_();
+            }
+          }).catch(function() {});
+          return;
+        }
+        var chip = ev.target.closest('.af-ob-uvodni-chip');
+        if (chip) {
+          var tekstEl = chip.querySelector('.af-ob-uvodni-chip-tekst');
+          if (tekstEl) { obUvodniTextarea.value = tekstEl.textContent; obUvodniTextarea.focus(); }
+        }
+      });
+
+      obUvodniZapamtiBtn.addEventListener('click', function(ev) {
+        ev.stopPropagation();
+        var noviTekst = (obUvodniTextarea.value || '').trim();
+        if (!noviTekst) { obUvodniTextarea.focus(); return; }
+        if (obUvodniTekstoviLokalno_.length >= 20) {
+          obUvodniPostaviStatus_('Dosegnut je maksimalan broj od 20 tekstova — obriši neki prije dodavanja novog.', 'error');
+          return;
+        }
+        obUvodniZapamtiBtn.disabled = true;
+        gasCall({ action: 'adminObUvodniTekstDodaj', token: adminToken, tekst: noviTekst }).then(function(res) {
+          obUvodniZapamtiBtn.disabled = false;
+          if (handleAuthError(res)) { return; }
+          if (res.status === 'ok') {
+            obUvodniTekstoviLokalno_ = res.tekstovi || [];
+            obUvodniRenderChipove_();
+            obUvodniPostaviStatus_('Spremljeno.', 'ok');
+          } else {
+            obUvodniPostaviStatus_(res.message || 'Spremanje nije uspjelo.', 'error');
+          }
+        }).catch(function() {
+          obUvodniZapamtiBtn.disabled = false;
+          obUvodniPostaviStatus_('Greška u komunikaciji s poslužiteljem.', 'error');
+        });
+      });
+
+      obUvodniResetBtn.addEventListener('click', function(ev) {
+        ev.stopPropagation();
+        if (!confirm('Vratiti uvodne tekstove na zadanih 10? Svi prilagođeni tekstovi koje si dodao bit će obrisani.')) { return; }
+        obUvodniResetBtn.disabled = true;
+        gasCall({ action: 'adminObUvodniTekstoviReset', token: adminToken }).then(function(res) {
+          obUvodniResetBtn.disabled = false;
+          if (handleAuthError(res)) { return; }
+          if (res.status === 'ok') {
+            obUvodniTekstoviLokalno_ = res.tekstovi || [];
+            obUvodniRenderChipove_();
+            obUvodniPostaviStatus_('Vraćeno na zadano.', 'ok');
+          } else {
+            obUvodniPostaviStatus_(res.message || 'Nije uspjelo.', 'error');
+          }
+        }).catch(function() {
+          obUvodniResetBtn.disabled = false;
+          obUvodniPostaviStatus_('Greška u komunikaciji s poslužiteljem.', 'error');
+        });
+      });
+
+      // Spaja uvodni tekst (ako je upisan) s tijelom odabranog predloška —
+      // koristi se u testnom I stvarnom slanju, ne mijenja obZadnjiPregled_
+      // (pregled predloška ostaje čist, bez uvodnog teksta).
+      var obIzgradiTijeloZaSlanje_ = function() {
+        var uvodni = (obUvodniTextarea.value || '').trim();
+        if (!uvodni) { return obZadnjiPregled_.tijelo; }
+        if (obZadnjiPregled_.html) {
+          return '<p>' + esc(uvodni).replace(/\n/g, '<br>') + '</p>' + obZadnjiPregled_.tijelo;
+        }
+        return uvodni + '\n\n' + obZadnjiPregled_.tijelo;
+      };
+
+      obTestBtn.addEventListener('click', function(ev) {
+        ev.stopPropagation();
+        var testMail = (obTestInput.value || '').trim();
+        obTestInput.classList.remove('error');
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(testMail)) {
+          obTestInput.classList.add('error');
+          obPostaviStatus_('Upišite ispravnu test adresu.', 'error');
+          return;
+        }
+        if (!obZadnjiPregled_.tijelo.trim()) {
+          obPostaviStatus_('Nema teksta za slanje — odaberi predložak iznad.', 'error');
+          return;
+        }
+        obTestBtn.disabled = true;
+        obPosaljiBtn.disabled = true;
+        obPostaviStatus_('Šaljem testni mail…', null);
+        gasCall({ action: 'adminPosaljiObZahtjevTest', token: adminToken, testMail: testMail, predmet: obZadnjiPregled_.predmet, tijelo: obIzgradiTijeloZaSlanje_(), jeHtml: obZadnjiPregled_.html }).then(function(res) {
+          obTestBtn.disabled = false;
+          obPosaljiBtn.disabled = false;
+          if (handleAuthError(res)) { return; }
+          if (res.status === 'ok') {
+            obPostaviStatus_('Testni mail poslan na ' + testMail + '.', 'ok');
+          } else {
+            obPostaviStatus_(res.message || 'Slanje testnog maila nije uspjelo.', 'error');
+          }
+        }).catch(function() {
+          obTestBtn.disabled = false;
+          obPosaljiBtn.disabled = false;
+          obPostaviStatus_('Greška u komunikaciji s poslužiteljem.', 'error');
+        });
+      });
+
+      obPosaljiBtn.addEventListener('click', function(ev) {
+        ev.stopPropagation();
+        var primatelj = (obPrimateljInput.value || '').trim();
+        obPrimateljInput.classList.remove('error');
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(primatelj)) {
+          obPrimateljInput.classList.add('error');
+          obPostaviStatus_('Upišite ispravnu adresu primatelja.', 'error');
+          return;
+        }
+        if (!obZadnjiPregled_.tijelo.trim()) {
+          obPostaviStatus_('Nema teksta za slanje — odaberi predložak iznad.', 'error');
+          return;
+        }
+        var kopijaSebi = !!(obKopijaCb && obKopijaCb.checked);
+        if (!confirm('Poslati zahtjev za Online Booking na ' + primatelj + '?' + (kopijaSebi ? '\n\n(+ kopija tebi na sbatinac.intime@gmail.com)' : ''))) { return; }
+        obTestBtn.disabled = true;
+        obPosaljiBtn.disabled = true;
+        obPostaviStatus_('Šaljem…', null);
+        gasCall({ action: 'adminPosaljiObZahtjevMail', token: adminToken, rowIndex: entry.rowIndex, primatelj: primatelj, predmet: obZadnjiPregled_.predmet, tijelo: obIzgradiTijeloZaSlanje_(), kopijaSebi: kopijaSebi, jeHtml: obZadnjiPregled_.html }).then(function(res) {
+          obTestBtn.disabled = false;
+          obPosaljiBtn.disabled = false;
+          if (handleAuthError(res)) { return; }
+          if (res.status === 'ok') {
+            obPostaviStatus_('Zahtjev poslan na: ' + primatelj + (kopijaSebi ? ' (+ kopija tebi).' : '.'), 'ok');
+          } else {
+            obPostaviStatus_(res.message || 'Slanje zahtjeva nije uspjelo.', 'error');
+          }
+        }).catch(function() {
+          obTestBtn.disabled = false;
+          obPosaljiBtn.disabled = false;
+          obPostaviStatus_('Greška u komunikaciji s poslužiteljem.', 'error');
+        });
+      });
     }
 
     // Blok "Rok važenja ponude" (Sašin izričit zahtjev, 20.9.2026., dvadeset
