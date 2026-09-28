@@ -7831,7 +7831,7 @@
             // CSS .af-ob-uvodni-chip.prilagodjen). Backend: adminObUvodni*
             // akcije u InTime_Code.gs, PropertiesService spremište.
             '<div class="af-ob-uvodni-okvir">' +
-              '<label class="af-ob-uvodni-label">Uvodni tekst (dodaje se na početak maila, ne sprema se u predložak)</label>' +
+              '<label class="af-ob-uvodni-label">Uvodni tekst (ide na mjesto {{UVODNI_TEKST}} taga u predlošku, ne sprema se u predložak — pregled se odmah osvježava)</label>' +
               '<textarea class="af-ob-uvodni-textarea" placeholder="npr. Pozdrav dečki, kako ste danas... hitno trebam otvaranje OB-a..."></textarea>' +
               '<div class="af-ob-uvodni-chips"><span class="af-ob-uvodni-prazno">Učitavanje…</span></div>' +
               '<div class="af-ob-uvodni-alati">' +
@@ -9910,6 +9910,30 @@
         obSlanjeStatus.className = 'af-ob-slanje-status' + (vrsta === 'error' ? ' error' : vrsta === 'ok' ? ' ok' : '');
       };
 
+      // Umeće uvodni tekst (textarea ispod predloška) na mjesto TAGA
+      // {{UVODNI_TEKST}} unutar predloška (Sašin izričit zahtjev,
+      // 28.9.2026.: "da ne moram ja ručno copy-paste... tag koji kad se
+      // klikne na tekst koji želim odmah se promijeni" — označio je
+      // TOČNO mjesto u pregledu, vidi seed MAIL_PREDLOZAK_OB_TEKST_ /
+      // popraviObPredlozakUvodniTag_ u InTime_Code.gs). Predlošci BEZ tog
+      // taga (stariji, ručno pisani) zadržavaju STARI obrazac — uvodni
+      // tekst se doda na sam početak. Kad ništa nije upisano/odabrano,
+      // ide generički zadani uvod (da mail ne počne "u prazno" izravno s
+      // podacima), ali SAMO na mjestu taga — stari obrazac (bez taga) se
+      // u tom slučaju uopće ne dira.
+      var obUmetniUvodniTekst_ = function(tijelo, jeHtml) {
+        var uvodni = (obUvodniTextarea.value || '').trim();
+        var imaTag = /\{\{UVODNI_TEKST\}\}/.test(tijelo);
+        if (imaTag) {
+          var zamjena = uvodni
+            ? (jeHtml ? ('<p>' + esc(uvodni).replace(/\n/g, '<br>') + '</p>') : uvodni)
+            : (jeHtml ? '<p>Molimo hitno otvaranje Online Booking računa za klijenta u nastavku:</p>' : 'Molimo hitno otvaranje Online Booking računa za klijenta u nastavku:');
+          return tijelo.replace(/\{\{UVODNI_TEKST\}\}/g, zamjena);
+        }
+        if (!uvodni) { return tijelo; }
+        return jeHtml ? ('<p>' + esc(uvodni).replace(/\n/g, '<br>') + '</p>' + tijelo) : (uvodni + '\n\n' + tijelo);
+      };
+
       var obRenderPregled_ = function() {
         var odabraniId = parseInt(obPredlozakSelect.value, 10);
         var odabrani = obPredlosciLokalno.filter(function(p) { return p.rowIndex === odabraniId; })[0];
@@ -9923,7 +9947,7 @@
         obPredlozakUrediBtn.disabled = false;
         obPredlozakKopirajBtn.disabled = false;
         var predmetIzrenderiran = renderMailTekst_(odabrani.predmet, entry);
-        var tijeloIzrenderirano = renderMailTekst_(odabrani.sadrzaj, entry);
+        var tijeloIzrenderirano = obUmetniUvodniTekst_(renderMailTekst_(odabrani.sadrzaj, entry), !!odabrani.html);
         obZadnjiPregled_ = { predmet: predmetIzrenderiran, tijelo: tijeloIzrenderirano, html: !!odabrani.html };
         var predmetHtml = predmetIzrenderiran ? '<div class="af-ob-predlozak-predmet">Predmet: ' + esc(predmetIzrenderiran) + '</div>' : '';
         if (odabrani.html) {
@@ -10046,6 +10070,9 @@
       var obUvodniTekstoviLokalno_ = [];
       obUvodniTextarea.addEventListener('click', function(ev) { ev.stopPropagation(); });
       obUvodniTextarea.addEventListener('keydown', function(ev) { ev.stopPropagation(); });
+      // Živo osvježavanje pregleda dok admin tipka (ne samo kod klika na
+      // chip) — Sašin izričit zahtjev, 28.9.2026.
+      obUvodniTextarea.addEventListener('input', function() { obRenderPregled_(); });
 
       var obUvodniRenderChipove_ = function() {
         if (!obUvodniTekstoviLokalno_.length) {
@@ -10094,7 +10121,11 @@
         var chip = ev.target.closest('.af-ob-uvodni-chip');
         if (chip) {
           var tekstEl = chip.querySelector('.af-ob-uvodni-chip-tekst');
-          if (tekstEl) { obUvodniTextarea.value = tekstEl.textContent; obUvodniTextarea.focus(); }
+          if (tekstEl) {
+            obUvodniTextarea.value = tekstEl.textContent;
+            obUvodniTextarea.focus();
+            obRenderPregled_();
+          }
         }
       });
 
@@ -10143,17 +10174,11 @@
         });
       });
 
-      // Spaja uvodni tekst (ako je upisan) s tijelom odabranog predloška —
-      // koristi se u testnom I stvarnom slanju, ne mijenja obZadnjiPregled_
-      // (pregled predloška ostaje čist, bez uvodnog teksta).
-      var obIzgradiTijeloZaSlanje_ = function() {
-        var uvodni = (obUvodniTextarea.value || '').trim();
-        if (!uvodni) { return obZadnjiPregled_.tijelo; }
-        if (obZadnjiPregled_.html) {
-          return '<p>' + esc(uvodni).replace(/\n/g, '<br>') + '</p>' + obZadnjiPregled_.tijelo;
-        }
-        return uvodni + '\n\n' + obZadnjiPregled_.tijelo;
-      };
+      // Uvodni tekst je već umetnut u obZadnjiPregled_.tijelo (vidi
+      // obUmetniUvodniTekst_/obRenderPregled_ iznad — živo se osvježava dok
+      // admin tipka ili klikne chip), pa test/stvarno slanje ovdje samo
+      // šalju obZadnjiPregled_.tijelo izravno, bez dodatnog spajanja.
+      var obIzgradiTijeloZaSlanje_ = function() { return obZadnjiPregled_.tijelo; };
 
       obTestBtn.addEventListener('click', function(ev) {
         ev.stopPropagation();
