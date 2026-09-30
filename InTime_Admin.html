@@ -957,6 +957,29 @@
   .af-dok-priprema-status{font-size:11px;color:var(--grey);margin-top:6px;min-height:14px;}
   .af-dok-priprema-status.error{color:var(--red);}
   .af-dok-priprema-link{font-size:12px;margin-top:5px;word-break:break-all;}
+  /* NOVO (30.9.2026.) — blok "Pristup kalkulatoru cijena", vidi napomenu uz
+     adminDodijeliKalkulatorPristup u InTime_Code.gs. */
+  .af-kalk-pristup-blok{grid-column:1 / -1;margin-top:4px;}
+  .af-kalk-pristup-blok > label{display:block;font-size:14px;font-weight:800;letter-spacing:.03em;text-transform:uppercase;color:var(--purple-dark);margin-bottom:7px;}
+  .af-kalk-pristup-okvir{border:2px solid var(--line);border-radius:14px;padding:12px 14px;background:#fff;}
+  .af-kalk-pristup-info{font-size:12.5px;color:var(--graphite);margin-bottom:8px;}
+  .af-kalk-pristup-info-prazno{color:var(--grey);}
+  .af-kalk-pristup-info-red{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:3px 0;}
+  .af-kalk-pristup-info-oznaka{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;color:var(--grey);min-width:110px;}
+  .af-kalk-pristup-info-vrijednost{font-family:'SF Mono',Consolas,Monaco,monospace;font-size:13px;font-weight:700;color:var(--purple-dark);background:#f0fbfa;border:1px solid var(--line);border-radius:6px;padding:3px 8px;}
+  .af-kalk-pristup-akcije{display:flex;gap:8px;flex-wrap:wrap;}
+  .af-kalk-pristup-status{font-size:11px;color:var(--grey);margin-top:6px;min-height:14px;}
+  .af-kalk-pristup-status.error{color:var(--red);}
+  .af-kalk-pristup-status.ok{color:var(--green);}
+  /* NOVO (30.9.2026.) — pod-kartica "👥 Korisnici" na tabu "🧮 Kalkulator". */
+  .kalk-korisnici-status{font-size:12px;color:var(--grey);margin:4px 0 10px;}
+  .kalk-korisnik-red{border:1px solid var(--line);border-radius:10px;padding:10px 14px;margin-bottom:10px;background:#fafcfc;}
+  .kalk-korisnik-glavno{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;}
+  .kalk-korisnik-glavno strong{font-size:14px;color:var(--purple-dark);}
+  .kalk-korisnik-oib{font-size:11.5px;color:var(--grey);}
+  .kalk-korisnik-red2{display:flex;gap:16px;flex-wrap:wrap;font-size:11.5px;color:var(--graphite);margin-top:4px;}
+  .kalk-korisnik-red3{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px;}
+  .kalk-korisnik-akcije{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;}
   .af-dok-priprema-link a{color:var(--purple);}
   /* Gumb "🔓 Vrati link na dokumente" (23. krug, nastavak) — vidi napomenu
      uz markup u buildAdminFieldsBlock() i adminVratiLinkDokumenataOdbijenePonude
@@ -4239,18 +4262,98 @@
     return wrap;
   }
 
-  // "👥 Korisnici" (27.9.2026., Sašin izričit zahtjev — "napravi prvu
-  // karticu prije osnovnog zadanog cjenika, neka bude prazna za sada").
-  // NAMJERNO prazan placeholder — sadržaj/funkcionalnost dolazi naknadno,
-  // kad Saša javi što točno treba biti ovdje (npr. popis korisnika
-  // kalkulatora, njihovi vlastiti cjenici i sl. — nagađanje unaprijed bi
-  // moglo krenuti u krivom smjeru, pa se namjerno ostavlja otvoreno).
+  // "👥 Korisnici" (27.9.2026., placeholder; POPUNJENO 30.9.2026., Sašin
+  // izričit zahtjev: popis svih klijenata kojima je dodijeljen OSOBNI
+  // cjenik/pristup kalkulatoru — ime firme, OIB, adresa, datum dodjele
+  // cjenika, TM broj, uz korisničko ime/lozinku. Podaci se ovdje SAMO
+  // prikazuju (izvor istine je Sheet "InTime_Upiti", vidi
+  // adminDohvatiKalkulatorKorisnike u InTime_Code.gs) — sama dodjela se radi
+  // iz kartice klijenta (tab "Ponude"/"Novi klijenti" i sl.), blok "Pristup
+  // kalkulatoru cijena" (vidi buildAdminFieldsBlock gore). Regeneriranje
+  // lozinke/uklanjanje pristupa ovdje rade ISTE backend akcije, samo je
+  // prečac da ne treba tražiti karticu klijenta.
   function buildKalkulatorKorisniciPanel_() {
     var wrap = document.createElement('div');
     wrap.className = 'faq-admin-card';
     wrap.innerHTML =
-      '<h3>Korisnici</h3>' +
-      '<p class="faq-admin-hint">Ova pod-kartica je tek napravljena, namjerno prazna — sadržaj dolazi naknadno.</p>';
+      '<h3>Korisnici kalkulatora</h3>' +
+      '<p class="faq-admin-hint">Klijenti kojima je dodijeljen osobni cjenik i pristup kalkulatoru cijena na javnoj stranici — dodjeljuje se iz kartice klijenta (blok "Pristup kalkulatoru cijena", uz "Cjenik Hrvatska"). Korisničko ime je OB korisničko ime klijenta, lozinka se generira automatski.</p>' +
+      '<div class="kalk-korisnici-status">Učitavanje…</div>' +
+      '<div class="kalk-korisnici-lista"></div>';
+    var statusEl = wrap.querySelector('.kalk-korisnici-status');
+    var listaEl = wrap.querySelector('.kalk-korisnici-lista');
+
+    var renderLista_ = function(korisnici) {
+      if (!korisnici.length) {
+        listaEl.innerHTML = '';
+        statusEl.textContent = 'Još nijedan klijent nema pristup kalkulatoru.';
+        return;
+      }
+      statusEl.textContent = korisnici.length + ' klijent(a) s pristupom kalkulatoru.';
+      listaEl.innerHTML = korisnici.map(function(k) {
+        return '<div class="kalk-korisnik-red">' +
+          '<div class="kalk-korisnik-glavno">' +
+            '<strong>' + esc(k.naziv || '(bez naziva)') + '</strong>' +
+            '<span class="kalk-korisnik-oib">OIB: ' + esc(k.oib || '—') + '</span>' +
+          '</div>' +
+          '<div class="kalk-korisnik-red2">' +
+            '<span>📍 ' + esc(k.adresa || '—') + '</span>' +
+            '<span>TM broj: ' + esc(k.tmBroj || '—') + '</span>' +
+            '<span>Cjenik dodijeljen: ' + esc(k.cjenikDatum || '—') + '</span>' +
+            (k.cjenikNaziv ? ('<span>Datoteka: ' + esc(k.cjenikNaziv) + '</span>') : '') +
+          '</div>' +
+          '<div class="kalk-korisnik-red3">' +
+            '<span class="af-kalk-pristup-info-oznaka">Korisničko ime</span><span class="af-kalk-pristup-info-vrijednost">' + esc(k.korisnickoIme || '—') + '</span>' +
+            '<span class="af-kalk-pristup-info-oznaka">Lozinka</span><span class="af-kalk-pristup-info-vrijednost">' + esc(k.lozinka || '—') + '</span>' +
+          '</div>' +
+          '<div class="kalk-korisnik-akcije">' +
+            '<button type="button" class="btn btn-outline btn-small kalk-korisnik-regen" data-row="' + k.rowIndex + '">🔁 Nova lozinka</button>' +
+            '<button type="button" class="btn btn-danger btn-small kalk-korisnik-ukloni" data-row="' + k.rowIndex + '">✕ Ukloni pristup</button>' +
+          '</div>' +
+        '</div>';
+      }).join('');
+
+      Array.prototype.forEach.call(listaEl.querySelectorAll('.kalk-korisnik-regen'), function(btn) {
+        btn.addEventListener('click', function() {
+          if (!confirm('Generirati NOVU lozinku za kalkulator? Klijent će morati koristiti novu lozinku — stara više neće raditi.')) { return; }
+          var rowIndex = parseInt(btn.getAttribute('data-row'), 10);
+          btn.disabled = true;
+          gasCall({ action: 'adminDodijeliKalkulatorPristup', token: adminToken, rowIndex: rowIndex, regenerirajLozinku: true }).then(function(res) {
+            btn.disabled = false;
+            if (handleAuthError(res)) { return; }
+            if (res.status === 'ok') { ucitaj_(); } else { alert(res.message || 'Greška pri generiranju nove lozinke.'); }
+          }).catch(function() { btn.disabled = false; alert('Greška u komunikaciji s poslužiteljem.'); });
+        });
+      });
+      Array.prototype.forEach.call(listaEl.querySelectorAll('.kalk-korisnik-ukloni'), function(btn) {
+        btn.addEventListener('click', function() {
+          if (!confirm('Ukloniti pristup kalkulatoru za ovog klijenta? Korisničko ime, lozinka i spremljeni cjenik će biti obrisani.')) { return; }
+          var rowIndex = parseInt(btn.getAttribute('data-row'), 10);
+          btn.disabled = true;
+          gasCall({ action: 'adminUkloniKalkulatorPristup', token: adminToken, rowIndex: rowIndex }).then(function(res) {
+            btn.disabled = false;
+            if (handleAuthError(res)) { return; }
+            if (res.status === 'ok') { ucitaj_(); } else { alert(res.message || 'Greška pri uklanjanju pristupa.'); }
+          }).catch(function() { btn.disabled = false; alert('Greška u komunikaciji s poslužiteljem.'); });
+        });
+      });
+    };
+
+    var ucitaj_ = function() {
+      statusEl.textContent = 'Učitavanje…';
+      gasCall({ action: 'adminDohvatiKalkulatorKorisnike', token: adminToken }).then(function(res) {
+        if (handleAuthError(res)) { return; }
+        if (res.status === 'ok') {
+          renderLista_(res.korisnici || []);
+        } else {
+          statusEl.textContent = res.message || 'Greška pri učitavanju popisa.';
+        }
+      }).catch(function() {
+        statusEl.textContent = 'Greška u komunikaciji s poslužiteljem.';
+      });
+    };
+    ucitaj_();
+
     return wrap;
   }
 
@@ -7834,6 +7937,26 @@
             '<div class="af-dok-priprema-link"></div>' +
           '</div>' +
         '</div>' +
+        // NOVO (30.9.2026., Sašin izričit zahtjev) — "Pristup kalkulatoru
+        // cijena": koristi dokument "Cjenik Hrvatska" iznad (fiksno polje u
+        // bloku "Dokumenti za ponudu") da klijentu dodijeli OSOBNI cjenik i
+        // login za javni kalkulator na stranici. Vidi punu napomenu uz
+        // adminDodijeliKalkulatorPristup/adminUkloniKalkulatorPristup u
+        // InTime_Code.gs i wiring niže u ovoj funkciji.
+        '<div class="af-kalk-pristup-blok">' +
+          '<label>Pristup kalkulatoru cijena (za ovog klijenta)</label>' +
+          '<div class="af-kalk-pristup-okvir">' +
+            '<div class="af-kalk-pristup-info"></div>' +
+            '<div class="af-kalk-pristup-akcije">' +
+              '<button type="button" class="af-kalk-pristup-dodijeli-btn btn btn-small">🧮 Dodijeli cjenik u kalkulator</button>' +
+              '<button type="button" class="af-kalk-pristup-osvjezi-btn btn btn-outline btn-small" hidden>⟳ Osvježi cjenik</button>' +
+              '<button type="button" class="af-kalk-pristup-regen-btn btn btn-outline btn-small" hidden>🔁 Nova lozinka</button>' +
+              '<button type="button" class="af-kalk-pristup-ukloni-btn btn btn-danger btn-small" hidden>✕ Ukloni pristup</button>' +
+            '</div>' +
+            '<p class="af-dok-cilj-hint">Koristi trenutno priloženi dokument "Cjenik Hrvatska" iznad (blok "Dokumenti za ponudu") — parsira ga i sprema kao klijentov OSOBNI cjenik u kalkulatoru na javnoj stranici (klijent tada NE MOŽE učitati nijedan drugi cjenik, samo svoj). Korisničko ime je "OB korisničko ime" (admin polje), lozinka se generira automatski prema formuli datum otvaranja OB-a + ime superheroja + 2 početna slova naziva tvrtke + "!" i prikazuje ovdje. Ponovna dodjela (npr. nakon zamjene Excel datoteke) samo osvježava cjenik — pristupni podaci ostaju isti dok se ručno ne zatraži nova lozinka.</p>' +
+            '<div class="af-kalk-pristup-status"></div>' +
+          '</div>' +
+        '</div>' +
         '<div class="af-predlozak-blok">' +
           '<label>Predložak za slanje ponude</label>' +
           '<div class="af-predlozak-okvir">' +
@@ -9801,6 +9924,106 @@
           pripremaBtn.disabled = false;
           pripremaStatusEl.textContent = 'Greška u komunikaciji s poslužiteljem.';
           pripremaStatusEl.classList.add('error');
+        });
+      });
+    }
+
+    // Blok "Pristup kalkulatoru cijena" — vidi punu napomenu uz
+    // adminDodijeliKalkulatorPristup/adminUkloniKalkulatorPristup u
+    // InTime_Code.gs. Dodjela čita trenutno priloženi "Cjenik Hrvatska"
+    // (dokFiksniPolja.cjenikhr, isti blok iznad) — SERVER je autoritet za tu
+    // provjeru (ne blokiramo gumb ovdje na temelju dokFiksniPolja, jer bi
+    // klijent mogao imati stariji spremljeni cjenik a "Cjenik Hrvatska" polje
+    // privremeno prazno tijekom izrade nove ponude; poruka greške s
+    // poslužitelja je dovoljna).
+    if (prikaziPuniBlok) {
+      var kalkBtn = wrap.querySelector('.af-kalk-pristup-dodijeli-btn');
+      var kalkOsvjeziBtn = wrap.querySelector('.af-kalk-pristup-osvjezi-btn');
+      var kalkRegenBtn = wrap.querySelector('.af-kalk-pristup-regen-btn');
+      var kalkUkloniBtn = wrap.querySelector('.af-kalk-pristup-ukloni-btn');
+      var kalkInfoEl = wrap.querySelector('.af-kalk-pristup-info');
+      var kalkStatusEl = wrap.querySelector('.af-kalk-pristup-status');
+
+      var kalkRenderInfo_ = function() {
+        var korisnickoIme = fieldVal(entry, 'Kalkulator korisničko ime (admin)');
+        var lozinka = fieldVal(entry, 'Kalkulator lozinka (admin)');
+        var cjenikNaziv = fieldVal(entry, 'Kalkulator cjenik - naziv datoteke (admin)');
+        var cjenikDatum = fieldVal(entry, 'Datum dodjele cjenika u kalkulator (admin)');
+        if (!lozinka) {
+          kalkInfoEl.innerHTML = '<div class="af-kalk-pristup-info-prazno">Klijent još nema pristup kalkulatoru.</div>';
+          kalkBtn.hidden = false;
+          kalkOsvjeziBtn.hidden = true;
+          kalkRegenBtn.hidden = true;
+          kalkUkloniBtn.hidden = true;
+        } else {
+          kalkInfoEl.innerHTML =
+            '<div class="af-kalk-pristup-info-red"><span class="af-kalk-pristup-info-oznaka">Korisničko ime</span><span class="af-kalk-pristup-info-vrijednost">' + esc(korisnickoIme) + '</span></div>' +
+            '<div class="af-kalk-pristup-info-red"><span class="af-kalk-pristup-info-oznaka">Lozinka</span><span class="af-kalk-pristup-info-vrijednost">' + esc(lozinka) + '</span></div>' +
+            '<div class="af-kalk-pristup-info-red"><span class="af-kalk-pristup-info-oznaka">Cjenik</span><span>' + esc(cjenikNaziv || '—') + (cjenikDatum ? (' <span style="color:var(--grey);">(dodijeljeno ' + esc(cjenikDatum) + ')</span>') : '') + '</span></div>';
+          kalkBtn.hidden = true;
+          kalkOsvjeziBtn.hidden = false;
+          kalkRegenBtn.hidden = false;
+          kalkUkloniBtn.hidden = false;
+        }
+      };
+      kalkRenderInfo_();
+
+      var kalkSveGumbe_ = [kalkBtn, kalkOsvjeziBtn, kalkRegenBtn, kalkUkloniBtn];
+      var kalkPozovi_ = function(regen) {
+        kalkStatusEl.textContent = regen ? 'Generiranje nove lozinke…' : 'Dodjela pristupa…';
+        kalkStatusEl.classList.remove('error', 'ok');
+        kalkSveGumbe_.forEach(function(b) { b.disabled = true; });
+        gasCall({ action: 'adminDodijeliKalkulatorPristup', token: adminToken, rowIndex: entry.rowIndex, regenerirajLozinku: !!regen }).then(function(res) {
+          kalkSveGumbe_.forEach(function(b) { b.disabled = false; });
+          if (handleAuthError(res)) { return; }
+          if (res.status === 'ok') {
+            entry.fields['Kalkulator korisničko ime (admin)'] = res.korisnickoIme;
+            entry.fields['Kalkulator lozinka (admin)'] = res.lozinka;
+            entry.fields['Kalkulator cjenik - naziv datoteke (admin)'] = res.nazivDatoteke;
+            entry.fields['Datum dodjele cjenika u kalkulator (admin)'] = res.datum;
+            kalkRenderInfo_();
+            kalkStatusEl.textContent = 'Spremljeno — ' + res.brojKategorija + ' kategorija cjenika prepoznato.';
+            kalkStatusEl.classList.add('ok');
+          } else {
+            kalkStatusEl.textContent = res.message || 'Greška pri dodjeli pristupa.';
+            kalkStatusEl.classList.add('error');
+          }
+        }).catch(function() {
+          kalkSveGumbe_.forEach(function(b) { b.disabled = false; });
+          kalkStatusEl.textContent = 'Greška u komunikaciji s poslužiteljem.';
+          kalkStatusEl.classList.add('error');
+        });
+      };
+
+      kalkBtn.addEventListener('click', function(ev) { ev.stopPropagation(); kalkPozovi_(false); });
+      kalkOsvjeziBtn.addEventListener('click', function(ev) { ev.stopPropagation(); kalkPozovi_(false); });
+      kalkRegenBtn.addEventListener('click', function(ev) {
+        ev.stopPropagation();
+        if (!confirm('Generirati NOVU lozinku za kalkulator? Klijent će morati koristiti novu lozinku — stara više neće raditi.')) { return; }
+        kalkPozovi_(true);
+      });
+      kalkUkloniBtn.addEventListener('click', function(ev) {
+        ev.stopPropagation();
+        if (!confirm('Ukloniti pristup kalkulatoru za ovog klijenta? Korisničko ime, lozinka i spremljeni cjenik će biti obrisani.')) { return; }
+        kalkStatusEl.textContent = 'Uklanjanje…';
+        kalkStatusEl.classList.remove('error', 'ok');
+        gasCall({ action: 'adminUkloniKalkulatorPristup', token: adminToken, rowIndex: entry.rowIndex }).then(function(res) {
+          if (handleAuthError(res)) { return; }
+          if (res.status === 'ok') {
+            entry.fields['Kalkulator korisničko ime (admin)'] = '';
+            entry.fields['Kalkulator lozinka (admin)'] = '';
+            entry.fields['Kalkulator cjenik - naziv datoteke (admin)'] = '';
+            entry.fields['Datum dodjele cjenika u kalkulator (admin)'] = '';
+            kalkRenderInfo_();
+            kalkStatusEl.textContent = 'Pristup uklonjen.';
+            kalkStatusEl.classList.add('ok');
+          } else {
+            kalkStatusEl.textContent = res.message || 'Greška pri uklanjanju pristupa.';
+            kalkStatusEl.classList.add('error');
+          }
+        }).catch(function() {
+          kalkStatusEl.textContent = 'Greška u komunikaciji s poslužiteljem.';
+          kalkStatusEl.classList.add('error');
         });
       });
     }

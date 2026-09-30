@@ -300,6 +300,23 @@
     white-space:nowrap;
   }
   .btn-secondary:hover{ background:#eaf5f4; }
+  /* NOVO (30.9.2026., Sašin izričit zahtjev) — prijava klijenta s osobnim
+     cjenikom, vidi wiring uz #prijavaBtn niže u <script>. */
+  input[type=password]{
+    padding:9px 10px;
+    border:1px solid #c9d4d2;
+    border-radius:7px;
+    font-size:13px;
+    background:#fff;
+    color:var(--black);
+    width:100%;
+  }
+  input[type=password]:focus{
+    outline:none;
+    border-color:var(--teal);
+    box-shadow:0 0 0 3px rgba(34,152,145,.15);
+  }
+  #prijavaKlijentaCard .note.error{ color:var(--danger); }
   #rezultat{
     display:none;
   }
@@ -872,6 +889,44 @@
 </header>
 
 <div class="wrap">
+
+<!-- NOVO (30.9.2026., Sašin izričit zahtjev) — prijava klijenta s osobnim,
+     ugovorenim cjenikom. Korisničko ime/lozinku dodjeljuje In Time d.o.o.
+     (vidi blok "Pristup kalkulatoru cijena" u InTime_Admin.html i
+     kalkulatorKlijentPrijava u InTime_Code.gs). Dok je klijent prijavljen,
+     ručno učitavanje Excel cjenika ispod je onemogućeno — koristi se
+     ISKLJUČIVO njegov osobni cjenik. Vidi wiring na dnu <script>. -->
+<div class="card" id="prijavaKlijentaCard">
+  <h2 style="margin-bottom:10px;">Prijava — Vaš osobni cjenik</h2>
+  <div id="prijavaKlijentaForma">
+    <p class="note" style="margin:0 0 12px;">Ako ste od In Time d.o.o. dobili korisničko ime i lozinku, prijavite se ovdje da se automatski učita Vaš vlastiti, ugovoreni cjenik — bez ručnog učitavanja Excel datoteke.</p>
+    <div class="row" style="align-items:flex-end; margin-bottom:0;">
+      <div class="field" style="flex:1 1 220px;">
+        <label>Korisničko ime</label>
+        <input type="text" id="prijavaUsername" autocomplete="username" placeholder="ime@tvrtka.hr">
+      </div>
+      <div class="field" style="flex:1 1 220px;">
+        <label>Lozinka</label>
+        <input type="password" id="prijavaLozinka" autocomplete="current-password" placeholder="Lozinka">
+      </div>
+      <div class="field" style="flex:0 0 auto;">
+        <button type="button" class="btn-secondary" id="prijavaBtn" style="padding:10px 18px;">Prijava</button>
+      </div>
+    </div>
+    <div class="note" id="prijavaStatus"></div>
+  </div>
+  <div id="prijavaKlijentaAktivna" style="display:none;">
+    <div class="row" style="align-items:center; margin-bottom:0;">
+      <div class="field" style="flex:1 1 auto;">
+        <span style="font-weight:700; color:var(--teal-dark);">✓ Prijavljeni ste kao: <span id="prijavaNazivFirme"></span></span>
+        <div class="note" style="margin-top:4px;">Učitan je Vaš osobni ugovoreni cjenik — ručno učitavanje drugih cjenika je onemogućeno dok ste prijavljeni.</div>
+      </div>
+      <div class="field" style="flex:0 0 auto;">
+        <button type="button" class="btn-secondary" id="odjavaBtn" style="padding:10px 18px;">Odjava</button>
+      </div>
+    </div>
+  </div>
+</div>
 
 <div class="layout-grid">
   <div class="col-left">
@@ -4230,6 +4285,115 @@ function ucitajZadaniCjenikSaAdmina_(){
   }).catch(function(){ /* tiho — kalkulator i dalje radi s ugrađenim zadanim cjenikom iz builda */ });
 }
 ucitajZadaniCjenikSaAdmina_();
+
+// ---------- Prijava klijenta — osobni ugovoreni cjenik (30.9.2026., Sašin
+// izričit zahtjev). Korisničko ime/lozinku generira i dodjeljuje In Time
+// d.o.o. (vidi kalkulatorKlijentPrijava u InTime_Code.gs, blok "Pristup
+// kalkulatoru cijena" u InTime_Admin.html). Napomena: prijava primjenjuje
+// ISTU (server-side) parsiranu osnovnu tablicu cijena (33 kategorije težine
+// × 3 zone) kao i admin-zadani cjenik iznad (ucitajZadaniCjenikSaAdmina_) —
+// ostale postavke iz Excela (ugovoreni % nestandardne, povrat, dodatak na
+// težinu, SMS, povratnica, otkupnina, iskazana vrijednost, itd.) parsira
+// SAMO ručno učitavanje datoteke na ovoj stranici (parseCjenikRows i
+// prijatelji, iznad) — ista granica postoji već i za admin-zadani cjenik,
+// nije nova. Prijavljen klijent time dobiva TOČNU osnovnu cijenu po
+// težini/zoni iz svog cjenika; ostale postavke ostaju na zadanim/tvorničkim
+// vrijednostima dok se ručno ne prilagode (checkbox/polja i dalje rade
+// normalno i nakon prijave).
+var PRIJAVA_LS_KLJUC_ = 'intime_kalk_prijava_v1';
+
+function prijavaPostaviAktivnoStanje_(nazivFirme){
+  document.getElementById('prijavaKlijentaForma').style.display = 'none';
+  document.getElementById('prijavaKlijentaAktivna').style.display = 'block';
+  document.getElementById('prijavaNazivFirme').textContent = nazivFirme || '(bez naziva)';
+  var fileInput = document.getElementById('cjenikFile');
+  if(fileInput){ fileInput.disabled = true; }
+  var resetBtn = document.querySelector('button[onclick="resetCjenik()"]');
+  if(resetBtn){ resetBtn.disabled = true; resetBtn.title = 'Onemogućeno dok ste prijavljeni s osobnim cjenikom.'; }
+}
+
+function prijavaPostaviNeaktivnoStanje_(){
+  document.getElementById('prijavaKlijentaForma').style.display = 'block';
+  document.getElementById('prijavaKlijentaAktivna').style.display = 'none';
+  var fileInput = document.getElementById('cjenikFile');
+  if(fileInput){ fileInput.disabled = false; }
+  var resetBtn = document.querySelector('button[onclick="resetCjenik()"]');
+  if(resetBtn){ resetBtn.disabled = false; resetBtn.title = ''; }
+}
+
+function prijaviKlijenta_(username, lozinka, tiho){
+  var statusEl = document.getElementById('prijavaStatus');
+  var btn = document.getElementById('prijavaBtn');
+  if(!tiho){
+    statusEl.textContent = 'Provjera podataka…';
+    statusEl.classList.remove('error');
+    btn.disabled = true;
+  }
+  return gorivoGasCall_({ action: 'kalkulatorKlijentPrijava', username: username, lozinka: lozinka }).then(function(res){
+    if(!tiho){ btn.disabled = false; }
+    if(!res || res.status !== 'ok'){
+      if(!tiho){
+        statusEl.textContent = (res && res.message) ? res.message : 'Prijava nije uspjela.';
+        statusEl.classList.add('error');
+      } else {
+        try{ localStorage.removeItem(PRIJAVA_LS_KLJUC_); }catch(eLs){ /* zanemari */ }
+      }
+      return false;
+    }
+    korisnikUcitaoVlastitiCjenik_ = true;
+    if(Array.isArray(res.cjenik) && res.cjenik.length){
+      CURRENT_CJENIK = res.cjenik.slice();
+      renderCjenikTable(CURRENT_CJENIK);
+      scheduleLiveIzracunaj();
+    }
+    prijavaPostaviAktivnoStanje_(res.naziv);
+    if(statusEl){ statusEl.textContent = ''; statusEl.classList.remove('error'); }
+    try{ localStorage.setItem(PRIJAVA_LS_KLJUC_, JSON.stringify({ u: username, p: lozinka })); }catch(eLs){ /* privatni način preglednika i sl. — prijava i dalje radi, samo se ne pamti za sljedeći posjet */ }
+    return true;
+  }).catch(function(){
+    if(!tiho){
+      btn.disabled = false;
+      statusEl.textContent = 'Greška u komunikaciji s poslužiteljem — pokušajte ponovno.';
+      statusEl.classList.add('error');
+    }
+    return false;
+  });
+}
+
+document.getElementById('prijavaBtn').addEventListener('click', function(){
+  var username = document.getElementById('prijavaUsername').value.trim();
+  var lozinka = document.getElementById('prijavaLozinka').value.trim();
+  if(!username || !lozinka){
+    var statusEl = document.getElementById('prijavaStatus');
+    statusEl.textContent = 'Unesite korisničko ime i lozinku.';
+    statusEl.classList.add('error');
+    return;
+  }
+  prijaviKlijenta_(username, lozinka, false);
+});
+document.getElementById('prijavaLozinka').addEventListener('keydown', function(ev){
+  if(ev.key === 'Enter'){ document.getElementById('prijavaBtn').click(); }
+});
+
+document.getElementById('odjavaBtn').addEventListener('click', function(){
+  try{ localStorage.removeItem(PRIJAVA_LS_KLJUC_); }catch(eLs){ /* zanemari */ }
+  korisnikUcitaoVlastitiCjenik_ = false;
+  document.getElementById('prijavaUsername').value = '';
+  document.getElementById('prijavaLozinka').value = '';
+  prijavaPostaviNeaktivnoStanje_();
+  resetCjenik();
+});
+
+// Tiha automatska prijava ako je korisnik prošli put ostao prijavljen na
+// ovom uređaju/pregledniku (isti obrazac otpornosti kao i ostatak ove
+// stranice — ako ne uspije, samo se prikaže login forma, ništa se ne ruši).
+(function(){
+  var spremljeno;
+  try{ spremljeno = JSON.parse(localStorage.getItem(PRIJAVA_LS_KLJUC_) || 'null'); }catch(eLs){ spremljeno = null; }
+  if(spremljeno && spremljeno.u && spremljeno.p){
+    prijaviKlijenta_(spremljeno.u, spremljeno.p, true);
+  }
+})();
 </script>
 
 </body>
