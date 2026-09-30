@@ -276,17 +276,23 @@
      30.9.2026. (drugi krug, isti dan) — polja SLOŽENA JEDNO ISPOD DRUGOGA
      (ne jedno pored drugog), obje kućice iste veličine, kompaktan natpis u
      retku ("Korisnik:"/"Lozinka:") umjesto velikog UPPERCASE naslova iznad
-     polja. VAŽNO — ovo je vizualni sloj ISKLJUČIVO na naslovnici
-     (`InTime_PismoNamjere.html`), na kartici kalkulatora; NE dira se
-     `InTime_KalkulatorCijena.html` (sama kalkulator-stranica koja se
-     ugrađuje u iframe) niti admin (`InTime_Admin.html`/kartica "Kalkulator"
-     u adminu) — Sašin izričit zahtjev da se ovo ne prenese tamo.
-     Postavljene position:absolute preko wrap-elementa (.kalkulator-kartica-wrap
-     ima position:relative) — NISU unutar samog <button>, jer <button> ne
-     smije sadržavati <input> (nevaljan HTML, browser bi ih izbacio iz
-     elementa). Klik/fokus na poljima zaustavlja probijanje klika do gumba
-     (stopPropagation u HTML-u niže) da se kartica ne otvara/zatvara dok
-     korisnik upisuje. */
+     polja.
+     30.9.2026. (deseti krug, isti dan, FAZA 2 — Saša je preko AskUserQuestion
+     potvrdio "Da, poveži ih sad"): kućice više NISU čisto vizualne. Dodan
+     gumb "Prijava" — čita upisano korisničko ime/lozinku i otvara/ponovno
+     učitava kalkulator (iframe ispod ove kartice) S TIM podacima u URL
+     upitu (?kalk_u=...&kalk_p=...), koje InTime_KalkulatorCijena.html čita
+     pri učitavanju i automatski (ne tiho — status se vidi) prijavljuje
+     klijenta, isti mehanizam kao prijava izravno na kalkulator stranici
+     (vidi kalkulatorNaslovnicaPrijava_ u JS-u niže i IIFE na dnu
+     InTime_KalkulatorCijena.html koji čita URLSearchParams). "Otvori u
+     novom prozoru" poveznica isto nosi ove podatke ako su upisani (vidi
+     wiring niže). Postavljene position:absolute preko wrap-elementa
+     (.kalkulator-kartica-wrap ima position:relative) — NISU unutar samog
+     <button>, jer <button> ne smije sadržavati <input> (nevaljan HTML,
+     browser bi ih izbacio iz elementa). Klik/fokus na poljima zaustavlja
+     probijanje klika do gumba (stopPropagation u HTML-u niže) da se kartica
+     ne otvara/zatvara dok korisnik upisuje. */
   .kalkulator-kartica-wrap{position:relative;}
   .kalkulator-login-kucice{
     position:absolute;top:50%;right:64px;transform:translateY(-50%);
@@ -315,12 +321,28 @@
   .kalkulator-login-polje input.kalkulator-login-input:focus{
     outline:2px solid var(--purple);outline-offset:1px;background:#fff;
   }
+  /* Gumb "Prijava" + status poruka — dodano 30.9.2026. (nastavak istog dana,
+     Sašin izričit zahtjev, uz odobrenje preko AskUserQuestion): dosad su
+     ove kućice bile ČISTO vizualne (FAZA 1, bez ikakve radnje); sad gumb
+     stvarno prijavljuje klijenta — vidi kalkulatorNaslovnicaPrijava_ niže. */
+  .kalkulator-login-btn{
+    align-self:flex-end;padding:5px 14px;border-radius:6px;border:none;
+    background:var(--teal,#229891);color:#fff;font-size:12.5px;font-weight:700;
+    cursor:pointer;
+  }
+  .kalkulator-login-btn:hover{opacity:.88;}
+  .kalkulator-login-status{
+    font-size:11.5px;color:#ffd7d7;text-shadow:0 1px 3px rgba(0,0,0,.6);
+    text-align:right;min-height:14px;max-width:210px;
+  }
   @media(max-width:640px){
     .kalkulator-login-kucice{
       position:static;transform:none;margin:14px 0 0;
       align-items:center;
     }
     .kalkulator-login-polje label{color:var(--graphite,#333);text-shadow:none;}
+    .kalkulator-login-btn{align-self:center;}
+    .kalkulator-login-status{color:var(--danger,#c0392b);text-shadow:none;text-align:center;}
   }
   /* GORIVO — nova kartica (25.9.2026., Faza 2, Sašin izričit zahtjev: "to je
      trebala biti posebna kartica, a ne u sklopu kalkulatora") — ISTI obrazac
@@ -1581,13 +1603,15 @@
             <label for="kalkulator-login-pass">Lozinka:</label>
             <input type="password" id="kalkulator-login-pass" class="kalkulator-login-input" autocomplete="off" placeholder="lozinka">
           </div>
+          <button type="button" id="kalkulator-login-btn" class="kalkulator-login-btn" onclick="kalkulatorNaslovnicaPrijava_(event)">Prijava</button>
+          <div id="kalkulator-login-status" class="kalkulator-login-status"></div>
         </div>
       </div>
       <div id="kalkulator-embed-wrap" class="kalkulator-embed-wrap">
         <div class="kalkulator-embed-bar">
           <span>In Time — kalkulator cijene dostave</span>
           <div class="kalkulator-embed-actions">
-            <a href="InTime_KalkulatorCijena.html" target="_blank" rel="noopener" class="kalkulator-embed-btn">↗ Otvori u novom prozoru</a>
+            <a href="InTime_KalkulatorCijena.html" target="_blank" rel="noopener" class="kalkulator-embed-btn" id="kalkulator-novi-prozor-link">↗ Otvori u novom prozoru</a>
             <button type="button" id="kalkulator-fullscreen-btn" class="kalkulator-embed-btn" onclick="toggleKalkulatorFullscreen(event)">⛶ Raširi</button>
             <button type="button" class="kalkulator-embed-btn" onclick="closeKalkulatorEmbed()">Zatvori ✕</button>
           </div>
@@ -6033,6 +6057,59 @@
     var fsBtn = document.getElementById('kalkulator-fullscreen-btn');
     if (fsBtn) { fsBtn.textContent = '⛶ Raširi'; }
   }
+
+  // Gumb "Prijava" uz kućice na kartici kalkulatora (30.9.2026., deseti
+  // krug — vidi punu napomenu uz CSS .kalkulator-login-btn gore). Za
+  // razliku od običnog otvaranja kartice (openKalkulatorEmbed, lijeno
+  // učitavanje SAMO prvi put — iframe.src se ne dira ako je već postavljen),
+  // prijava MORA (ponovno) postaviti iframe.src svaki put — jedino tako se
+  // pouzdano pokreće auto-login na kalkulator stranici, čak i ako je
+  // kalkulator već bio otvoren bez prijave ili s drugim korisnikom.
+  function kalkulatorNaslovnicaPrijava_(event){
+    if (event) { event.stopPropagation(); }
+    var userEl = document.getElementById('kalkulator-login-user');
+    var passEl = document.getElementById('kalkulator-login-pass');
+    var statusEl = document.getElementById('kalkulator-login-status');
+    var username = userEl ? userEl.value.trim() : '';
+    var lozinka = passEl ? passEl.value.trim() : '';
+    if (!username || !lozinka) {
+      if (statusEl) { statusEl.textContent = 'Unesite korisničko ime i lozinku.'; }
+      return;
+    }
+    if (statusEl) { statusEl.textContent = ''; }
+    document.getElementById('panel-interes').classList.remove('active');
+    document.getElementById('panel-odbijenica').classList.remove('active');
+    document.getElementById('confirm-box').classList.remove('active');
+    closeAnketaEmbed();
+    closeBookingEmbed();
+    var wrap = document.getElementById('kalkulator-embed-wrap');
+    var iframe = document.getElementById('kalkulator-embed-iframe');
+    iframe.src = 'InTime_KalkulatorCijena.html?kalk_u=' + encodeURIComponent(username) + '&kalk_p=' + encodeURIComponent(lozinka);
+    wrap.classList.add('active');
+    skociNaSidro('kalkulator-embed-wrap');
+  }
+  (function(){
+    var passEl = document.getElementById('kalkulator-login-pass');
+    if (passEl) {
+      passEl.addEventListener('keydown', function(ev){
+        if (ev.key === 'Enter') { kalkulatorNaslovnicaPrijava_(ev); }
+      });
+    }
+    // "Otvori u novom prozoru" nosi iste pristupne podatke ako su upisani —
+    // isti obrazac prijave, samo u novoj kartici umjesto u iframeu.
+    var noviProzorLink = document.getElementById('kalkulator-novi-prozor-link');
+    if (noviProzorLink) {
+      noviProzorLink.addEventListener('click', function(){
+        var userEl = document.getElementById('kalkulator-login-user');
+        var passEl2 = document.getElementById('kalkulator-login-pass');
+        var username = userEl ? userEl.value.trim() : '';
+        var lozinka = passEl2 ? passEl2.value.trim() : '';
+        this.href = (username && lozinka)
+          ? 'InTime_KalkulatorCijena.html?kalk_u=' + encodeURIComponent(username) + '&kalk_p=' + encodeURIComponent(lozinka)
+          : 'InTime_KalkulatorCijena.html';
+      });
+    }
+  })();
 
   function toggleKalkulatorFullscreen(event){
     if (event) { event.stopPropagation(); }

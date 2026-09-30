@@ -723,6 +723,10 @@
   .af-posl-uvodni-status.error{color:#b3261e;}
   .af-posl-slanje-okvir{margin-top:12px;padding-top:12px;border-top:1px dashed #a6d9c1;}
   .af-posl-primatelji-red textarea{width:100%;min-height:44px;resize:vertical;box-sizing:border-box;font-size:12.5px;font-family:inherit;padding:8px 10px;border:1px solid #a6d9c1;border-radius:8px;margin-bottom:4px;}
+  .af-posl-primatelji-alati{display:flex;align-items:center;gap:8px;margin-bottom:6px;}
+  .af-posl-primatelji-reset-status{font-size:11px;min-height:14px;}
+  .af-posl-primatelji-reset-status.ok{color:#1a7a3c;}
+  .af-posl-primatelji-reset-status.error{color:#b3261e;}
   .af-posl-primatelji-hint{font-size:11px;color:var(--grey);margin:0 0 10px;}
   .af-posl-test-red{display:flex;gap:8px;margin-bottom:10px;}
   .af-posl-test-red input{flex:1;padding:7px 9px;border:1px solid #a6d9c1;border-radius:6px;font-size:12px;}
@@ -971,6 +975,32 @@
   .af-kalk-pristup-status{font-size:11px;color:var(--grey);margin-top:6px;min-height:14px;}
   .af-kalk-pristup-status.error{color:var(--red);}
   .af-kalk-pristup-status.ok{color:var(--green);}
+  /* Značka "🧊 Zamrznuto" — Sašin izričit zahtjev (30.9.2026., isti dan):
+     privremeno onemogućavanje pristupa kalkulatoru BEZ brisanja korisničkog
+     imena/lozinke/cjenika (obrnuto od "Ukloni pristup", koje briše sve) —
+     vidi adminPostaviZamrznutostKalkulatora u InTime_Code.gs. */
+  .af-kalk-zamrznuto-znacka{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.02em;text-transform:uppercase;color:#8a5a00;background:#fff3cd;border:1px solid #ffe08a;border-radius:6px;padding:3px 8px;margin:0 0 6px;}
+  .kalk-korisnik-zamrznuto-znacka{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.02em;text-transform:uppercase;color:#8a5a00;background:#fff3cd;border:1px solid #ffe08a;border-radius:6px;padding:3px 8px;margin-left:8px;}
+  /* Blok "Podaci o prikupu pošiljaka" (Sašin izričit zahtjev, 30.9.2026. —
+     "tu gdje je sve vezano za prikup... i tu dodaj onda kartu"): read-only
+     prikaz podataka koje je klijent VEĆ upisao u upitniku (osoba zadužena,
+     telefon, email, adresa/poštanski broj/mjesto), grupirano na jednom
+     mjestu na kartici, plus besplatna (OpenStreetMap) karta te lokacije na
+     klik — vidi adminDohvatiKartuPrikupa u InTime_Code.gs i wiring niže u
+     ovoj funkciji. */
+  .af-prikup-info-blok{grid-column:1 / -1;margin-top:4px;}
+  .af-prikup-red{display:grid;grid-template-columns:repeat(3,1fr);gap:10px 16px;margin:8px 0 14px;}
+  .af-prikup-label{display:block;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;color:var(--grey);margin-bottom:2px;}
+  .af-prikup-vrijednost{display:block;font-size:13px;font-weight:700;color:var(--graphite);word-break:break-word;}
+  .af-prikup-karta-okvir{border:2px solid var(--line);border-radius:14px;padding:12px 14px;background:#fff;margin-bottom:4px;}
+  .af-prikup-karta-slika{margin-bottom:8px;}
+  .af-prikup-karta-slika img{max-width:100%;border-radius:10px;border:1px solid var(--line);display:block;}
+  .af-prikup-karta-akcije{display:flex;gap:8px;flex-wrap:wrap;}
+  .af-prikup-karta-status{font-size:11px;color:var(--grey);margin-top:6px;min-height:14px;}
+  .af-prikup-karta-status.error{color:var(--red);}
+  .af-prikup-karta-status.ok{color:var(--green);}
+  .af-prikup-karta-hint{font-size:10.5px;color:var(--grey);margin:7px 0 0;line-height:1.4;}
+  @media(max-width:640px){.af-prikup-red{grid-template-columns:1fr;}}
   /* NOVO (30.9.2026.) — pod-kartica "👥 Korisnici" na tabu "🧮 Kalkulator". */
   .kalk-korisnici-status{font-size:12px;color:var(--grey);margin:4px 0 10px;}
   .kalk-korisnik-red{border:1px solid var(--line);border-radius:10px;padding:10px 14px;margin-bottom:10px;background:#fafcfc;}
@@ -980,6 +1010,28 @@
   .kalk-korisnik-red2{display:flex;gap:16px;flex-wrap:wrap;font-size:11.5px;color:var(--graphite);margin-top:4px;}
   .kalk-korisnik-red3{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px;}
   .kalk-korisnik-akcije{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;}
+  .kalk-korisnik-kopiraj-status{font-size:11px;color:var(--grey);margin-top:4px;min-height:14px;}
+  .kalk-korisnik-kopiraj-status.ok{color:var(--green);}
+  .kalk-korisnik-kopiraj-status.error{color:var(--red);}
+  /* NOVO (30.9.2026., isti dan) — pod-kartica "📋 Evidencija": prijave i
+     izračuni klijenata na javnom kalkulatoru, vidi
+     adminDohvatiKalkulatorEvidenciju u InTime_Code.gs. */
+  .kalk-evid-status{font-size:12px;color:var(--grey);margin:4px 0 10px;}
+  .kalk-evid-red{border:1px solid var(--line);border-radius:10px;margin-bottom:6px;background:#fafcfc;overflow:hidden;}
+  .kalk-evid-glavno{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:9px 14px;}
+  .kalk-evid-red-izracun .kalk-evid-glavno.kalk-evid-klik{cursor:pointer;}
+  .kalk-evid-red-izracun .kalk-evid-glavno.kalk-evid-klik:hover{background:#f0fbfa;}
+  .kalk-evid-vrsta-znacka{font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.02em;color:var(--purple-dark);background:#eef0ff;border:1px solid #d7daff;border-radius:6px;padding:3px 8px;white-space:nowrap;}
+  .kalk-evid-vrsta-znacka.izracun{color:#0f6b5e;background:#e3f7f3;border-color:#bfe9e0;}
+  .kalk-evid-datum{font-size:11.5px;color:var(--grey);white-space:nowrap;}
+  .kalk-evid-tvrtka{font-size:12.5px;font-weight:700;color:var(--graphite);}
+  .kalk-evid-ip{font-size:11px;color:var(--grey);font-family:'SF Mono',Consolas,Monaco,monospace;}
+  .kalk-evid-sazetak{font-size:11.5px;color:var(--purple-dark);font-weight:600;margin-left:auto;}
+  .kalk-evid-glavno .chevron{font-size:12px;color:var(--grey);}
+  .kalk-evid-detalji{border-top:1px dashed var(--line);padding:10px 14px 12px;background:#fff;}
+  .kalk-evid-detalji-naslov{font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.02em;color:var(--grey);margin:8px 0 4px;}
+  .kalk-evid-detalji-naslov:first-child{margin-top:0;}
+  .kalk-evid-json{font-family:'SF Mono',Consolas,Monaco,monospace;font-size:11.5px;line-height:1.5;color:var(--graphite);background:#f6f7f9;border:1px solid var(--line);border-radius:8px;padding:8px 10px;margin:0;white-space:pre-wrap;word-break:break-word;max-height:320px;overflow:auto;}
   .af-dok-priprema-link a{color:var(--purple);}
   /* Gumb "🔓 Vrati link na dokumente" (23. krug, nastavak) — vidi napomenu
      uz markup u buildAdminFieldsBlock() i adminVratiLinkDokumenataOdbijenePonude
@@ -1726,6 +1778,14 @@
   // {{LINK_POTVRDE}} tag u mail predlošku. MORA ostati identičan
   // POTVRDA_PONUDE_STRANICA_URL u InTime_Code.gs.
   var POTVRDA_PONUDE_STRANICA_URL = 'https://sbatinac.github.io/intime-portal/InTime_PotvrdaPonude.html';
+
+  // Isti princip kao gore, za standalone javnu stranicu kalkulatora cijene
+  // (Sašin izričit zahtjev, 30.9.2026. — "možemo li kalkulator napraviti na
+  // posebnoj stranici... ispred nje unos username i password") — koristi se
+  // u renderMailTekst_() niže za {{LINK_KALKULATOR}} tag u panelu "Pošalji
+  // pristupne podatke klijentu". MORA ostati identičan KALKULATOR_STRANICA_URL_
+  // u InTime_Code.gs.
+  var KALKULATOR_STRANICA_URL_ = 'https://sbatinac.github.io/intime-portal/InTime_KalkulatorCijena.html';
 
   // Popis poglavlja (broj + naslov) za prikaz checkboxova odobrenja ispravka
   // — brojevi i naslovi MORAJU odgovarati POGLAVLJA_ISPRAVAK mapi u
@@ -2749,6 +2809,21 @@
     var postanskiBrojPrikupaSirov = fieldVal(entry, 'Poštanski broj mjesta prikupa') || fieldVal(entry, 'Poštanski broj');
     var gradPrikupaSirov = fieldVal(entry, 'Mjesto prikupa pošiljaka') || fieldVal(entry, 'Mjesto');
     var adresaPrikupa = [adresaPrikupaSirova, postanskiBrojPrikupaSirov, gradPrikupaSirov].filter(function(d) { return d; }).join(', ') || '[adresa prikupa pošiljaka]';
+    // {{SLIKA_PRIKUPA}} — za panel "Pošalji obavijest poslovnicama" (Sašin
+    // izričit zahtjev, 30.9.2026.: "sliku lokacije prikupa koju smo ugradili
+    // na stranicu poslati i poslovnicama... u prvom [i jedinom] mailu koji
+    // ide prema njima... ispod adrese prikupa pošiljke"). Tag se zamjenjuje
+    // CIJELIM HTML fragmentom (isti obrazac kao {{USLUGE}} iznad), ne samo
+    // tekstom — koristi TOČNO istu, već generiranu/cache-iranu kartu koju
+    // blok "Podaci o prikupu pošiljaka" na kartici prikazuje (polje "Karta
+    // prikupa - URL slike (admin)", vidi adminDohvatiKartuPrikupa u
+    // InTime_Code.gs) — NE geokodira ništa iznova ovdje, čisto prikaz onoga
+    // što je admin već generirao/osvježio na kartici. Ako karta još nije
+    // generirana, umjesto slike ide kratka napomena.
+    var kartaPrikupaUrl = fieldVal(entry, 'Karta prikupa - URL slike (admin)');
+    var slikaPrikupa = kartaPrikupaUrl
+      ? ('<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:6px 0 16px;border-collapse:collapse;"><tr><td align="center"><img src="' + esc(kartaPrikupaUrl) + '" alt="Karta lokacije prikupa" width="600" style="display:block;border:0;outline:none;text-decoration:none;width:100%;max-width:600px;height:auto;border-radius:8px;"></td></tr></table>')
+      : '<p style="font-size:11.5px;color:#888888;margin:0 0 16px;">[Karta lokacije prikupa još nije generirana — klikni "🗺️ Prikaži kartu prikupa" na kartici klijenta (blok "Podaci o prikupu pošiljaka") prije slanja ovog maila.]</p>';
     var zadnjiRokUnosaAdmin_ = fieldVal(entry, 'Zadnje vrijeme unosa naloga (admin)');
     var zadnjiRokUnosaIzracunat_ = pomakniVrijeme_(fieldVal(entry, 'Vrijeme prikupa pošiljaka (dolazak vozila)'), -30);
     var zadnjiRokUnosa = zadnjiRokUnosaAdmin_ || zadnjiRokUnosaIzracunat_ || '[zadnji rok za unos naloga]';
@@ -2761,6 +2836,27 @@
     // popis (zarez+razmak) imena poslovnica iz polja "Nadležna poslovnica
     // (admin)" (isti popis koji puni checkbox padajući izbornik iznad).
     var obLozinka = fieldVal(entry, 'OB lozinka (admin)') || '[lozinka za Online Booking — potvrdi OB lozinku]';
+    // Tagovi za blok "pristupni podaci za kalkulator cijene" u panelu
+    // "Pošalji pristupne podatke klijentu" (Sašin izričit zahtjev,
+    // 30.9.2026., vidi KLIJENT_PRISTUP_KALKULATOR_BLOK_ u InTime_Code.gs).
+    // KALK_USERNAME/KALK_LOZINKA čitaju se iz istih admin polja koja panel
+    // "Pristup kalkulatoru cijena" gore na kartici popunjava (vidi
+    // kalkDodijeliBtn handler niže u ovoj datoteci). LINK_KALKULATOR vodi na
+    // standalone stranicu kalkulatora (KALKULATOR_STRANICA_URL_ iznad) BEZ
+    // ?kalk_u=/?kalk_p= parametara — Sašin izričit zahtjev (30.9.2026., isti
+    // dan): "ovo bih ipak želio da imaju prijavu... ne da bude automatski da
+    // se prijave... već da imaju prozor gdje moraju unijeti svoj username i
+    // password" — u mailu KLIJENTU poveznica namjerno vodi na PRAZNU
+    // (neprijavljenu) stranicu kalkulatora, klijent sam upisuje korisničko
+    // ime/lozinku prikazane iznad u ovom mailu. (Auto-prijava putem tih istih
+    // URL parametara i dalje postoji i ostaje nepromijenjena za gumb
+    // "Prijava" na početnoj stranici — InTime_PismoNamjere.html — to je
+    // zaseban, već ranije odobren put.)
+    var kalkUsername = fieldVal(entry, 'Kalkulator korisničko ime (admin)');
+    var kalkLozinka = fieldVal(entry, 'Kalkulator lozinka (admin)');
+    var linkKalkulator = KALKULATOR_STRANICA_URL_;
+    kalkUsername = kalkUsername || '[kalkulator još nije dodijeljen klijentu — vidi blok "Pristup kalkulatoru cijena" iznad]';
+    kalkLozinka = kalkLozinka || '[kalkulator još nije dodijeljen klijentu — vidi blok "Pristup kalkulatoru cijena" iznad]';
     // {{LINK_OPCIH_DOKUMENATA}} — poveznica na ZAJEDNIČKI Drive direktorij s
     // općim uputama za korištenje (vidi ucitajKlijentPristupOpceDokumente_
     // iznad) — ISTA za sve klijente, ne čita se iz `entry`. Dok se dohvat
@@ -2789,10 +2885,14 @@
       .replace(/\{\{OSOBA_POSILJKE_IME\}\}/g, osobaPosiljkeIme)
       .replace(/\{\{OSOBA_POSILJKE_TELEFON\}\}/g, osobaPosiljkeTelefon)
       .replace(/\{\{ADRESA_PRIKUPA\}\}/g, adresaPrikupa)
+      .replace(/\{\{SLIKA_PRIKUPA\}\}/g, slikaPrikupa)
       .replace(/\{\{ZADNJI_ROK_UNOSA\}\}/g, zadnjiRokUnosa)
       .replace(/\{\{OB_LOZINKA\}\}/g, obLozinka)
       .replace(/\{\{NADLEZNE_POSLOVNICE\}\}/g, nadlezneposlovnice)
-      .replace(/\{\{LINK_OPCIH_DOKUMENATA\}\}/g, linkOpcihDokumenata);
+      .replace(/\{\{LINK_OPCIH_DOKUMENATA\}\}/g, linkOpcihDokumenata)
+      .replace(/\{\{KALK_USERNAME\}\}/g, kalkUsername)
+      .replace(/\{\{KALK_LOZINKA\}\}/g, kalkLozinka)
+      .replace(/\{\{LINK_KALKULATOR\}\}/g, linkKalkulator);
   }
 
   function primijeniCounters_(res) {
@@ -4213,6 +4313,7 @@
     podtabs.className = 'lc-podtabs';
     podtabs.innerHTML =
       '<button type="button" class="lc-podtab-btn' + (kalkulatorPodTab_ === 'Korisnici' ? ' active' : '') + '" data-podtab="Korisnici">👥 Korisnici</button>' +
+      '<button type="button" class="lc-podtab-btn' + (kalkulatorPodTab_ === 'Evidencija' ? ' active' : '') + '" data-podtab="Evidencija">📋 Evidencija</button>' +
       '<button type="button" class="lc-podtab-btn' + (kalkulatorPodTab_ === 'Postavke' ? ' active' : '') + '" data-podtab="Postavke">⚙️ Postavke osnovnog kalkulatora</button>' +
       '<button type="button" class="lc-podtab-btn' + (kalkulatorPodTab_ === 'Isprobaj' ? ' active' : '') + '" data-podtab="Isprobaj">🧪 Isprobaj kalkulator</button>' +
       '<button type="button" class="lc-podtab-btn' + (kalkulatorPodTab_ === 'Napomene' ? ' active' : '') + '" data-podtab="Napomene">NAPOMENE</button>';
@@ -4225,6 +4326,8 @@
     outer.appendChild(podtabs);
     if (kalkulatorPodTab_ === 'Korisnici') {
       outer.appendChild(buildKalkulatorKorisniciPanel_());
+    } else if (kalkulatorPodTab_ === 'Evidencija') {
+      outer.appendChild(buildKalkulatorEvidencijaPanel_());
     } else if (kalkulatorPodTab_ === 'Postavke') {
       outer.appendChild(buildKalkulatorCjenikPanel_());
     } else if (kalkulatorPodTab_ === 'Isprobaj') {
@@ -4295,6 +4398,7 @@
           '<div class="kalk-korisnik-glavno">' +
             '<strong>' + esc(k.naziv || '(bez naziva)') + '</strong>' +
             '<span class="kalk-korisnik-oib">OIB: ' + esc(k.oib || '—') + '</span>' +
+            (k.zamrznuto ? '<span class="kalk-korisnik-zamrznuto-znacka">🧊 Zamrznuto</span>' : '') +
           '</div>' +
           '<div class="kalk-korisnik-red2">' +
             '<span>📍 ' + esc(k.adresa || '—') + '</span>' +
@@ -4307,11 +4411,49 @@
             '<span class="af-kalk-pristup-info-oznaka">Lozinka</span><span class="af-kalk-pristup-info-vrijednost">' + esc(k.lozinka || '—') + '</span>' +
           '</div>' +
           '<div class="kalk-korisnik-akcije">' +
+            '<button type="button" class="btn btn-outline btn-small kalk-korisnik-kopiraj" data-user="' + esc(k.korisnickoIme || '') + '" data-pass="' + esc(k.lozinka || '') + '">📋 Kopiraj</button>' +
             '<button type="button" class="btn btn-outline btn-small kalk-korisnik-regen" data-row="' + k.rowIndex + '">🔁 Nova lozinka</button>' +
+            '<button type="button" class="btn btn-outline btn-small kalk-korisnik-zamrzni" data-row="' + k.rowIndex + '" data-zamrznuto="' + (k.zamrznuto ? '1' : '0') + '">' + (k.zamrznuto ? '▶️ Odmrzni pristup' : '🧊 Zamrzni pristup') + '</button>' +
             '<button type="button" class="btn btn-danger btn-small kalk-korisnik-ukloni" data-row="' + k.rowIndex + '">✕ Ukloni pristup</button>' +
           '</div>' +
+          '<div class="kalk-korisnik-kopiraj-status"></div>' +
         '</div>';
       }).join('');
+
+      // Gumb "📋 Kopiraj" — 30.9.2026. (Sašin izričit zahtjev): kopira
+      // korisničko ime + lozinku ZAJEDNO, u obliku "Korisničko ime: ...\nLozinka: ..."
+      // u clipboard jednim klikom, bez otvaranja kartice klijenta. Isti
+      // obrazac kao rokKopirajBtn (poveznica ponude) — navigator.clipboard
+      // s execCommand('copy') fallbackom (privremeni <textarea>, jer ovdje
+      // nema vidljivog input polja za .select()).
+      Array.prototype.forEach.call(listaEl.querySelectorAll('.kalk-korisnik-kopiraj'), function(btn) {
+        btn.addEventListener('click', function() {
+          var tekst = 'Korisničko ime: ' + btn.getAttribute('data-user') + '\nLozinka: ' + btn.getAttribute('data-pass');
+          var statusEl2 = btn.closest('.kalk-korisnik-red').querySelector('.kalk-korisnik-kopiraj-status');
+          var kopirano = false;
+          try {
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+              navigator.clipboard.writeText(tekst);
+              kopirano = true;
+            } else {
+              var privremeni = document.createElement('textarea');
+              privremeni.value = tekst;
+              privremeni.style.position = 'fixed';
+              privremeni.style.left = '-9999px';
+              document.body.appendChild(privremeni);
+              privremeni.select();
+              kopirano = document.execCommand('copy');
+              document.body.removeChild(privremeni);
+            }
+          } catch (e) { kopirano = false; }
+          if (statusEl2) {
+            statusEl2.textContent = kopirano ? '✓ Kopirano u međuspremnik.' : 'Automatsko kopiranje nije uspjelo — kopiraj ručno.';
+            statusEl2.className = 'kalk-korisnik-kopiraj-status' + (kopirano ? ' ok' : ' error');
+            clearTimeout(statusEl2._kalkKopirajTimeout);
+            statusEl2._kalkKopirajTimeout = setTimeout(function() { statusEl2.textContent = ''; }, 3000);
+          }
+        });
+      });
 
       Array.prototype.forEach.call(listaEl.querySelectorAll('.kalk-korisnik-regen'), function(btn) {
         btn.addEventListener('click', function() {
@@ -4322,6 +4464,20 @@
             btn.disabled = false;
             if (handleAuthError(res)) { return; }
             if (res.status === 'ok') { ucitaj_(); } else { alert(res.message || 'Greška pri generiranju nove lozinke.'); }
+          }).catch(function() { btn.disabled = false; alert('Greška u komunikaciji s poslužiteljem.'); });
+        });
+      });
+      Array.prototype.forEach.call(listaEl.querySelectorAll('.kalk-korisnik-zamrzni'), function(btn) {
+        btn.addEventListener('click', function() {
+          var trenutnoZamrznuto = btn.getAttribute('data-zamrznuto') === '1';
+          var novoStanje = !trenutnoZamrznuto;
+          if (novoStanje && !confirm('Zamrznuti pristup kalkulatoru za ovog klijenta? Klijent se privremeno neće moći prijaviti (korisničko ime, lozinka i cjenik ostaju sačuvani — možeš odmrznuti u bilo kojem trenutku).')) { return; }
+          var rowIndex = parseInt(btn.getAttribute('data-row'), 10);
+          btn.disabled = true;
+          gasCall({ action: 'adminPostaviZamrznutostKalkulatora', token: adminToken, rowIndex: rowIndex, zamrznuto: novoStanje }).then(function(res) {
+            btn.disabled = false;
+            if (handleAuthError(res)) { return; }
+            if (res.status === 'ok') { ucitaj_(); } else { alert(res.message || 'Greška pri promjeni stanja pristupa.'); }
           }).catch(function() { btn.disabled = false; alert('Greška u komunikaciji s poslužiteljem.'); });
         });
       });
@@ -4347,6 +4503,88 @@
           renderLista_(res.korisnici || []);
         } else {
           statusEl.textContent = res.message || 'Greška pri učitavanju popisa.';
+        }
+      }).catch(function() {
+        statusEl.textContent = 'Greška u komunikaciji s poslužiteljem.';
+      });
+    };
+    ucitaj_();
+
+    return wrap;
+  }
+
+  // "📋 Evidencija" (30.9.2026., Sašin izričit zahtjev, isti dan — "da li
+  // možemo napraviti praćenje IP adrese koja pristupa kalkulatoru i kada je
+  // pristupio... bilo bi dobro da imamo evidenciju... da dobijemo vrijednosti
+  // koje je ukucavao... da kad on klikne izračunaj s druge strane mi s voje
+  // strane dobijemo zapis koji mogu kliknuti i vidjeti što je računao").
+  // Prikazuje log iz adminDohvatiKalkulatorEvidenciju (InTime_Code.gs) — svaka
+  // prijava I svaki klik na "Izračunaj cijenu" na javnoj stranici kalkulatora
+  // (vidi zabiljeziKalkulatorEvidenciju_/zabiljeziIzracunEvidencija_ u
+  // InTime_KalkulatorCijena.html). Zapisi tipa "Izračun" su klikabilni —
+  // otvara se detalj s TOČNO unesenim vrijednostima (JSON) i generiranim
+  // prikazom rezultata koji je klijent vidio — oboje prikazano ESCAPE-ano
+  // (kao čitljiv tekst, ne kao izvršeni HTML) jer sadržaj potječe iz
+  // klijentovog preglednika, radi sigurnosti.
+  function buildKalkulatorEvidencijaPanel_() {
+    var wrap = document.createElement('div');
+    wrap.className = 'faq-admin-card';
+    wrap.innerHTML =
+      '<h3>Evidencija korištenja kalkulatora</h3>' +
+      '<p class="faq-admin-hint">Svaka prijava i svaki klik na "Izračunaj cijenu" na javnoj stranici kalkulatora bilježi se ovdje — vrijeme, IP adresa i, za izračune, točno koje je vrijednosti klijent unio te sažetak dobivenog rezultata. Klikni na zapis izračuna za pune detalje. Prikazano je zadnjih 300 zapisa (najnoviji prvi).</p>' +
+      '<div class="kalk-evid-status">Učitavanje…</div>' +
+      '<div class="kalk-evid-lista"></div>';
+    var statusEl = wrap.querySelector('.kalk-evid-status');
+    var listaEl = wrap.querySelector('.kalk-evid-lista');
+
+    var renderLista_ = function(zapisi) {
+      if (!zapisi.length) {
+        listaEl.innerHTML = '';
+        statusEl.textContent = 'Još nema zabilježenih događaja.';
+        return;
+      }
+      statusEl.textContent = zapisi.length + ' zabilježen(ih) događaj(a) (najnoviji prvi).';
+      listaEl.innerHTML = zapisi.map(function(z, idx) {
+        var jeIzracun = z.vrsta === 'Izračun';
+        return '<div class="kalk-evid-red' + (jeIzracun ? ' kalk-evid-red-izracun' : '') + '">' +
+          '<div class="kalk-evid-glavno' + (jeIzracun ? ' kalk-evid-klik' : '') + '" data-idx="' + idx + '">' +
+            '<span class="kalk-evid-vrsta-znacka' + (jeIzracun ? ' izracun' : '') + '">' + (jeIzracun ? '🧮 Izračun' : '🔑 Prijava') + '</span>' +
+            '<span class="kalk-evid-datum">' + esc(z.datum) + '</span>' +
+            '<span class="kalk-evid-tvrtka">' + esc(z.nazivTvrtke || z.korisnickoIme || '—') + '</span>' +
+            '<span class="kalk-evid-ip">IP: ' + esc(z.ipAdresa || '—') + '</span>' +
+            (jeIzracun ? '<span class="kalk-evid-sazetak">' + esc(z.rezultatSazetak || '') + '</span><span class="chevron">▾</span>' : '') +
+          '</div>' +
+          (jeIzracun ? '<div class="kalk-evid-detalji" hidden></div>' : '') +
+        '</div>';
+      }).join('');
+
+      Array.prototype.forEach.call(listaEl.querySelectorAll('.kalk-evid-klik'), function(el) {
+        el.addEventListener('click', function() {
+          var idx = parseInt(el.getAttribute('data-idx'), 10);
+          var z = zapisi[idx];
+          var detaljiEl = el.parentElement.querySelector('.kalk-evid-detalji');
+          if (!detaljiEl) { return; }
+          if (!detaljiEl.hidden) { detaljiEl.hidden = true; return; }
+          var ulazniFormatirano;
+          try { ulazniFormatirano = JSON.stringify(JSON.parse(z.ulazniPodaci || '{}'), null, 2); } catch (eJson) { ulazniFormatirano = z.ulazniPodaci || '(nema podataka)'; }
+          detaljiEl.innerHTML =
+            '<div class="kalk-evid-detalji-naslov">Uneseni podaci</div>' +
+            '<pre class="kalk-evid-json">' + esc(ulazniFormatirano) + '</pre>' +
+            '<div class="kalk-evid-detalji-naslov">Prikazani rezultat klijentu</div>' +
+            '<pre class="kalk-evid-json">' + esc(z.rezultatHtml || '(nema spremljenog prikaza)') + '</pre>';
+          detaljiEl.hidden = false;
+        });
+      });
+    };
+
+    var ucitaj_ = function() {
+      statusEl.textContent = 'Učitavanje…';
+      gasCall({ action: 'adminDohvatiKalkulatorEvidenciju', token: adminToken, limit: 300 }).then(function(res) {
+        if (handleAuthError(res)) { return; }
+        if (res.status === 'ok') {
+          renderLista_(res.zapisi || []);
+        } else {
+          statusEl.textContent = res.message || 'Greška pri učitavanju evidencije.';
         }
       }).catch(function() {
         statusEl.textContent = 'Greška u komunikaciji s poslužiteljem.';
@@ -7937,26 +8175,6 @@
             '<div class="af-dok-priprema-link"></div>' +
           '</div>' +
         '</div>' +
-        // NOVO (30.9.2026., Sašin izričit zahtjev) — "Pristup kalkulatoru
-        // cijena": koristi dokument "Cjenik Hrvatska" iznad (fiksno polje u
-        // bloku "Dokumenti za ponudu") da klijentu dodijeli OSOBNI cjenik i
-        // login za javni kalkulator na stranici. Vidi punu napomenu uz
-        // adminDodijeliKalkulatorPristup/adminUkloniKalkulatorPristup u
-        // InTime_Code.gs i wiring niže u ovoj funkciji.
-        '<div class="af-kalk-pristup-blok">' +
-          '<label>Pristup kalkulatoru cijena (za ovog klijenta)</label>' +
-          '<div class="af-kalk-pristup-okvir">' +
-            '<div class="af-kalk-pristup-info"></div>' +
-            '<div class="af-kalk-pristup-akcije">' +
-              '<button type="button" class="af-kalk-pristup-dodijeli-btn btn btn-small">🧮 Dodijeli cjenik u kalkulator</button>' +
-              '<button type="button" class="af-kalk-pristup-osvjezi-btn btn btn-outline btn-small" hidden>⟳ Osvježi cjenik</button>' +
-              '<button type="button" class="af-kalk-pristup-regen-btn btn btn-outline btn-small" hidden>🔁 Nova lozinka</button>' +
-              '<button type="button" class="af-kalk-pristup-ukloni-btn btn btn-danger btn-small" hidden>✕ Ukloni pristup</button>' +
-            '</div>' +
-            '<p class="af-dok-cilj-hint">Koristi trenutno priloženi dokument "Cjenik Hrvatska" iznad (blok "Dokumenti za ponudu") — parsira ga i sprema kao klijentov OSOBNI cjenik u kalkulatoru na javnoj stranici (klijent tada NE MOŽE učitati nijedan drugi cjenik, samo svoj). Korisničko ime je "OB korisničko ime" (admin polje), lozinka se generira automatski prema formuli datum otvaranja OB-a + ime superheroja + 2 početna slova naziva tvrtke + "!" i prikazuje ovdje. Ponovna dodjela (npr. nakon zamjene Excel datoteke) samo osvježava cjenik — pristupni podaci ostaju isti dok se ručno ne zatraži nova lozinka.</p>' +
-            '<div class="af-kalk-pristup-status"></div>' +
-          '</div>' +
-        '</div>' +
         '<div class="af-predlozak-blok">' +
           '<label>Predložak za slanje ponude</label>' +
           '<div class="af-predlozak-okvir">' +
@@ -8305,8 +8523,58 @@
               : '<button type="button" class="af-sifra-btn af-sifra-potvrdi-btn af-ob-polje-potvrdi-btn" data-polje="vrijemePrikupa"' + (fieldVal(entry, 'Identifikacijski TM broj klijenta (admin)') ? '' : ' disabled') + '>✓ Potvrdi</button>') +
           '</div>' +
         '</div>' +
+        '<div class="af-prikup-info-blok">' +
+          '<div style="grid-column:1 / -1;border-top:1px dashed var(--line);margin:4px 0 2px;padding-top:10px;font-size:11px;font-weight:800;letter-spacing:.02em;text-transform:uppercase;color:var(--purple-dark);">Podaci o prikupu pošiljaka (iz upitnika)</div>' +
+          '<div class="af-prikup-red">' +
+            '<div><span class="af-prikup-label">Osoba zadužena za pošiljke</span><span class="af-prikup-vrijednost">' + esc(fieldVal(entry, 'Osoba za organizaciju slanja/primanja pošiljaka – ime i prezime') || '—') + '</span></div>' +
+            '<div><span class="af-prikup-label">Telefon</span><span class="af-prikup-vrijednost">' + esc(fieldVal(entry, 'Osoba za organizaciju slanja/primanja pošiljaka – telefon') || '—') + '</span></div>' +
+            '<div><span class="af-prikup-label">E-mail</span><span class="af-prikup-vrijednost">' + esc(fieldVal(entry, 'Osoba za organizaciju slanja/primanja pošiljaka – email') || '—') + '</span></div>' +
+            '<div><span class="af-prikup-label">Adresa prikupa</span><span class="af-prikup-vrijednost">' + esc(fieldVal(entry, 'Adresa mjesta prikupa pošiljaka') || fieldVal(entry, 'Adresa sjedišta') || '—') + '</span></div>' +
+            '<div><span class="af-prikup-label">Poštanski broj</span><span class="af-prikup-vrijednost">' + esc(fieldVal(entry, 'Poštanski broj mjesta prikupa') || fieldVal(entry, 'Poštanski broj') || '—') + '</span></div>' +
+            '<div><span class="af-prikup-label">Mjesto</span><span class="af-prikup-vrijednost">' + esc(fieldVal(entry, 'Mjesto prikupa pošiljaka') || fieldVal(entry, 'Mjesto') || '—') + '</span></div>' +
+          '</div>' +
+          '<div class="af-prikup-karta-okvir">' +
+            '<div class="af-prikup-karta-slika"></div>' +
+            '<div class="af-prikup-karta-akcije">' +
+              '<button type="button" class="af-prikup-karta-btn btn btn-small">🗺️ Prikaži kartu prikupa</button>' +
+              '<button type="button" class="af-prikup-karta-osvjezi-btn btn btn-outline btn-small" hidden>🔄 Osvježi kartu</button>' +
+            '</div>' +
+            '<div class="af-prikup-karta-status"></div>' +
+            '<p class="af-prikup-karta-hint">Besplatna karta (OpenStreetMap, bez API ključa) prema adresi prikupa iznad — generira se na klik i pamti se dok se adresa ne promijeni. "Osvježi kartu" ponovno geokodira (npr. nakon ispravka adrese).</p>' +
+          '</div>' +
+        '</div>' +
         '<div class="af-napomena-wrap"><label>Interna napomena (samo za tebe, ne šalje se klijentu)</label>' +
           '<textarea class="af-napomena" placeholder="Slobodne bilješke o ovom klijentu...">' + esc(fieldVal(entry, 'Interna napomena (admin)')) + '</textarea></div>' +
+        // Blok "Pristup kalkulatoru cijena" — PREMJEŠTEN ovdje (Sašin izričit
+        // zahtjev, 30.9.2026., isti dan): prvotno je bio odmah uz "Dokumenti
+        // za ponudu", ali logičnije mjesto je OVDJE — između potvrđenih OB
+        // podataka iznad (korisničko ime za kalkulator = "OB korisničko ime")
+        // i panela "Pošalji pristupne podatke klijentu" ispod, jer se ovdje
+        // zapravo ugovara cjenik s klijentom i dodjeljuje mu se lozinka za
+        // kalkulator — prirodni nastavak istog koraka (OB podaci → cjenik/
+        // lozinka za kalkulator → slanje pristupnih podataka klijentu).
+        // Koristi dokument "Cjenik Hrvatska" (fiksno polje u bloku "Dokumenti
+        // za ponudu" gore) da klijentu dodijeli OSOBNI cjenik i login za
+        // javni kalkulator na stranici. Vidi punu napomenu uz
+        // adminDodijeliKalkulatorPristup/adminUkloniKalkulatorPristup u
+        // InTime_Code.gs i wiring niže u ovoj funkciji (querySelector po
+        // klasi — ne ovisi o poziciji u DOM-u, pa premještanje markupa ovdje
+        // ne zahtijeva nikakvu izmjenu JS wiringa).
+        '<div class="af-kalk-pristup-blok">' +
+          '<label>Pristup kalkulatoru cijena (za ovog klijenta)</label>' +
+          '<div class="af-kalk-pristup-okvir">' +
+            '<div class="af-kalk-pristup-info"></div>' +
+            '<div class="af-kalk-pristup-akcije">' +
+              '<button type="button" class="af-kalk-pristup-dodijeli-btn btn btn-small">🧮 Dodijeli cjenik u kalkulator</button>' +
+              '<button type="button" class="af-kalk-pristup-osvjezi-btn btn btn-outline btn-small" hidden>⟳ Osvježi cjenik</button>' +
+              '<button type="button" class="af-kalk-pristup-regen-btn btn btn-outline btn-small" hidden>🔁 Nova lozinka</button>' +
+              '<button type="button" class="af-kalk-pristup-zamrzni-btn btn btn-outline btn-small" hidden>🧊 Zamrzni pristup</button>' +
+              '<button type="button" class="af-kalk-pristup-ukloni-btn btn btn-danger btn-small" hidden>✕ Ukloni pristup</button>' +
+            '</div>' +
+            '<p class="af-dok-cilj-hint">Koristi trenutno priloženi dokument "Cjenik Hrvatska" iznad (blok "Dokumenti za ponudu") — parsira ga i sprema kao klijentov OSOBNI cjenik u kalkulatoru na javnoj stranici (klijent tada NE MOŽE učitati nijedan drugi cjenik, samo svoj). Korisničko ime je "OB korisničko ime" (admin polje), lozinka se generira automatski prema formuli datum otvaranja OB-a + ime superheroja + 2 početna slova naziva tvrtke + "!" i prikazuje ovdje. Ponovna dodjela (npr. nakon zamjene Excel datoteke) samo osvježava cjenik — pristupni podaci ostaju isti dok se ručno ne zatraži nova lozinka.</p>' +
+            '<div class="af-kalk-pristup-status"></div>' +
+          '</div>' +
+        '</div>' +
         // Panel "Pošalji pristupne podatke klijentu" (Sašin izričit zahtjev,
         // 28.9.2026.: mail KLIJENTU — ne interni — s korisničkim imenom i
         // lozinkom za Online Booking, zahvala za odluku o suradnji. NAMJERNO
@@ -8425,7 +8693,11 @@
               '<div class="af-posl-primatelji-red">' +
                 '<textarea class="af-posl-primatelji-textarea" placeholder="primatelji (e-mail adrese odvojene zarezom) — automatski popunjeno prema nadležnim poslovnicama"></textarea>' +
               '</div>' +
-              '<p class="af-posl-primatelji-hint">Automatski predloženo prema poslovnicama označenim kao "Nadležna poslovnica" gore na kartici (upareno po imenu s mailom iz Logističkih centara). Slobodno dodaj/ukloni adrese, odvojene zarezom.</p>' +
+              '<div class="af-posl-primatelji-alati">' +
+                '<button type="button" class="af-posl-btn af-posl-primatelji-reset-btn">↺ Vrati zadane adrese</button>' +
+                '<span class="af-posl-primatelji-reset-status"></span>' +
+              '</div>' +
+              '<p class="af-posl-primatelji-hint">Automatski predloženo prema poslovnicama označenim kao "Nadležna poslovnica" gore na kartici (upareno po imenu s mailom iz Logističkih centara). Slobodno dodaj/ukloni adrese, odvojene zarezom — ako nešto slučajno obrišeš, gumb "↺ Vrati zadane adrese" iznad vraća izvorno predložene adrese.</p>' +
               '<div class="af-posl-test-red">' +
                 '<input type="email" class="af-posl-test-input" placeholder="test adresa za probno slanje">' +
                 '<button type="button" class="af-posl-btn af-posl-test-btn">✉ Pošalji test</button>' +
@@ -9940,6 +10212,7 @@
       var kalkBtn = wrap.querySelector('.af-kalk-pristup-dodijeli-btn');
       var kalkOsvjeziBtn = wrap.querySelector('.af-kalk-pristup-osvjezi-btn');
       var kalkRegenBtn = wrap.querySelector('.af-kalk-pristup-regen-btn');
+      var kalkZamrzniBtn = wrap.querySelector('.af-kalk-pristup-zamrzni-btn');
       var kalkUkloniBtn = wrap.querySelector('.af-kalk-pristup-ukloni-btn');
       var kalkInfoEl = wrap.querySelector('.af-kalk-pristup-info');
       var kalkStatusEl = wrap.querySelector('.af-kalk-pristup-status');
@@ -9949,26 +10222,31 @@
         var lozinka = fieldVal(entry, 'Kalkulator lozinka (admin)');
         var cjenikNaziv = fieldVal(entry, 'Kalkulator cjenik - naziv datoteke (admin)');
         var cjenikDatum = fieldVal(entry, 'Datum dodjele cjenika u kalkulator (admin)');
+        var zamrznuto = String(fieldVal(entry, 'Kalkulator pristup zamrznut (admin)') || '').trim() === 'DA';
         if (!lozinka) {
           kalkInfoEl.innerHTML = '<div class="af-kalk-pristup-info-prazno">Klijent još nema pristup kalkulatoru.</div>';
           kalkBtn.hidden = false;
           kalkOsvjeziBtn.hidden = true;
           kalkRegenBtn.hidden = true;
+          kalkZamrzniBtn.hidden = true;
           kalkUkloniBtn.hidden = true;
         } else {
           kalkInfoEl.innerHTML =
+            (zamrznuto ? '<div class="af-kalk-zamrznuto-znacka">🧊 Pristup trenutno zamrznut — klijent se ne može prijaviti</div>' : '') +
             '<div class="af-kalk-pristup-info-red"><span class="af-kalk-pristup-info-oznaka">Korisničko ime</span><span class="af-kalk-pristup-info-vrijednost">' + esc(korisnickoIme) + '</span></div>' +
             '<div class="af-kalk-pristup-info-red"><span class="af-kalk-pristup-info-oznaka">Lozinka</span><span class="af-kalk-pristup-info-vrijednost">' + esc(lozinka) + '</span></div>' +
             '<div class="af-kalk-pristup-info-red"><span class="af-kalk-pristup-info-oznaka">Cjenik</span><span>' + esc(cjenikNaziv || '—') + (cjenikDatum ? (' <span style="color:var(--grey);">(dodijeljeno ' + esc(cjenikDatum) + ')</span>') : '') + '</span></div>';
           kalkBtn.hidden = true;
           kalkOsvjeziBtn.hidden = false;
           kalkRegenBtn.hidden = false;
+          kalkZamrzniBtn.hidden = false;
+          kalkZamrzniBtn.textContent = zamrznuto ? '▶️ Odmrzni pristup' : '🧊 Zamrzni pristup';
           kalkUkloniBtn.hidden = false;
         }
       };
       kalkRenderInfo_();
 
-      var kalkSveGumbe_ = [kalkBtn, kalkOsvjeziBtn, kalkRegenBtn, kalkUkloniBtn];
+      var kalkSveGumbe_ = [kalkBtn, kalkOsvjeziBtn, kalkRegenBtn, kalkZamrzniBtn, kalkUkloniBtn];
       var kalkPozovi_ = function(regen) {
         kalkStatusEl.textContent = regen ? 'Generiranje nove lozinke…' : 'Dodjela pristupa…';
         kalkStatusEl.classList.remove('error', 'ok');
@@ -9982,7 +10260,7 @@
             entry.fields['Kalkulator cjenik - naziv datoteke (admin)'] = res.nazivDatoteke;
             entry.fields['Datum dodjele cjenika u kalkulator (admin)'] = res.datum;
             kalkRenderInfo_();
-            kalkStatusEl.textContent = 'Spremljeno — ' + res.brojKategorija + ' kategorija cjenika prepoznato.';
+            kalkStatusEl.textContent = 'Spremljeno — ' + res.brojKategorija + ' kategorija cjenika' + (typeof res.brojPostavki === 'number' ? ', ' + res.brojPostavki + ' od 16 dodatnih postavki' : '') + ' prepoznato.';
             kalkStatusEl.classList.add('ok');
           } else {
             kalkStatusEl.textContent = res.message || 'Greška pri dodjeli pristupa.';
@@ -10002,6 +10280,37 @@
         if (!confirm('Generirati NOVU lozinku za kalkulator? Klijent će morati koristiti novu lozinku — stara više neće raditi.')) { return; }
         kalkPozovi_(true);
       });
+      // "🧊 Zamrzni pristup" / "▶️ Odmrzni pristup" — Sašin izričit zahtjev
+      // (30.9.2026., isti dan): PRIVREMENO onemogućavanje prijave, bez
+      // brisanja korisničkog imena/lozinke/cjenika (za razliku od "Ukloni
+      // pristup" ispod, koje briše sve) — vidi
+      // adminPostaviZamrznutostKalkulatora u InTime_Code.gs.
+      kalkZamrzniBtn.addEventListener('click', function(ev) {
+        ev.stopPropagation();
+        var trenutnoZamrznuto = String(fieldVal(entry, 'Kalkulator pristup zamrznut (admin)') || '').trim() === 'DA';
+        var novoStanje = !trenutnoZamrznuto;
+        if (novoStanje && !confirm('Zamrznuti pristup kalkulatoru za ovog klijenta? Klijent se privremeno neće moći prijaviti (korisničko ime, lozinka i cjenik ostaju sačuvani — možeš odmrznuti u bilo kojem trenutku).')) { return; }
+        kalkStatusEl.textContent = novoStanje ? 'Zamrzavanje pristupa…' : 'Odmrzavanje pristupa…';
+        kalkStatusEl.classList.remove('error', 'ok');
+        kalkSveGumbe_.forEach(function(b) { b.disabled = true; });
+        gasCall({ action: 'adminPostaviZamrznutostKalkulatora', token: adminToken, rowIndex: entry.rowIndex, zamrznuto: novoStanje }).then(function(res) {
+          kalkSveGumbe_.forEach(function(b) { b.disabled = false; });
+          if (handleAuthError(res)) { return; }
+          if (res.status === 'ok') {
+            entry.fields['Kalkulator pristup zamrznut (admin)'] = res.zamrznuto ? 'DA' : '';
+            kalkRenderInfo_();
+            kalkStatusEl.textContent = res.zamrznuto ? 'Pristup zamrznut.' : 'Pristup odmrznut.';
+            kalkStatusEl.classList.add('ok');
+          } else {
+            kalkStatusEl.textContent = res.message || 'Greška pri promjeni stanja pristupa.';
+            kalkStatusEl.classList.add('error');
+          }
+        }).catch(function() {
+          kalkSveGumbe_.forEach(function(b) { b.disabled = false; });
+          kalkStatusEl.textContent = 'Greška u komunikaciji s poslužiteljem.';
+          kalkStatusEl.classList.add('error');
+        });
+      });
       kalkUkloniBtn.addEventListener('click', function(ev) {
         ev.stopPropagation();
         if (!confirm('Ukloniti pristup kalkulatoru za ovog klijenta? Korisničko ime, lozinka i spremljeni cjenik će biti obrisani.')) { return; }
@@ -10014,6 +10323,7 @@
             entry.fields['Kalkulator lozinka (admin)'] = '';
             entry.fields['Kalkulator cjenik - naziv datoteke (admin)'] = '';
             entry.fields['Datum dodjele cjenika u kalkulator (admin)'] = '';
+            entry.fields['Kalkulator pristup zamrznut (admin)'] = '';
             kalkRenderInfo_();
             kalkStatusEl.textContent = 'Pristup uklonjen.';
             kalkStatusEl.classList.add('ok');
@@ -10026,6 +10336,66 @@
           kalkStatusEl.classList.add('error');
         });
       });
+    }
+
+    // Blok "Podaci o prikupu pošiljaka" — gumb generira/dohvaća besplatnu
+    // (OpenStreetMap, bez API ključa) kartu lokacije prikupa preko
+    // adminDohvatiKartuPrikupa u InTime_Code.gs (Sašin izričit zahtjev,
+    // 30.9.2026. — "tu gdje je sve vezano za prikup... i tu dodaj onda
+    // kartu"). Karta se NE generira automatski za SVE kartice pri
+    // otvaranju popisa (da se ne gomilaju upiti prema Nominatimu, koji ima
+    // ograničenje na razuman broj poziva) — ako je već prije generirana i
+    // spremljena (karta_prikupa_url u ADMIN_ONLY_FIELDS), prikazuje se
+    // odmah iz tih polja; inače tek na klik "🗺️ Prikaži kartu prikupa".
+    if (prikaziPuniBlok) {
+      var prikupKartaBtn = wrap.querySelector('.af-prikup-karta-btn');
+      var prikupKartaOsvjeziBtn = wrap.querySelector('.af-prikup-karta-osvjezi-btn');
+      var prikupKartaSlikaEl = wrap.querySelector('.af-prikup-karta-slika');
+      var prikupKartaStatusEl = wrap.querySelector('.af-prikup-karta-status');
+
+      var prikupVecSpremljenUrl_ = fieldVal(entry, 'Karta prikupa - URL slike (admin)');
+      var prikupVecSpremljenaAdresa_ = fieldVal(entry, 'Karta prikupa - adresa koja je geokodirana (admin)');
+      if (prikupVecSpremljenUrl_) {
+        prikupKartaSlikaEl.innerHTML = '<img src="' + esc(prikupVecSpremljenUrl_) + '" alt="Karta lokacije prikupa" loading="lazy">';
+        prikupKartaBtn.hidden = true;
+        prikupKartaOsvjeziBtn.hidden = false;
+        if (prikupVecSpremljenaAdresa_) {
+          prikupKartaStatusEl.textContent = 'Karta za: ' + prikupVecSpremljenaAdresa_;
+          prikupKartaStatusEl.classList.add('ok');
+        }
+      }
+
+      var prikupKartaPozovi_ = function(prisili) {
+        prikupKartaStatusEl.textContent = prisili ? 'Osvježavanje karte…' : 'Generiranje karte…';
+        prikupKartaStatusEl.classList.remove('error', 'ok');
+        prikupKartaBtn.disabled = true;
+        prikupKartaOsvjeziBtn.disabled = true;
+        gasCall({ action: 'adminDohvatiKartuPrikupa', token: adminToken, rowIndex: entry.rowIndex, prisili: !!prisili }).then(function(res) {
+          prikupKartaBtn.disabled = false;
+          prikupKartaOsvjeziBtn.disabled = false;
+          if (handleAuthError(res)) { return; }
+          if (res.status === 'ok') {
+            entry.fields['Karta prikupa - URL slike (admin)'] = res.url;
+            entry.fields['Karta prikupa - adresa koja je geokodirana (admin)'] = res.adresa;
+            prikupKartaSlikaEl.innerHTML = '<img src="' + esc(res.url) + '" alt="Karta lokacije prikupa" loading="lazy">';
+            prikupKartaBtn.hidden = true;
+            prikupKartaOsvjeziBtn.hidden = false;
+            prikupKartaStatusEl.textContent = (res.izCachea ? 'Karta za: ' : 'Generirano za: ') + res.adresa;
+            prikupKartaStatusEl.classList.add('ok');
+          } else {
+            prikupKartaStatusEl.textContent = res.message || 'Generiranje karte nije uspjelo.';
+            prikupKartaStatusEl.classList.add('error');
+          }
+        }).catch(function() {
+          prikupKartaBtn.disabled = false;
+          prikupKartaOsvjeziBtn.disabled = false;
+          prikupKartaStatusEl.textContent = 'Greška u komunikaciji s poslužiteljem.';
+          prikupKartaStatusEl.classList.add('error');
+        });
+      };
+
+      prikupKartaBtn.addEventListener('click', function(ev) { ev.stopPropagation(); prikupKartaPozovi_(false); });
+      prikupKartaOsvjeziBtn.addEventListener('click', function(ev) { ev.stopPropagation(); prikupKartaPozovi_(true); });
     }
 
     // Blok "Predložak za slanje ponude" — izbornik (select) učitava popis
@@ -11608,17 +11978,65 @@
           return logistickiCentriCache_ || [];
         }).catch(function() { return []; });
       };
-      poslDohvatiCentre_().then(function(centri) {
-        if (poslPrimateljiRucnoPromijenjeno_ || poslPrimateljiTextarea.value.trim()) { return; }
-        var poslovniceSkup_ = {};
-        poslovniceOdabrane.forEach(function(p) { poslovniceSkup_[p] = true; });
-        var mailoviPronadjeni_ = (centri || [])
-          .filter(function(c) { return (c.vrsta || 'centar') === 'centar' && c.email && poslovniceSkup_[c.grad || '']; })
-          .map(function(c) { return c.email; });
-        var mailoviJedinstveni_ = mailoviPronadjeni_.filter(function(m, i) { return mailoviPronadjeni_.indexOf(m) === i; });
+      // Izdvojeno u zasebnu funkciju (30.9.2026., Sašin izričit zahtjev —
+      // "na zelenom slanju maila napravi vrati defaultne predložene mail
+      // adrese... jer ih može biti više i onda ja mogu slučajno obrisati
+      // neke... napravi da klikne da on opet povuče one koje su inicijalno
+      // bile stavljene") — ISTI izračun koristi i automatsko popunjavanje
+      // pri otvaranju kartice ISPOD, i novi gumb "↺ Vrati zadane adrese"
+      // niže (kredPrimateljiResetBtn handler), da se logika ne piše dvaput.
+      var poslIzracunajZadanePrimatelje_ = function() {
+        return poslDohvatiCentre_().then(function(centri) {
+          var poslovniceSkup_ = {};
+          poslovniceOdabrane.forEach(function(p) { poslovniceSkup_[p] = true; });
+          var mailoviPronadjeni_ = (centri || [])
+            .filter(function(c) { return (c.vrsta || 'centar') === 'centar' && c.email && poslovniceSkup_[c.grad || '']; })
+            .map(function(c) { return c.email; });
+          return mailoviPronadjeni_.filter(function(m, i) { return mailoviPronadjeni_.indexOf(m) === i; });
+        });
+      };
+      // Automatsko popunjavanje pri otvaranju kartice — NEPROMIJENJENO
+      // ponašanje, i dalje se ne dira već ručno upisana/promijenjena
+      // vrijednost.
+      poslIzracunajZadanePrimatelje_().then(function(mailoviJedinstveni_) {
         if (mailoviJedinstveni_.length && !poslPrimateljiRucnoPromijenjeno_ && !poslPrimateljiTextarea.value.trim()) {
           poslPrimateljiTextarea.value = mailoviJedinstveni_.join(', ');
         }
+      });
+
+      // Gumb "↺ Vrati zadane adrese" — za razliku od automatskog popunjavanja
+      // iznad, OVDJE se namjerno PREPISUJE polje čak i ako je već ručno
+      // mijenjano/ima sadržaj (to je svrha gumba — admin izričito traži
+      // vraćanje na izvorno predložene adrese, npr. nakon što je nešto
+      // slučajno obrisao).
+      var poslPrimateljiResetBtn = wrap.querySelector('.af-posl-primatelji-reset-btn');
+      var poslPrimateljiResetStatus = wrap.querySelector('.af-posl-primatelji-reset-status');
+      poslPrimateljiResetBtn.addEventListener('click', function(ev) {
+        ev.stopPropagation();
+        poslPrimateljiResetBtn.disabled = true;
+        poslPrimateljiResetStatus.textContent = 'Učitavam…';
+        poslPrimateljiResetStatus.className = 'af-posl-primatelji-reset-status';
+        poslIzracunajZadanePrimatelje_().then(function(mailoviJedinstveni_) {
+          poslPrimateljiResetBtn.disabled = false;
+          if (!mailoviJedinstveni_.length) {
+            poslPrimateljiResetStatus.textContent = 'Nema automatski prepoznatih adresa — provjeri "Nadležna poslovnica" gore na kartici.';
+            poslPrimateljiResetStatus.className = 'af-posl-primatelji-reset-status error';
+            return;
+          }
+          poslPrimateljiTextarea.value = mailoviJedinstveni_.join(', ');
+          poslPrimateljiRucnoPromijenjeno_ = false;
+          poslPrimateljiResetStatus.textContent = 'Vraćeno na zadano.';
+          poslPrimateljiResetStatus.className = 'af-posl-primatelji-reset-status ok';
+          clearTimeout(poslPrimateljiResetStatus._poslResetTimeout);
+          poslPrimateljiResetStatus._poslResetTimeout = setTimeout(function() {
+            poslPrimateljiResetStatus.textContent = '';
+            poslPrimateljiResetStatus.className = 'af-posl-primatelji-reset-status';
+          }, 4000);
+        }).catch(function() {
+          poslPrimateljiResetBtn.disabled = false;
+          poslPrimateljiResetStatus.textContent = 'Greška u komunikaciji s poslužiteljem.';
+          poslPrimateljiResetStatus.className = 'af-posl-primatelji-reset-status error';
+        });
       });
 
       // Uvodni tekst — DIJELI isti globalni popis/backend kao OB panel

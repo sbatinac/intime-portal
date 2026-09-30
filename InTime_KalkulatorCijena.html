@@ -1401,7 +1401,7 @@
     </div>
   </div>
 
-  <button class="btn" onclick="izracunaj()">Izračunaj cijenu</button>
+  <button class="btn" onclick="izracunaj(); zabiljeziIzracunEvidencija_();">Izračunaj cijenu</button>
 
   <div class="card" id="rezultat">
     <h2>Izračun cijene</h2>
@@ -1518,6 +1518,11 @@ let ADMIN_ZADANI_CJENIK_ = null;
 // true čim korisnik SAM učita svoj cjenik na ovoj stranici (postojeća opcija ispod, "TO NE DIRAJ" — Sašin
 // izričit zahtjev) — admin-postavljeni zadani cjenik se tad više ne smije naknadno sam prepisati preko toga.
 let korisnikUcitaoVlastitiCjenik_ = false;
+// Korisničko ime PRIJAVLJENOG klijenta (30.9.2026., Sašin izričit zahtjev — praćenje/evidencija
+// korištenja kalkulatora) — postavlja prijaviKlijenta_() na uspješnu prijavu, briše se na odjavu.
+// Koristi ga ISKLJUČIVO zabiljeziIzracunEvidencija_()/prijava-log niže da zna kojem klijentu pripisati
+// zapis; anonimni posjetitelji (bez prijave) se ne evidentiraju — nemaju kome pripisati zapis.
+let prijavljeniKorisnickoIme_ = null;
 // Ugovoreni postotak naknade za nestandardnu pošiljku, pročitan iz učitanog cjenika (Excel), ako postoji.
 // null = nije pronađen/nije učitan poseban cjenik -> koristi se zadanih 100% (frakcija 1).
 let cjenikNestandardnaPct = null;
@@ -4289,17 +4294,21 @@ ucitajZadaniCjenikSaAdmina_();
 // ---------- Prijava klijenta — osobni ugovoreni cjenik (30.9.2026., Sašin
 // izričit zahtjev). Korisničko ime/lozinku generira i dodjeljuje In Time
 // d.o.o. (vidi kalkulatorKlijentPrijava u InTime_Code.gs, blok "Pristup
-// kalkulatoru cijena" u InTime_Admin.html). Napomena: prijava primjenjuje
-// ISTU (server-side) parsiranu osnovnu tablicu cijena (33 kategorije težine
-// × 3 zone) kao i admin-zadani cjenik iznad (ucitajZadaniCjenikSaAdmina_) —
-// ostale postavke iz Excela (ugovoreni % nestandardne, povrat, dodatak na
-// težinu, SMS, povratnica, otkupnina, iskazana vrijednost, itd.) parsira
-// SAMO ručno učitavanje datoteke na ovoj stranici (parseCjenikRows i
-// prijatelji, iznad) — ista granica postoji već i za admin-zadani cjenik,
-// nije nova. Prijavljen klijent time dobiva TOČNU osnovnu cijenu po
-// težini/zoni iz svog cjenika; ostale postavke ostaju na zadanim/tvorničkim
-// vrijednostima dok se ručno ne prilagode (checkbox/polja i dalje rade
-// normalno i nakon prijave).
+// kalkulatoru cijena" u InTime_Admin.html). AŽURIRANO (30.9.2026., nastavak
+// istog dana, Sašin izričit zahtjev — "dovrši kalkulator, one 14 postavki"):
+// prijava sad primjenjuje NE SAMO osnovnu tablicu cijena (33×3, kao i
+// admin-zadani cjenik iznad — ucitajZadaniCjenikSaAdmina_), nego I svih 16
+// dodatnih "skrivenih" postavki iz istog Excela (ugovoreni % nestandardne/
+// povrata, dodatak na težinu, zaključavanje načina obračuna, SMS,
+// povratnica, otkupnina gotovina/kartica, iskazana vrijednost, 5 fiksnih
+// naknada, sezonski dodatak, ograničen broj koleta) — server ih sad parsira
+// ISTIM parserima kao i ovdje (port u InTime_Code.gs, vidi
+// parsirajDodatneKalkulatorPostavke_) i šalje ih zajedno s cjenikom. Vidi
+// primijeniKalkulatorPostavke_ niže — primjenjuje ih IDENTIČNO kao i ručno
+// učitavanje datoteke na ovoj stranici (isti update*UI()/apply*Lock() poziv
+// po poziv). Napomena: ovo vrijedi SAMO za prijavljenog klijenta — admin-
+// zadani (globalni) cjenik iznad i dalje nosi samo osnovnu tablicu, ista
+// granica kao dosad (zaseban zahvat ako Saša poželi i to prošireno).
 var PRIJAVA_LS_KLJUC_ = 'intime_kalk_prijava_v1';
 
 function prijavaPostaviAktivnoStanje_(nazivFirme){
@@ -4319,6 +4328,135 @@ function prijavaPostaviNeaktivnoStanje_(){
   if(fileInput){ fileInput.disabled = false; }
   var resetBtn = document.querySelector('button[onclick="resetCjenik()"]');
   if(resetBtn){ resetBtn.disabled = false; resetBtn.title = ''; }
+}
+
+// Primjenjuje svih 16 dodatnih postavki vraćenih iz kalkulatorKlijentPrijava
+// (res.postavke) — ISTI obrazac kao unutar #cjenikFile 'change' handlera
+// iznad (ručno učitavanje), samo izvor podataka je server, ne lokalno
+// parsiran `rows` niz. Nedostajuće/starije redak (klijent kojem je pristup
+// dodijeljen PRIJE ove nadogradnje) jednostavno ostavlja sve na null —
+// kalkulator se ponaša kao i dosad (zadane/tvorničke vrijednosti).
+function primijeniKalkulatorPostavke_(p){
+  if(!p || typeof p !== 'object'){ p = {}; }
+  cjenikNestandardnaPct = (typeof p.nestandardnaPct === 'number') ? p.nestandardnaPct : null;
+  updateNestandardnaPctUI();
+  cjenikPovratPct = (typeof p.povratPct === 'number') ? p.povratPct : null;
+  updatePovratPctUI();
+  if(typeof p.dodatakTezinaPct === 'number'){
+    document.getElementById('dodatakTezinaPct').value = p.dodatakTezinaPct;
+  }
+  cjenikVolumenLock = (p.volumenLock === 'vol' || p.volumenLock === 'nestandardna') ? p.volumenLock : null;
+  applyVolumenLock(cjenikVolumenLock);
+  cjenikSmsCijena = (typeof p.smsCijena === 'number') ? p.smsCijena : null;
+  updateSmsCijenaUI();
+  cjenikPovratnicaCijena = (typeof p.povratnicaCijena === 'number') ? p.povratnicaCijena : null;
+  updatePovratnicaCijenaUI();
+  cjenikOtkupninaGotovina = (p.otkupninaGotovina && typeof p.otkupninaGotovina.pct === 'number') ? p.otkupninaGotovina : null;
+  cjenikOtkupninaKartica = (p.otkupninaKartica && typeof p.otkupninaKartica.pct === 'number') ? p.otkupninaKartica : null;
+  updateOtkupninaCijenaUI();
+  cjenikIskazanaVrijednostPct = (typeof p.iskazanaVrijednostPct === 'number') ? p.iskazanaVrijednostPct : null;
+  updateIskazanaVrijednostUI();
+  cjenikPreuzimanjeCijena = (typeof p.preuzimanjeCijena === 'number') ? p.preuzimanjeCijena : null;
+  updatePreuzimanjeCijenaUI();
+  cjenikUrucenjeCijena = (typeof p.urucenjeCijena === 'number') ? p.urucenjeCijena : null;
+  updateUrucenjeCijenaUI();
+  cjenikDrugiCijena = (typeof p.drugiCijena === 'number') ? p.drugiCijena : null;
+  updateDrugiCijenaUI();
+  cjenikIspravkaCijena = (typeof p.ispravkaCijena === 'number') ? p.ispravkaCijena : null;
+  updateIspravkaCijenaUI();
+  cjenikPotvrdaCijena = (typeof p.potvrdaCijena === 'number') ? p.potvrdaCijena : null;
+  updatePotvrdaCijenaUI();
+  cjenikSezonskiPct = (typeof p.sezonskiPct === 'number') ? p.sezonskiPct : null;
+  updateSezonskiPctBox();
+  var maxKoletaLock = (p.maxKoletaLock && typeof p.maxKoletaLock === 'object') ? p.maxKoletaLock : null;
+  applyMaxKoletaLock(maxKoletaLock);
+}
+
+// Dohvat javne IP adrese klijentovog preglednika (30.9.2026., Sašin izričit
+// zahtjev — praćenje pristupa kalkulatoru) — identičan obrazac kao
+// dohvatiIP_() u InTime_PotvrdaPonude.html: Apps Script backend nema
+// izravan pristup IP adresi pošiljatelja, pa se dohvaća OVDJE preko
+// besplatnog javnog servisa (api.ipify.org) i šalje na server kao parametar.
+// ČISTO informativno — ako dohvat ne uspije (servis nedostupan/blokiran),
+// evidencija se svejedno zapisuje, samo bez IP adrese. Kratak timeout da
+// spor/nedostupan servis ne uspori rad s kalkulatorom.
+function dohvatiIP_(){
+  var kontroler = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+  var timeoutId = kontroler ? setTimeout(function(){ kontroler.abort(); }, 3000) : null;
+  return fetch('https://api.ipify.org?format=json', kontroler ? { signal: kontroler.signal } : {})
+    .then(function(res){ return res.json(); })
+    .then(function(data){ return (data && data.ip) ? String(data.ip) : ''; })
+    .catch(function(){ return ''; })
+    .finally(function(){ if(timeoutId){ clearTimeout(timeoutId); } });
+}
+
+// Fire-and-forget zapis u evidenciju kalkulatora (30.9.2026., Sašin izričit
+// zahtjev) — NIKAD ne čeka se na rezultat (.then/.catch se ne vraćaju
+// pozivatelju) i NIKAD ne prikazuje ništa klijentu, uspjelo ili ne: ovo je
+// čisto Sašin trag u pozadini, ne smije na bilo koji način usporiti ili
+// prekinuti klijentov rad s kalkulatorom.
+function zabiljeziKalkulatorEvidenciju_(vrsta, ulazniPodaci, rezultatSazetak, rezultatHtml){
+  if(!prijavljeniKorisnickoIme_){ return; }
+  try{
+    dohvatiIP_().then(function(ip){
+      gorivoGasCall_({
+        action: 'kalkulatorZabiljeziEvidenciju',
+        username: prijavljeniKorisnickoIme_,
+        vrsta: vrsta,
+        ulazniPodaci: ulazniPodaci ? JSON.stringify(ulazniPodaci) : '',
+        rezultatSazetak: rezultatSazetak || '',
+        rezultatHtml: rezultatHtml || '',
+        ipAdresa: ip
+      }).catch(function(){ /* best-effort, zanemari */ });
+    });
+  }catch(e){ /* best-effort, nikad ne prekida rad klijenta */ }
+}
+
+// Skuplja trenutne vrijednosti SVIH input/select/textarea polja kalkulatora
+// (osim prijave — korisničko ime/lozinka se ne biljeze ovdje, već su već
+// zabilježeni u samoj 'Prijava' evidenciji) u običan objekt {id: vrijednost}
+// — generički pristup (umjesto ručno nabrajanje svakog od desetaka polja)
+// da se svako postojeće I buduće polje automatski uhvati. Koristi ga
+// zabiljeziIzracunEvidencija_() niže.
+function prikupiUlazneVrijednostiZaEvidenciju_(){
+  var podaci = {};
+  try{
+    var elementi = document.querySelectorAll('.wrap input, .wrap select, .wrap textarea');
+    elementi.forEach(function(el){
+      if(!el.id){ return; }
+      if(el.closest('#prijavaKlijentaCard')){ return; }
+      if(el.type === 'file' || el.type === 'password'){ return; }
+      if(el.type === 'checkbox' || el.type === 'radio'){
+        if(el.type === 'radio' && !el.checked){ return; }
+        podaci[el.id] = el.checked;
+      } else {
+        var v = (el.value || '').trim();
+        if(v){ podaci[el.id] = v; }
+      }
+    });
+    if(typeof selectedZona !== 'undefined' && selectedZona){ podaci._zonaObracuna = selectedZona; }
+  }catch(e){ /* best-effort */ }
+  return podaci;
+}
+
+// Poziva se odmah NAKON izracunaj() (vidi onclick gumba "Izračunaj cijenu"
+// niže) — čita GOTOV rezultat iz DOM-a (breakdownTable je u tom trenutku
+// već popunjen) umjesto da dira samu izracunaj() funkciju (velika, s puno
+// grananja/ranih return-a za upozorenja) — sigurnije i jednako pouzdano.
+function zabiljeziIzracunEvidencija_(){
+  if(!prijavljeniKorisnickoIme_){ return; }
+  try{
+    var ulazniPodaci = prikupiUlazneVrijednostiZaEvidenciju_();
+    var breakdownEl = document.getElementById('breakdownTable');
+    var rezultatHtml = breakdownEl ? breakdownEl.innerHTML : '';
+    var totalRow = breakdownEl ? breakdownEl.querySelector('tr.total-row') : null;
+    var rezultatSazetak = totalRow ? totalRow.textContent.replace(/\s+/g, ' ').trim() : '';
+    if(!rezultatSazetak){
+      var warnBox = document.getElementById('warnBox');
+      rezultatSazetak = (warnBox && warnBox.textContent) ? ('Upozorenje: ' + warnBox.textContent.replace(/\s+/g, ' ').trim()) : '';
+    }
+    zabiljeziKalkulatorEvidenciju_('Izračun', ulazniPodaci, rezultatSazetak, rezultatHtml);
+  }catch(e){ /* best-effort, nikad ne prekida rad klijenta */ }
 }
 
 function prijaviKlijenta_(username, lozinka, tiho){
@@ -4341,14 +4479,19 @@ function prijaviKlijenta_(username, lozinka, tiho){
       return false;
     }
     korisnikUcitaoVlastitiCjenik_ = true;
+    prijavljeniKorisnickoIme_ = username;
     if(Array.isArray(res.cjenik) && res.cjenik.length){
       CURRENT_CJENIK = res.cjenik.slice();
       renderCjenikTable(CURRENT_CJENIK);
-      scheduleLiveIzracunaj();
     }
+    primijeniKalkulatorPostavke_(res.postavke);
+    scheduleLiveIzracunaj();
     prijavaPostaviAktivnoStanje_(res.naziv);
     if(statusEl){ statusEl.textContent = ''; statusEl.classList.remove('error'); }
     try{ localStorage.setItem(PRIJAVA_LS_KLJUC_, JSON.stringify({ u: username, p: lozinka })); }catch(eLs){ /* privatni način preglednika i sl. — prijava i dalje radi, samo se ne pamti za sljedeći posjet */ }
+    // Evidencija prijave (30.9.2026., Sašin izričit zahtjev) — fire-and-forget,
+    // NE čeka se i ne prikazuje se ništa klijentu bez obzira na ishod.
+    zabiljeziKalkulatorEvidenciju_('Prijava', null, '', '');
     return true;
   }).catch(function(){
     if(!tiho){
@@ -4378,16 +4521,43 @@ document.getElementById('prijavaLozinka').addEventListener('keydown', function(e
 document.getElementById('odjavaBtn').addEventListener('click', function(){
   try{ localStorage.removeItem(PRIJAVA_LS_KLJUC_); }catch(eLs){ /* zanemari */ }
   korisnikUcitaoVlastitiCjenik_ = false;
+  prijavljeniKorisnickoIme_ = null;
   document.getElementById('prijavaUsername').value = '';
   document.getElementById('prijavaLozinka').value = '';
   prijavaPostaviNeaktivnoStanje_();
   resetCjenik();
 });
 
+// Prijava putem URL parametara (?kalk_u=...&kalk_p=...) — 30.9.2026. (deseti
+// krug, isti dan): kućice na naslovnici (InTime_PismoNamjere.html, gumb
+// "Prijava" uz karticu kalkulatora) otvaraju/ponovno učitavaju OVU stranicu
+// (u iframeu ili novom prozoru) s tim parametrima — vidi
+// kalkulatorNaslovnicaPrijava_ ondje. NIJE tiha (tiho=false) — greška
+// (npr. kriva lozinka) mora biti vidljiva korisniku, ne samo nestati.
+// Polja se unaprijed popune istim podacima radi transparentnosti (i da
+// "Prijava" gumb ovdje radi odmah ako korisnik ručno ponovno pokuša).
+// Ima PRIORITET nad tihom prijavom iz localStorage ispod — različit
+// korisnik koji dođe preko naslovnice ne smije ostati prijavljen kao
+// netko iz prijašnje posjete na ovom uređaju.
+function ucitajPrijavuIzUrlaAkoPostoji_(){
+  var params;
+  try{ params = new URLSearchParams(window.location.search); }catch(eUrl){ return false; }
+  var u = params.get('kalk_u');
+  var p = params.get('kalk_p');
+  if(!u || !p){ return false; }
+  var userEl = document.getElementById('prijavaUsername');
+  var passEl = document.getElementById('prijavaLozinka');
+  if(userEl){ userEl.value = u; }
+  if(passEl){ passEl.value = p; }
+  prijaviKlijenta_(u, p, false);
+  return true;
+}
+
 // Tiha automatska prijava ako je korisnik prošli put ostao prijavljen na
 // ovom uređaju/pregledniku (isti obrazac otpornosti kao i ostatak ove
 // stranice — ako ne uspije, samo se prikaže login forma, ništa se ne ruši).
 (function(){
+  if(ucitajPrijavuIzUrlaAkoPostoji_()){ return; }
   var spremljeno;
   try{ spremljeno = JSON.parse(localStorage.getItem(PRIJAVA_LS_KLJUC_) || 'null'); }catch(eLs){ spremljeno = null; }
   if(spremljeno && spremljeno.u && spremljeno.p){
