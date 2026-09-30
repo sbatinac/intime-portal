@@ -783,6 +783,30 @@
   .af-kred-uvodni-status{font-size:11px;min-height:14px;}
   .af-kred-uvodni-status.ok{color:#1a7a3c;}
   .af-kred-uvodni-status.error{color:#b3261e;}
+  /* Okvir "Dokumenti uz ovaj mail" (Sašin izričit zahtjev, 30.9.2026. —
+     "dodati mjesto gdje mogu napraviti add file... da mogu više dokumenata
+     dodati principom drag and drop"). Jednostavan JEDAN drop-zone (za
+     razliku od dvoblokovnog "Dokumenti za ponudu" — ovdje nema "Osnovna
+     dokumentacija" izvor, samo izravan upload s računala), isti vizualni
+     jezik/crvena tema kao ostatak ovog panela. */
+  .af-kred-dok-okvir{margin-top:12px;padding-top:12px;border-top:1px dashed #f3b7b0;}
+  .af-kred-dok-napomena{font-size:11.5px;color:#8a94a6;margin:2px 0 8px;}
+  .af-kred-dok-folder-link{color:#8c2b22;font-weight:700;text-decoration:none;}
+  .af-kred-dok-folder-link:hover{text-decoration:underline;}
+  .af-kred-dok-folder-link.af-kred-dok-folder-link-cekaj{pointer-events:none;color:#b8bec9;}
+  .af-kred-dok-drop{border:2px dashed #f0b8b3;border-radius:10px;padding:16px;text-align:center;cursor:pointer;background:#fff;transition:background .12s,border-color .12s;}
+  .af-kred-dok-drop:hover{background:#fdf3f2;}
+  .af-kred-dok-drop.af-kred-dok-drag-over{background:#fce6e4;border-color:#c0392b;}
+  .af-kred-dok-drop-tekst{font-size:12.5px;color:#8c2b22;font-weight:700;}
+  .af-kred-dok-lista{margin-top:10px;display:flex;flex-direction:column;gap:6px;}
+  .af-kred-dok-stavka{display:flex;align-items:center;gap:8px;background:#fff;border:1px solid #f0b8b3;border-radius:8px;padding:7px 10px;font-size:12.5px;}
+  .af-kred-dok-stavka a{color:#8c2b22;text-decoration:none;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .af-kred-dok-stavka a:hover{text-decoration:underline;}
+  .af-kred-dok-ukloni{background:rgba(0,0,0,.06);border:none;border-radius:50%;width:20px;height:20px;line-height:20px;font-size:13px;color:#8c2b22;cursor:pointer;flex-shrink:0;padding:0;}
+  .af-kred-dok-ukloni:hover{background:rgba(0,0,0,.14);}
+  .af-kred-dok-prazno{font-size:11.5px;color:#8a94a6;}
+  .af-kred-dok-status{font-size:11px;min-height:14px;margin-top:6px;}
+  .af-kred-dok-status.error{color:#b3261e;}
   .af-kred-slanje-okvir{margin-top:12px;padding-top:12px;border-top:1px dashed #f3b7b0;}
   .af-kred-primatelji-red textarea{width:100%;min-height:44px;resize:vertical;box-sizing:border-box;font-size:12.5px;font-family:inherit;padding:8px 10px;border:1px solid #f3b7b0;border-radius:8px;margin-bottom:4px;}
   .af-kred-primatelji-hint{font-size:11px;color:var(--grey);margin:0 0 10px;}
@@ -2503,6 +2527,44 @@
     return mailPredlosciPromise;
   }
 
+  // Popis "općih dokumenata" za panel "Pošalji pristupne podatke klijentu"
+  // (Sašin izričit zahtjev, 30.9.2026., ispravak istog dana — "ti dokumenti
+  // koji se prilažu su opcenit i vrijede za sve klijente... google drive
+  // link se dijeli klijentu u obliku buttona u templateu, ne ide mu fizički
+  // dokument, vec samo link na taj drive"): JEDAN zajednički Drive direktorij
+  // (getOpciDokumentiKlijentPristupFolderJavni_() u InTime_Code.gs, javno
+  // dijeljen "svatko s poveznicom — pregledavač"), ISTI za sve klijente —
+  // Saša najčešće sam ubacuje/mijenja dokumente izravno u taj Drive
+  // direktorij, a admin drag&drop (niže, af-kred-dok-*) je samo prečac za
+  // dodavanje novih bez izlaska iz admina. Mail predložak nosi {{LINK_OPCIH_DOKUMENATA}}
+  // tag — gumb koji vodi NA CIJELI DIREKTORIJ (ne na pojedinačne datoteke),
+  // klijent ondje otvara/preuzima što god je unutra. Dijeljeni cache, isti
+  // obrazac kao ucitajMailPredloske_ gore — dohvaća se JEDNOM za cijelu
+  // admin sesiju, ne po retku/klijentu.
+  var klijentPristupOpciDokumentiCache = null;
+  var klijentPristupOpciDokumentiPromise = null;
+  function ucitajKlijentPristupOpceDokumente_(forsirajOsvjezavanje) {
+    if (klijentPristupOpciDokumentiCache && !forsirajOsvjezavanje) {
+      return Promise.resolve(klijentPristupOpciDokumentiCache);
+    }
+    if (klijentPristupOpciDokumentiPromise && !forsirajOsvjezavanje) {
+      return klijentPristupOpciDokumentiPromise;
+    }
+    klijentPristupOpciDokumentiPromise = gasCall({ action: 'adminDohvatiKlijentPristupOpceDokumente', token: adminToken }).then(function(res) {
+      klijentPristupOpciDokumentiPromise = null;
+      if (handleAuthError(res)) { throw new Error('Sesija je istekla.'); }
+      if (res.status === 'ok') {
+        klijentPristupOpciDokumentiCache = { dokumenti: res.dokumenti || [], folderUrl: res.folderUrl || '' };
+        return klijentPristupOpciDokumentiCache;
+      }
+      throw new Error(res.message || 'Dohvaćanje dokumenata nije uspjelo.');
+    }).catch(function(err) {
+      klijentPristupOpciDokumentiPromise = null;
+      throw err;
+    });
+    return klijentPristupOpciDokumentiPromise;
+  }
+
   // Zapamćena test-adresa za probno slanje ponude (adminGetTestMail/
   // adminPosaljiPonudaTest u InTime_Code.gs) — GLOBALNA (ne po klijentu,
   // Sašin izričit zahtjev), isti dijeljeni-cache obrazac kao predlošci gore.
@@ -2676,6 +2738,15 @@
     // popis (zarez+razmak) imena poslovnica iz polja "Nadležna poslovnica
     // (admin)" (isti popis koji puni checkbox padajući izbornik iznad).
     var obLozinka = fieldVal(entry, 'OB lozinka (admin)') || '[lozinka za Online Booking — potvrdi OB lozinku]';
+    // {{LINK_OPCIH_DOKUMENATA}} — poveznica na ZAJEDNIČKI Drive direktorij s
+    // općim uputama za korištenje (vidi ucitajKlijentPristupOpceDokumente_
+    // iznad) — ISTA za sve klijente, ne čita se iz `entry`. Dok se dohvat
+    // (async, jednom po admin sesiji) još nije vratio, prikazuje se
+    // placeholder — pregled se sam osvježi čim dohvat završi (vidi
+    // kredOsvjeziPregledAkoPostoji_ poziv unutar ucitajKlijentPristupOpceDokumente_().then(...) niže).
+    var linkOpcihDokumenata = (klijentPristupOpciDokumentiCache && klijentPristupOpciDokumentiCache.folderUrl)
+      ? klijentPristupOpciDokumentiCache.folderUrl
+      : '[poveznica na upute za korištenje — učitava se…]';
     var nadleznePoslovniceSirovo_ = fieldVal(entry, 'Nadležna poslovnica (admin)') || '';
     var nadlezneposlovnice = nadleznePoslovniceSirovo_
       ? nadleznePoslovniceSirovo_.split(',').map(function(p) { return p.trim(); }).filter(function(p) { return p; }).join(', ')
@@ -2697,7 +2768,8 @@
       .replace(/\{\{ADRESA_PRIKUPA\}\}/g, adresaPrikupa)
       .replace(/\{\{ZADNJI_ROK_UNOSA\}\}/g, zadnjiRokUnosa)
       .replace(/\{\{OB_LOZINKA\}\}/g, obLozinka)
-      .replace(/\{\{NADLEZNE_POSLOVNICE\}\}/g, nadlezneposlovnice);
+      .replace(/\{\{NADLEZNE_POSLOVNICE\}\}/g, nadlezneposlovnice)
+      .replace(/\{\{LINK_OPCIH_DOKUMENATA\}\}/g, linkOpcihDokumenata);
   }
 
   function primijeniCounters_(res) {
@@ -7421,6 +7493,13 @@
         if (Array.isArray(parsiranoDokumentiPonude)) { dokumentiPonude = parsiranoDokumentiPonude; }
       }
     } catch (errDokumentiPonude) { dokumentiPonude = []; }
+    // NAPOMENA (30.9.2026., ispravak istog dana): dokumenti za panel "Pošalji
+    // pristupne podatke klijentu" VIŠE NISU po-klijentu (Saša je pojasnio —
+    // to su OPĆE upute za korištenje, iste za sve klijente, koje najčešće
+    // sam ubacuje izravno u Drive, a admin drag&drop je samo prečac). Zato
+    // više NEMA parsiranja po-retka ovdje — popis se čita globalno preko
+    // ucitajKlijentPristupOpceDokumente_() niže (dijeljeni cache, isti obrazac
+    // kao ucitajMailPredloske_). Vidi puni odjeljak uz kredDokDrop niže.
     // Tri fiksna polja dokumenata (Sašin izričit zahtjev, 21.9.2026., vidi
     // punu napomenu uz ADMIN_ONLY_FIELDS.dokument_analiticki_cjenik u
     // InTime_Code.gs) — svako drži NAJVIŠE jednu stavku {id, name, url}
@@ -8149,6 +8228,16 @@
                 '<button type="button" class="af-kred-btn af-kred-uvodni-reset-btn">↺ Vrati na zadano (10)</button>' +
               '</div>' +
               '<div class="af-kred-uvodni-status"></div>' +
+            '</div>' +
+            '<div class="af-kred-dok-okvir">' +
+              '<label class="af-kred-uvodni-label">Upute za korištenje (OPĆI dokumenti, isti za sve klijente — mail nosi samo poveznicu na Drive mapu, ne šalju se kao privitak)</label>' +
+              '<div class="af-kred-dok-napomena">Dokumente možeš i sam izravno dodavati/mijenjati u Drive mapi — <a class="af-kred-dok-folder-link" href="#" target="_blank" rel="noopener">otvori Drive mapu</a>.</div>' +
+              '<div class="af-kred-dok-drop">' +
+                '<div class="af-kred-dok-drop-tekst">📎 Povuci datoteke ovdje (i s računala) ili klikni za odabir</div>' +
+                '<input type="file" class="af-kred-dok-input" multiple style="display:none;">' +
+              '</div>' +
+              '<div class="af-kred-dok-lista"></div>' +
+              '<div class="af-kred-dok-status"></div>' +
             '</div>' +
             '<div class="af-kred-slanje-okvir">' +
               '<div class="af-kred-primatelji-red">' +
@@ -10635,6 +10724,11 @@
       var kredUvodniZapamtiBtn = wrap.querySelector('.af-kred-uvodni-zapamti-btn');
       var kredUvodniResetBtn = wrap.querySelector('.af-kred-uvodni-reset-btn');
       var kredUvodniStatus = wrap.querySelector('.af-kred-uvodni-status');
+      var kredDokDrop = wrap.querySelector('.af-kred-dok-drop');
+      var kredDokInput = wrap.querySelector('.af-kred-dok-input');
+      var kredDokLista = wrap.querySelector('.af-kred-dok-lista');
+      var kredDokStatus = wrap.querySelector('.af-kred-dok-status');
+      var kredDokFolderLink = wrap.querySelector('.af-kred-dok-folder-link');
 
       var kredPredlosciLokalno = [];
       var kredZadnjiPregled_ = { predmet: '', tijelo: '', html: false };
@@ -10907,6 +11001,130 @@
         }
         return lista;
       };
+
+      // Okvir "Upute za korištenje" (Sašin izričit zahtjev, 30.9.2026.,
+      // ispravak ISTI dan — "ti dokumenti koji se prilažu su opcenit i
+      // vrijede za sve klijente... google drive link se dijeli klijentu u
+      // obliku buttona u templateu, ne ide mu fizički dokument, vec samo
+      // link na taj drive... ja cu fizicki sam staviti u taj direktorij
+      // dokument i mijenjati ih, ali mogu uvijek ubaciti i nesto novo u sam
+      // drag and drop"). VIŠE NIJE po-klijentu — GLOBALNI popis (vidi
+      // ucitajKlijentPristupOpceDokumente_ na vrhu datoteke), izvor istine
+      // je SAM Drive direktorij (adminDohvatiKlijentPristupOpceDokumente
+      // čita folder.getFiles() uživo, ništa se ne sprema u red upita) — Saša
+      // ga slobodno uređuje i izravno u Drive sučelju, admin popis to uvijek
+      // odražava. "Ukloni" ovdje STVARNO briše (trash) datoteku s Drivea, jer
+      // folder JE izvor istine, nema zasebnog "popisa" koji bi mogao
+      // zaostati iza njega.
+      var kredRenderDokListu_ = function() {
+        var dokumenti = (klijentPristupOpciDokumentiCache && klijentPristupOpciDokumentiCache.dokumenti) || [];
+        if (!dokumenti.length) {
+          kredDokLista.innerHTML = '<div class="af-kred-dok-prazno">Još ništa nije dodano.</div>';
+        } else {
+          kredDokLista.innerHTML = dokumenti.map(function(d, i) {
+            return '<div class="af-kred-dok-stavka">' +
+              '<span>📎</span>' +
+              '<a href="' + esc(d.url) + '" target="_blank" rel="noopener" title="' + esc(d.name) + '">' + esc(d.name) + '</a>' +
+              '<button type="button" class="af-kred-dok-ukloni" data-i="' + i + '" title="Ukloni (briše datoteku iz Drive mape)">✕</button>' +
+            '</div>';
+          }).join('');
+          Array.prototype.slice.call(kredDokLista.querySelectorAll('.af-kred-dok-ukloni')).forEach(function(btn) {
+            btn.addEventListener('click', function(ev) {
+              ev.stopPropagation();
+              var i = parseInt(btn.getAttribute('data-i'), 10);
+              var stavka = dokumenti[i];
+              if (!stavka) { return; }
+              btn.disabled = true;
+              kredDokStatus.textContent = 'Brisanje…';
+              kredDokStatus.classList.remove('error');
+              gasCall({ action: 'adminObrisiKlijentPristupOpciDokument', token: adminToken, id: stavka.id }).then(function(res) {
+                if (handleAuthError(res)) { return; }
+                if (res.status === 'ok') {
+                  dokumenti.splice(i, 1);
+                  kredRenderDokListu_();
+                  kredDokStatus.textContent = 'Obrisano.';
+                } else {
+                  btn.disabled = false;
+                  kredDokStatus.textContent = res.message || 'Brisanje nije uspjelo.';
+                  kredDokStatus.classList.add('error');
+                }
+              }).catch(function() {
+                btn.disabled = false;
+                kredDokStatus.textContent = 'Greška u komunikaciji s poslužiteljem.';
+                kredDokStatus.classList.add('error');
+              });
+            });
+          });
+        }
+        if (klijentPristupOpciDokumentiCache && klijentPristupOpciDokumentiCache.folderUrl) {
+          kredDokFolderLink.href = klijentPristupOpciDokumentiCache.folderUrl;
+          kredDokFolderLink.classList.remove('af-kred-dok-folder-link-cekaj');
+        } else {
+          kredDokFolderLink.href = '#';
+          kredDokFolderLink.classList.add('af-kred-dok-folder-link-cekaj');
+        }
+      };
+
+      var kredPosaljiDatoteku_ = function(file) {
+        kredDokStatus.textContent = 'Slanje datoteke "' + file.name + '"…';
+        kredDokStatus.classList.remove('error');
+        var reader = new FileReader();
+        reader.onload = function() {
+          var base64 = String(reader.result).split(',')[1] || '';
+          gasCall({ action: 'adminUploadKlijentPristupOpciDokument', token: adminToken, base64Data: base64, mimeType: file.type || 'application/octet-stream', filename: file.name }).then(function(res) {
+            if (handleAuthError(res)) { return; }
+            if (res.status === 'ok') {
+              if (!klijentPristupOpciDokumentiCache) { klijentPristupOpciDokumentiCache = { dokumenti: [], folderUrl: res.folderUrl || '' }; }
+              klijentPristupOpciDokumentiCache.folderUrl = klijentPristupOpciDokumentiCache.folderUrl || res.folderUrl || '';
+              klijentPristupOpciDokumentiCache.dokumenti.push({ id: res.id, name: res.name, url: res.url });
+              kredRenderDokListu_();
+              kredOsvjeziPregledAkoPostoji_();
+            } else {
+              kredDokStatus.textContent = res.message || 'Greška pri slanju datoteke.';
+              kredDokStatus.classList.add('error');
+            }
+          }).catch(function() {
+            kredDokStatus.textContent = 'Greška u komunikaciji s poslužiteljem.';
+            kredDokStatus.classList.add('error');
+          });
+        };
+        reader.readAsDataURL(file);
+      };
+
+      kredDokLista.innerHTML = '<div class="af-kred-dok-prazno">Učitavanje…</div>';
+      ucitajKlijentPristupOpceDokumente_(false).then(function() {
+        kredRenderDokListu_();
+        kredOsvjeziPregledAkoPostoji_();
+      }).catch(function(err) {
+        kredDokLista.innerHTML = '<div class="af-kred-dok-prazno">Greška: ' + esc((err && err.message) || 'nepoznata greška') + '</div>';
+      });
+
+      kredDokFolderLink.addEventListener('click', function(ev) {
+        ev.stopPropagation();
+        if (!kredDokFolderLink.href || kredDokFolderLink.classList.contains('af-kred-dok-folder-link-cekaj')) { ev.preventDefault(); }
+      });
+      kredDokDrop.addEventListener('click', function(ev) { ev.stopPropagation(); kredDokInput.click(); });
+      kredDokInput.addEventListener('click', function(ev) { ev.stopPropagation(); });
+      kredDokInput.addEventListener('change', function() {
+        Array.prototype.slice.call(kredDokInput.files || []).forEach(kredPosaljiDatoteku_);
+        kredDokInput.value = '';
+      });
+      kredDokDrop.addEventListener('dragover', function(ev) {
+        ev.preventDefault();
+        kredDokDrop.classList.add('af-kred-dok-drag-over');
+      });
+      kredDokDrop.addEventListener('dragleave', function() {
+        kredDokDrop.classList.remove('af-kred-dok-drag-over');
+      });
+      kredDokDrop.addEventListener('drop', function(ev) {
+        ev.preventDefault();
+        ev.stopPropagation();
+        kredDokDrop.classList.remove('af-kred-dok-drag-over');
+        var datoteke = ev.dataTransfer.files;
+        if (datoteke && datoteke.length) {
+          Array.prototype.slice.call(datoteke).forEach(kredPosaljiDatoteku_);
+        }
+      });
 
       kredTestBtn.addEventListener('click', function(ev) {
         ev.stopPropagation();
