@@ -268,6 +268,60 @@
       linear-gradient(90deg, rgba(8,20,28,.76), rgba(8,20,28,.42)),
       url('https://i.imgur.com/V2krix2.png') center/cover no-repeat;
   }
+  /* PRISTUP KALKULATORU (username/lozinka) — 30.9.2026., Sašin izričit
+     zahtjev: dvije kućice za unos, na kartici Kalkulatora, na desnoj strani,
+     malo odmaknute od ruba kartice. FAZA 1 — samo vizualni unos (polja),
+     BEZ ikakve provjere/zaključavanja još; mehanizam generiranja i provjere
+     korisničkog imena/lozinke definira se kasnije, u idućem krugu.
+     30.9.2026. (drugi krug, isti dan) — polja SLOŽENA JEDNO ISPOD DRUGOGA
+     (ne jedno pored drugog), obje kućice iste veličine, kompaktan natpis u
+     retku ("Korisnik:"/"Lozinka:") umjesto velikog UPPERCASE naslova iznad
+     polja. VAŽNO — ovo je vizualni sloj ISKLJUČIVO na naslovnici
+     (`InTime_PismoNamjere.html`), na kartici kalkulatora; NE dira se
+     `InTime_KalkulatorCijena.html` (sama kalkulator-stranica koja se
+     ugrađuje u iframe) niti admin (`InTime_Admin.html`/kartica "Kalkulator"
+     u adminu) — Sašin izričit zahtjev da se ovo ne prenese tamo.
+     Postavljene position:absolute preko wrap-elementa (.kalkulator-kartica-wrap
+     ima position:relative) — NISU unutar samog <button>, jer <button> ne
+     smije sadržavati <input> (nevaljan HTML, browser bi ih izbacio iz
+     elementa). Klik/fokus na poljima zaustavlja probijanje klika do gumba
+     (stopPropagation u HTML-u niže) da se kartica ne otvara/zatvara dok
+     korisnik upisuje. */
+  .kalkulator-kartica-wrap{position:relative;}
+  .kalkulator-login-kucice{
+    position:absolute;top:50%;right:64px;transform:translateY(-50%);
+    display:flex;flex-direction:column;gap:7px;z-index:3;
+  }
+  .kalkulator-login-polje{display:flex;align-items:center;gap:8px;}
+  .kalkulator-login-polje label{
+    font-size:12.5px;font-weight:700;letter-spacing:.01em;
+    color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.55);
+    min-width:58px;text-align:right;flex:0 0 auto;
+  }
+  /* .kalkulator-login-input (a ne samo `.kalkulator-login-polje input`) —
+     potrebna dodatna klasa radi specifičnosti: postojeće globalno pravilo
+     "input[type=text]{width:100%...}" (niže u ovoj datoteci) ima ISTU
+     CSS specifičnost kao obični `.kalkulator-login-polje input` i dolazi
+     IZA njega, pa bi nadjačalo širinu SAMO na text polju (ne i na
+     password polju, jer taj selektor ne pokriva type=password) — vidljivo
+     kao dvije različito velike kućice. Klasa diže specifičnost i rješava
+     to za oba polja jednako. */
+  .kalkulator-login-polje input.kalkulator-login-input{
+    width:140px;box-sizing:border-box;padding:6px 10px;
+    border-radius:6px;border:1px solid rgba(255,255,255,.55);
+    background:rgba(255,255,255,.94);color:#222;
+    font-size:13px;font-family:inherit;
+  }
+  .kalkulator-login-polje input.kalkulator-login-input:focus{
+    outline:2px solid var(--purple);outline-offset:1px;background:#fff;
+  }
+  @media(max-width:640px){
+    .kalkulator-login-kucice{
+      position:static;transform:none;margin:14px 0 0;
+      align-items:center;
+    }
+    .kalkulator-login-polje label{color:var(--graphite,#333);text-shadow:none;}
+  }
   /* GORIVO — nova kartica (25.9.2026., Faza 2, Sašin izričit zahtjev: "to je
      trebala biti posebna kartica, a ne u sklopu kalkulatora") — ISTI obrazac
      kao ostale "tema-foto-*" kartice, samo slika je LOKALNA datoteka
@@ -1509,10 +1563,26 @@
        Pozadinska slika kartice — vidi CSS .tema-foto-kalkulator. -->
   <section>
     <div class="wrap-galerija">
-      <button type="button" id="kalkulator-toggle-btn" class="galerija-toggle-btn tema-foto-kalkulator" onclick="toggleKalkulatorEmbed(event)">
-        <span>Kalkulator cijene dostave</span>
-        <span class="galerija-toggle-arrow">▾</span>
-      </button>
+      <div class="kalkulator-kartica-wrap">
+        <button type="button" id="kalkulator-toggle-btn" class="galerija-toggle-btn tema-foto-kalkulator" onclick="toggleKalkulatorEmbed(event)">
+          <span>Kalkulator cijene dostave</span>
+          <span class="galerija-toggle-arrow">▾</span>
+        </button>
+        <!-- Kućice za pristup kalkulatoru (username/lozinka) — vidi napomenu
+             uz CSS .kalkulator-login-kucice: FAZA 1, samo unos, bez provjere.
+             stopPropagation na cijeloj kućici da klik/fokus u polje ne
+             otvara/zatvara karticu ispod. -->
+        <div class="kalkulator-login-kucice" onclick="event.stopPropagation()">
+          <div class="kalkulator-login-polje">
+            <label for="kalkulator-login-user">Korisnik:</label>
+            <input type="text" id="kalkulator-login-user" class="kalkulator-login-input" autocomplete="off" placeholder="korisničko ime">
+          </div>
+          <div class="kalkulator-login-polje">
+            <label for="kalkulator-login-pass">Lozinka:</label>
+            <input type="password" id="kalkulator-login-pass" class="kalkulator-login-input" autocomplete="off" placeholder="lozinka">
+          </div>
+        </div>
+      </div>
       <div id="kalkulator-embed-wrap" class="kalkulator-embed-wrap">
         <div class="kalkulator-embed-bar">
           <span>In Time — kalkulator cijene dostave</span>
