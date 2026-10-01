@@ -895,11 +895,23 @@
      (vidi blok "Pristup kalkulatoru cijena" u InTime_Admin.html i
      kalkulatorKlijentPrijava u InTime_Code.gs). Dok je klijent prijavljen,
      ručno učitavanje Excel cjenika ispod je onemogućeno — koristi se
-     ISKLJUČIVO njegov osobni cjenik. Vidi wiring na dnu <script>. -->
+     ISKLJUČIVO njegov osobni cjenik. Vidi wiring na dnu <script>.
+
+     IZMJENA (1.10.2026., Sašin izričit zahtjev — "prvo kućica s lozinkom,
+     tek onda se otvara kalkulator, a ne da se dođe do kalkulatora pa se
+     tek na njemu upisuje lozinka"): cijeli sadržaj kalkulatora ispod ove
+     kartice (#kalkSadrzajGate — layout-grid s obrascem/izračunom + footer)
+     sad je SAKRIVEN (display:none) dok se ne prijavi važećim korisničkim
+     imenom/lozinkom koje dodjeljuje In Time d.o.o. Jedino što se vidi prije
+     prijave jest ova kartica — nema više "otvorene" stranice kalkulatora
+     koju bi itko mogao koristiti bez lozinke, bez obzira dolazi li se na
+     ovu stranicu izravno (link iz e-maila), ugrađenu (iframe na naslovnici)
+     ili u novom prozoru. Prikazuje se tek nakon uspješne prijave — vidi
+     prijavaPostaviAktivnoStanje_()/prijavaPostaviNeaktivnoStanje_() niže. -->
 <div class="card" id="prijavaKlijentaCard">
-  <h2 style="margin-bottom:10px;">Prijava — Vaš osobni cjenik</h2>
+  <h2 style="margin-bottom:10px;">🔒 Prijava — pristup kalkulatoru</h2>
   <div id="prijavaKlijentaForma">
-    <p class="note" style="margin:0 0 12px;">Ako ste od In Time d.o.o. dobili korisničko ime i lozinku, prijavite se ovdje da se automatski učita Vaš vlastiti, ugovoreni cjenik — bez ručnog učitavanja Excel datoteke.</p>
+    <p class="note" style="margin:0 0 12px;">Kalkulator cijene dostave dostupan je isključivo uz korisničko ime i lozinku koje dodjeljuje In Time d.o.o. Unesite pristupne podatke da se odmah otvori kalkulator s Vašim ugovorenim uvjetima.</p>
     <div class="row" style="align-items:flex-end; margin-bottom:0;">
       <div class="field" style="flex:1 1 220px;">
         <label>Korisničko ime</label>
@@ -928,6 +940,9 @@
   </div>
 </div>
 
+<!-- Zaštićeni sadržaj kalkulatora — sakriven dok se ne prijavi (vidi napomenu
+     uz #prijavaKlijentaCard gore). -->
+<div id="kalkSadrzajGate" style="display:none;">
 <div class="layout-grid">
   <div class="col-left">
 
@@ -1451,6 +1466,7 @@
   <p>Zone dostave po mjestu/poštanskom broju preuzete su iz internog popisa "Gradovi i poštanska mjesta — zone"; za sporne/nove adrese provjerite na <a href="https://www.in-time.hr" target="_blank" rel="noopener">www.in-time.hr</a>.</p>
   <p>Ovaj izračun je informativan. Konačna cijena definira se ugovorom / potvrđenom ponudom In Time d.o.o.</p>
 </footer>
+</div><!-- /#kalkSadrzajGate -->
 
 <script>
 /* SheetJS (xlsx) — Apache-2.0 — ugrađeno radi rada bez interneta */
@@ -4319,6 +4335,12 @@ function prijavaPostaviAktivnoStanje_(nazivFirme){
   if(fileInput){ fileInput.disabled = true; }
   var resetBtn = document.querySelector('button[onclick="resetCjenik()"]');
   if(resetBtn){ resetBtn.disabled = true; resetBtn.title = 'Onemogućeno dok ste prijavljeni s osobnim cjenikom.'; }
+  // NOVO (1.10.2026., Sašin izričit zahtjev) — tek SAD, nakon uspješne
+  // prijave, otkriva se cijeli kalkulator (vidi #kalkSadrzajGate i napomenu
+  // uz #prijavaKlijentaCard gore). Do ovog trenutka kalkulator nije bio ni
+  // vidljiv, ni upotrebljiv.
+  var gateEl = document.getElementById('kalkSadrzajGate');
+  if(gateEl){ gateEl.style.display = ''; }
 }
 
 function prijavaPostaviNeaktivnoStanje_(){
@@ -4328,6 +4350,10 @@ function prijavaPostaviNeaktivnoStanje_(){
   if(fileInput){ fileInput.disabled = false; }
   var resetBtn = document.querySelector('button[onclick="resetCjenik()"]');
   if(resetBtn){ resetBtn.disabled = false; resetBtn.title = ''; }
+  // NOVO (1.10.2026.) — na odjavu se kalkulator ponovno sakriva; ostaje
+  // vidljiva samo kućica za prijavu (gate se ponovno zatvara).
+  var gateEl = document.getElementById('kalkSadrzajGate');
+  if(gateEl){ gateEl.style.display = 'none'; }
 }
 
 // Primjenjuje svih 16 dodatnih postavki vraćenih iz kalkulatorKlijentPrijava
