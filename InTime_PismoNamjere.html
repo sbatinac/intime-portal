@@ -6048,29 +6048,28 @@
   // ipak je zadržan isti fullscreen obrazac jer je kalkulator vrlo velika,
   // detaljna stranica i korisnik će htjeti što više prostora za rad s njim.
   // Sašin izričit zahtjev (18.9.2026.).
+  // ISPRAVAK (1.10.2026., Sašin izričit zahtjev — "ne želim da se kartica kalkulator uopće otvara dok
+  // nije ukucana šifra"): klik na samu karticu/sliku više NE otvara kalkulator "prazan" (bez pristupnih
+  // podataka) — ako kućice korisničko ime/lozinka nisu popunjene, kartica se uopće ne otvara, nego se
+  // samo ispiše poruka da prvo treba unijeti pristupne podatke. Ako SU popunjene, otvaranje je istovjetno
+  // klikom na gumb "Prijava" (kalkulatorNaslovnicaPrijava_ niže) — kartica se otvara VEĆ prijavljena.
   function toggleKalkulatorEmbed(event){
     if (event) { event.stopPropagation(); }
     var wrap = document.getElementById('kalkulator-embed-wrap');
     if (wrap.classList.contains('active')) {
       closeKalkulatorEmbed();
-    } else {
-      openKalkulatorEmbed();
+      return;
     }
-  }
-
-  function openKalkulatorEmbed(){
-    document.getElementById('panel-interes').classList.remove('active');
-    document.getElementById('panel-odbijenica').classList.remove('active');
-    document.getElementById('confirm-box').classList.remove('active');
-    closeAnketaEmbed();
-    closeBookingEmbed();
-    var wrap = document.getElementById('kalkulator-embed-wrap');
-    var iframe = document.getElementById('kalkulator-embed-iframe');
-    if (!iframe.getAttribute('src')) {
-      iframe.src = 'InTime_KalkulatorCijena.html';
+    var userEl = document.getElementById('kalkulator-login-user');
+    var passEl = document.getElementById('kalkulator-login-pass');
+    var statusEl = document.getElementById('kalkulator-login-status');
+    var username = userEl ? userEl.value.trim() : '';
+    var lozinka = passEl ? passEl.value.trim() : '';
+    if (!username || !lozinka) {
+      if (statusEl) { statusEl.textContent = 'Prvo unesite korisničko ime i lozinku, pa kliknite "Prijava".'; }
+      return;
     }
-    wrap.classList.add('active');
-    skociNaSidro('kalkulator-embed-wrap');
+    kalkulatorNaslovnicaPrijava_(event);
   }
 
   function closeKalkulatorEmbed(){
@@ -6082,12 +6081,13 @@
   }
 
   // Gumb "Prijava" uz kućice na kartici kalkulatora (30.9.2026., deseti
-  // krug — vidi punu napomenu uz CSS .kalkulator-login-btn gore). Za
-  // razliku od običnog otvaranja kartice (openKalkulatorEmbed, lijeno
-  // učitavanje SAMO prvi put — iframe.src se ne dira ako je već postavljen),
-  // prijava MORA (ponovno) postaviti iframe.src svaki put — jedino tako se
-  // pouzdano pokreće auto-login na kalkulator stranici, čak i ako je
-  // kalkulator već bio otvoren bez prijave ili s drugim korisnikom.
+  // krug — vidi punu napomenu uz CSS .kalkulator-login-btn gore). Od
+  // 1.10.2026. ovo je JEDINI način da se kartica kalkulatora otvori — i
+  // izravan klik na karticu (toggleKalkulatorEmbed gore) sad poziva baš
+  // ovu funkciju čim su kućice popunjene. Uvijek (ponovno) postavlja
+  // iframe.src — jedino tako se pouzdano pokreće auto-login na kalkulator
+  // stranici, čak i ako je kalkulator već bio otvoren bez prijave (više
+  // nije moguće) ili s drugim korisnikom.
   function kalkulatorNaslovnicaPrijava_(event){
     if (event) { event.stopPropagation(); }
     var userEl = document.getElementById('kalkulator-login-user');
@@ -6133,6 +6133,26 @@
       });
     }
   })();
+
+  // NOVO (1.10.2026., Sašin izričit zahtjev — "ako se korisnik na kalkulatoru odjavi, želim da se kartica
+  // kalkulator na naslovnici zatvori i zaključa"): kalkulator (InTime_KalkulatorCijena.html), kad je
+  // ugrađen u ovaj iframe, na klik "Odjava" šalje postMessage({intimeKalkulator:'odjava'}) roditeljskoj
+  // stranici (vidi odjavaBtn handler ondje). Ovdje se ta poruka hvata — kartica se zatvara (isto kao gumb
+  // "Zatvori") I zaključava: iframe.src se briše (sljedeće otvaranje kreće od prijavne kućice, ne od
+  // zadnje upamćene sesije) i kućice korisničko ime/lozinka se prazne, pa kartica ostaje zaključana dok
+  // netko ponovno ne upiše pristupne podatke.
+  window.addEventListener('message', function(ev){
+    if (!ev || !ev.data || ev.data.intimeKalkulator !== 'odjava') { return; }
+    closeKalkulatorEmbed();
+    var iframe = document.getElementById('kalkulator-embed-iframe');
+    if (iframe) { iframe.removeAttribute('src'); }
+    var userEl = document.getElementById('kalkulator-login-user');
+    var passEl = document.getElementById('kalkulator-login-pass');
+    var statusEl = document.getElementById('kalkulator-login-status');
+    if (userEl) { userEl.value = ''; }
+    if (passEl) { passEl.value = ''; }
+    if (statusEl) { statusEl.textContent = ''; }
+  });
 
   function toggleKalkulatorFullscreen(event){
     if (event) { event.stopPropagation(); }

@@ -1539,6 +1539,14 @@ let korisnikUcitaoVlastitiCjenik_ = false;
 // Koristi ga ISKLJUČIVO zabiljeziIzracunEvidencija_()/prijava-log niže da zna kojem klijentu pripisati
 // zapis; anonimni posjetitelji (bez prijave) se ne evidentiraju — nemaju kome pripisati zapis.
 let prijavljeniKorisnickoIme_ = null;
+// Lozinka PRIJAVLJENOG klijenta, čisto u memoriji stranice — NIKAD u localStorage/sessionStorage (1.10.2026.,
+// Sašin izričit zahtjev — "reset obračuna ne smije odjaviti korisnika"). Koristi je ISKLJUČIVO
+// resetObracunaBtn niže da nakon punog reloada stranice (jedini pouzdan način da se SIGURNO vrati baš
+// svako polje/dinamički redak u prazno početno stanje — ima previše međusobno povezanih polja/redaka
+// za ručni, djelomičan reset) odmah ponovno automatski prijavi ISTOG klijenta preko već postojećeg
+// ?kalk_u=/?kalk_p= mehanizma (vidi ucitajPrijavuIzUrlaAkoPostoji_ na dnu) — isti obrazac kao i gumb
+// "Prijava" na naslovnici. Briše se na odjavu.
+let prijavljenaLozinka_ = null;
 // Ugovoreni postotak naknade za nestandardnu pošiljku, pročitan iz učitanog cjenika (Excel), ako postoji.
 // null = nije pronađen/nije učitan poseban cjenik -> koristi se zadanih 100% (frakcija 1).
 let cjenikNestandardnaPct = null;
@@ -4129,15 +4137,27 @@ function izracunaj(){
 // ---------- Reset cijelog obračuna (17.9.2026., Sašin zahtjev) ----------
 // Gumb pri vrhu stranice (u headeru) koji vraća CIJELI kalkulator u prazno, početno stanje — uvijek prvo
 // traži potvrdu, jer je riječ o nepovratnom brisanju svih upisanih podataka o pošiljci. Namjerno implementirano
-// kao potpuno ponovno učitavanje stranice (location.reload()), a NE ručno resetiranje svakog polja pojedinačno
-// — jednostavnije je i pouzdanije (jamči doista prazno stanje, uključujući sva polja koja bi se u budućnosti
-// mogla dodati), ali napomena: to ujedno briše i eventualno UČITANI ugovoreni cjenik (Excel upload), jer taj
-// podatak postoji samo u memoriji stranice dok je otvorena, ne trajno spremljen — ako Saša poželi da se cjenik
-// sačuva kroz reset, treba drugačiji (selektivan) pristup.
+// kao potpuno ponovno učitavanje stranice, a NE ručno resetiranje svakog polja pojedinačno — jednostavnije
+// je i pouzdanije (jamči doista prazno stanje, uključujući dinamičke retke poput "dimenzije po koletu" i
+// sva polja koja bi se u budućnosti mogla dodati).
+//
+// ISPRAVAK (1.10.2026., Sašin izričit zahtjev — "reset obračuna odjavi korisnika, ne želim da to radi dok
+// se on sam ne odjavi"): obično ponovno učitavanje (location.reload()) gubi prijavu, jer stranica (po
+// ranijem, namjernom Sašinom zahtjevu — vidi napomenu uz ucitajPrijavuIzUrlaAkoPostoji_ niže) NIKAD ne
+// pamti prijavu u localStorage — svaki "svjež" dolazak na stranicu uvijek traži lozinku. To je bilo točno
+// ponašanje za NOVI posjet, ali ne i za ovaj gumb unutar VEĆ prijavljene sesije. Rješenje: ako je klijent
+// trenutno prijavljen, reset se radi kao ponovno učitavanje NA ISTI, već postojeći ?kalk_u=/?kalk_p=
+// mehanizam (isti kao gumb "Prijava" na naslovnici) — stranica se u potpunosti isprazni (jamstvo kao i
+// dosad), a zatim se ISTI klijent odmah automatski ponovno prijavi, bez da itko ponovno upisuje lozinku.
 document.getElementById('resetObracunaBtn').addEventListener('click', function(){
   const potvrdjeno = confirm('RESET OBRAČUNA\n\nJeste li sigurni da želite resetirati cijeli obračun? Svi uneseni podaci o pošiljci (težina, dimenzije, mjesta, dopunske usluge...) bit će trajno izbrisani.\n\nOva radnja se ne može poništiti.');
   if(potvrdjeno){
-    location.reload();
+    if(prijavljeniKorisnickoIme_ && prijavljenaLozinka_){
+      var noviUrl = window.location.pathname + '?kalk_u=' + encodeURIComponent(prijavljeniKorisnickoIme_) + '&kalk_p=' + encodeURIComponent(prijavljenaLozinka_);
+      window.location.href = noviUrl;
+    } else {
+      location.reload();
+    }
   }
 });
 
@@ -4506,6 +4526,7 @@ function prijaviKlijenta_(username, lozinka, tiho){
     }
     korisnikUcitaoVlastitiCjenik_ = true;
     prijavljeniKorisnickoIme_ = username;
+    prijavljenaLozinka_ = lozinka;
     if(Array.isArray(res.cjenik) && res.cjenik.length){
       CURRENT_CJENIK = res.cjenik.slice();
       renderCjenikTable(CURRENT_CJENIK);
@@ -4555,9 +4576,20 @@ document.getElementById('odjavaBtn').addEventListener('click', function(){
   try{ localStorage.removeItem(PRIJAVA_LS_KLJUC_); }catch(eLs){ /* zanemari */ }
   korisnikUcitaoVlastitiCjenik_ = false;
   prijavljeniKorisnickoIme_ = null;
+  prijavljenaLozinka_ = null;
   document.getElementById('prijavaUsername').value = '';
   document.getElementById('prijavaLozinka').value = '';
   prijavaPostaviNeaktivnoStanje_();
+  // NOVO (1.10.2026., Sašin izričit zahtjev — "ako se korisnik na kalkulatoru odjavi, želim da se
+  // kartica kalkulator na naslovnici zatvori i zaključa") — ako je ova stranica ugrađena u iframe na
+  // naslovnici (InTime_PismoNamjere.html), javi roditeljskoj stranici da se odjava dogodila, da ona
+  // može zatvoriti/zaključati svoju karticu. Ako stranica NIJE u iframeu (otvorena izravno/u novom
+  // prozoru), window.parent === window pa se poruka jednostavno ne šalje nikome — bez greške.
+  try{
+    if(window.parent && window.parent !== window){
+      window.parent.postMessage({ intimeKalkulator: 'odjava' }, '*');
+    }
+  }catch(eMsg){ /* best-effort, nikad ne prekida odjavu */ }
   resetCjenik();
 });
 
