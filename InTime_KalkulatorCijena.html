@@ -4488,7 +4488,14 @@ function prijaviKlijenta_(username, lozinka, tiho){
     scheduleLiveIzracunaj();
     prijavaPostaviAktivnoStanje_(res.naziv);
     if(statusEl){ statusEl.textContent = ''; statusEl.classList.remove('error'); }
-    try{ localStorage.setItem(PRIJAVA_LS_KLJUC_, JSON.stringify({ u: username, p: lozinka })); }catch(eLs){ /* privatni način preglednika i sl. — prijava i dalje radi, samo se ne pamti za sljedeći posjet */ }
+    // NAPOMENA (30.9.2026., sedamnaesti/osamnaesti krug, Sašin izričit
+    // zahtjev — "kad odem na link odmah me uvede u kalkulator... želio bih
+    // da ipak ima kutiju za ulaz"): prijava se VIŠE NE PAMTI u localStorage
+    // za sljedeći posjet — direktan dolazak na ovu stranicu UVIJEK prikazuje
+    // prijavnu formu. Jedini put kad se prijava automatski popuni/pošalje je
+    // preko ?kalk_u=/?kalk_p= URL parametara (gumb "Prijava" na naslovnici,
+    // ili poveznica koju admin pošalje klijentu) — to je EKSPLICITNA radnja,
+    // ne tiho pamćenje iz prošlog posjeta.
     // Evidencija prijave (30.9.2026., Sašin izričit zahtjev) — fire-and-forget,
     // NE čeka se i ne prikazuje se ništa klijentu bez obzira na ishod.
     zabiljeziKalkulatorEvidenciju_('Prijava', null, '', '');
@@ -4536,9 +4543,17 @@ document.getElementById('odjavaBtn').addEventListener('click', function(){
 // (npr. kriva lozinka) mora biti vidljiva korisniku, ne samo nestati.
 // Polja se unaprijed popune istim podacima radi transparentnosti (i da
 // "Prijava" gumb ovdje radi odmah ako korisnik ručno ponovno pokuša).
-// Ima PRIORITET nad tihom prijavom iz localStorage ispod — različit
-// korisnik koji dođe preko naslovnice ne smije ostati prijavljen kao
-// netko iz prijašnje posjete na ovom uređaju.
+// (30.9.2026., sedamnaesti/osamnaesti krug, ISPRAVAK — Sašin izričit
+// zahtjev: "kad odem na link odmah me uvede u kalkulator... želio bih da
+// ipak ima kutiju za ulaz") — dosad je ovdje, ISPOD ove funkcije, postojala
+// i "tiha automatska prijava" koja je, ako je korisnik OSTAO PRIJAVLJEN iz
+// prošlog posjeta (localStorage), preskočila prijavnu formu u potpunosti.
+// To je UKLONJENO — direktan dolazak na ovu stranicu (bez ?kalk_u=/?kalk_p=
+// u linku) UVIJEK prikazuje praznu prijavnu formu, bez obzira je li se
+// netko prije prijavio na ovom uređaju/pregledniku. Jedini način da se
+// polja automatski popune/pošalju je EKSPLICITNO preko URL parametara
+// ispod (gumb "Prijava" na naslovnici, ili poveznica koju admin pošalje
+// klijentu) — to je namjerna radnja, ne tiho pamćenje unatrag.
 function ucitajPrijavuIzUrlaAkoPostoji_(){
   var params;
   try{ params = new URLSearchParams(window.location.search); }catch(eUrl){ return false; }
@@ -4552,18 +4567,7 @@ function ucitajPrijavuIzUrlaAkoPostoji_(){
   prijaviKlijenta_(u, p, false);
   return true;
 }
-
-// Tiha automatska prijava ako je korisnik prošli put ostao prijavljen na
-// ovom uređaju/pregledniku (isti obrazac otpornosti kao i ostatak ove
-// stranice — ako ne uspije, samo se prikaže login forma, ništa se ne ruši).
-(function(){
-  if(ucitajPrijavuIzUrlaAkoPostoji_()){ return; }
-  var spremljeno;
-  try{ spremljeno = JSON.parse(localStorage.getItem(PRIJAVA_LS_KLJUC_) || 'null'); }catch(eLs){ spremljeno = null; }
-  if(spremljeno && spremljeno.u && spremljeno.p){
-    prijaviKlijenta_(spremljeno.u, spremljeno.p, true);
-  }
-})();
+ucitajPrijavuIzUrlaAkoPostoji_();
 </script>
 
 </body>

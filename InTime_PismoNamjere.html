@@ -292,12 +292,26 @@
      <button>, jer <button> ne smije sadržavati <input> (nevaljan HTML,
      browser bi ih izbacio iz elementa). Klik/fokus na poljima zaustavlja
      probijanje klika do gumba (stopPropagation u HTML-u niže) da se kartica
-     ne otvara/zatvara dok korisnik upisuje. */
+     ne otvara/zatvara dok korisnik upisuje.
+     30.9.2026. (sedamnaesti krug, isti dan, Sašin izričit zahtjev — "napravi
+     prijavu neka bude vertikalna tipka pokriva obje kućice s desne strane...
+     2 paralelno za unos i jedan vertikalna da klikne da potvrdi unos"):
+     preslagano iz "dva retka + gumb ispod" u "dva retka jedno ispod
+     drugoga (.kalkulator-login-polja) + VISOKI gumb s desne strane koji
+     visinom pokriva oba retka" (.kalkulator-login-red = flex red,
+     align-items:stretch — gumb se razvlači na punu visinu susjednog stupca
+     s poljima). Tekst gumba ispisan OKOMITO (writing-mode:vertical-rl) jer
+     je gumb uzak i visok, ne širok — prirodnije se čita odozgo prema dolje
+     nego zbijen/sitan vodoravan tekst. Na mobitelu (≤640px) vraćeno na
+     vodoravan raspored (gumb ispod, vodoravan tekst) jer uska visoka traka
+     ne pristaje uskom mobilnom zaslonu. */
   .kalkulator-kartica-wrap{position:relative;}
   .kalkulator-login-kucice{
     position:absolute;top:50%;right:64px;transform:translateY(-50%);
-    display:flex;flex-direction:column;gap:7px;z-index:3;
+    display:flex;flex-direction:column;gap:6px;z-index:3;
   }
+  .kalkulator-login-red{display:flex;align-items:stretch;gap:8px;}
+  .kalkulator-login-polja{display:flex;flex-direction:column;gap:7px;justify-content:center;}
   .kalkulator-login-polje{display:flex;align-items:center;gap:8px;}
   .kalkulator-login-polje label{
     font-size:12.5px;font-weight:700;letter-spacing:.01em;
@@ -326,9 +340,10 @@
      ove kućice bile ČISTO vizualne (FAZA 1, bez ikakve radnje); sad gumb
      stvarno prijavljuje klijenta — vidi kalkulatorNaslovnicaPrijava_ niže. */
   .kalkulator-login-btn{
-    align-self:flex-end;padding:5px 14px;border-radius:6px;border:none;
+    align-self:stretch;padding:6px 8px;border-radius:6px;border:none;
     background:var(--teal,#229891);color:#fff;font-size:12.5px;font-weight:700;
-    cursor:pointer;
+    cursor:pointer;display:flex;align-items:center;justify-content:center;
+    writing-mode:vertical-rl;text-orientation:mixed;letter-spacing:.03em;
   }
   .kalkulator-login-btn:hover{opacity:.88;}
   .kalkulator-login-status{
@@ -340,8 +355,12 @@
       position:static;transform:none;margin:14px 0 0;
       align-items:center;
     }
+    .kalkulator-login-red{flex-direction:column;align-items:center;width:100%;}
+    .kalkulator-login-polja{width:100%;align-items:center;}
     .kalkulator-login-polje label{color:var(--graphite,#333);text-shadow:none;}
-    .kalkulator-login-btn{align-self:center;}
+    .kalkulator-login-btn{
+      writing-mode:horizontal-tb;align-self:center;width:auto;padding:6px 18px;
+    }
     .kalkulator-login-status{color:var(--danger,#c0392b);text-shadow:none;text-align:center;}
   }
   /* GORIVO — nova kartica (25.9.2026., Faza 2, Sašin izričit zahtjev: "to je
@@ -1595,15 +1614,19 @@
              stopPropagation na cijeloj kućici da klik/fokus u polje ne
              otvara/zatvara karticu ispod. -->
         <div class="kalkulator-login-kucice" onclick="event.stopPropagation()">
-          <div class="kalkulator-login-polje">
-            <label for="kalkulator-login-user">Korisnik:</label>
-            <input type="text" id="kalkulator-login-user" class="kalkulator-login-input" autocomplete="off" placeholder="korisničko ime">
+          <div class="kalkulator-login-red">
+            <div class="kalkulator-login-polja">
+              <div class="kalkulator-login-polje">
+                <label for="kalkulator-login-user">Korisnik:</label>
+                <input type="text" id="kalkulator-login-user" class="kalkulator-login-input" autocomplete="off" placeholder="korisničko ime">
+              </div>
+              <div class="kalkulator-login-polje">
+                <label for="kalkulator-login-pass">Lozinka:</label>
+                <input type="password" id="kalkulator-login-pass" class="kalkulator-login-input" autocomplete="off" placeholder="lozinka">
+              </div>
+            </div>
+            <button type="button" id="kalkulator-login-btn" class="kalkulator-login-btn" onclick="kalkulatorNaslovnicaPrijava_(event)">Prijava</button>
           </div>
-          <div class="kalkulator-login-polje">
-            <label for="kalkulator-login-pass">Lozinka:</label>
-            <input type="password" id="kalkulator-login-pass" class="kalkulator-login-input" autocomplete="off" placeholder="lozinka">
-          </div>
-          <button type="button" id="kalkulator-login-btn" class="kalkulator-login-btn" onclick="kalkulatorNaslovnicaPrijava_(event)">Prijava</button>
           <div id="kalkulator-login-status" class="kalkulator-login-status"></div>
         </div>
       </div>
