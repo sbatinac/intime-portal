@@ -2967,18 +2967,18 @@
     // drugačiji (sivkasti) izgled od OSM karte na kartici.
     // PROMIJENJENO (2.10.2026., dvadeset i osmi krug, Sašin izričit zahtjev
     // — "probaj staviti onu bolju mapu koju smo gore stavili u mail", uz
-    // screenshot Leaflet karte na kartici): natrag na staticmap.openstreetmap.de
-    // (isti OSM Mapnik stil kao Leaflet na kartici, bijelo-pastelne boje) —
-    // ovaj servis je RANIJE (dvadeset i prvi krug) bio odbačen kao
-    // "nepouzdan", ALI tadašnji problem je bio da se slika hot-linkala
-    // izravno u mail (fetch u trenutku OTVARANJA maila, kod primatelja) — isti
-    // problem koji je kasnije (dvadeset i šesti krug) pogodio i Yandex.
-    // Otkad se slika dohvaća NA SERVERU (Apps Script) PRIJE slanja i ugrađuje
-    // kao cid: privitak (vidi ugradiKartuPrikupaInlineAkoPostoji_ u
-    // InTime_Code.gs, sad prepoznaje i ovaj URL obrazac), taj specifični
-    // uzrok otpada — vrijedi probati ponovno. Ako se ipak pokaže nepouzdanim
-    // (servis je poznat kao povremeno spor/nestabilan), fail-safe ostaje:
-    // mail ide dalje s izvornim linkom, slanje se nikad ne ruši.
+    // screenshot Leaflet karte na kartici): pokušano staticmap.openstreetmap.de
+    // — Saša je stvarnim testom (isti dan, naknadno) potvrdio da slika OPET
+    // ne radi, ni u narančastom ni u zelenom mailu. Provjereno izravno s
+    // ovog poslužitelja: staticmap.openstreetmap.de ne odgovara na upit
+    // (spoj ne uspijeva), dok static-maps.yandex.ru odgovara ispravno
+    // (HTTP 200, stvarna PNG slika) — isti servis koji je već JEDNOM bio
+    // potvrđeno funkcionalan (dvadeset i peti/šesti krug, s cid: ugradnjom).
+    // VRAĆENO NATRAG na static-maps.yandex.ru (2.10.2026., dvadeset i deveti
+    // krug) — pouzdanije od staticmap.openstreetmap.de, uz poznati kompromis
+    // (sitna "Яндекс" oznaka u kutu, prihvatljivo za INTERNI mail
+    // poslovnicama). `ugradiKartuPrikupaInlineAkoPostoji_` u InTime_Code.gs
+    // već prepoznaje OBA obrasca URL-a, nije trebalo mijenjati.
     // Slika i poveznica idu ZAJEDNO (slika za brz pregled bez klikanja,
     // poveznica ispod za otvaranje prave, interaktivne karte).
     // NE geokodira ništa iznova ovdje, čisto prikaz onoga što je admin već
@@ -2988,7 +2988,7 @@
     var kartaPrikupaLon = fieldVal(entry, 'Karta prikupa - lon (admin)');
     var slikaPrikupa = (kartaPrikupaLat && kartaPrikupaLon)
       ? ('<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:6px 0 8px;border-collapse:collapse;"><tr><td align="center" style="padding:0;">' +
-           '<img src="https://staticmap.openstreetmap.de/staticmap.php?center=' + encodeURIComponent(kartaPrikupaLat) + ',' + encodeURIComponent(kartaPrikupaLon) + '&zoom=16&size=600x300&markers=' + encodeURIComponent(kartaPrikupaLat) + ',' + encodeURIComponent(kartaPrikupaLon) + ',red-pushpin" width="600" height="300" alt="Karta lokacije prikupa" style="display:block;width:100%;max-width:600px;height:auto;border-radius:8px;border:2px solid #0f8b7e;" />' +
+           '<img src="https://static-maps.yandex.ru/1.x/?lang=en_US&ll=' + encodeURIComponent(kartaPrikupaLon) + ',' + encodeURIComponent(kartaPrikupaLat) + '&z=16&l=map&size=600,300&pt=' + encodeURIComponent(kartaPrikupaLon) + ',' + encodeURIComponent(kartaPrikupaLat) + ',pm2rdl" width="600" height="300" alt="Karta lokacije prikupa" style="display:block;width:100%;max-width:600px;height:auto;border-radius:8px;border:2px solid #0f8b7e;" />' +
          '</td></tr></table>' +
          '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 16px;border-collapse:collapse;"><tr><td align="center" bgcolor="#ffffff" style="border-radius:8px;border:2px solid #0f8b7e;background-color:#ffffff;"><a href="https://www.openstreetmap.org/?mlat=' + encodeURIComponent(kartaPrikupaLat) + '&mlon=' + encodeURIComponent(kartaPrikupaLon) + '#map=17/' + encodeURIComponent(kartaPrikupaLat) + '/' + encodeURIComponent(kartaPrikupaLon) + '" target="_blank" rel="noopener" style="display:block;width:100%;box-sizing:border-box;padding:10px 18px;font-family:Arial,Helvetica,sans-serif;font-size:13px;font-weight:bold;color:#0f8b7e;text-decoration:none;text-align:center;">🗺️ Otvori veću, interaktivnu kartu</a></td></tr></table>')
       : '<p style="font-size:11.5px;color:#888888;margin:0 0 16px;">[Karta lokacije prikupa još nije generirana — klikni "🗺️ Prikaži kartu prikupa" na kartici klijenta (blok "Podaci o prikupu pošiljaka") prije slanja ovog maila.]</p>';
@@ -5042,13 +5042,25 @@
   function buildKalkulatorIsprobajPanel_() {
     var wrap = document.createElement('div');
     wrap.className = 'faq-admin-card';
+    // Sašin izričit zahtjev (2.10.2026.): "kalkulator u adminu treba biti
+    // otključan, samo u adminu... neka bude onaj osnovni s defaultnim
+    // cjenikom" — dosad je ova ugrađena stranica, kao i svima, pokazivala
+    // prijavni zaključan ekran (trebala je stvarno korisničko ime/lozinku
+    // nekog klijenta). Sad se uz URL dodaje ?kalk_admin=<adminToken> — ISTI
+    // token kojim je admin već prijavljen u ovom sučelju (provjerava ga
+    // kalkulatorAdminPrijava u InTime_Code.gs preko isValidAdminToken_, isto
+    // kao sve druge admin radnje) — stranica to prepozna i odmah se
+    // otključa BEZ klijentske prijave, ostajući na osnovnom/zadanom cjeniku
+    // (nikad na nekog klijenta personaliziranom). Vrijedi i za "Otvori u
+    // novom prozoru" i za sam iframe.
+    var kalkUrlAdmin_ = 'InTime_KalkulatorCijena.html' + (adminToken ? ('?kalk_admin=' + encodeURIComponent(adminToken)) : '');
     wrap.innerHTML =
       '<h3>Isprobaj kalkulator</h3>' +
-      '<p class="faq-admin-hint">Ovo je STVARNI kalkulator s naslovnice, ugrađen ovdje radi isprobavanja — nije kopija, pa se svaka promjena (npr. novi zadani cjenik postavljen u pod-kartici "Postavke osnovnog kalkulatora") ovdje odmah vidi, isto kao i klijentima. Osvježite karticu (ili ponovno otvorite ovaj pod-tab) da vidite najsvježije stanje ako ga upravo mijenjate.</p>' +
+      '<p class="faq-admin-hint">Ovo je STVARNI kalkulator s naslovnice, ugrađen ovdje radi isprobavanja — nije kopija, pa se svaka promjena (npr. novi zadani cjenik postavljen u pod-kartici "Postavke osnovnog kalkulatora") ovdje odmah vidi, isto kao i klijentima. U adminu je uvijek odmah OTKLJUČAN i prikazuje osnovni/zadani cjenik, bez potrebe za klijentskom prijavom. Osvježite karticu (ili ponovno otvorite ovaj pod-tab) da vidite najsvježije stanje ako ga upravo mijenjate.</p>' +
       '<div class="faq-admin-card-actions" style="margin-bottom:10px;">' +
-        '<a href="InTime_KalkulatorCijena.html" target="_blank" rel="noopener" class="btn btn-outline btn-small">↗ Otvori u novom prozoru</a>' +
+        '<a href="' + esc(kalkUrlAdmin_) + '" target="_blank" rel="noopener" class="btn btn-outline btn-small">↗ Otvori u novom prozoru</a>' +
       '</div>' +
-      '<iframe src="InTime_KalkulatorCijena.html" title="In Time — kalkulator cijene dostave (isprobavanje u adminu)" loading="lazy" class="kalk-isprobaj-iframe"></iframe>';
+      '<iframe src="' + esc(kalkUrlAdmin_) + '" title="In Time — kalkulator cijene dostave (isprobavanje u adminu, otključano)" loading="lazy" class="kalk-isprobaj-iframe"></iframe>';
     return wrap;
   }
 
@@ -11211,6 +11223,14 @@
             // čekanja ponovnog učitavanja kartice.
             poslGuardRecheck_();
             poslOsvjeziPregledAkoPostoji_();
+            // ISPRAVAK (2.10.2026.): nedostajao je isti osvježavajući poziv
+            // za narančasti panel — ako je narančasti panel već otvoren (ili
+            // se otvori nakon ovog klika) dok admin generira/osvježava
+            // kartu, njegov pregled maila je dosad ostajao sa starim
+            // "karta još nije generirana" tekstom dok se stranica ne
+            // ponovno učita. Sad se i on uživo osvježi, isto kao zeleni.
+            svepGuardRecheck_();
+            svepOsvjeziPregledAkoPostoji_();
           } else {
             prikupKartaStatusEl.textContent = res.message || 'Generiranje karte nije uspjelo.';
             prikupKartaStatusEl.classList.add('error');

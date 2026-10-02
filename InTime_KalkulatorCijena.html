@@ -4625,7 +4625,47 @@ function ucitajPrijavuIzUrlaAkoPostoji_(){
   prijaviKlijenta_(u, p, false);
   return true;
 }
-ucitajPrijavuIzUrlaAkoPostoji_();
+
+// NOVO (2.10.2026., Sašin izričit zahtjev — "kalkulator u adminu treba biti
+// otključan, samo u adminu... neka bude onaj osnovni s defaultnim
+// cjenikom"): poseban ulaz preko ?kalk_admin=<adminToken> — generira ga
+// buildKalkulatorIsprobajPanel_ u InTime_Admin.html (ugrađeni iframe/link
+// "Isprobaj kalkulator"), koristi POSTOJEĆI admin token (provjerava ga
+// kalkulatorAdminPrijava u InTime_Code.gs preko isValidAdminToken_, isto
+// kao sve druge admin radnje). Za razliku od prijaviKlijenta_ iznad: NE
+// mijenja CURRENT_CJENIK (ostaje na već učitanom zadanom/admin-postavljenom
+// cjeniku iz ucitajZadaniCjenikSaAdmina_), NE postavlja
+// prijavljeniKorisnickoIme_/prijavljenaLozinka_ (nije stvarni klijent), i NE
+// bilježi evidenciju prijave — samo otključava prikaz
+// (prijavaPostaviAktivnoStanje_), isto kao uspješna klijentska prijava.
+function ucitajAdminPrijavuIzUrlaAkoPostoji_(){
+  var params;
+  try{ params = new URLSearchParams(window.location.search); }catch(eUrl){ return false; }
+  var adminTok = params.get('kalk_admin');
+  if(!adminTok){ return false; }
+  gorivoGasCall_({ action: 'kalkulatorAdminPrijava', token: adminTok }).then(function(res){
+    if(!res || res.status !== 'ok'){
+      var statusEl = document.getElementById('prijavaStatus');
+      if(statusEl){
+        statusEl.textContent = (res && res.message) ? res.message : 'Admin prijava nije uspjela.';
+        statusEl.classList.add('error');
+      }
+      return;
+    }
+    prijavaPostaviAktivnoStanje_(res.naziv || 'Administrator (osnovni cjenik)');
+  }).catch(function(){
+    var statusEl = document.getElementById('prijavaStatus');
+    if(statusEl){
+      statusEl.textContent = 'Greška u komunikaciji s poslužiteljem.';
+      statusEl.classList.add('error');
+    }
+  });
+  return true;
+}
+
+if(!ucitajAdminPrijavuIzUrlaAkoPostoji_()){
+  ucitajPrijavuIzUrlaAkoPostoji_();
+}
 </script>
 
 </body>
