@@ -747,6 +747,77 @@
   .af-posl-slanje-status.ok{color:#1a7a3c;}
   .af-posl-slanje-status.error{color:#b3261e;}
 
+  /* Panel "Pošalji obavijest SVIM poslovnicama" (Sašin izričit zahtjev,
+     2.10.2026.: "još jedan mail kao ove što smo napravili... narančasta
+     boja... pošalji obavijest svim poslovnicama o otvorenom poslovnom
+     subjektu"). ISTI obrazac kao .af-posl-mail-blok iznad (isti tag-
+     mehanizam/predložak sustav/uvodni tekst backend), samo ČETVRTA brend
+     boja (#e67e22, narančasta) i DRUGAČIJI skup primatelja — SVE poslovnice,
+     ne samo nadležne za ovog klijenta (vidi svepIzracunajZadanePrimatelje_
+     niže u ovoj datoteci). Kategorija predloška: 'sve_poslovnice_obavijest'.
+     NAMJERNO ODMAH ISPOD zelenog panela — logičan slijed: prvo (zeleno)
+     obavijest nadležnoj poslovnici koja stvarno preuzima klijenta, zatim
+     (narančasto) kratka obavijest svima da obrate pažnju. */
+  .af-svep-mail-blok{grid-column:1 / -1;margin-top:14px;overflow:hidden;border-radius:12px;}
+  .af-svep-mail-traka{display:flex;justify-content:space-between;align-items:center;gap:10px;cursor:pointer;background:#e67e22;color:#fff;border-radius:12px;padding:13px 16px;font-size:13px;font-weight:800;letter-spacing:.02em;user-select:none;}
+  .af-svep-mail-traka:hover{opacity:.93;}
+  .af-svep-mail-traka .chevron{font-size:13px;transition:transform .15s;flex-shrink:0;}
+  .af-svep-mail-blok.expanded .af-svep-mail-traka .chevron{transform:rotate(180deg);}
+  .af-svep-mail-blok.expanded .af-svep-mail-traka{border-radius:12px 12px 0 0;}
+  .af-svep-mail-panel{display:none;border:2px solid #f3cd9e;border-top:none;border-radius:0 0 12px 12px;padding:14px;background:#fdf1e6;}
+  .af-svep-mail-blok.expanded .af-svep-mail-panel{display:block;}
+  .af-svep-mail-blok.locked .af-svep-mail-traka{background:#8a94a6;cursor:not-allowed;}
+  .af-svep-mail-blok.locked .af-svep-mail-traka:hover{opacity:1;}
+  .af-svep-guard-lock{font-size:13px;flex-shrink:0;}
+  .af-svep-guard-hint{background:#eef1f5;color:#4a5568;font-size:11.5px;line-height:1.6;padding:9px 16px;border:2px solid #d7dbe3;border-top:none;border-radius:0 0 12px 12px;display:flex;flex-wrap:wrap;gap:4px 12px;}
+  .af-svep-guard-stavka{font-weight:800;color:#b3261e;}
+  .af-svep-guard-stavka.ok{color:#1a7a3c;}
+  .af-svep-mail-hint{font-size:11.5px;color:var(--grey);line-height:1.5;margin:0 0 10px;}
+  .af-svep-predlozak-okvir{background:#fff;border:1px solid #d7dbe3;border-radius:10px;padding:12px;margin-bottom:12px;}
+  .af-svep-predlozak-alati{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;}
+  .af-svep-predlozak-select{flex:1 1 200px;min-width:160px;padding:6px 8px;border:1px solid #ccd2da;border-radius:6px;font-size:12px;}
+  .af-svep-predlozak-btn{background:#fff;border:1px solid #ccd2da;border-radius:6px;padding:6px 10px;font-size:11.5px;font-weight:700;cursor:pointer;white-space:nowrap;}
+  .af-svep-predlozak-btn:hover{background:#f3f4f6;}
+  .af-svep-predlozak-btn:disabled{opacity:.5;cursor:not-allowed;}
+  .af-svep-predlozak-pregled{border:1px dashed #ccd2da;border-radius:8px;padding:10px 12px;font-size:12.5px;line-height:1.6;max-height:260px;overflow-y:auto;background:#fafbfc;}
+  .af-svep-predlozak-predmet{font-weight:800;margin-bottom:8px;color:#1f3d3a;}
+  .af-svep-predlozak-tijelo{white-space:pre-wrap;}
+  .af-svep-predlozak-prazno{color:var(--grey);font-size:12px;}
+  .af-svep-predlozak-status{font-size:11px;min-height:14px;margin-top:6px;}
+  .af-svep-predlozak-status.error{color:#b3261e;}
+  .svep-predlozak-html-pregled{width:100%;min-height:120px;border:none;display:block;}
+  .af-svep-uvodni-okvir{margin-top:12px;padding-top:12px;border-top:1px dashed #f3cd9e;}
+  .af-svep-uvodni-label{display:block;font-size:11.5px;font-weight:700;color:#9a5a0a;margin-bottom:5px;}
+  .af-svep-uvodni-textarea{width:100%;min-height:56px;resize:vertical;box-sizing:border-box;font-size:13px;font-family:inherit;padding:8px 10px;border:1px solid #f3cd9e;border-radius:8px;margin-bottom:8px;}
+  .af-svep-uvodni-chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;}
+  .af-svep-uvodni-chip{display:inline-flex;align-items:center;gap:6px;background:#fdebd3;border:1px solid #f0c389;color:#8a4b05;font-size:11.5px;border-radius:14px;padding:5px 6px 5px 11px;cursor:pointer;max-width:100%;}
+  .af-svep-uvodni-chip.prilagodjen{background:#fce6e4;border-color:#f0b8b3;color:#8c2b22;}
+  .af-svep-uvodni-chip-tekst{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:260px;}
+  .af-svep-uvodni-chip-x{background:rgba(0,0,0,.08);border:none;border-radius:50%;width:16px;height:16px;line-height:16px;font-size:12px;color:inherit;cursor:pointer;flex-shrink:0;padding:0;}
+  .af-svep-uvodni-chip-x:hover{background:rgba(0,0,0,.18);}
+  .af-svep-uvodni-prazno{font-size:11.5px;color:#8a94a6;}
+  .af-svep-uvodni-alati{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px;}
+  .af-svep-uvodni-status{font-size:11px;min-height:14px;}
+  .af-svep-uvodni-status.ok{color:#1a7a3c;}
+  .af-svep-uvodni-status.error{color:#b3261e;}
+  .af-svep-slanje-okvir{margin-top:12px;padding-top:12px;border-top:1px dashed #f3cd9e;}
+  .af-svep-primatelji-red textarea{width:100%;min-height:44px;resize:vertical;box-sizing:border-box;font-size:12.5px;font-family:inherit;padding:8px 10px;border:1px solid #f3cd9e;border-radius:8px;margin-bottom:4px;}
+  .af-svep-primatelji-alati{display:flex;align-items:center;gap:8px;margin-bottom:6px;}
+  .af-svep-primatelji-reset-status{font-size:11px;min-height:14px;}
+  .af-svep-primatelji-reset-status.ok{color:#1a7a3c;}
+  .af-svep-primatelji-reset-status.error{color:#b3261e;}
+  .af-svep-primatelji-hint{font-size:11px;color:var(--grey);margin:0 0 10px;}
+  .af-svep-test-red{display:flex;gap:8px;margin-bottom:10px;}
+  .af-svep-test-red input{flex:1;padding:7px 9px;border:1px solid #f3cd9e;border-radius:6px;font-size:12px;}
+  .af-svep-kopija-red{display:block;font-size:11.5px;color:var(--grey);margin-bottom:10px;}
+  .af-svep-btn{background:#fff;border:1px solid #f3cd9e;border-radius:6px;padding:8px 12px;font-size:12px;font-weight:700;cursor:pointer;}
+  .af-svep-btn:hover{background:#fdf6ee;}
+  .af-svep-btn.uspjeh{background:#e67e22;border-color:#e67e22;color:#fff;}
+  .af-svep-btn.uspjeh:hover{opacity:.92;}
+  .af-svep-slanje-status{font-size:11.5px;min-height:16px;margin-top:8px;}
+  .af-svep-slanje-status.ok{color:#1a7a3c;}
+  .af-svep-slanje-status.error{color:#b3261e;}
+
   /* Panel "Pošalji pristupne podatke klijentu" (Sašin izričit zahtjev,
      28.9.2026.: mail KLIJENTU s username/password za Online Booking,
      zahvala za odluku o suradnji — IZMEĐU plavog OB zahtjeva i zelene
@@ -3080,7 +3151,7 @@
   function openMailPredlozakModal(predlozak, kategorija) {
     mpTrenutniRowIndex = predlozak ? predlozak.rowIndex : null;
     mpTrenutnaKategorija_ = predlozak ? (predlozak.kategorija || 'ponuda') : (kategorija || 'ponuda');
-    var oznakaKategorije_ = (mpTrenutnaKategorija_ === 'ob_zahtjev') ? ' (zahtjev za Online Booking)' : (mpTrenutnaKategorija_ === 'poslovnica_obavijest' ? ' (obavijest poslovnicama)' : (mpTrenutnaKategorija_ === 'klijent_pristup' ? ' (pristupni podaci klijentu)' : ' (ponuda)'));
+    var oznakaKategorije_ = (mpTrenutnaKategorija_ === 'ob_zahtjev') ? ' (zahtjev za Online Booking)' : (mpTrenutnaKategorija_ === 'poslovnica_obavijest' ? ' (obavijest poslovnicama)' : (mpTrenutnaKategorija_ === 'sve_poslovnice_obavijest' ? ' (obavijest svim poslovnicama)' : (mpTrenutnaKategorija_ === 'klijent_pristup' ? ' (pristupni podaci klijentu)' : ' (ponuda)')));
     document.getElementById('mail-predlozak-modal-naslov').textContent = (predlozak ? 'Uredi predložak' : 'Novi predložak') + oznakaKategorije_;
     document.getElementById('mp-naziv').value = predlozak ? predlozak.naziv : '';
     document.getElementById('mp-predmet').value = predlozak ? predlozak.predmet : '';
@@ -8296,6 +8367,22 @@
     var poslGuardListaHtml_ = poslGuardStavke_.map(function(s) {
       return '<span class="af-posl-guard-stavka' + (s.ok ? ' ok' : '') + '">' + (s.ok ? '✓' : '✕') + ' ' + esc(s.naziv) + '</span>';
     }).join('');
+    // Traka "Pošalji obavijest SVIM poslovnicama" (narančasti panel, Sašin
+    // izričit zahtjev, 2.10.2026., IZMIJENJENO istog dana — "taj panel se ne
+    // može otvoriti dok se ne pošalje prethodni mail... obavijest
+    // poslovnicama"): otključava se ISKLJUČIVO kad je mail "Pošalji obavijest
+    // nadležnim poslovnicama" (zeleni panel iznad) već poslan — NIJE isti
+    // uvjet kao zeleni panel (prvotna, privremena verzija), nego ovisi O
+    // SAMOM slanju zelenog (ADMIN_ONLY_FIELDS.datum_slanja_poslovnice_obavijest,
+    // upisuje adminPosaljiPoslovniceObavijestMail u InTime_Code.gs).
+    var svepGuardPoslovniceObavijestPoslan_ = !!fieldVal(entry, 'Datum slanja obavijesti nadležnim poslovnicama (admin)');
+    var svepGuardOtkljucano_ = svepGuardPoslovniceObavijestPoslan_;
+    var svepGuardStavke_ = [
+      { ok: svepGuardPoslovniceObavijestPoslan_, naziv: 'Obavijest nadležnim poslovnicama poslana' }
+    ];
+    var svepGuardListaHtml_ = svepGuardStavke_.map(function(s) {
+      return '<span class="af-svep-guard-stavka' + (s.ok ? ' ok' : '') + '">' + (s.ok ? '✓' : '✕') + ' ' + esc(s.naziv) + '</span>';
+    }).join('');
     wrap.innerHTML =
       '<div class="af-puni-blok"' + (prikaziPuniBlok ? '' : ' style="display:none"') + '>' +
       '<h3>Podaci koje popunjava In Time — sastavljanje ponude</h3>' +
@@ -9108,7 +9195,7 @@
         // panela — logičan slijed: prvo zahtjev za OB, zatim (kad su
         // podaci spremni) obavijest poslovnicama.
         '<div class="af-posl-mail-blok' + (poslGuardSveOtkljucano_ ? '' : ' locked') + '">' +
-          '<div class="af-posl-mail-traka"><span>📨 Pošalji obavijest poslovnicama (otvoren poslovni subjekt)</span>' +
+          '<div class="af-posl-mail-traka"><span>📨 Pošalji obavijest nadležnim poslovnicama (otvoren poslovni subjekt)</span>' +
             (poslGuardSveOtkljucano_ ? '<span class="chevron">▾</span>' : '<span class="af-posl-guard-lock">🔒</span>') +
           '</div>' +
           (poslGuardSveOtkljucano_ ? '' : '<div class="af-posl-guard-hint">🔒 Otključava se kad bude potvrđeno: ' + poslGuardListaHtml_ + '</div>') +
@@ -9150,6 +9237,74 @@
               '<label class="af-posl-kopija-red"><input type="checkbox" class="af-posl-kopija-cb"> Pošalji i meni kopiju (sbatinac.intime@gmail.com)</label>' +
               '<button type="button" class="af-posl-btn af-posl-posalji-btn uspjeh">📨 Pošalji obavijest</button>' +
               '<div class="af-posl-slanje-status"></div>' +
+            '</div>' +
+          '</div>' +
+        '</div>' +
+        // Panel "Pošalji obavijest SVIM poslovnicama" (Sašin izričit zahtjev,
+        // 2.10.2026.: "treba ugradnju još jednog slanja maila kao ove što
+        // smo napravili... narančasta boja... pošalji obavijest svim
+        // poslovnica o otvorenom poslovnom subjektu... mail primatelji su
+        // sve poslovnice... mail treba biti sadržaja kao i prethodni mail
+        // ukratko o novom klijentu... i da ih molim da pripaze na pošiljke
+        // u startu od novog klijenta jer imamo velika očekivanja od istoga...
+        // da je puno truda uloženo u njegov prelazak u naš logistički
+        // sustav te ako ima bilo kakav problem vezan za tog klijenta da me
+        // kontaktiraju"). Struktura/wiring gotovo 1:1 kopija zelenog panela
+        // iznad (isti tag-mehanizam, isti predložak sustav — kategorija
+        // 'sve_poslovnice_obavijest', isti globalni uvodni-tekst spremište),
+        // s JEDINOM strukturnom razlikom: primatelji se predlažu iz SVIH
+        // logističkih centara (vrsta 'centar') s upisanim mailom, ne samo
+        // onih označenih kao "Nadležna poslovnica" za ovog klijenta (vidi
+        // svepIzracunajZadanePrimatelje_ niže u ovoj funkciji). Uvjet
+        // otključavanja (IZMIJENJENO 2.10.2026., Sašin izričit zahtjev — "taj
+        // panel se ne može otvoriti dok se ne pošalje prethodni mail...
+        // obavijest poslovnicama"): svepGuard* iznad — otključava se
+        // ISKLJUČIVO kad je zeleni panel "Pošalji obavijest NADLEŽNIM
+        // poslovnicama" već poslan, NE samo kad su OB korisničko ime/lozinka
+        // potvrđeni (prvotna, privremena verzija istog dana).
+        '<div class="af-svep-mail-blok' + (svepGuardOtkljucano_ ? '' : ' locked') + '">' +
+          '<div class="af-svep-mail-traka"><span>📣 Pošalji obavijest SVIM poslovnicama (otvoren poslovni subjekt)</span>' +
+            (svepGuardOtkljucano_ ? '<span class="chevron">▾</span>' : '<span class="af-svep-guard-lock">🔒</span>') +
+          '</div>' +
+          (svepGuardOtkljucano_ ? '' : '<div class="af-svep-guard-hint">🔒 Otključava se kad bude potvrđeno: ' + svepGuardListaHtml_ + '</div>') +
+          '<div class="af-svep-mail-panel">' +
+            '<p class="af-svep-mail-hint">Kratka obavijest SVIM poslovnicama (ne samo nadležnoj) da je novi klijent otvoren — traži se pojačana pažnja na pošiljke ovog klijenta u početnom razdoblju. Ide ODVOJENO od maila nadležnoj poslovnici iznad, ne dira ponudu ni njen status.</p>' +
+            '<div class="af-svep-predlozak-okvir">' +
+              '<div class="af-svep-predlozak-alati">' +
+                '<select class="af-svep-predlozak-select"><option value="">Učitavanje…</option></select>' +
+                '<button type="button" class="af-svep-predlozak-btn af-svep-predlozak-novi">+ Novi predložak</button>' +
+                '<button type="button" class="af-svep-predlozak-btn af-svep-predlozak-uredi">✎ Uredi</button>' +
+                '<button type="button" class="af-svep-predlozak-btn af-svep-predlozak-kopiraj">📋 Kopiraj tekst</button>' +
+              '</div>' +
+              '<div class="af-svep-predlozak-pregled"><div class="af-svep-predlozak-prazno">Učitavanje predložaka…</div></div>' +
+              '<div class="af-svep-predlozak-status"></div>' +
+            '</div>' +
+            '<div class="af-svep-uvodni-okvir">' +
+              '<label class="af-svep-uvodni-label">Uvodni tekst (ide na mjesto {{UVODNI_TEKST}} taga u predlošku, ne sprema se u predložak — pregled se odmah osvježava)</label>' +
+              '<textarea class="af-svep-uvodni-textarea" placeholder="npr. Pozdrav svima, obavještavamo vas da je klijent u nastavku otvoren..."></textarea>' +
+              '<div class="af-svep-uvodni-chips"><span class="af-svep-uvodni-prazno">Učitavanje…</span></div>' +
+              '<div class="af-svep-uvodni-alati">' +
+                '<button type="button" class="af-svep-btn af-svep-uvodni-zapamti-btn">💾 Zapamti tekst</button>' +
+                '<button type="button" class="af-svep-btn af-svep-uvodni-reset-btn">↺ Vrati na zadano (10)</button>' +
+              '</div>' +
+              '<div class="af-svep-uvodni-status"></div>' +
+            '</div>' +
+            '<div class="af-svep-slanje-okvir">' +
+              '<div class="af-svep-primatelji-red">' +
+                '<textarea class="af-svep-primatelji-textarea" placeholder="primatelji (e-mail adrese odvojene zarezom) — automatski popunjeno sa SVIM poslovnicama"></textarea>' +
+              '</div>' +
+              '<div class="af-svep-primatelji-alati">' +
+                '<button type="button" class="af-svep-btn af-svep-primatelji-reset-btn">↺ Vrati zadane adrese (sve poslovnice)</button>' +
+                '<span class="af-svep-primatelji-reset-status"></span>' +
+              '</div>' +
+              '<p class="af-svep-primatelji-hint">Automatski predloženo SVIM logističkim centrima iz kartice "Logistički centri i servisi" koji imaju upisan mail (ne samo nadležnoj poslovnici ovog klijenta). Slobodno dodaj/ukloni adrese, odvojene zarezom.</p>' +
+              '<div class="af-svep-test-red">' +
+                '<input type="email" class="af-svep-test-input" placeholder="test adresa za probno slanje">' +
+                '<button type="button" class="af-svep-btn af-svep-test-btn">✉ Pošalji test</button>' +
+              '</div>' +
+              '<label class="af-svep-kopija-red"><input type="checkbox" class="af-svep-kopija-cb"> Pošalji i meni kopiju (sbatinac.intime@gmail.com)</label>' +
+              '<button type="button" class="af-svep-btn af-svep-posalji-btn uspjeh">📣 Pošalji obavijest</button>' +
+              '<div class="af-svep-slanje-status"></div>' +
             '</div>' +
           '</div>' +
         '</div>' +
@@ -9648,6 +9803,25 @@
     };
     var poslOsvjeziPregledAkoPostoji_ = function() {
       if (typeof wrap._poslPregledOsvjezi_ === 'function') { wrap._poslPregledOsvjezi_(); }
+    };
+    // Isti mehanizam, za NOVI narančasti panel "Pošalji obavijest SVIM
+    // poslovnicama" (vidi svepGuard* varijable prije wrap.innerHTML, 2.10.2026.)
+    // — uvjet je isključivo "obavijest nadležnim poslovnicama je poslana" —
+    // poziva se iz zelenog panela ("Pošalji obavijest nadležnim poslovnicama")
+    // send-success handlera niže, bez čekanja ponovnog učitavanja kartice.
+    var svepGuardRecheck_ = function() {
+      var blok = wrap.querySelector('.af-svep-mail-blok');
+      if (!blok || !blok.classList.contains('locked')) { return; }
+      var poslano = !!fieldVal(entry, 'Datum slanja obavijesti nadležnim poslovnicama (admin)');
+      if (!poslano) { return; }
+      blok.classList.remove('locked');
+      var lockIcon = blok.querySelector('.af-svep-guard-lock');
+      if (lockIcon) { lockIcon.outerHTML = '<span class="chevron">▾</span>'; }
+      var hint = blok.querySelector('.af-svep-guard-hint');
+      if (hint) { hint.remove(); }
+    };
+    var svepOsvjeziPregledAkoPostoji_ = function() {
+      if (typeof wrap._svepPregledOsvjezi_ === 'function') { wrap._svepPregledOsvjezi_(); }
     };
 
     // TM broj + 5 polja Online Bookinga — lanac zaključavanja (Sašin
@@ -12907,7 +13081,7 @@
           return;
         }
         var kopijaSebi = !!(poslKopijaCb && poslKopijaCb.checked);
-        if (!confirm('Poslati obavijest poslovnicama na:\n' + primateljiLista.join(', ') + '?' + (kopijaSebi ? '\n\n(+ kopija tebi na sbatinac.intime@gmail.com)' : ''))) { return; }
+        if (!confirm('Poslati obavijest nadležnim poslovnicama na:\n' + primateljiLista.join(', ') + '?' + (kopijaSebi ? '\n\n(+ kopija tebi na sbatinac.intime@gmail.com)' : ''))) { return; }
         poslTestBtn.disabled = true;
         poslPosaljiBtn.disabled = true;
         poslPostaviStatus_('Šaljem…', null);
@@ -12917,6 +13091,14 @@
           if (handleAuthError(res)) { return; }
           if (res.status === 'ok') {
             poslPostaviStatus_('Obavijest poslana na: ' + primateljiLista.join(', ') + (kopijaSebi ? ' (+ kopija tebi).' : '.'), 'ok');
+            // Otključava narančasti panel "Pošalji obavijest SVIM
+            // poslovnicama" (2.10.2026., Sašin izričit zahtjev — vidi
+            // svepGuardRecheck_ iznad) — isti obrazac kao entry.fields
+            // ažuriranje kod crvenog→zelenog lanca iznad, bez čekanja
+            // ponovnog učitavanja kartice.
+            entry.fields['Datum slanja obavijesti nadležnim poslovnicama (admin)'] = new Date().toISOString();
+            svepGuardRecheck_();
+            svepOsvjeziPregledAkoPostoji_();
           } else {
             poslPostaviStatus_(res.message || 'Slanje obavijesti nije uspjelo.', 'error');
           }
@@ -12924,6 +13106,406 @@
           poslTestBtn.disabled = false;
           poslPosaljiBtn.disabled = false;
           poslPostaviStatus_('Greška u komunikaciji s poslužiteljem.', 'error');
+        });
+      });
+    }
+
+    // Panel "Pošalji obavijest SVIM poslovnicama" (Sašin izričit zahtjev,
+    // 2.10.2026.) — gotovo 1:1 kopija bloka "Pošalji obavijest poslovnicama"
+    // iznad (isti tag-mehanizam/predložak sustav, isti globalni uvodni-tekst
+    // backend — adminObUvodniTekstovi* akcije), s dvije razlike: (1) kategorija
+    // predloška je 'sve_poslovnice_obavijest', ne 'poslovnica_obavijest'; (2)
+    // predloženi primatelji su SVI centri (vrsta 'centar') s upisanim mailom
+    // iz "Logistički centri i servisi" — NE filtrirani po "Nadležna
+    // poslovnica" ovog klijenta (svepIzracunajZadanePrimatelje_ niže, zrcalna
+    // verzija poslIzracunajZadanePrimatelje_ iznad, bez poslovniceSkup_
+    // filtera). Zaključavanje: svepGuard* (definirano ranije u ovoj funkciji,
+    // prije wrap.innerHTML) — otključava se kad je zeleni panel "Pošalji
+    // obavijest nadležnim poslovnicama" već poslan, vidi napomenu uz
+    // svepGuardOtkljucano_ gore.
+    if (prikaziPuniBlok) {
+      var svepBlok = wrap.querySelector('.af-svep-mail-blok');
+      var svepTraka = wrap.querySelector('.af-svep-mail-traka');
+      svepTraka.addEventListener('click', function() {
+        if (svepBlok.classList.contains('locked')) { return; }
+        svepBlok.classList.toggle('expanded');
+      });
+
+      var svepPredlozakSelect = wrap.querySelector('.af-svep-predlozak-select');
+      var svepPredlozakPregled = wrap.querySelector('.af-svep-predlozak-pregled');
+      var svepPredlozakStatus = wrap.querySelector('.af-svep-predlozak-status');
+      var svepPredlozakNoviBtn = wrap.querySelector('.af-svep-predlozak-novi');
+      var svepPredlozakUrediBtn = wrap.querySelector('.af-svep-predlozak-uredi');
+      var svepPredlozakKopirajBtn = wrap.querySelector('.af-svep-predlozak-kopiraj');
+      var svepPrimateljiTextarea = wrap.querySelector('.af-svep-primatelji-textarea');
+      var svepTestInput = wrap.querySelector('.af-svep-test-input');
+      var svepTestBtn = wrap.querySelector('.af-svep-test-btn');
+      var svepKopijaCb = wrap.querySelector('.af-svep-kopija-cb');
+      var svepPosaljiBtn = wrap.querySelector('.af-svep-posalji-btn');
+      var svepSlanjeStatus = wrap.querySelector('.af-svep-slanje-status');
+      var svepUvodniTextarea = wrap.querySelector('.af-svep-uvodni-textarea');
+      var svepUvodniChipsEl = wrap.querySelector('.af-svep-uvodni-chips');
+      var svepUvodniZapamtiBtn = wrap.querySelector('.af-svep-uvodni-zapamti-btn');
+      var svepUvodniResetBtn = wrap.querySelector('.af-svep-uvodni-reset-btn');
+      var svepUvodniStatus = wrap.querySelector('.af-svep-uvodni-status');
+
+      var svepPredlosciLokalno = [];
+      var svepZadnjiPregled_ = { predmet: '', tijelo: '', html: false };
+      var svepPrimateljiRucnoPromijenjeno_ = false;
+
+      svepPrimateljiTextarea.addEventListener('input', function() { svepPrimateljiRucnoPromijenjeno_ = true; });
+      svepPrimateljiTextarea.addEventListener('click', function(ev) { ev.stopPropagation(); });
+      svepPrimateljiTextarea.addEventListener('keydown', function(ev) { ev.stopPropagation(); });
+      svepTestInput.addEventListener('click', function(ev) { ev.stopPropagation(); });
+      svepTestInput.addEventListener('keydown', function(ev) { ev.stopPropagation(); });
+
+      var svepPostaviStatus_ = function(tekst, vrsta) {
+        svepSlanjeStatus.textContent = tekst || '';
+        svepSlanjeStatus.className = 'af-svep-slanje-status' + (vrsta === 'error' ? ' error' : vrsta === 'ok' ? ' ok' : '');
+      };
+
+      // Isti tag-mehanizam kao poslUmetniUvodniTekst_ iznad — jedina razlika
+      // je generički zadani tekst kad ništa nije upisano/odabrano.
+      var svepUmetniUvodniTekst_ = function(tijelo, jeHtml) {
+        var uvodni = (svepUvodniTextarea.value || '').trim();
+        var imaTag = /\{\{UVODNI_TEKST\}\}/.test(tijelo);
+        if (imaTag) {
+          var zamjena = uvodni
+            ? (jeHtml ? ('<p>' + esc(uvodni).replace(/\n/g, '<br>') + '</p>') : uvodni)
+            : (jeHtml ? '<p>Obavještavamo sve poslovnice da je poslovni subjekt niže naveden otvoren u našem sustavu:</p>' : 'Obavještavamo sve poslovnice da je poslovni subjekt niže naveden otvoren u našem sustavu:');
+          return tijelo.replace(/\{\{UVODNI_TEKST\}\}/g, zamjena);
+        }
+        if (!uvodni) { return tijelo; }
+        return jeHtml ? ('<p>' + esc(uvodni).replace(/\n/g, '<br>') + '</p>' + tijelo) : (uvodni + '\n\n' + tijelo);
+      };
+
+      var svepRenderPregled_ = function() {
+        var odabraniId = parseInt(svepPredlozakSelect.value, 10);
+        var odabrani = svepPredlosciLokalno.filter(function(p) { return p.rowIndex === odabraniId; })[0];
+        if (!odabrani) {
+          svepPredlozakPregled.innerHTML = '<div class="af-svep-predlozak-prazno">Nema još nijednog predloška — klikni "+ Novi predložak".</div>';
+          svepPredlozakUrediBtn.disabled = true;
+          svepPredlozakKopirajBtn.disabled = true;
+          svepZadnjiPregled_ = { predmet: '', tijelo: '', html: false };
+          return;
+        }
+        svepPredlozakUrediBtn.disabled = false;
+        svepPredlozakKopirajBtn.disabled = false;
+        var predmetIzrenderiran = renderMailTekst_(odabrani.predmet, entry);
+        var tijeloIzrenderirano = svepUmetniUvodniTekst_(renderMailTekst_(odabrani.sadrzaj, entry), !!odabrani.html);
+        svepZadnjiPregled_ = { predmet: predmetIzrenderiran, tijelo: tijeloIzrenderirano, html: !!odabrani.html };
+        var predmetHtml = predmetIzrenderiran ? '<div class="af-svep-predlozak-predmet">Predmet: ' + esc(predmetIzrenderiran) + '</div>' : '';
+        if (odabrani.html) {
+          svepPredlozakPregled.innerHTML = predmetHtml + '<iframe class="svep-predlozak-html-pregled" sandbox="allow-same-origin" srcdoc="' + esc(tijeloIzrenderirano) + '"></iframe>';
+          var svepIframeEl = svepPredlozakPregled.querySelector('iframe');
+          svepIframeEl.addEventListener('load', function() {
+            try {
+              var visina = svepIframeEl.contentWindow.document.body.scrollHeight;
+              if (visina > 0) { svepIframeEl.style.height = (visina + 16) + 'px'; }
+            } catch (e) { /* zadrži CSS min-height */ }
+          });
+        } else {
+          svepPredlozakPregled.innerHTML = predmetHtml + '<div class="af-svep-predlozak-tijelo">' + esc(tijeloIzrenderirano) + '</div>';
+        }
+      };
+      wrap._svepPregledOsvjezi_ = svepRenderPregled_;
+
+      var svepPopuniIzbornik_ = function(predlosci) {
+        svepPredlosciLokalno = (predlosci || []).filter(function(p) { return p.kategorija === 'sve_poslovnice_obavijest'; });
+        if (!svepPredlosciLokalno.length) {
+          svepPredlozakSelect.innerHTML = '<option value="">— nema predložaka —</option>';
+          svepRenderPregled_();
+          return;
+        }
+        var zadaniId = (svepPredlosciLokalno.filter(function(p) { return p.zadani; })[0] || svepPredlosciLokalno[0]).rowIndex;
+        svepPredlozakSelect.innerHTML = svepPredlosciLokalno.map(function(p) {
+          return '<option value="' + p.rowIndex + '"' + (p.rowIndex === zadaniId ? ' selected' : '') + '>' + esc(p.naziv) + (p.zadani ? ' (zadani)' : '') + '</option>';
+        }).join('');
+        svepRenderPregled_();
+      };
+
+      svepPredlozakPregled.innerHTML = '<div class="af-svep-predlozak-prazno">Učitavanje predložaka…</div>';
+      ucitajMailPredloske_(false).then(svepPopuniIzbornik_).catch(function(err) {
+        svepPredlozakPregled.innerHTML = '<div class="af-svep-predlozak-prazno">Greška: ' + esc((err && err.message) || 'nepoznata greška') + '</div>';
+      });
+
+      svepPredlozakSelect.addEventListener('change', function(ev) { ev.stopPropagation(); svepRenderPregled_(); });
+      svepPredlozakSelect.addEventListener('click', function(ev) { ev.stopPropagation(); });
+
+      svepPredlozakNoviBtn.addEventListener('click', function(ev) { ev.stopPropagation(); openMailPredlozakModal(null, 'sve_poslovnice_obavijest'); });
+      svepPredlozakUrediBtn.addEventListener('click', function(ev) {
+        ev.stopPropagation();
+        var odabraniId = parseInt(svepPredlozakSelect.value, 10);
+        var odabrani = svepPredlosciLokalno.filter(function(p) { return p.rowIndex === odabraniId; })[0];
+        if (odabrani) { openMailPredlozakModal(odabrani); }
+      });
+      svepPredlozakKopirajBtn.addEventListener('click', function(ev) {
+        ev.stopPropagation();
+        var predmet = svepZadnjiPregled_.predmet, tijelo = svepZadnjiPregled_.tijelo;
+        if (!tijelo.trim()) { return; }
+        if (svepZadnjiPregled_.html && window.ClipboardItem && navigator.clipboard && navigator.clipboard.write) {
+          var htmlZaKopiranje = (predmet ? '<p><strong>Predmet: ' + esc(predmet) + '</strong></p>' : '') + tijelo;
+          var plainZaKopiranje = (predmet ? 'Predmet: ' + predmet + '\n\n' : '') + skiniHtmlTagoveZaPregled_(tijelo);
+          var stavka = new ClipboardItem({
+            'text/html': new Blob([htmlZaKopiranje], { type: 'text/html' }),
+            'text/plain': new Blob([plainZaKopiranje], { type: 'text/plain' })
+          });
+          navigator.clipboard.write([stavka]).then(function() {
+            svepPredlozakStatus.textContent = 'Kopirano u međuspremnik (HTML formatirano — zalijepi u Gmail s Ctrl+V/Cmd+V).';
+            svepPredlozakStatus.classList.remove('error');
+          }).catch(function() {
+            svepPredlozakStatus.textContent = 'HTML kopiranje nije uspjelo — označi i kopiraj ručno iz pregleda.';
+            svepPredlozakStatus.classList.add('error');
+          });
+          return;
+        }
+        var tekstZaKopiranje = (predmet ? predmet + '\n\n' : '') + tijelo;
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(tekstZaKopiranje).then(function() {
+            svepPredlozakStatus.textContent = 'Kopirano u međuspremnik.';
+            svepPredlozakStatus.classList.remove('error');
+          }).catch(function() {
+            svepPredlozakStatus.textContent = 'Kopiranje nije uspjelo — označi i kopiraj ručno.';
+            svepPredlozakStatus.classList.add('error');
+          });
+        } else {
+          svepPredlozakStatus.textContent = 'Kopiranje nije podržano u ovom pregledniku — označi i kopiraj ručno.';
+          svepPredlozakStatus.classList.add('error');
+        }
+      });
+
+      // Predloženi primatelji — SVI logistički centri (vrsta 'centar') s
+      // upisanim mailom, iz ISTOG dijeljenog cachea kao zeleni panel
+      // (logistickiCentriCache_/poslDohvatiCentre_ iznad) — NEMA filtera po
+      // "Nadležna poslovnica" ovog klijenta, baš to je svrha ovog panela.
+      // NIKAD ne prepisuje već ručno upisanu/promijenjenu vrijednost.
+      var svepIzracunajZadanePrimatelje_ = function() {
+        return poslDohvatiCentre_().then(function(centri) {
+          var mailoviPronadjeni_ = (centri || [])
+            .filter(function(c) { return (c.vrsta || 'centar') === 'centar' && c.email; })
+            .map(function(c) { return c.email; });
+          return mailoviPronadjeni_.filter(function(m, i) { return mailoviPronadjeni_.indexOf(m) === i; });
+        });
+      };
+      svepIzracunajZadanePrimatelje_().then(function(mailoviJedinstveni_) {
+        if (mailoviJedinstveni_.length && !svepPrimateljiRucnoPromijenjeno_ && !svepPrimateljiTextarea.value.trim()) {
+          svepPrimateljiTextarea.value = mailoviJedinstveni_.join(', ');
+        }
+      });
+
+      var svepPrimateljiResetBtn = wrap.querySelector('.af-svep-primatelji-reset-btn');
+      var svepPrimateljiResetStatus = wrap.querySelector('.af-svep-primatelji-reset-status');
+      svepPrimateljiResetBtn.addEventListener('click', function(ev) {
+        ev.stopPropagation();
+        svepPrimateljiResetBtn.disabled = true;
+        svepPrimateljiResetStatus.textContent = 'Učitavam…';
+        svepPrimateljiResetStatus.className = 'af-svep-primatelji-reset-status';
+        svepIzracunajZadanePrimatelje_().then(function(mailoviJedinstveni_) {
+          svepPrimateljiResetBtn.disabled = false;
+          if (!mailoviJedinstveni_.length) {
+            svepPrimateljiResetStatus.textContent = 'Nema automatski prepoznatih adresa — provjeri "Logistički centri i servisi".';
+            svepPrimateljiResetStatus.className = 'af-svep-primatelji-reset-status error';
+            return;
+          }
+          svepPrimateljiTextarea.value = mailoviJedinstveni_.join(', ');
+          svepPrimateljiRucnoPromijenjeno_ = false;
+          svepPrimateljiResetStatus.textContent = 'Vraćeno na zadano.';
+          svepPrimateljiResetStatus.className = 'af-svep-primatelji-reset-status ok';
+          clearTimeout(svepPrimateljiResetStatus._svepResetTimeout);
+          svepPrimateljiResetStatus._svepResetTimeout = setTimeout(function() {
+            svepPrimateljiResetStatus.textContent = '';
+            svepPrimateljiResetStatus.className = 'af-svep-primatelji-reset-status';
+          }, 4000);
+        }).catch(function() {
+          svepPrimateljiResetBtn.disabled = false;
+          svepPrimateljiResetStatus.textContent = 'Greška u komunikaciji s poslužiteljem.';
+          svepPrimateljiResetStatus.className = 'af-svep-primatelji-reset-status error';
+        });
+      });
+
+      // Uvodni tekst — DIJELI isti globalni popis/backend kao OB/zeleni panel
+      // iznad (adminObUvodniTekstoviList/Dodaj/Obrisi/Reset); DOM elementi
+      // (textarea/chips) su ipak svoji, zasebni za ovaj panel.
+      var svepUvodniTekstoviLokalno_ = [];
+      svepUvodniTextarea.addEventListener('click', function(ev) { ev.stopPropagation(); });
+      svepUvodniTextarea.addEventListener('keydown', function(ev) { ev.stopPropagation(); });
+      svepUvodniTextarea.addEventListener('input', function() { svepRenderPregled_(); });
+
+      var svepUvodniRenderChipove_ = function() {
+        if (!svepUvodniTekstoviLokalno_.length) {
+          svepUvodniChipsEl.innerHTML = '<span class="af-svep-uvodni-prazno">Nema spremljenih prijedloga.</span>';
+          return;
+        }
+        svepUvodniChipsEl.innerHTML = svepUvodniTekstoviLokalno_.map(function(t) {
+          return '<span class="af-svep-uvodni-chip' + (t.prilagodjen ? ' prilagodjen' : '') + '" data-id="' + esc(t.id) + '">' +
+            '<span class="af-svep-uvodni-chip-tekst">' + esc(t.tekst) + '</span>' +
+            '<button type="button" class="af-svep-uvodni-chip-x" data-id="' + esc(t.id) + '" title="Obriši prijedlog">×</button>' +
+          '</span>';
+        }).join('');
+      };
+
+      var svepUvodniPostaviStatus_ = function(tekst, vrsta) {
+        svepUvodniStatus.textContent = tekst || '';
+        svepUvodniStatus.className = 'af-svep-uvodni-status' + (vrsta === 'error' ? ' error' : vrsta === 'ok' ? ' ok' : '');
+      };
+
+      gasCall({ action: 'adminObUvodniTekstoviList', token: adminToken }).then(function(res) {
+        if (handleAuthError(res)) { return; }
+        if (res.status === 'ok') {
+          svepUvodniTekstoviLokalno_ = res.tekstovi || [];
+          svepUvodniRenderChipove_();
+        } else {
+          svepUvodniChipsEl.innerHTML = '<span class="af-svep-uvodni-prazno">Greška kod učitavanja prijedloga.</span>';
+        }
+      }).catch(function() {
+        svepUvodniChipsEl.innerHTML = '<span class="af-svep-uvodni-prazno">Greška u komunikaciji s poslužiteljem.</span>';
+      });
+
+      svepUvodniChipsEl.addEventListener('click', function(ev) {
+        ev.stopPropagation();
+        var xBtn = ev.target.closest('.af-svep-uvodni-chip-x');
+        if (xBtn) {
+          var idZaBrisanje = xBtn.getAttribute('data-id');
+          gasCall({ action: 'adminObUvodniTekstObrisi', token: adminToken, id: idZaBrisanje }).then(function(res) {
+            if (handleAuthError(res)) { return; }
+            if (res.status === 'ok') {
+              svepUvodniTekstoviLokalno_ = res.tekstovi || [];
+              svepUvodniRenderChipove_();
+            }
+          }).catch(function() {});
+          return;
+        }
+        var chip = ev.target.closest('.af-svep-uvodni-chip');
+        if (chip) {
+          var tekstEl = chip.querySelector('.af-svep-uvodni-chip-tekst');
+          if (tekstEl) {
+            svepUvodniTextarea.value = tekstEl.textContent;
+            svepUvodniTextarea.focus();
+            svepRenderPregled_();
+          }
+        }
+      });
+
+      svepUvodniZapamtiBtn.addEventListener('click', function(ev) {
+        ev.stopPropagation();
+        var noviTekst = (svepUvodniTextarea.value || '').trim();
+        if (!noviTekst) { svepUvodniTextarea.focus(); return; }
+        if (svepUvodniTekstoviLokalno_.length >= 20) {
+          svepUvodniPostaviStatus_('Dosegnut je maksimalan broj od 20 tekstova — obriši neki prije dodavanja novog.', 'error');
+          return;
+        }
+        svepUvodniZapamtiBtn.disabled = true;
+        gasCall({ action: 'adminObUvodniTekstDodaj', token: adminToken, tekst: noviTekst }).then(function(res) {
+          svepUvodniZapamtiBtn.disabled = false;
+          if (handleAuthError(res)) { return; }
+          if (res.status === 'ok') {
+            svepUvodniTekstoviLokalno_ = res.tekstovi || [];
+            svepUvodniRenderChipove_();
+            svepUvodniPostaviStatus_('Spremljeno.', 'ok');
+          } else {
+            svepUvodniPostaviStatus_(res.message || 'Spremanje nije uspjelo.', 'error');
+          }
+        }).catch(function() {
+          svepUvodniZapamtiBtn.disabled = false;
+          svepUvodniPostaviStatus_('Greška u komunikaciji s poslužiteljem.', 'error');
+        });
+      });
+
+      svepUvodniResetBtn.addEventListener('click', function(ev) {
+        ev.stopPropagation();
+        if (!confirm('Vratiti uvodne tekstove na zadanih 10? Svi prilagođeni tekstovi koje si dodao bit će obrisani.')) { return; }
+        svepUvodniResetBtn.disabled = true;
+        gasCall({ action: 'adminObUvodniTekstoviReset', token: adminToken }).then(function(res) {
+          svepUvodniResetBtn.disabled = false;
+          if (handleAuthError(res)) { return; }
+          if (res.status === 'ok') {
+            svepUvodniTekstoviLokalno_ = res.tekstovi || [];
+            svepUvodniRenderChipove_();
+            svepUvodniPostaviStatus_('Vraćeno na zadano.', 'ok');
+          } else {
+            svepUvodniPostaviStatus_(res.message || 'Nije uspjelo.', 'error');
+          }
+        }).catch(function() {
+          svepUvodniResetBtn.disabled = false;
+          svepUvodniPostaviStatus_('Greška u komunikaciji s poslužiteljem.', 'error');
+        });
+      });
+
+      var svepIzgradiTijeloZaSlanje_ = function() { return svepZadnjiPregled_.tijelo; };
+
+      var svepValidirajPrimatelje_ = function(str) {
+        var lista = String(str || '').split(',').map(function(s) { return s.trim(); }).filter(function(s) { return s; });
+        if (!lista.length) { return null; }
+        for (var i = 0; i < lista.length; i++) {
+          if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(lista[i])) { return null; }
+        }
+        return lista;
+      };
+
+      svepTestBtn.addEventListener('click', function(ev) {
+        ev.stopPropagation();
+        var testMail = (svepTestInput.value || '').trim();
+        svepTestInput.classList.remove('error');
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(testMail)) {
+          svepTestInput.classList.add('error');
+          svepPostaviStatus_('Upišite ispravnu test adresu.', 'error');
+          return;
+        }
+        if (!svepZadnjiPregled_.tijelo.trim()) {
+          svepPostaviStatus_('Nema teksta za slanje — odaberi predložak iznad.', 'error');
+          return;
+        }
+        svepTestBtn.disabled = true;
+        svepPosaljiBtn.disabled = true;
+        svepPostaviStatus_('Šaljem testni mail…', null);
+        gasCall({ action: 'adminPosaljiSvePoslovniceObavijestTest', token: adminToken, testMail: testMail, predmet: svepZadnjiPregled_.predmet, tijelo: svepIzgradiTijeloZaSlanje_(), jeHtml: svepZadnjiPregled_.html }).then(function(res) {
+          svepTestBtn.disabled = false;
+          svepPosaljiBtn.disabled = false;
+          if (handleAuthError(res)) { return; }
+          if (res.status === 'ok') {
+            svepPostaviStatus_('Testni mail poslan na ' + testMail + '.', 'ok');
+          } else {
+            svepPostaviStatus_(res.message || 'Slanje testnog maila nije uspjelo.', 'error');
+          }
+        }).catch(function() {
+          svepTestBtn.disabled = false;
+          svepPosaljiBtn.disabled = false;
+          svepPostaviStatus_('Greška u komunikaciji s poslužiteljem.', 'error');
+        });
+      });
+
+      svepPosaljiBtn.addEventListener('click', function(ev) {
+        ev.stopPropagation();
+        var primateljiSirovo = (svepPrimateljiTextarea.value || '').trim();
+        svepPrimateljiTextarea.classList.remove('error');
+        var primateljiLista = svepValidirajPrimatelje_(primateljiSirovo);
+        if (!primateljiLista) {
+          svepPrimateljiTextarea.classList.add('error');
+          svepPostaviStatus_('Upišite barem jednu ispravnu adresu primatelja (odvojene zarezom).', 'error');
+          return;
+        }
+        if (!svepZadnjiPregled_.tijelo.trim()) {
+          svepPostaviStatus_('Nema teksta za slanje — odaberi predložak iznad.', 'error');
+          return;
+        }
+        var kopijaSebi = !!(svepKopijaCb && svepKopijaCb.checked);
+        if (!confirm('Poslati obavijest SVIM poslovnicama na:\n' + primateljiLista.join(', ') + '?' + (kopijaSebi ? '\n\n(+ kopija tebi na sbatinac.intime@gmail.com)' : ''))) { return; }
+        svepTestBtn.disabled = true;
+        svepPosaljiBtn.disabled = true;
+        svepPostaviStatus_('Šaljem…', null);
+        gasCall({ action: 'adminPosaljiSvePoslovniceObavijestMail', token: adminToken, rowIndex: entry.rowIndex, primatelji: primateljiLista.join(','), predmet: svepZadnjiPregled_.predmet, tijelo: svepIzgradiTijeloZaSlanje_(), kopijaSebi: kopijaSebi, jeHtml: svepZadnjiPregled_.html }).then(function(res) {
+          svepTestBtn.disabled = false;
+          svepPosaljiBtn.disabled = false;
+          if (handleAuthError(res)) { return; }
+          if (res.status === 'ok') {
+            svepPostaviStatus_('Obavijest poslana na: ' + primateljiLista.join(', ') + (kopijaSebi ? ' (+ kopija tebi).' : '.'), 'ok');
+          } else {
+            svepPostaviStatus_(res.message || 'Slanje obavijesti nije uspjelo.', 'error');
+          }
+        }).catch(function() {
+          svepTestBtn.disabled = false;
+          svepPosaljiBtn.disabled = false;
+          svepPostaviStatus_('Greška u komunikaciji s poslužiteljem.', 'error');
         });
       });
     }
