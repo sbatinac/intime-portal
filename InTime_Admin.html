@@ -2875,20 +2875,36 @@
     // na stranicu poslati i poslovnicama... u prvom [i jedinom] mailu koji
     // ide prema njima... ispod adrese prikupa pošiljke"). Tag se zamjenjuje
     // CIJELIM HTML fragmentom (isti obrazac kao {{USLUGE}} iznad), ne samo
-    // tekstom. NAPOMENA (1.10.2026., dvadeset i prvi krug): stara statična
-    // slika (staticmap.openstreetmap.de) je Saša prijavio kao nepouzdanu
-    // ("ovo ne valja") — zamijenjena je gumbom-poveznicom na OpenStreetMap
-    // (gradi se iz koordinata iz adminDohvatiKartuPrikupa, isto geokodiranje
-    // kao i dosad) — pouzdanije od ugrađene slike u e-mailu (statične karte
-    // trećih servisa znaju biti spore/nepouzdane, a mnogi mail klijenti i
-    // onako ne učitaju vanjske slike dok korisnik to ručno ne odobri).
+    // tekstom.
+    //
+    // POVIJEST (za buduće mene): prvotno `<img>` prema staticmap.openstreetmap.de
+    // → Saša prijavio kao nepouzdan ("ovo ne valja") → zamijenjeno (dvadeset i
+    // prvi krug) gumbom-poveznicom na openstreetmap.org (bez slike) → Saša
+    // (1.10.2026., dvadeset i peti krug) ponovno zatražio PRAVU SLIKU, ne
+    // link ("ne mogu ga otvoriti... nije dobar"), po uzoru na kartu koju sad
+    // ima na kartici (Leaflet) — ALI Leaflet je živi JavaScript widget, mail
+    // klijenti JS ne izvršavaju, pa se ne može izravno "prenijeti" u mail;
+    // treba PRAVA, gotova slika (isti problem koji je prvotni staticmap.
+    // openstreetmap.de pokušavao riješiti, samo taj servis Saša više ne želi).
+    // Odabran je static-maps.yandex.ru — besplatan, bez API ključa, bez
+    // registracije, potvrđeno radi (testirano), ISKLJUČIVO za ovaj interni
+    // mail poslovnicama (ne i za javnu/klijentsku stranu, gdje ostaje
+    // Leaflet/OpenStreetMap kao dosad) — ima sitnu "Яндекс" oznaku u kutu
+    // slike, prihvatljivo za internu obavijest. Ako se i ovaj servis pokaže
+    // nepouzdanim, javi — postoji nekoliko drugih (treba API ključ/
+    // registraciju, pa nisu bili prvi izbor).
+    // Slika i poveznica idu ZAJEDNO (slika za brz pregled bez klikanja,
+    // poveznica ispod za otvaranje prave, interaktivne karte).
     // NE geokodira ništa iznova ovdje, čisto prikaz onoga što je admin već
     // generirao/osvježio na kartici. Ako karta još nije generirana, umjesto
-    // poveznice ide kratka napomena.
+    // slike/poveznice ide kratka napomena.
     var kartaPrikupaLat = fieldVal(entry, 'Karta prikupa - lat (admin)');
     var kartaPrikupaLon = fieldVal(entry, 'Karta prikupa - lon (admin)');
     var slikaPrikupa = (kartaPrikupaLat && kartaPrikupaLon)
-      ? ('<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:6px 0 16px;border-collapse:collapse;"><tr><td align="center" bgcolor="#ffffff" style="border-radius:8px;border:2px solid #0f8b7e;background-color:#ffffff;"><a href="https://www.openstreetmap.org/?mlat=' + encodeURIComponent(kartaPrikupaLat) + '&mlon=' + encodeURIComponent(kartaPrikupaLon) + '#map=17/' + encodeURIComponent(kartaPrikupaLat) + '/' + encodeURIComponent(kartaPrikupaLon) + '" target="_blank" rel="noopener" style="display:block;width:100%;box-sizing:border-box;padding:12px 18px;font-family:Arial,Helvetica,sans-serif;font-size:15px;font-weight:bold;color:#0f8b7e;text-decoration:none;text-align:center;">🗺️ Otvori kartu lokacije prikupa</a></td></tr></table>')
+      ? ('<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:6px 0 8px;border-collapse:collapse;"><tr><td align="center" style="padding:0;">' +
+           '<img src="https://static-maps.yandex.ru/1.x/?ll=' + encodeURIComponent(kartaPrikupaLon) + ',' + encodeURIComponent(kartaPrikupaLat) + '&z=16&size=600,300&l=map&pt=' + encodeURIComponent(kartaPrikupaLon) + ',' + encodeURIComponent(kartaPrikupaLat) + ',pm2rdm" width="600" height="300" alt="Karta lokacije prikupa" style="display:block;width:100%;max-width:600px;height:auto;border-radius:8px;border:2px solid #0f8b7e;" />' +
+         '</td></tr></table>' +
+         '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 16px;border-collapse:collapse;"><tr><td align="center" bgcolor="#ffffff" style="border-radius:8px;border:2px solid #0f8b7e;background-color:#ffffff;"><a href="https://www.openstreetmap.org/?mlat=' + encodeURIComponent(kartaPrikupaLat) + '&mlon=' + encodeURIComponent(kartaPrikupaLon) + '#map=17/' + encodeURIComponent(kartaPrikupaLat) + '/' + encodeURIComponent(kartaPrikupaLon) + '" target="_blank" rel="noopener" style="display:block;width:100%;box-sizing:border-box;padding:10px 18px;font-family:Arial,Helvetica,sans-serif;font-size:13px;font-weight:bold;color:#0f8b7e;text-decoration:none;text-align:center;">🗺️ Otvori veću, interaktivnu kartu</a></td></tr></table>')
       : '<p style="font-size:11.5px;color:#888888;margin:0 0 16px;">[Karta lokacije prikupa još nije generirana — klikni "🗺️ Prikaži kartu prikupa" na kartici klijenta (blok "Podaci o prikupu pošiljaka") prije slanja ovog maila.]</p>';
     var zadnjiRokUnosaAdmin_ = fieldVal(entry, 'Zadnje vrijeme unosa naloga (admin)');
     var zadnjiRokUnosaIzracunat_ = pomakniVrijeme_(fieldVal(entry, 'Vrijeme prikupa pošiljaka (dolazak vozila)'), -30);
