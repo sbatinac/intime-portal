@@ -2933,6 +2933,11 @@
     // dvadeset i prvi krug).
     var osobaPosiljkeIme = fieldVal(entry, 'Ispravljena osoba zadužena za prikup (admin)') || fieldVal(entry, 'Osoba za organizaciju slanja/primanja pošiljaka – ime i prezime') || '[ime i prezime osobe zadužene za pošiljke]';
     var osobaPosiljkeTelefon = fieldVal(entry, 'Ispravljeni telefon prikupa (admin)') || fieldVal(entry, 'Osoba za organizaciju slanja/primanja pošiljaka – telefon') || '[telefon osobe zadužene za pošiljke]';
+    // NOVO (2.10.2026., Sašin izričit zahtjev — "obavezno stavi kontakt mail
+    // primatelja... kontakt mail onog tko organizira transport"): email
+    // osobe zadužene za pošiljke, za panel "Pošalji obavijest SVIM
+    // poslovnicama" — isti ispravak-obrazac kao ime/telefon iznad.
+    var osobaPosiljkeEmail = fieldVal(entry, 'Ispravljeni email prikupa (admin)') || fieldVal(entry, 'Osoba za organizaciju slanja/primanja pošiljaka – email') || '[email osobe zadužene za pošiljke]';
     // Admin ispravak (ispravljena_adresa_prikupa/...) IMA PREDNOST pred
     // izvornim upitnikom — vidi punu napomenu uz
     // ADMIN_ONLY_FIELDS.ispravljena_adresa_prikupa u InTime_Code.gs
@@ -2957,13 +2962,23 @@
     // klijenti JS ne izvršavaju, pa se ne može izravno "prenijeti" u mail;
     // treba PRAVA, gotova slika (isti problem koji je prvotni staticmap.
     // openstreetmap.de pokušavao riješiti, samo taj servis Saša više ne želi).
-    // Odabran je static-maps.yandex.ru — besplatan, bez API ključa, bez
-    // registracije, potvrđeno radi (testirano), ISKLJUČIVO za ovaj interni
-    // mail poslovnicama (ne i za javnu/klijentsku stranu, gdje ostaje
-    // Leaflet/OpenStreetMap kao dosad) — ima sitnu "Яндекс" oznaku u kutu
-    // slike, prihvatljivo za internu obavijest. Ako se i ovaj servis pokaže
-    // nepouzdanim, javi — postoji nekoliko drugih (treba API ključ/
-    // registraciju, pa nisu bili prvi izbor).
+    // Odabran je static-maps.yandex.ru (dvadeset i peti krug) — besplatan,
+    // bez API ključa, potvrđeno radi — ALI ima sitnu "Яндекс" oznaku u kutu i
+    // drugačiji (sivkasti) izgled od OSM karte na kartici.
+    // PROMIJENJENO (2.10.2026., dvadeset i osmi krug, Sašin izričit zahtjev
+    // — "probaj staviti onu bolju mapu koju smo gore stavili u mail", uz
+    // screenshot Leaflet karte na kartici): natrag na staticmap.openstreetmap.de
+    // (isti OSM Mapnik stil kao Leaflet na kartici, bijelo-pastelne boje) —
+    // ovaj servis je RANIJE (dvadeset i prvi krug) bio odbačen kao
+    // "nepouzdan", ALI tadašnji problem je bio da se slika hot-linkala
+    // izravno u mail (fetch u trenutku OTVARANJA maila, kod primatelja) — isti
+    // problem koji je kasnije (dvadeset i šesti krug) pogodio i Yandex.
+    // Otkad se slika dohvaća NA SERVERU (Apps Script) PRIJE slanja i ugrađuje
+    // kao cid: privitak (vidi ugradiKartuPrikupaInlineAkoPostoji_ u
+    // InTime_Code.gs, sad prepoznaje i ovaj URL obrazac), taj specifični
+    // uzrok otpada — vrijedi probati ponovno. Ako se ipak pokaže nepouzdanim
+    // (servis je poznat kao povremeno spor/nestabilan), fail-safe ostaje:
+    // mail ide dalje s izvornim linkom, slanje se nikad ne ruši.
     // Slika i poveznica idu ZAJEDNO (slika za brz pregled bez klikanja,
     // poveznica ispod za otvaranje prave, interaktivne karte).
     // NE geokodira ništa iznova ovdje, čisto prikaz onoga što je admin već
@@ -2973,7 +2988,7 @@
     var kartaPrikupaLon = fieldVal(entry, 'Karta prikupa - lon (admin)');
     var slikaPrikupa = (kartaPrikupaLat && kartaPrikupaLon)
       ? ('<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:6px 0 8px;border-collapse:collapse;"><tr><td align="center" style="padding:0;">' +
-           '<img src="https://static-maps.yandex.ru/1.x/?ll=' + encodeURIComponent(kartaPrikupaLon) + ',' + encodeURIComponent(kartaPrikupaLat) + '&z=16&size=600,300&l=map&pt=' + encodeURIComponent(kartaPrikupaLon) + ',' + encodeURIComponent(kartaPrikupaLat) + ',pm2rdm" width="600" height="300" alt="Karta lokacije prikupa" style="display:block;width:100%;max-width:600px;height:auto;border-radius:8px;border:2px solid #0f8b7e;" />' +
+           '<img src="https://staticmap.openstreetmap.de/staticmap.php?center=' + encodeURIComponent(kartaPrikupaLat) + ',' + encodeURIComponent(kartaPrikupaLon) + '&zoom=16&size=600x300&markers=' + encodeURIComponent(kartaPrikupaLat) + ',' + encodeURIComponent(kartaPrikupaLon) + ',red-pushpin" width="600" height="300" alt="Karta lokacije prikupa" style="display:block;width:100%;max-width:600px;height:auto;border-radius:8px;border:2px solid #0f8b7e;" />' +
          '</td></tr></table>' +
          '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 16px;border-collapse:collapse;"><tr><td align="center" bgcolor="#ffffff" style="border-radius:8px;border:2px solid #0f8b7e;background-color:#ffffff;"><a href="https://www.openstreetmap.org/?mlat=' + encodeURIComponent(kartaPrikupaLat) + '&mlon=' + encodeURIComponent(kartaPrikupaLon) + '#map=17/' + encodeURIComponent(kartaPrikupaLat) + '/' + encodeURIComponent(kartaPrikupaLon) + '" target="_blank" rel="noopener" style="display:block;width:100%;box-sizing:border-box;padding:10px 18px;font-family:Arial,Helvetica,sans-serif;font-size:13px;font-weight:bold;color:#0f8b7e;text-decoration:none;text-align:center;">🗺️ Otvori veću, interaktivnu kartu</a></td></tr></table>')
       : '<p style="font-size:11.5px;color:#888888;margin:0 0 16px;">[Karta lokacije prikupa još nije generirana — klikni "🗺️ Prikaži kartu prikupa" na kartici klijenta (blok "Podaci o prikupu pošiljaka") prije slanja ovog maila.]</p>';
@@ -3037,6 +3052,7 @@
       .replace(/\{\{OB_EMAIL\}\}/g, obEmail)
       .replace(/\{\{OSOBA_POSILJKE_IME\}\}/g, osobaPosiljkeIme)
       .replace(/\{\{OSOBA_POSILJKE_TELEFON\}\}/g, osobaPosiljkeTelefon)
+      .replace(/\{\{OSOBA_POSILJKE_EMAIL\}\}/g, osobaPosiljkeEmail)
       .replace(/\{\{ADRESA_PRIKUPA\}\}/g, adresaPrikupa)
       .replace(/\{\{SLIKA_PRIKUPA\}\}/g, slikaPrikupa)
       .replace(/\{\{ZADNJI_ROK_UNOSA\}\}/g, zadnjiRokUnosa)
@@ -8360,9 +8376,21 @@
     // nakon toga se otključava zeleni". Otključava se ISKLJUČIVO kad je mail
     // "Pošalji pristupne podatke klijentu" (crveni panel iznad) već poslan.
     var poslGuardKlijentPristupPoslan_ = !!fieldVal(entry, 'Datum slanja maila klijentu s pristupnim podacima (admin)');
-    var poslGuardSveOtkljucano_ = poslGuardKlijentPristupPoslan_;
+    // NOVO (2.10.2026., Sašin izričit zahtjev — "primijetio sam da slika s
+    // mapom radi u panelu obavijest svim poslovnicama ali ne radi u panelu
+    // koji je već otvoren dok odabiremo mapu... možda bi bilo dobro napraviti
+    // da jedan od uvjeta slanja obavijesti nadležnim poslovnicama bude da
+    // moraš potvrditi lokaciju na mapi"): drugi uvjet — karta prikupa
+    // (lat/lon) mora biti generirana PRIJE nego se ovaj panel uopće može
+    // otvoriti, jer {{SLIKA_PRIKUPA}} tag inače prikazuje "karta još nije
+    // generirana" umjesto stvarne slike (vidi slikaPrikupa iznad). Narančasti
+    // panel ispod ionako nasljeđuje ovaj uvjet TRANZITIVNO (otključava se tek
+    // kad JE zeleni poslan), pa mu ne treba zasebna provjera.
+    var poslGuardKartaPotvrdjena_ = !!(fieldVal(entry, 'Karta prikupa - lat (admin)') && fieldVal(entry, 'Karta prikupa - lon (admin)'));
+    var poslGuardSveOtkljucano_ = poslGuardKlijentPristupPoslan_ && poslGuardKartaPotvrdjena_;
     var poslGuardStavke_ = [
-      { ok: poslGuardKlijentPristupPoslan_, naziv: 'Mail s pristupnim podacima poslan klijentu' }
+      { ok: poslGuardKlijentPristupPoslan_, naziv: 'Mail s pristupnim podacima poslan klijentu' },
+      { ok: poslGuardKartaPotvrdjena_, naziv: 'Karta prikupa generirana (blok "Podaci o prikupu pošiljaka")' }
     ];
     var poslGuardListaHtml_ = poslGuardStavke_.map(function(s) {
       return '<span class="af-posl-guard-stavka' + (s.ok ? ' ok' : '') + '">' + (s.ok ? '✓' : '✕') + ' ' + esc(s.naziv) + '</span>';
@@ -9794,7 +9822,10 @@
       var blok = wrap.querySelector('.af-posl-mail-blok');
       if (!blok || !blok.classList.contains('locked')) { return; }
       var poslano = !!fieldVal(entry, 'Datum slanja maila klijentu s pristupnim podacima (admin)');
-      if (!poslano) { return; }
+      // Drugi uvjet (2.10.2026.) — vidi napomenu uz poslGuardKartaPotvrdjena_
+      // prije wrap.innerHTML. Pozvano i iz karta-prikupa uspjeh handlera niže.
+      var kartaOk = !!(fieldVal(entry, 'Karta prikupa - lat (admin)') && fieldVal(entry, 'Karta prikupa - lon (admin)'));
+      if (!poslano || !kartaOk) { return; }
       blok.classList.remove('locked');
       var lockIcon = blok.querySelector('.af-posl-guard-lock');
       if (lockIcon) { lockIcon.outerHTML = '<span class="chevron">▾</span>'; }
@@ -11174,6 +11205,12 @@
             prikupKartaOsvjeziBtn.hidden = false;
             prikupKartaStatusEl.textContent = (res.izCachea ? 'Karta za: ' : 'Generirano za: ') + res.adresa;
             prikupKartaStatusEl.classList.add('ok');
+            // Otključava zeleni panel "Pošalji obavijest nadležnim
+            // poslovnicama" ako je i prvi uvjet (crveni mail poslan) već
+            // ispunjen (2.10.2026., vidi poslGuardRecheck_ iznad) — bez
+            // čekanja ponovnog učitavanja kartice.
+            poslGuardRecheck_();
+            poslOsvjeziPregledAkoPostoji_();
           } else {
             prikupKartaStatusEl.textContent = res.message || 'Generiranje karte nije uspjelo.';
             prikupKartaStatusEl.classList.add('error');
@@ -12905,12 +12942,12 @@
         });
       });
 
-      // Uvodni tekst — DIJELI isti globalni popis/backend kao OB panel
-      // iznad (adminObUvodniTekstoviList/Dodaj/Obrisi/Reset) — Sašin
-      // izričit zahtjev je bio da ovaj panel bude "identično sve kao za
-      // slanje zahtjeva za online booking", pa nema smisla voditi drugi,
-      // zaseban popis prijedloga; DOM elementi (textarea/chips) su ipak
-      // svoji, zasebni za ovaj panel.
+      // Uvodni tekst — VLASTITO spremište, odvojeno od OB i od SVEP panela
+      // (adminPoslUvodniTekstoviList/Dodaj/Obrisi/Reset, PropertiesService
+      // spremište 'POSL_UVODNI_TEKSTOVI', InTime_Code.gs). Do 2.10.2026.
+      // ovaj je panel DIJELIO popis s OB panelom — Sašin izričit zahtjev
+      // ("evo za zeleni mail nove rečenice a ne one od plavoga") je popis
+      // razdvojio i zamijenio zadanih 10 novim tekstovima.
       var poslUvodniTekstoviLokalno_ = [];
       poslUvodniTextarea.addEventListener('click', function(ev) { ev.stopPropagation(); });
       poslUvodniTextarea.addEventListener('keydown', function(ev) { ev.stopPropagation(); });
@@ -12934,7 +12971,7 @@
         poslUvodniStatus.className = 'af-posl-uvodni-status' + (vrsta === 'error' ? ' error' : vrsta === 'ok' ? ' ok' : '');
       };
 
-      gasCall({ action: 'adminObUvodniTekstoviList', token: adminToken }).then(function(res) {
+      gasCall({ action: 'adminPoslUvodniTekstoviList', token: adminToken }).then(function(res) {
         if (handleAuthError(res)) { return; }
         if (res.status === 'ok') {
           poslUvodniTekstoviLokalno_ = res.tekstovi || [];
@@ -12951,7 +12988,7 @@
         var xBtn = ev.target.closest('.af-posl-uvodni-chip-x');
         if (xBtn) {
           var idZaBrisanje = xBtn.getAttribute('data-id');
-          gasCall({ action: 'adminObUvodniTekstObrisi', token: adminToken, id: idZaBrisanje }).then(function(res) {
+          gasCall({ action: 'adminPoslUvodniTekstObrisi', token: adminToken, id: idZaBrisanje }).then(function(res) {
             if (handleAuthError(res)) { return; }
             if (res.status === 'ok') {
               poslUvodniTekstoviLokalno_ = res.tekstovi || [];
@@ -12980,7 +13017,7 @@
           return;
         }
         poslUvodniZapamtiBtn.disabled = true;
-        gasCall({ action: 'adminObUvodniTekstDodaj', token: adminToken, tekst: noviTekst }).then(function(res) {
+        gasCall({ action: 'adminPoslUvodniTekstDodaj', token: adminToken, tekst: noviTekst }).then(function(res) {
           poslUvodniZapamtiBtn.disabled = false;
           if (handleAuthError(res)) { return; }
           if (res.status === 'ok') {
@@ -13000,7 +13037,7 @@
         ev.stopPropagation();
         if (!confirm('Vratiti uvodne tekstove na zadanih 10? Svi prilagođeni tekstovi koje si dodao bit će obrisani.')) { return; }
         poslUvodniResetBtn.disabled = true;
-        gasCall({ action: 'adminObUvodniTekstoviReset', token: adminToken }).then(function(res) {
+        gasCall({ action: 'adminPoslUvodniTekstoviReset', token: adminToken }).then(function(res) {
           poslUvodniResetBtn.disabled = false;
           if (handleAuthError(res)) { return; }
           if (res.status === 'ok') {
@@ -13279,10 +13316,18 @@
       // (logistickiCentriCache_/poslDohvatiCentre_ iznad) — NEMA filtera po
       // "Nadležna poslovnica" ovog klijenta, baš to je svrha ovog panela.
       // NIKAD ne prepisuje već ručno upisanu/promijenjenu vrijednost.
+      // ISPRAVAK (2.10.2026., Sašin izričit zahtjev — "fale poslovnice među
+      // svim poslovnicama... fale vanjske i fali Zadar npr."): prvotna
+      // verzija je uzimala SAMO vrsta==='centar', pa su ispali svi "Vanjski
+      // izvršitelji" (vrsta 'vanjski' — gradovi pokriveni preko vanjskih
+      // suradnika, npr. Zadar). Sada se uzimaju SVI geografski entiteti
+      // (centar + vanjski) — jedino 'servis' (funkcionalni odjeli:
+      // Računovodstvo, IT podrška...) i dalje ispravno ostaje izvan ovog
+      // maila, jer se ne bavi pošiljkama.
       var svepIzracunajZadanePrimatelje_ = function() {
         return poslDohvatiCentre_().then(function(centri) {
           var mailoviPronadjeni_ = (centri || [])
-            .filter(function(c) { return (c.vrsta || 'centar') === 'centar' && c.email; })
+            .filter(function(c) { var v = c.vrsta || 'centar'; return (v === 'centar' || v === 'vanjski') && c.email; })
             .map(function(c) { return c.email; });
           return mailoviPronadjeni_.filter(function(m, i) { return mailoviPronadjeni_.indexOf(m) === i; });
         });
@@ -13323,9 +13368,11 @@
         });
       });
 
-      // Uvodni tekst — DIJELI isti globalni popis/backend kao OB/zeleni panel
-      // iznad (adminObUvodniTekstoviList/Dodaj/Obrisi/Reset); DOM elementi
-      // (textarea/chips) su ipak svoji, zasebni za ovaj panel.
+      // Uvodni tekst — VLASTITO, ZASEBNO spremište (2.10.2026., isti dan,
+      // Sašin izričit zahtjev — "stavi ove tekstove kao uvodni tekst umjesto
+      // onih koji si stavio") — adminSvepUvodniTekstovi* akcije, NE dijeli se
+      // više s OB/zeleni panel poolom (vidi SVEP_UVODNI_TEKST_DEFAULT_ u
+      // InTime_Code.gs, 10 novih Sašinih tekstova, posve drugačiji ton).
       var svepUvodniTekstoviLokalno_ = [];
       svepUvodniTextarea.addEventListener('click', function(ev) { ev.stopPropagation(); });
       svepUvodniTextarea.addEventListener('keydown', function(ev) { ev.stopPropagation(); });
@@ -13349,7 +13396,7 @@
         svepUvodniStatus.className = 'af-svep-uvodni-status' + (vrsta === 'error' ? ' error' : vrsta === 'ok' ? ' ok' : '');
       };
 
-      gasCall({ action: 'adminObUvodniTekstoviList', token: adminToken }).then(function(res) {
+      gasCall({ action: 'adminSvepUvodniTekstoviList', token: adminToken }).then(function(res) {
         if (handleAuthError(res)) { return; }
         if (res.status === 'ok') {
           svepUvodniTekstoviLokalno_ = res.tekstovi || [];
@@ -13366,7 +13413,7 @@
         var xBtn = ev.target.closest('.af-svep-uvodni-chip-x');
         if (xBtn) {
           var idZaBrisanje = xBtn.getAttribute('data-id');
-          gasCall({ action: 'adminObUvodniTekstObrisi', token: adminToken, id: idZaBrisanje }).then(function(res) {
+          gasCall({ action: 'adminSvepUvodniTekstObrisi', token: adminToken, id: idZaBrisanje }).then(function(res) {
             if (handleAuthError(res)) { return; }
             if (res.status === 'ok') {
               svepUvodniTekstoviLokalno_ = res.tekstovi || [];
@@ -13395,7 +13442,7 @@
           return;
         }
         svepUvodniZapamtiBtn.disabled = true;
-        gasCall({ action: 'adminObUvodniTekstDodaj', token: adminToken, tekst: noviTekst }).then(function(res) {
+        gasCall({ action: 'adminSvepUvodniTekstDodaj', token: adminToken, tekst: noviTekst }).then(function(res) {
           svepUvodniZapamtiBtn.disabled = false;
           if (handleAuthError(res)) { return; }
           if (res.status === 'ok') {
@@ -13415,7 +13462,7 @@
         ev.stopPropagation();
         if (!confirm('Vratiti uvodne tekstove na zadanih 10? Svi prilagođeni tekstovi koje si dodao bit će obrisani.')) { return; }
         svepUvodniResetBtn.disabled = true;
-        gasCall({ action: 'adminObUvodniTekstoviReset', token: adminToken }).then(function(res) {
+        gasCall({ action: 'adminSvepUvodniTekstoviReset', token: adminToken }).then(function(res) {
           svepUvodniResetBtn.disabled = false;
           if (handleAuthError(res)) { return; }
           if (res.status === 'ok') {
