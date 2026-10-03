@@ -139,6 +139,36 @@
   .form-error{color:var(--red);font-size:13px;margin:0 0 12px;}
   .form-ok{color:var(--green);font-size:13px;margin:0 0 12px;}
 
+  /* ---- PRIJAVA U ADMIN (isti izgled kao prijava u Kalkulacije) ---- */
+  #login-screen{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px 16px;position:relative;overflow:hidden;
+    background:radial-gradient(1200px 700px at 15% -10%,#0e5f5a 0%,rgba(14,95,90,0) 60%),radial-gradient(900px 600px at 100% 110%,#0b3f6b 0%,rgba(11,63,107,0) 55%),linear-gradient(160deg,#04141a 0%,#071f2a 55%,#050d14 100%);}
+  #login-screen::before,#login-screen::after{content:"";position:absolute;border-radius:50%;filter:blur(70px);opacity:.45;pointer-events:none;animation:prijavaPlutaj 14s ease-in-out infinite alternate;}
+  #login-screen::before{width:420px;height:420px;left:-120px;top:8%;background:#16c1b4;}
+  #login-screen::after{width:380px;height:380px;right:-100px;bottom:4%;background:#1f7bd8;animation-delay:-6s;}
+  @keyframes prijavaPlutaj{from{transform:translate(0,0) scale(1);}to{transform:translate(40px,-30px) scale(1.15);}}
+  .prijava-kartica{position:relative;z-index:1;width:100%;max-width:780px;background:rgba(10,24,32,.72);border:1px solid rgba(120,220,210,.22);border-radius:22px;
+    box-shadow:0 30px 80px rgba(0,0,0,.6),0 0 0 1px rgba(255,255,255,.03) inset,0 0 60px rgba(34,152,145,.18);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);overflow:hidden;text-align:center;}
+  .prijava-hero{position:relative;line-height:0;}
+  .prijava-slika{display:block;width:100%;height:auto;margin:0;border-radius:0;}
+  .prijava-hero::after{content:"";position:absolute;left:0;right:0;bottom:0;height:46%;background:linear-gradient(180deg,rgba(10,24,32,0) 0%,rgba(10,24,32,.92) 100%);}
+  .prijava-tijelo{padding:4px 34px 30px;margin-top:-18px;position:relative;z-index:2;}
+  .prijava-naslov{margin:0 0 6px;font-size:26px;font-weight:800;letter-spacing:.32em;text-transform:uppercase;color:#fff;text-shadow:0 0 22px rgba(34,200,190,.55);}
+  .prijava-podnaslov{margin:0 auto 22px;font-size:13.5px;color:#9fb8bf;}
+  .prijava-podnaslov::after{content:"";display:block;width:64px;height:3px;margin:14px auto 0;border-radius:3px;background:linear-gradient(90deg,#16c1b4,#1f7bd8);}
+  .prijava-forma{max-width:420px;margin:0 auto;}
+  .prijava-polje{text-align:left;margin-bottom:14px;}
+  .prijava-polje label{display:block;font-size:11px;font-weight:700;color:#7fa3ab;margin-bottom:6px;text-transform:uppercase;letter-spacing:.12em;}
+  #login-screen input[type=text],#login-screen input[type=password]{width:100%;background:rgba(255,255,255,.06);color:#fff;border:1.5px solid rgba(160,230,225,.2);border-radius:12px;padding:13px 14px;font-size:15px;font-family:inherit;margin:0;transition:border-color .15s,box-shadow .15s,background .15s;}
+  #login-screen input::placeholder{color:#6d8a92;}
+  #login-screen input[type=text]:focus,#login-screen input[type=password]:focus{outline:none;background:rgba(255,255,255,.09);border-color:#22c8bc;box-shadow:0 0 0 4px rgba(34,200,188,.18),0 0 24px rgba(34,200,188,.25);}
+  .prijava-gumb{width:100%;padding:14px;font-size:15px;letter-spacing:.12em;text-transform:uppercase;margin-top:6px;border:0;border-radius:12px;color:#fff;cursor:pointer;font-weight:700;
+    background:linear-gradient(135deg,#16c1b4 0%,#1b8f9a 50%,#1f6fd0 100%);box-shadow:0 10px 28px rgba(22,193,180,.35);transition:transform .15s,box-shadow .15s,filter .15s;}
+  .prijava-gumb:hover{background:linear-gradient(135deg,#1ad6c8 0%,#1fa3ae 50%,#2a82ea 100%);transform:translateY(-2px);box-shadow:0 14px 34px rgba(22,193,180,.5);}
+  .prijava-gumb:active{transform:translateY(0);}
+  #login-screen .form-error{color:#ff7b6e;font-weight:700;font-size:13px;margin:12px 0 0;}
+  .prijava-podnozje{margin-top:18px;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#587780;}
+  @media (max-width:600px){.prijava-tijelo{padding:2px 20px 24px;}.prijava-naslov{font-size:20px;letter-spacing:.22em;}}
+
   /* ---- POSTAVKE (zupčanik u donjem desnom kutu, 27.9.2026., Sašin izričit
      zahtjev) — fiksna pozicija, uvijek dostupan iznad ostalog sadržaja. ---- */
   .settings-fab{
@@ -1628,14 +1658,19 @@
 <body>
 
 <div id="login-screen">
-  <div class="login-card">
-    <img src="https://i.imgur.com/XVKObib.png" alt="In Time — FedEx" class="login-banner">
-    <h1>In Time d.o.o. - portal za nove klijente - REGIJA ISTOK</h1>
-    <p class="form-error" id="login-error" hidden></p>
-    <form id="login-form" onsubmit="return handleLogin(event)">
-      <input type="password" id="login-password" placeholder="Lozinka" autocomplete="current-password" required>
-      <button type="submit" class="btn">Prijava</button>
-    </form>
+  <div class="prijava-kartica">
+    <div class="prijava-hero"><img class="prijava-slika" src="https://i.imgur.com/czZmH1C.png" alt="In Time — FedEx"></div>
+    <div class="prijava-tijelo">
+      <h1 class="prijava-naslov">Admin</h1>
+      <p class="prijava-podnaslov">In Time d.o.o. · portal za nove klijente · Regija Istok</p>
+      <form id="login-form" class="prijava-forma" onsubmit="return handleLogin(event)" autocomplete="on">
+        <div class="prijava-polje"><label for="login-username">Korisničko ime</label><input type="text" id="login-username" name="username" autocomplete="username" placeholder="korisničko ime" autocapitalize="none" spellcheck="false" required></div>
+        <div class="prijava-polje"><label for="login-password">Lozinka</label><input type="password" id="login-password" name="password" autocomplete="current-password" placeholder="••••••••" required></div>
+        <button type="submit" class="prijava-gumb">Prijava</button>
+        <p class="form-error" id="login-error" hidden></p>
+      </form>
+      <div class="prijava-podnozje">In Time d.o.o. · interni alat</div>
+    </div>
   </div>
 </div>
 
@@ -2132,8 +2167,9 @@
   function handleLogin(e) {
     e.preventDefault();
     var pass = document.getElementById('login-password').value;
+    var user = document.getElementById('login-username').value;
     document.getElementById('login-error').hidden = true;
-    gasCall({ action: 'adminLogin', password: pass }).then(function(res) {
+    gasCall({ action: 'adminLogin', username: user, password: pass }).then(function(res) {
       if (res.status !== 'ok') {
         showLoginError(res.message || 'Prijava nije uspjela.');
         return;
