@@ -356,6 +356,15 @@
   .search-filter-chip:hover{border-color:var(--purple);}
   .search-filter-chip.active{background:var(--purple);border-color:var(--purple);color:#fff;}
 
+  /* Prekidač balončića goriva (kartica Gorivo) */
+  .gorivo-fab-prekidac-red{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:10px 12px;margin-bottom:12px;border:1.5px solid var(--line);border-radius:10px;background:#f7fbfb;}
+  .gorivo-fab-prekidac{position:relative;display:inline-block;width:48px;height:26px;flex-shrink:0;}
+  .gorivo-fab-prekidac input{opacity:0;width:0;height:0;}
+  .gorivo-fab-prekidac-slider{position:absolute;inset:0;background:#b9c4c6;border-radius:26px;cursor:pointer;transition:background .2s;}
+  .gorivo-fab-prekidac-slider::before{content:"";position:absolute;width:20px;height:20px;left:3px;top:3px;background:#fff;border-radius:50%;transition:transform .2s;box-shadow:0 1px 3px rgba(0,0,0,.3);}
+  .gorivo-fab-prekidac input:checked + .gorivo-fab-prekidac-slider{background:#229891;}
+  .gorivo-fab-prekidac input:checked + .gorivo-fab-prekidac-slider::before{transform:translateX(22px);}
+  .gorivo-fab-prekidac input:disabled + .gorivo-fab-prekidac-slider{opacity:.55;cursor:default;}
   /* ---- GLAVNE KARTICE: uokvireno + efekt podizanja pri prelasku mišem (3.10.2026., Sašin zahtjev) ---- */
   .tabs{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:10px;margin-bottom:18px;padding-bottom:4px;}
   @media (max-width:900px){.tabs{grid-template-columns:repeat(auto-fill,minmax(130px,1fr));}}
@@ -389,6 +398,10 @@
     box-shadow:0 6px 16px rgba(34,152,145,.45);
   }
   .tab-btn.active:hover{background:linear-gradient(135deg,#27a79f 0%,#1f8d99 100%);color:#fff;border-color:#6fe0d6;}
+  /* "Klijenti" — crvena kartica (Sašin zahtjev), ista crvena kao "NE" gumb na javnoj stranici */
+  #tab-btn-novi-klijenti{background:linear-gradient(160deg,#d64545 0%,#a82222 100%);border-color:#8f1b1b;color:#fff;box-shadow:0 2px 6px rgba(120,20,20,.35);}
+  #tab-btn-novi-klijenti:hover{background:linear-gradient(160deg,#e45a5a 0%,#b82a2a 100%);border-color:#ffd0d0;box-shadow:0 10px 22px rgba(120,20,20,.45),0 0 0 1px rgba(255,208,208,.45);}
+  #tab-btn-novi-klijenti.active{background:linear-gradient(160deg,#d64545 0%,#a82222 100%);border-color:#fff;box-shadow:0 0 0 3px #a82222,0 6px 16px rgba(120,20,20,.5);}
   @media (prefers-reduced-motion:reduce){.tab-btn,.tab-btn:hover{transition:none;transform:none;}}
 
   .empty-hint{color:var(--grey);font-size:13px;padding:24px;text-align:center;}
@@ -8523,6 +8536,11 @@
     wrap.className = 'faq-admin-card';
     wrap.innerHTML =
       '<h3>⛽ Gorivo — pregled kretanja</h3>' +
+      '<div class="gorivo-fab-prekidac-red">' +
+        '<label class="gorivo-fab-prekidac"><input type="checkbox" id="gorivo-fab-prekidac-cb" disabled><span class="gorivo-fab-prekidac-slider"></span></label>' +
+        '<div><strong>Balončić s trendovima goriva na naslovnici</strong><div class="faq-admin-hint" style="margin:2px 0 0;">Zadano ugašen. Kad ga uključiš, na javnoj naslovnici se prikazuje mali balončić s dnevnim trendovima goriva i dodatka.</div></div>' +
+        '<span class="faq-admin-status" id="gorivo-fab-prekidac-status"></span>' +
+      '</div>' +
       '<div id="gorivo-graf-mount"></div>' +
       '<h3 class="zone-arhiva-naslov">Dodatak na gorivo — mjesečni postotci</h3>' +
       '<p class="faq-admin-hint">Ovdje se unosi STVARNI mjesečni postotak dodatka na gorivo (retroaktivan unos je moguć — ako nešto zakasni, samo se naknadno upiše za taj mjesec). Ovi podaci pokreću i podsjetnik mailom ispod, te tirkiznu liniju na grafu iznad.</p>' +
@@ -8577,6 +8595,28 @@
         '<span class="faq-admin-status" id="gorivo-cijene-status"></span>' +
       '</div>' +
       '<div id="gorivo-cijene-lista"' + (gorivoCijeneSakrivena_ ? ' hidden' : '') + '></div>';
+
+    // Prekidač balončića goriva na javnoj naslovnici (3.10.2026.). Početno
+    // stanje se čita iz javne rute gorivoJavniPodaci (polje fabUkljucen).
+    (function() {
+      var cb = wrap.querySelector('#gorivo-fab-prekidac-cb');
+      var st = wrap.querySelector('#gorivo-fab-prekidac-status');
+      if (!cb) { return; }
+      gasCall({ action: 'gorivoJavniPodaci' }).then(function(res) {
+        if (res && res.status === 'ok') { cb.checked = res.fabUkljucen === true; cb.disabled = false; }
+        else { st.textContent = 'Stanje nije moguće učitati.'; }
+      }).catch(function() { st.textContent = 'Stanje nije moguće učitati.'; });
+      cb.addEventListener('change', function() {
+        var novo = cb.checked;
+        cb.disabled = true; st.textContent = 'Spremam…';
+        gasCall({ action: 'adminGorivoFabPostavi', token: adminToken, ukljucen: novo }).then(function(res) {
+          if (handleAuthError(res)) { return; }
+          cb.disabled = false;
+          if (res.status === 'ok') { cb.checked = res.fabUkljucen === true; st.textContent = res.fabUkljucen ? '✓ Uključen na naslovnici' : '✓ Ugašen na naslovnici'; }
+          else { cb.checked = !novo; st.textContent = res.message || 'Spremanje nije uspjelo.'; }
+        }).catch(function() { cb.disabled = false; cb.checked = !novo; st.textContent = 'Greška u komunikaciji.'; });
+      });
+    })();
 
     var mjesecSelect = wrap.querySelector('#gorivo-mjesec-select');
     GORIVO_MJESECI_HR_.forEach(function(naziv, idx) {
