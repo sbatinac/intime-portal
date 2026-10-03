@@ -412,6 +412,36 @@
   .imenik-brojac-sep{color:var(--grey);font-weight:400;}
   .imenik-brojac-skriveni{color:var(--red,#c0392b);}
   .imenik-brojac-label{font-weight:400;color:var(--grey);font-size:12px;margin-left:2px;}
+  /* "Osnovni logistički podaci" (3.10.2026.) — kartica po klijentu */
+  .lp-toolbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 0 12px;}
+  .lp-card{border:1px solid var(--line);border-radius:12px;background:#fff;padding:14px 16px;margin:0 0 14px;box-shadow:0 1px 3px rgba(0,0,0,.05);}
+  .lp-card-head{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid var(--line);}
+  .lp-card-naziv{font-size:17px;font-weight:800;color:var(--graphite);}
+  .lp-card-sub{font-size:12px;color:var(--grey);margin-top:2px;}
+  .lp-card-actions{display:flex;flex-wrap:wrap;gap:6px;align-items:center;}
+  .lp-badge-nedostaje{background:#fdecea;color:#c0392b;border:1px solid #f5b7b1;border-radius:999px;font-size:11.5px;font-weight:700;padding:2px 9px;}
+  .lp-badge-ok{background:#e8f6ee;color:#1e8449;border:1px solid #abdfc0;border-radius:999px;font-size:11.5px;font-weight:700;padding:2px 9px;}
+  .lp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:8px 18px;}
+  .lp-sekcija{grid-column:1 / -1;font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--teal-dark,#0f6e68);margin-top:6px;}
+  .lp-red{display:flex;flex-direction:column;gap:1px;min-width:0;}
+  .lp-label{font-size:11px;color:var(--grey);font-weight:700;}
+  .lp-vr{display:flex;align-items:center;gap:6px;font-size:13.5px;color:var(--graphite);word-break:break-word;}
+  .lp-vr.prazno{color:#c0392b;font-style:italic;}
+  .lp-mini-btn{border:1px solid var(--line);background:#f6f8fa;border-radius:6px;font-size:11px;padding:1px 6px;cursor:pointer;line-height:1.6;color:var(--graphite);}
+  .lp-mini-btn:hover{background:#e9eef2;}
+  .lp-grupa{border:1px solid var(--line);border-radius:12px;background:#fbfdfd;margin:0 0 14px;padding:0 12px;}
+  .lp-grupa>summary{cursor:pointer;padding:12px 2px;font-size:15px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;}
+  .lp-grupa-naziv{font-weight:800;font-size:16px;}
+  .lp-grupa-broj{color:var(--grey);font-size:12.5px;}
+  .lp-grupa-mala{color:var(--grey);font-size:11.5px;}
+  .lp-grupa-body{padding:0 0 10px;}
+  .lp-postavke{border:1px dashed var(--line);border-radius:10px;background:#fff;padding:12px 14px;margin:0 0 12px;}
+  .lp-postavke label{display:block;font-size:12px;font-weight:700;margin:8px 0 3px;}
+  .lp-postavke input[type=text]{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:7px;font-size:13px;}
+  .lp-postavke-sek{font-size:12px;font-weight:800;color:var(--teal-dark,#0f6e68);margin-top:10px;text-transform:uppercase;letter-spacing:.04em;}
+  .lp-postavke-hint{font-size:11.5px;color:var(--grey);margin-top:4px;}
+  .lp-lozinka-box{margin-top:10px;padding:10px 12px;border:2px solid #f1c40f;background:#fff9d6;border-radius:8px;font-size:13px;}
+  .lp-lozinka-box code,.lp-postavke code{background:#eef2f4;padding:1px 6px;border-radius:4px;}
 
   .entry-card-body{
     display:none;
@@ -1464,6 +1494,9 @@
   .kalk-usporedba-grid{display:flex;gap:14px;overflow-x:auto;padding-bottom:8px;}
   .kalk-usporedba-slot{flex:0 0 480px;border:1px solid var(--line);border-radius:10px;padding:10px;background:#fafafa;}
   .kalk-usporedba-slot-naslov{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px;font-size:13px;color:var(--graphite);}
+  .kalk-usporedba-cjenik-bar{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:8px 10px;margin-bottom:8px;background:#fdecea;border:2px solid #c0392b;border-radius:8px;}
+  .kalk-usporedba-cjenik-bar input[type=file]{font-size:12px;max-width:100%;flex:1 1 200px;}
+  .kalk-usporedba-cjenik-status{flex:1 1 100%;font-size:11.5px;color:var(--graphite);line-height:1.35;word-break:break-word;}
   .kalk-usporedba-iframe{width:100%;height:1500px;border:1px solid var(--line);border-radius:8px;display:block;background:#fff;}
   /* Prošireni prikaz (cijela stranica) — ista kartica, samo position:fixed; iframeovi se NE ponovno stvaraju pa ostaju učitani cjenici i uneseni podaci. */
   .kalk-usporedba-fs{position:fixed;top:0;left:0;right:0;bottom:0;z-index:99999;background:#fff;overflow:auto;padding:14px 18px;border-radius:0;margin:0;box-sizing:border-box;}
@@ -1649,6 +1682,12 @@
       <button type="button" class="tab-btn" id="tab-btn-odbijenica" onclick="switchTab('Odbijenica')">Nisu zainteresirani (<span id="tab-count-odbijenica">0</span>)</button>
       <button type="button" class="tab-btn" id="tab-btn-ankete" onclick="switchTab('Ankete')">Ankete kvalitete (<span id="tab-count-ankete">0</span>)</button>
       <button type="button" class="tab-btn" id="tab-btn-novi-klijenti" onclick="switchTab('NoviKlijenti')">Klijenti (<span id="tab-count-novi-klijenti">0</span>)</button>
+      <!-- NOVO (3.10.2026., Sašin izričit zahtjev — "još jednu karticu pokraj
+           klijenata... osnovni logistički podaci"): za SVAKOG klijenta iz
+           "Klijenti" automatski se generira kartica s osnovnim logističkim
+           podacima (OIB, TM broj, OB pristup, adresa, vrijeme prikupa,
+           osoba za logistiku, nadležna poslovnica). Vidi buildLogPodaciPanel_. -->
+      <button type="button" class="tab-btn" id="tab-btn-log-podaci" onclick="switchTab('LogPodaci')">📋 Osnovni logistički podaci (<span id="tab-count-log-podaci">0</span>)</button>
       <button type="button" class="tab-btn" id="tab-btn-faq" onclick="switchTab('FAQ')">Česta pitanja (<span id="tab-count-faq">0</span>)</button>
       <button type="button" class="tab-btn" id="tab-btn-zone" onclick="switchTab('Zone')">Zone dostave (<span id="tab-count-zone">0</span>)</button>
       <!-- NOVO (27.9.2026., Sašin izričit zahtjev) — kartica "Kalkulator":
@@ -2151,6 +2190,7 @@
     Odbijenica: { q: '', raspon: null },
     Arhiva: { q: '', raspon: null },
     NoviKlijenti: { q: '', raspon: null },
+    LogPodaci: { q: '', raspon: null },
     Ankete: { q: '', raspon: null },
     Imenik: { q: '', raspon: null }
   };
@@ -3737,6 +3777,8 @@
     document.getElementById('tab-count-interes').textContent = interesCount;
     document.getElementById('tab-count-odbijenica').textContent = odbijenicaCount;
     document.getElementById('tab-count-novi-klijenti').textContent = noviKlijentiCount;
+    var logPodaciBrojacEl_ = document.getElementById('tab-count-log-podaci');
+    if (logPodaciBrojacEl_) { logPodaciBrojacEl_.textContent = noviKlijentiCount; }
     document.getElementById('tab-count-ponude').textContent = ponudeCount;
     document.getElementById('tab-count-arhiva').textContent = arhivaCount;
     // Glavni dashboard counter — ukupan broj klijenata u bazi (isti brojevi
@@ -3754,6 +3796,7 @@
     document.getElementById('tab-btn-odbijenica').classList.toggle('active', tab === 'Odbijenica');
     document.getElementById('tab-btn-ankete').classList.toggle('active', tab === 'Ankete');
     document.getElementById('tab-btn-novi-klijenti').classList.toggle('active', tab === 'NoviKlijenti');
+    document.getElementById('tab-btn-log-podaci').classList.toggle('active', tab === 'LogPodaci');
     document.getElementById('tab-btn-faq').classList.toggle('active', tab === 'FAQ');
     document.getElementById('tab-btn-zone').classList.toggle('active', tab === 'Zone');
     document.getElementById('tab-btn-kalkulator').classList.toggle('active', tab === 'Kalkulator');
@@ -3954,6 +3997,11 @@
 
     if (activeTab === 'LogistickiCentri') {
       container.appendChild(buildLogistickiCentriPanel_());
+      return;
+    }
+
+    if (activeTab === 'LogPodaci') {
+      container.appendChild(buildLogPodaciPanel_());
       return;
     }
 
@@ -5095,7 +5143,7 @@
   // ("pratioci", ?kalk_uloga=pratilac) imaju tu karticu zaključanu
   // (vidi .usporedba-pratilac-locked u InTime_KalkulatorCijena.html) i
   // automatski preuzimaju iste podatke — vidi opširnu napomenu uz
-  // primijeniSinhroNaPratioca_ niže za TOČNO što se sinhronizira i zašto
+  // kalkSinhroIzvezi_/kalkSinhroUvezi_ (kraj skripte InTime_KalkulatorCijena.html) za TOČNO što se sinhronizira i zašto
   // izravnim pristupom varijablama umjesto simuliranjem tipkanja/klikova.
   function buildKalkulatorUsporedbaPanel_() {
     var wrap = document.createElement('div');
@@ -5105,10 +5153,11 @@
 
     wrap.innerHTML =
       '<h3 style="color:#c0392b;">KALKULACIJE — usporedba cjenika</h3>' +
-      '<p class="faq-admin-hint">Unesi podatke o pošiljci (mjesto, način obračuna, broj koleta, težinu, dimenzije) SAMO u <strong>Kalkulator 1 (glavni)</strong> — isti podaci se odmah prenose u sve ostale kalkulatore niže, svaki sa svojim (drugačijim) učitanim cjenikom preko gumba "Učitaj cjenik" na toj stranici, da odmah vidiš usporedbu cijena po istoj pošiljci. Dopunske usluge (otkupnina, SMS, iskazana vrijednost...) se NE prenose — unose se zasebno po kalkulatoru ako treba. Kalkulatori su potpuno otključani (bez korisničkog imena i lozinke klijenta) — otključava ih samo ova admin prijava. Gumbom "Proširi na cijelu stranicu" dobivaš puni prikaz usporedbe.</p>' +
+      '<p class="faq-admin-hint">Unesi podatke o pošiljci (mjesto, način obračuna, broj koleta, težinu, dimenzije) SAMO u <strong>Kalkulator 1 (glavni)</strong> — isti podaci se odmah prenose u sve ostale kalkulatore niže, svaki sa svojim (drugačijim) učitanim cjenikom preko crvene trake "Cjenik za ovaj kalkulator" iznad njega, da odmah vidiš usporedbu cijena po istoj pošiljci. Dopunske usluge (otkupnina, SMS, iskazana vrijednost...) se NE prenose — unose se zasebno po kalkulatoru ako treba. Kalkulatori su potpuno otključani (bez korisničkog imena i lozinke klijenta) — otključava ih samo ova admin prijava. Gumbom "Proširi na cijelu stranicu" dobivaš puni prikaz usporedbe. Kalkulator 1 je REFERENTNI: u ostalim kalkulatorima uz svaku cijenu u cjeniku stoji mali postotak odstupanja (npr. (+5%)), a uz ostale iznose (izračun, dopunske usluge) razlika u EUR (npr. (+1,45 EUR)). <span style="color:#1e8449;font-weight:700;">Zeleno</span> = veće od Kalkulatora 1, <span style="color:#c0392b;font-weight:700;">crveno</span> = manje. Usporedba počinje tek kad je u kalkulatoru učitan vlastiti cjenik (dok je na zadanom, ništa se ne označava). Vrijednosti koje su ISTE kao u Kalkulatoru 1 označene su <span style="background:#fff3a0;box-shadow:inset 0 -3px 0 #f1c40f;padding:0 4px;font-weight:700;">žuto</span>. Dopunske usluge se ne prenose iz glavnog — u svakom kalkulatoru se uključuju zasebno, a isključene piše „isključeno“.</p>' +
       '<div class="faq-admin-card-actions" style="margin-bottom:10px;">' +
         '<button type="button" class="btn btn-small" id="kalkUsporedbaDodajBtn">+ Dodaj kalkulator za usporedbu</button> ' +
-        '<button type="button" class="btn btn-outline btn-small" id="kalkUsporedbaFsBtn">⛶ Proširi na cijelu stranicu</button>' +
+        '<button type="button" class="btn btn-outline btn-small" id="kalkUsporedbaFsBtn">⛶ Proširi na cijelu stranicu</button>' + +
+        '<label style="margin-left:10px;font-size:12.5px;font-weight:700;cursor:pointer;"><input type="checkbox" id="kalkUsporedbaOdstupanjaChk" checked> Prikaži odstupanja od Kalkulatora 1</label>' +
       '</div>' +
       '<div class="kalk-usporedba-grid" id="kalkUsporedbaGrid"></div>';
 
@@ -5154,14 +5203,54 @@
         : ('<span>Kalkulator ' + (idx + 1) + '</span>' + ' <button type="button" class="btn btn-outline btn-small kalk-usporedba-ukloni-btn">✕ Ukloni</button>');
       slotWrap.innerHTML =
         '<div class="kalk-usporedba-slot-naslov">' + naslovHtml + '</div>' +
+        '<div class="kalk-usporedba-cjenik-bar">' +
+          '<strong style="color:#c0392b;font-size:12.5px;">📂 Cjenik za ovaj kalkulator:</strong>' +
+          '<input type="file" class="kalk-usporedba-cjenik-file" accept=".xlsx,.xls,.xltx,.xlsm">' +
+          '<button type="button" class="btn btn-outline btn-small kalk-usporedba-cjenik-reset">↺ Zadani cjenik</button>' +
+          '<div class="kalk-usporedba-cjenik-status">Trenutno: zadani (osnovni) cjenik.</div>' +
+        '</div>' +
         '<iframe src="' + esc(urlZaIframe) + '" title="In Time — kalkulator cijene (usporedba)" loading="lazy" class="kalk-usporedba-iframe"></iframe>';
       gridEl_.appendChild(slotWrap);
       var iframeEl = slotWrap.querySelector('iframe');
       var slot = { wrapEl: slotWrap, iframeEl: iframeEl, jeGlavni: jeGlavni };
       slotovi_.push(slot);
-      if (jeGlavni) {
-        iframeEl.addEventListener('load', function() { povezanaGlavniListener_(iframeEl); });
-      } else {
+      // Učitavanje cjenika za OVAJ kalkulator izravno iz trake iznad (Sašin zahtjev,
+      // 3.10.2026.: "želim imati mogućnost da unesem svoj cjenik za svaki") —
+      // datoteka se prosljeđuje u postojeće polje #cjenikFile unutar kalkulatora,
+      // pa vrijedi ISTI postupak/parser kao pri ručnom učitavanju na samoj stranici.
+      var cjFile_ = slotWrap.querySelector('.kalk-usporedba-cjenik-file');
+      var cjReset_ = slotWrap.querySelector('.kalk-usporedba-cjenik-reset');
+      var cjStatus_ = slotWrap.querySelector('.kalk-usporedba-cjenik-status');
+      slot.statusEl = cjStatus_;
+      cjFile_.addEventListener('change', function() {
+        var file = cjFile_.files && cjFile_.files[0];
+        if (!file) { return; }
+        try {
+          var fWin = iframeEl.contentWindow;
+          var inp = fWin.document.getElementById('cjenikFile');
+          if (!inp) { cjStatus_.textContent = 'Kalkulator se još učitava — pokušajte za trenutak.'; return; }
+          inp.disabled = false;
+          var dt = new fWin.DataTransfer();
+          dt.items.add(file);
+          inp.files = dt.files;
+          inp.dispatchEvent(new fWin.Event('change', { bubbles: true }));
+          cjStatus_.textContent = 'Učitavanje cjenika "' + file.name + '"…';
+        } catch (eCj) {
+          cjStatus_.textContent = 'Učitavanje cjenika nije uspjelo: ' + (eCj && eCj.message ? eCj.message : eCj);
+        }
+      });
+      cjReset_.addEventListener('click', function() {
+        try {
+          var fWin = iframeEl.contentWindow;
+          if (typeof fWin.resetCjenik === 'function') { fWin.resetCjenik(); }
+          cjFile_.value = '';
+          if (typeof fWin.scheduleLiveIzracunaj === 'function') { fWin.scheduleLiveIzracunaj(); }
+          slot.zadnjiSig = null; // ponovno prepiši podatke o pošiljci (reset je možda promijenio zaključavanja)
+        } catch (eRs) { /* ignorira */ }
+      });
+      // Kad se iframe (ponovno) učita, zaboravi zadnji prenos da se podaci opet prepišu.
+      iframeEl.addEventListener('load', function() { slot.zadnjiSig = null; });
+      if (!jeGlavni) {
         slotWrap.querySelector('.kalk-usporedba-ukloni-btn').addEventListener('click', function() {
           var pos = slotovi_.indexOf(slot);
           if (pos === -1) { return; }
@@ -5192,83 +5281,232 @@
     // pošiljci" — NE "Dopunske usluge" (otkupnina/SMS/iskazana vrijednost
     // itd.), koje Saša nije tražio da se prenose i ostaju zasebne po
     // kalkulatoru.
-    var sinkroTajmer_ = null;
-    function povezanaGlavniListener_(glavniIframe) {
-      var doc;
-      try { doc = glavniIframe.contentDocument; } catch (eDoc) { return; }
-      if (!doc) { return; }
-      var kartica = doc.getElementById('podaciOPosiljciCard');
-      if (!kartica) { return; }
-      var pokreniSinhro_ = function() {
-        clearTimeout(sinkroTajmer_);
-        sinkroTajmer_ = setTimeout(function() { sinhronizirajSvePratioce_(glavniIframe); }, 150);
-      };
-      kartica.addEventListener('input', pokreniSinhro_);
-      kartica.addEventListener('change', pokreniSinhro_);
-      kartica.addEventListener('click', pokreniSinhro_);
+    // IZMJENA (3.10.2026., Sašin zahtjev — "da se redovito prenosi/refresha
+    // što stavim u jedan od osnovnih podataka"): raniji pristup (izravan
+    // pristup varijablama kalkulatora iz ove stranice) NIJE radio jer su te
+    // varijable `let` (nisu svojstva window objekta) — sve je tiho ostajalo
+    // bez učinka dok se ne klikne "Izračunaj". Sad kalkulator sam izlaže dvije
+    // funkcije (kalkSinhroIzvezi_ / kalkSinhroUvezi_ na dnu njegove skripte),
+    // a ovdje se svakih ~400 ms uspoređuje potpis podataka glavnog
+    // kalkulatora s onim što je zadnje preneseno u svaki pratilac; čim se
+    // išta promijeni (upis, odabir mjesta, promjena težine/dimenzija...),
+    // odmah se prepiše u pratioce i oni sami preračunaju cijenu. Bez
+    // oslanjanja na događaje (input/change/click), pa hvata i programske
+    // promjene i odabir iz padajućeg izbornika.
+    // ---- Odstupanja od referentnog kalkulatora (Kalkulator 1) ----
+    // Sašin zahtjev (3.10.2026.): u svim kalkulatorima osim prvog uz svaku
+    // vrijednost stoji mala zagrada s odstupanjem od Kalkulatora 1 (koji je
+    // uvijek REFERENTNI, bez obzira koji cjenik ima učitan): postotak za
+    // cijene u tablici cjenika, razlika u EUR za sve ostale iznose (izračun,
+    // dopunske usluge). Veće = zeleno, manje = crveno, jednako = ništa.
+    // Anotacije se ubacuju u DOM svakog pratioca (iste domene); kalkulator ih
+    // sam obriše kad iznova iscrta tablicu/izračun, pa ih ovo na sljedećem
+    // otkucaju (≤400 ms) vraća. Bez izmjene samog kalkulatora.
+    var DEV_CSS_ = '.kalk-dev{font-size:10.5px;font-weight:700;margin-left:5px;white-space:nowrap;}' +
+      '.kalk-dev.up{color:#1e8449;}.kalk-dev.down{color:#c0392b;}' +
+      'td>.kalk-dev.blok{display:block;margin-left:0;text-align:right;}' +
+      '.kalk-isto:not(.hit-cell){background-color:#fff3a0 !important;}' +
+      '.kalk-isto{box-shadow:inset 0 -3px 0 #f1c40f;}' +
+      '.kalk-isklj{font-size:10.5px;font-weight:700;font-style:italic;color:#7f8c8d;margin-left:6px;white-space:nowrap;}' +
+      'tr.kalk-dev-row td{color:#7f8c8d;font-style:italic;}';
+    function ownText_(el) {
+      var t = '';
+      for (var i = 0; i < el.childNodes.length; i++) { if (el.childNodes[i].nodeType === 3) { t += el.childNodes[i].nodeValue; } }
+      return t;
+    }
+    function parseVr_(txt) {
+      var m = /^\s*([-−]?\d[\d.]*(?:,\d+)?)\s*(EUR|%)/.exec(txt || '');
+      if (!m) { return null; }
+      return { v: parseFloat(m[1].replace('−', '-').replace(/\./g, '').replace(',', '.')), jed: m[2] };
+    }
+    function fmtBr_(n, minDec, maxDec) { return n.toLocaleString('hr-HR', { minimumFractionDigits: minDec, maximumFractionDigits: maxDec }); }
+    function znak_(n) { return n > 0 ? '+' : '−'; }
+    function ukloniDev_(el) {
+      var old = el.querySelector(':scope > span.kalk-dev');
+      if (old) { old.remove(); }
+    }
+    function postaviDev_(el, tekst, cls, blok) {
+      var old = el.querySelector(':scope > span.kalk-dev');
+      var klasa = 'kalk-dev ' + cls + (blok ? ' blok' : '');
+      if (old && old.textContent === tekst && old.className === klasa) { return; }
+      if (old) { old.remove(); }
+      var sp = el.ownerDocument.createElement('span');
+      sp.className = klasa;
+      sp.textContent = tekst;
+      el.appendChild(sp);
+    }
+    function oznaci_(el, ref, val, opcije) {
+      // ref/val: {v, jed}; opcije: {pct:true, eur:true, blok:true}
+      if (!ref || !val || ref.jed !== val.jed) { ukloniDev_(el); el.classList.remove('kalk-isto'); return; }
+      var d = val.v - ref.v;
+      // Iste vrijednosti kao u referentnom kalkulatoru → zažućeno (bez zagrade).
+      if (Math.abs(d) < 0.005) { ukloniDev_(el); el.classList.add('kalk-isto'); return; }
+      el.classList.remove('kalk-isto');
+      var dijelovi = [];
+      if (val.jed === 'EUR') {
+        if (!opcije.samoPct) { dijelovi.push(znak_(d) + fmtBr_(Math.abs(d), 2, 2) + ' EUR'); }
+        if ((opcije.pct || opcije.samoPct) && ref.v > 0) {
+          var p = d / ref.v * 100;
+          dijelovi.push(znak_(p) + fmtBr_(Math.abs(p), 0, Math.abs(p) < 0.1 ? 2 : 1) + '%');
+        }
+      } else {
+        dijelovi.push(znak_(d) + fmtBr_(Math.abs(d), 0, 2) + '%');
+      }
+      if (!dijelovi.length) { ukloniDev_(el); return; }
+      postaviDev_(el, '(' + dijelovi.join(' · ') + ')', d > 0 ? 'up' : 'down', !!opcije.blok);
+    }
+    function ocistiSveDev_(doc) {
+      Array.prototype.forEach.call(doc.querySelectorAll('span.kalk-dev, span.kalk-isklj, tr.kalk-dev-row'), function(n) { n.remove(); });
+      Array.prototype.forEach.call(doc.querySelectorAll('.kalk-isto'), function(n) { n.classList.remove('kalk-isto'); });
+    }
+    function kljucRetka_(tr, brojac) {
+      var oznaka;
+      if (tr.classList.contains('total-row')) { oznaka = '#UKUPNO'; }
+      else { oznaka = (tr.cells[0].textContent || '').toLowerCase().replace(/\([^)]*\)/g, '').replace(/\s+/g, ' ').trim(); }
+      brojac[oznaka] = (brojac[oznaka] || 0) + 1;
+      return oznaka + '|' + brojac[oznaka];
+    }
+    function jeCijenaIzTablice_(kljuc) {
+      return /^(osnovna cijena|međuzbroj|ukupno|#ukupno)/.test(kljuc.toLowerCase());
+    }
+    function osvjeziOdstupanja_() {
+      var chk = wrap.querySelector('#kalkUsporedbaOdstupanjaChk');
+      var ukljuceno = !chk || chk.checked;
+      var glavni = slotovi_[0];
+      var rDoc = null;
+      try { rDoc = glavni && glavni.iframeEl.contentDocument; } catch (eR) { rDoc = null; }
+      slotovi_.forEach(function(slot) {
+        if (slot.jeGlavni) { return; }
+        var fDoc;
+        try { fDoc = slot.iframeEl.contentDocument; } catch (eF) { return; }
+        if (!fDoc || !fDoc.body) { return; }
+        if (!ukljuceno || !rDoc || !rDoc.body) { ocistiSveDev_(fDoc); return; }
+        // Usporedba KREĆE tek kad je u OVOM kalkulatoru učitan vlastiti cjenik (Sašin zahtjev,
+        // 3.10.2026.: "dok se ne učitaju cjenici nemoj ništa zažutiti"). Dok koristi zadani/osnovni
+        // cjenik, ništa se ne označava (ni žuto, ni zagrade, ni "isključeno").
+        var fWinU = null;
+        try { fWinU = slot.iframeEl.contentWindow; } catch (eU) { fWinU = null; }
+        if (!fWinU || typeof fWinU.kalkJeUcitanVlastitiCjenik_ !== 'function' || !fWinU.kalkJeUcitanVlastitiCjenik_()) { ocistiSveDev_(fDoc); return; }
+        if (!fDoc.getElementById('kalkDevStyle')) {
+          var st = fDoc.createElement('style'); st.id = 'kalkDevStyle'; st.textContent = DEV_CSS_;
+          (fDoc.head || fDoc.body).appendChild(st);
+        }
+        // 1) Tablica cjenika — postotak po ćeliji.
+        var refCjenik = {};
+        Array.prototype.forEach.call(rDoc.querySelectorAll('#cjenikTableBody tr[data-kg]'), function(tr) {
+          var o = {};
+          ['z1', 'z2', 'z3'].forEach(function(z) { var td = tr.querySelector('td[data-zone="' + z + '"]'); o[z] = td ? parseVr_(ownText_(td)) : null; });
+          refCjenik[tr.getAttribute('data-kg')] = o;
+        });
+        Array.prototype.forEach.call(fDoc.querySelectorAll('#cjenikTableBody tr[data-kg]'), function(tr) {
+          var ref = refCjenik[tr.getAttribute('data-kg')];
+          ['z1', 'z2', 'z3'].forEach(function(z) {
+            var td = tr.querySelector('td[data-zone="' + z + '"]');
+            if (!td) { return; }
+            if (!ref) { ukloniDev_(td); td.classList.remove('kalk-isto'); return; }
+            oznaci_(td, ref[z], parseVr_(ownText_(td)), { samoPct: true, blok: true });
+          });
+        });
+        // 2) Izračun — razlika u EUR po retku (uz postotak za cijene iz tablice i ukupno).
+        var refRetci = {};
+        var refOznake = [];
+        var rTbl = rDoc.getElementById('breakdownTable');
+        if (rTbl) {
+          var br = {};
+          Array.prototype.forEach.call(rTbl.querySelectorAll('tr'), function(tr) {
+            if (!tr.cells || tr.cells.length < 2 || tr.classList.contains('kalk-dev-row')) { return; }
+            var amt = parseVr_(ownText_(tr.cells[1]));
+            var k = kljucRetka_(tr, br);
+            if (amt) { refRetci[k] = amt; refOznake.push({ k: k, label: (tr.cells[0].textContent || '').trim() }); }
+          });
+        }
+        var fTbl = fDoc.getElementById('breakdownTable');
+        if (fTbl) {
+          var br2 = {};
+          var imaF = {};
+          Array.prototype.forEach.call(fTbl.querySelectorAll('tr'), function(tr) {
+            if (!tr.cells || tr.cells.length < 2 || tr.classList.contains('kalk-dev-row')) { return; }
+            var amt = parseVr_(ownText_(tr.cells[1]));
+            var k = kljucRetka_(tr, br2);
+            if (!amt) { ukloniDev_(tr.cells[1]); tr.cells[1].classList.remove('kalk-isto'); return; }
+            imaF[k] = true;
+            var ref = refRetci[k];
+            if (!ref) { ref = { v: 0, jed: 'EUR' }; }
+            oznaci_(tr.cells[1], ref, amt, { pct: jeCijenaIzTablice_(k) });
+          });
+          // Stavke koje postoje u referentnom izračunu, a u ovom ne (npr. isključena dopunska usluga) → redak "isključeno".
+          var fali = refOznake.filter(function(o) { return !imaF[o.k] && !jeCijenaIzTablice_(o.k); });
+          var zeljeni = fali.map(function(o) { return o.label + '|isključeno'; }).join('#');
+          var postojeci = Array.prototype.map.call(fTbl.querySelectorAll('tr.kalk-dev-row'), function(tr) { return tr.cells[0].textContent + '|' + tr.cells[1].textContent; }).join('#');
+          if (zeljeni !== postojeci) {
+            Array.prototype.forEach.call(fTbl.querySelectorAll('tr.kalk-dev-row'), function(tr) { tr.remove(); });
+            var ukupnoTr = fTbl.querySelector('tr.total-row');
+            fali.forEach(function(o) {
+              var tr = fDoc.createElement('tr');
+              tr.className = 'kalk-dev-row';
+              var t1 = fDoc.createElement('td'); t1.textContent = o.label;
+              var t2 = fDoc.createElement('td'); t2.textContent = 'isključeno';
+              tr.appendChild(t1); tr.appendChild(t2);
+              if (ukupnoTr) { ukupnoTr.parentNode.insertBefore(tr, ukupnoTr); } else { (fTbl.tBodies[0] || fTbl).appendChild(tr); }
+            });
+          }
+        }
+        // 3) Ostali iznosi (dopunske usluge, naknade...) — razlika u EUR / postotnim bodovima.
+        Array.prototype.forEach.call(rDoc.querySelectorAll('.live-fee-value[id], .price-tag[id]'), function(rEl) {
+          var id = rEl.id;
+          if (/^(dimNestandardnaSummary|dimPojedinacnoTotalValue|nestandardnaStandardnaMsg)/.test(id)) { return; }
+          var fEl = fDoc.getElementById(id);
+          if (!fEl) { return; }
+          oznaci_(fEl, parseVr_(ownText_(rEl)), parseVr_(ownText_(fEl)), {});
+        });
+        // 4) Dopunske usluge koje su u OVOM kalkulatoru isključene → oznaka "isključeno" (kvačice se NE prenose iz glavnog;
+        // svaka usluga se uključuje zasebno po kalkulatoru, ili ostaje isključena).
+        Array.prototype.forEach.call(fDoc.querySelectorAll('input[type=checkbox][id^="dop_"]'), function(cb) {
+          var lab = fDoc.querySelector('label[for="' + cb.id + '"]');
+          if (!lab) { return; }
+          var tag = lab.querySelector(':scope > span.kalk-isklj');
+          if (cb.checked) { if (tag) { tag.remove(); } return; }
+          if (tag) { return; }
+          var sp = fDoc.createElement('span'); sp.className = 'kalk-isklj'; sp.textContent = 'isključeno';
+          lab.appendChild(sp);
+        });
+      });
     }
 
-    function sinhronizirajSvePratioce_(glavniIframe) {
+    var sinkroInterval_ = setInterval(function() {
+      if (!document.body.contains(wrap)) { clearInterval(sinkroInterval_); return; }
+      sinhronizirajSvePratioce_();
+      try { osvjeziOdstupanja_(); } catch (eOds) { /* best-effort */ }
+      // Prikaz statusa učitanog cjenika iz svakog kalkulatora (npr. 'Učitan cjenik: "X.xlsx" (…)').
+      slotovi_.forEach(function(slot) {
+        if (!slot.statusEl) { return; }
+        try {
+          var st = slot.iframeEl.contentWindow.document.getElementById('cjenikStatus');
+          if (st && st.textContent && st.textContent !== slot.zadnjiStatus) {
+            slot.zadnjiStatus = st.textContent;
+            slot.statusEl.textContent = st.textContent;
+            slot.statusEl.style.color = (st.style.color && /danger|c0392b|rgb\(2[0-9]{2}, ?[0-9]{1,2}, ?[0-9]{1,2}\)/i.test(st.style.color)) ? '#c0392b' : '';
+          }
+        } catch (eSt) { /* iframe se još učitava */ }
+      });
+    }, 400);
+
+    function sinhronizirajSvePratioce_() {
+      var glavni = slotovi_[0];
+      if (!glavni) { return; }
       var mWin;
-      try { mWin = glavniIframe.contentWindow; } catch (eWin) { return; }
-      if (!mWin || typeof mWin.pojedinacneTezineVrijednosti === 'undefined') { return; }
+      try { mWin = glavni.iframeEl.contentWindow; } catch (eWin) { return; }
+      if (!mWin || typeof mWin.kalkSinhroIzvezi_ !== 'function') { return; }
+      var snap, sig;
+      try { snap = mWin.kalkSinhroIzvezi_(); sig = JSON.stringify(snap); } catch (eIzv) { return; }
       slotovi_.forEach(function(slot) {
         if (slot.jeGlavni) { return; }
         var fWin;
         try { fWin = slot.iframeEl.contentWindow; } catch (eFWin) { return; }
-        if (!fWin || typeof fWin.pojedinacneTezineVrijednosti === 'undefined') { return; }
-        try { primijeniSinhroNaPratioca_(mWin, fWin); } catch (ePrimjeni) { /* best-effort, ne prekida ostale slotove */ }
+        if (!fWin || typeof fWin.kalkSinhroUvezi_ !== 'function') { return; }
+        if (slot.zadnjiSig === sig) { return; }
+        try { fWin.kalkSinhroUvezi_(snap); slot.zadnjiSig = sig; } catch (ePrimjeni) { /* pokušat će ponovno pri sljedećem otkucaju */ }
       });
-    }
-
-    function primijeniSinhroNaPratioca_(mWin, fWin) {
-      var mDoc = mWin.document, fDoc = fWin.document;
-      // 1) Mjesto + zona.
-      fDoc.getElementById('mjestoPolaziste').value = mDoc.getElementById('mjestoPolaziste').value;
-      fDoc.getElementById('mjestoOdrediste').value = mDoc.getElementById('mjestoOdrediste').value;
-      fWin.zonaPolaziste = mWin.zonaPolaziste;
-      fWin.zonaOdrediste = mWin.zonaOdrediste;
-      var bPolBadge = mDoc.getElementById('mjestoPolazisteZonaBadge'), fPolBadge = fDoc.getElementById('mjestoPolazisteZonaBadge');
-      fPolBadge.textContent = bPolBadge.textContent;
-      fPolBadge.className = bPolBadge.className;
-      var bOdrBadge = mDoc.getElementById('mjestoOdredisteZonaBadge'), fOdrBadge = fDoc.getElementById('mjestoOdredisteZonaBadge');
-      fOdrBadge.textContent = bOdrBadge.textContent;
-      fOdrBadge.className = bOdrBadge.className;
-      if (typeof fWin.updateZonaObracuna === 'function') { fWin.updateZonaObracuna(); }
-
-      // 2) Jedinice — MORA prije kopiranja nizova (brojevi se tumače prema trenutnoj jedinici).
-      fWin.tezinaJedinica = mWin.tezinaJedinica;
-      fWin.duzinaJedinica = mWin.duzinaJedinica;
-      Array.prototype.forEach.call(fDoc.querySelectorAll('#tezinaJedinicaToggle button'), function(b) { b.classList.toggle('active', b.getAttribute('data-unit') === fWin.tezinaJedinica); });
-      Array.prototype.forEach.call(fDoc.querySelectorAll('#duzinaJedinicaToggle button'), function(b) { b.classList.toggle('active', b.getAttribute('data-unit') === fWin.duzinaJedinica); });
-
-      // 3) Način obračuna (volumenski / nestandardna) — Sašin naknadni zahtjev
-      // (2.10.2026., "želio bih da mogu na drugima način obračuna
-      // mijenjati... da vidim razlike"): OVO SE NE PRENOSI u pratioce.
-      // Svaki kalkulator (osim glavnog) zadržava svoj NEOVISNI način
-      // obračuna — blok "Način obračuna pošiljke" je u pratiocima namjerno
-      // ostavljen otključan (vidi zakljucajPodaciOPosiljciZaPratioca_ u
-      // InTime_KalkulatorCijena.html), baš da se može ručno postaviti
-      // drugačije od glavnog, radi usporedbe.
-
-      // 4) Nizovi po koletu (težina/dimenzije/paleta) — kopirani PRIJE promjene broja koleta
-      // (korak 5), da renderDimPojedinacno() odmah iscrta ispravno popunjene retke.
-      fWin.pojedinacneTezineVrijednosti = mWin.pojedinacneTezineVrijednosti.slice();
-      fWin.koletoDimS = mWin.koletoDimS.slice();
-      fWin.koletoDimD = mWin.koletoDimD.slice();
-      fWin.koletoDimV = mWin.koletoDimV.slice();
-      fWin.koletoNaPaleti = mWin.koletoNaPaleti.slice();
-      fWin.koletoPaletaTip = mWin.koletoPaletaTip.slice();
-      fWin.koletoPaletaRucno = mWin.koletoPaletaRucno.slice();
-
-      // 5) Broj koleta — postavljanje brojKoletaStvarni okida renderDimPojedinacno() preko
-      // postojećeg 'input' rukovatelja na toj stranici (updateDimNacinUI), koji čita gornje nizove.
-      fDoc.getElementById('brojKoletaTip').value = mDoc.getElementById('brojKoletaTip').value;
-      fDoc.getElementById('brojKoleta').value = mDoc.getElementById('brojKoleta').value;
-      fDoc.getElementById('brojKoletaStvarni').value = mDoc.getElementById('brojKoletaStvarni').value;
-      fDoc.getElementById('brojKoletaStvarni').dispatchEvent(new fWin.Event('input', { bubbles: true }));
-
-      if (typeof fWin.scheduleLiveIzracunaj === 'function') { fWin.scheduleLiveIzracunaj(); }
     }
 
     dodajBtn_.addEventListener('click', dodajSlot_);
@@ -5951,6 +6189,533 @@
       });
     }
     return sekcija;
+  }
+
+  // ============================================================
+  // NOVO (3.10.2026.) — "OSNOVNI LOGISTIČKI PODACI"
+  // Sašin izričit zahtjev: "još jednu karticu pokraj klijenata... u tu će
+  // se generirati kartica za svakog klijenta — kad se klijent prebaci u
+  // nove klijente, na tom mjestu se generira kartica s ovim podacima: OIB,
+  // ime klijenta, TM broj, OB username, OB password, adresa (grad, poštanski
+  // broj i sve), vrijeme prikupa, osoba zadužena za logistiku unutar
+  // subjekta (kontakt telefon, kontakt mail), poslovnica zadužena za
+  // klijenta". Kartice se NE spremaju zasebno — izvode se UŽIVO iz istih
+  // zapisa kao kartica "Klijenti" (jeOtvorenKlijent), pa se čim se klijent
+  // prebaci među klijente kartica pojavi sama, a svaka naknadna promjena
+  // (ispravak adrese, nova lozinka, promjena poslovnice...) vidi se odmah.
+  // Isti redoslijed prednosti kao ostatak admina: admin ISPRAVAK > upitnik.
+  // ============================================================
+  function logPodaciZaEntry_(entry) {
+    var f = function(l) { return fieldVal(entry, l); };
+    var vrijemeKlijent = f('Vrijeme prikupa pošiljaka (dolazak vozila)');
+    var adresaPrikup = f('Ispravljena adresa prikupa (admin)') || f('Adresa mjesta prikupa pošiljaka') || f('Adresa sjedišta');
+    var pbrPrikup = f('Ispravljeni poštanski broj prikupa (admin)') || f('Poštanski broj mjesta prikupa') || f('Poštanski broj');
+    var gradPrikup = f('Ispravljeno mjesto prikupa (admin)') || f('Mjesto prikupa pošiljaka') || f('Mjesto');
+    var sjedisteSvi = [f('Adresa sjedišta'), f('Poštanski broj'), f('Mjesto')].filter(function(x) { return x; }).join(', ');
+    var prikupSvi = [adresaPrikup, pbrPrikup, gradPrikup].filter(function(x) { return x; }).join(', ');
+    var poslovnice = (f('Nadležna poslovnica (admin)') || '').split(',').map(function(s) { return s.trim(); }).filter(function(s) { return s; }).join(', ');
+    var redovi = [
+      { sek: 'Klijent' },
+      { label: 'Naziv klijenta', vr: f('Naziv tvrtke') || f('Naziv poslovnog subjekta') },
+      { label: 'OIB', vr: f('OIB') || f('OIB poslovnog subjekta') },
+      { label: 'TM broj', vr: f('Identifikacijski TM broj klijenta (admin)') },
+      { sek: 'Online Booking (OB) pristup' },
+      { label: 'OB korisničko ime', vr: f('OB korisničko ime (admin)') || f('Preferirana e-mail adresa za prijavu u Online Booking (OB)') },
+      { label: 'OB lozinka', vr: f('OB lozinka (admin)'), tajno: true },
+      { sek: 'Adresa prikupa' },
+      { label: 'Adresa (ulica i broj)', vr: adresaPrikup },
+      { label: 'Poštanski broj', vr: pbrPrikup },
+      { label: 'Grad / mjesto', vr: gradPrikup }
+    ];
+    if (sjedisteSvi && prikupSvi && sjedisteSvi !== prikupSvi) {
+      redovi.push({ label: 'Adresa sjedišta (različita od prikupa)', vr: sjedisteSvi, neobavezno: true });
+    }
+    redovi.push(
+      { sek: 'Prikup' },
+      { label: 'Vrijeme prikupa (najraniji dolazak vozila)', vr: f('Vrijeme prikupa — ručno uređeno (admin)') || vrijemeKlijent },
+      { label: 'Zadnji termin za unos naloga', vr: f('Zadnje vrijeme unosa naloga (admin)') || pomakniVrijeme_(vrijemeKlijent, -30), neobavezno: true },
+      { sek: 'Osoba zadužena za logistiku u subjektu' },
+      { label: 'Ime i prezime', vr: f('Ispravljena osoba zadužena za prikup (admin)') || f('Osoba za organizaciju slanja/primanja pošiljaka – ime i prezime') },
+      { label: 'Telefon', vr: f('Ispravljeni telefon prikupa (admin)') || f('Osoba za organizaciju slanja/primanja pošiljaka – telefon') },
+      { label: 'E-mail', vr: f('Ispravljeni email prikupa (admin)') || f('Osoba za organizaciju slanja/primanja pošiljaka – email') },
+      { sek: 'In Time' },
+      { label: 'Nadležna poslovnica', vr: poslovnice }
+    );
+    return redovi;
+  }
+
+  function logPodaciKopiraj_(tekst) {
+    var ok = false;
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(tekst);
+        ok = true;
+      } else {
+        var ta = document.createElement('textarea');
+        ta.value = tekst; ta.style.position = 'fixed'; ta.style.left = '-9999px';
+        document.body.appendChild(ta); ta.select();
+        ok = document.execCommand('copy');
+        document.body.removeChild(ta);
+      }
+    } catch (e) { ok = false; }
+    return ok;
+  }
+
+  function logPodaciKartica_(entry) {
+    var redovi = logPodaciZaEntry_(entry);
+    var naziv = '', oib = '';
+    redovi.forEach(function(r) { if (r.label === 'Naziv klijenta') { naziv = r.vr; } if (r.label === 'OIB') { oib = r.vr; } });
+    var nedostaje = redovi.filter(function(r) { return r.label && !r.neobavezno && !r.vr; });
+    var otvoreno = fieldVal(entry, 'Datum otvaranja klijenta u sustavu (admin)');
+    var card = document.createElement('div');
+    card.className = 'lp-card';
+    var html = '<div class="lp-card-head"><div>' +
+      '<div class="lp-card-naziv">' + esc(naziv || '(bez naziva)') + '</div>' +
+      '<div class="lp-card-sub">' + (oib ? 'OIB ' + esc(oib) : '') + (otvoreno ? (oib ? ' · ' : '') + 'klijent u sustavu od ' + esc(otvoreno) : '') + '</div>' +
+      '</div><div class="lp-card-actions">' +
+      (nedostaje.length ? '<span class="lp-badge-nedostaje" title="' + esc(nedostaje.map(function(r) { return r.label; }).join(', ')) + '">Nedostaje: ' + nedostaje.length + '</span>' : '<span class="lp-badge-ok">✓ Potpuno</span>') +
+      '<button type="button" class="btn btn-outline btn-small lp-kopiraj-sve">📋 Kopiraj sve</button>' +
+      '<button type="button" class="btn btn-outline btn-small lp-otvori">↗ Otvori karticu klijenta</button>' +
+      '</div></div><div class="lp-grid">';
+    redovi.forEach(function(r, idx) {
+      if (r.sek) { html += '<div class="lp-sekcija">' + esc(r.sek) + '</div>'; return; }
+      var prazno = !r.vr;
+      var prikaz = prazno ? '— nije uneseno' : (r.tajno ? '••••••••' : r.vr);
+      html += '<div class="lp-red"><span class="lp-label">' + esc(r.label) + '</span>' +
+        '<span class="lp-vr' + (prazno ? ' prazno' : '') + '" data-idx="' + idx + '"><span class="lp-tekst">' + esc(prikaz) + '</span>' +
+        (!prazno && r.tajno ? '<button type="button" class="lp-mini-btn lp-oko" data-idx="' + idx + '" title="Prikaži/sakrij">👁</button>' : '') +
+        (!prazno ? '<button type="button" class="lp-mini-btn lp-kopiraj" data-idx="' + idx + '" title="Kopiraj">📋</button>' : '') +
+        '</span></div>';
+    });
+    html += '</div>';
+    card.innerHTML = html;
+    Array.prototype.forEach.call(card.querySelectorAll('.lp-kopiraj'), function(b) {
+      b.addEventListener('click', function() {
+        var ok = logPodaciKopiraj_(redovi[parseInt(b.getAttribute('data-idx'), 10)].vr);
+        var staro = b.textContent; b.textContent = ok ? '✓' : '✗';
+        setTimeout(function() { b.textContent = staro; }, 1100);
+      });
+    });
+    Array.prototype.forEach.call(card.querySelectorAll('.lp-oko'), function(b) {
+      b.addEventListener('click', function() {
+        var r = redovi[parseInt(b.getAttribute('data-idx'), 10)];
+        var t = b.parentNode.querySelector('.lp-tekst');
+        t.textContent = (t.textContent === '••••••••') ? r.vr : '••••••••';
+      });
+    });
+    card.querySelector('.lp-kopiraj-sve').addEventListener('click', function() {
+      var tekst = redovi.map(function(r) { return r.sek ? ('\n' + r.sek.toUpperCase()) : (r.label + ': ' + (r.vr || '—')); }).join('\n').trim();
+      var b = this, staro = b.textContent;
+      var ok = logPodaciKopiraj_(tekst);
+      b.textContent = ok ? '✓ Kopirano' : 'Kopiranje nije uspjelo';
+      setTimeout(function() { b.textContent = staro; }, 1400);
+    });
+    card.querySelector('.lp-otvori').addEventListener('click', function() {
+      searchFilterState.NoviKlijenti.q = naziv || oib || '';
+      switchTab('NoviKlijenti');
+    });
+    return card;
+  }
+
+  function logPodaciIzvezi_(entries) {
+    // CSV (UTF-8 s BOM-om, separator ";") — otvara se izravno u Excelu. NAMJERNO bez OB lozinke.
+    var stupci = null, retci = [];
+    entries.forEach(function(e) {
+      var redovi = logPodaciZaEntry_(e).filter(function(r) { return r.label && !r.tajno; });
+      var mapa = {};
+      redovi.forEach(function(r) { mapa[r.label] = r.vr || ''; });
+      if (!stupci) { stupci = redovi.map(function(r) { return r.label; }); }
+      retci.push(mapa);
+    });
+    if (!stupci) { return; }
+    var q = function(v) { return '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"'; };
+    var csv = '﻿' + [stupci.map(q).join(';')].concat(retci.map(function(m) { return stupci.map(function(s) { return q(m[s]); }).join(';'); })).join('\r\n');
+    var d = new Date();
+    var ime = 'InTime_osnovni_logisticki_podaci_' + d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2) + '.csv';
+    var blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+    var url = URL.createObjectURL(blob);
+    var link = document.createElement('a');
+    link.href = url; link.download = ime;
+    document.body.appendChild(link); link.click(); document.body.removeChild(link);
+    setTimeout(function() { URL.revokeObjectURL(url); }, 2000);
+  }
+
+  // ---- Pretraga po kategorijama + razvrstavanje po distribucijskim centrima + slanje centrima ----
+  // Sašin izričit zahtjev (3.10.2026.): "pretraživanje po kategorijama svim... razvrstaj po distribucijskim
+  // centrima... pošaljem svakom centru na mail samo njegove klijente (Excel)... ili način pristupa bazi za
+  // svaki centar (mail + lozinka) da svatko vidi samo svoje... napravi obje varijante... automatizacija:
+  // pošalji svakih 15/30 dana, napišem broj dana". Backend: blok "CENTRI — KLIJENTI PO DISTRIBUCIJSKIM
+  // CENTRIMA" u InTime_Code.gs (v21); portal: InTime_CentarPortal.html.
+  var LOG_KATEGORIJE_ = [
+    { k: 'sve', l: 'Sve kategorije', labels: null },
+    { k: 'naziv', l: 'Naziv klijenta', labels: ['Naziv klijenta'] },
+    { k: 'oib', l: 'OIB', labels: ['OIB'] },
+    { k: 'tm', l: 'TM broj', labels: ['TM broj'] },
+    { k: 'ob', l: 'OB korisničko ime', labels: ['OB korisničko ime'] },
+    { k: 'adresa', l: 'Adresa', labels: ['Adresa (ulica i broj)', 'Adresa sjedišta (različita od prikupa)'] },
+    { k: 'pbr', l: 'Poštanski broj', labels: ['Poštanski broj'] },
+    { k: 'grad', l: 'Grad / mjesto', labels: ['Grad / mjesto'] },
+    { k: 'vrijeme', l: 'Vrijeme prikupa', labels: ['Vrijeme prikupa (najraniji dolazak vozila)', 'Zadnji termin za unos naloga'] },
+    { k: 'osoba', l: 'Osoba za logistiku', labels: ['Ime i prezime'] },
+    { k: 'telefon', l: 'Telefon', labels: ['Telefon'] },
+    { k: 'email', l: 'E-mail', labels: ['E-mail'] },
+    { k: 'poslovnica', l: 'Nadležna poslovnica', labels: ['Nadležna poslovnica'] }
+  ];
+  var logPodaciRazvrstano_ = false;
+  var centriPregledCache_ = null;
+  var centriPregledUcitava_ = false;
+  var centriOtvorenoStanje_ = {};      // naziv centra → { otvoren, postavke }
+  var centriNovaLozinka_ = {};         // naziv centra → { lozinka, loginEmail, mailPoruka } (prikazuje se jednom)
+  var centriStatusPoruke_ = {};        // naziv centra → { tekst, greska }
+
+  function logPodaciOdgovara_(entry, q, kat) {
+    q = String(q || '').trim().toLowerCase();
+    if (!q) { return true; }
+    var redovi = logPodaciZaEntry_(entry).filter(function(r) { return r.label && !r.tajno; });
+    var def = LOG_KATEGORIJE_.filter(function(c) { return c.k === kat; })[0];
+    if (!def || !def.labels) {
+      // "Sve kategorije" — izvedeni podaci kartice + sirova polja upitnika (kao ranije)
+      if (redovi.some(function(r) { return String(r.vr || '').toLowerCase().indexOf(q) !== -1; })) { return true; }
+      return entryOdgovaraPretrazi_(entry, q);
+    }
+    return redovi.some(function(r) { return def.labels.indexOf(r.label) !== -1 && String(r.vr || '').toLowerCase().indexOf(q) !== -1; });
+  }
+
+  function logPodaciPoslovniceKlijenta_(entry) {
+    return (fieldVal(entry, 'Nadležna poslovnica (admin)') || '').split(',').map(function(s) { return s.trim(); }).filter(function(s) { return s; });
+  }
+
+  function ucitajCentriPregled_(forsiraj) {
+    if (centriPregledUcitava_) { return; }
+    if (centriPregledCache_ && !forsiraj) { return; }
+    centriPregledUcitava_ = true;
+    gasCall({ action: 'adminCentriKlijentiPregled', token: adminToken }).then(function(res) {
+      centriPregledUcitava_ = false;
+      if (handleAuthError(res)) { return; }
+      if (res.status !== 'ok') { centriPregledCache_ = { greska: res.message || 'Greška pri učitavanju centara.' }; }
+      else { centriPregledCache_ = res; }
+      if (activeTab === 'LogPodaci') { renderEntries(); }
+    }).catch(function() {
+      centriPregledUcitava_ = false;
+      centriPregledCache_ = { greska: 'Greška u komunikaciji s poslužiteljem.' };
+      if (activeTab === 'LogPodaci') { renderEntries(); }
+    });
+  }
+
+  function podesiStatusCentra_(naziv, tekst, greska) {
+    centriStatusPoruke_[naziv] = { tekst: tekst, greska: !!greska };
+  }
+
+  function preuzmiBase64Xlsx_(res) {
+    var bin = atob(res.base64), bytes = new Uint8Array(bin.length);
+    for (var i = 0; i < bin.length; i++) { bytes[i] = bin.charCodeAt(i); }
+    var blob = new Blob([bytes], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    var url = URL.createObjectURL(blob);
+    var link = document.createElement('a');
+    link.href = url; link.download = res.filename || 'klijenti.xlsx';
+    document.body.appendChild(link); link.click(); document.body.removeChild(link);
+    setTimeout(function() { URL.revokeObjectURL(url); }, 2000);
+  }
+
+  function portalUrlZadani_() {
+    return (centriPregledCache_ && centriPregledCache_.portalUrl) || new URL('InTime_CentarPortal.html', window.location.href).href;
+  }
+
+  function buildCentarGrupa_(centar, klijentiGrupe) {
+    // centar: stavka iz adminCentriKlijentiPregled ili null (grupa "Bez centra")
+    var naziv = centar ? centar.naziv : 'Bez dodijeljenog centra';
+    var stanje = centriOtvorenoStanje_[naziv] || (centriOtvorenoStanje_[naziv] = { otvoren: !!klijentiGrupe.length, postavke: false });
+    var det = document.createElement('details');
+    det.className = 'lp-grupa';
+    det.open = stanje.otvoren;
+    det.addEventListener('toggle', function() { stanje.otvoren = det.open; });
+    var pr = centar ? centar.pristup : null;
+    var značke = '';
+    if (pr) {
+      if (pr.aktivan && pr.imaLozinku) { značke += '<span class="lp-badge-ok">🔓 portal aktivan</span> '; }
+      if (pr.autoDana > 0) { značke += '<span class="lp-badge-ok">⏱ auto svakih ' + pr.autoDana + ' d</span> '; }
+      if (pr.zadnjeSlanje) { značke += '<span class="lp-grupa-mala">zadnje slanje: ' + esc(pr.zadnjeSlanje) + '</span> '; }
+    }
+    var sum = document.createElement('summary');
+    sum.innerHTML = '<span class="lp-grupa-naziv">🏭 ' + esc(naziv) + '</span> <span class="lp-grupa-broj">' + klijentiGrupe.length + (klijentiGrupe.length === 1 ? ' klijent' : ' klijenata') + '</span> ' + značke;
+    det.appendChild(sum);
+    var body = document.createElement('div');
+    body.className = 'lp-grupa-body';
+    if (centar) {
+      var akcije = document.createElement('div');
+      akcije.className = 'lp-card-actions';
+      akcije.style.margin = '8px 0';
+      akcije.innerHTML =
+        '<button type="button" class="btn btn-outline btn-small lp-g-xlsx">⬇ Preuzmi Excel</button>' +
+        '<button type="button" class="btn btn-small lp-g-mail">✉ Pošalji mailom centru</button>' +
+        '<button type="button" class="btn btn-outline btn-small lp-g-postavke">⚙ Postavke centra (portal, automatika)</button>' +
+        '<span class="lp-g-status faq-admin-status"></span>';
+      body.appendChild(akcije);
+      var statusEl = akcije.querySelector('.lp-g-status');
+      var porukaStanje = centriStatusPoruke_[naziv];
+      if (porukaStanje) { statusEl.textContent = porukaStanje.tekst; statusEl.className = 'lp-g-status faq-admin-status' + (porukaStanje.greska ? ' error' : ''); }
+      var postavi = function(t, g) { podesiStatusCentra_(naziv, t, g); statusEl.textContent = t; statusEl.className = 'lp-g-status faq-admin-status' + (g ? ' error' : ''); };
+      akcije.querySelector('.lp-g-xlsx').addEventListener('click', function() {
+        postavi('Priprema Excela…', false);
+        gasCall({ action: 'adminCentarXlsx', token: adminToken, naziv: naziv }).then(function(res) {
+          if (handleAuthError(res)) { return; }
+          if (res.status !== 'ok') { postavi(res.message || 'Greška.', true); return; }
+          preuzmiBase64Xlsx_(res); postavi('✓ Preuzeto: ' + res.filename, false);
+        }).catch(function() { postavi('Greška u komunikaciji s poslužiteljem.', true); });
+      });
+      akcije.querySelector('.lp-g-mail').addEventListener('click', function() {
+        var primatelji = (pr && pr.primatelji) || centar.email || '(nema adrese)';
+        if (!window.confirm('Poslati Excel s ' + klijentiGrupe.length + ' klijenata na: ' + primatelji + ' ?\n\n(Šalju se samo klijenti ovog centra; OB lozinke se ne šalju.)')) { return; }
+        postavi('Slanje maila…', false);
+        gasCall({ action: 'adminCentarPosaljiMail', token: adminToken, naziv: naziv }).then(function(res) {
+          if (handleAuthError(res)) { return; }
+          if (res.status !== 'ok') { postavi(res.message || 'Greška.', true); return; }
+          if (centar && res.pristup) { centar.pristup = res.pristup; }
+          podesiStatusCentra_(naziv, '✓ ' + res.message, false);
+          renderEntries();
+        }).catch(function() { postavi('Greška u komunikaciji s poslužiteljem.', true); });
+      });
+      akcije.querySelector('.lp-g-postavke').addEventListener('click', function() { stanje.postavke = !stanje.postavke; renderEntries(); });
+      if (stanje.postavke) { body.appendChild(buildCentarPostavke_(centar)); }
+    }
+    if (!klijentiGrupe.length) {
+      var prazno = document.createElement('div');
+      prazno.className = 'empty-hint';
+      prazno.textContent = 'Nema klijenata za ovaj centar (uz trenutnu pretragu).';
+      body.appendChild(prazno);
+    }
+    klijentiGrupe.forEach(function(e) { body.appendChild(logPodaciKartica_(e)); });
+    det.appendChild(body);
+    return det;
+  }
+
+  var LOZINKA_JUNACI_ = ['Batman', 'Superman', 'Spiderman', 'Ironman', 'Hulk', 'Thor', 'Wolverine', 'Aquaman', 'Flash', 'Cyclops', 'Storm', 'Rogue', 'Deadpool', 'Daredevil', 'Hawkeye', 'Antman', 'Nightwing', 'Robin', 'Cyborg', 'Starfire', 'Vision', 'Gambit', 'Beast', 'Blade', 'Phoenix', 'Zatanna', 'Raven', 'Shazam', 'Atom', 'Falcon'];
+  function slucajno_(n) {
+    var a = new Uint32Array(1);
+    (window.crypto || window.msCrypto).getRandomValues(a);
+    return a[0] % n;
+  }
+  // vrsta: 'junak' = dva superjunaka + 2 broja uz svakog + JEDAN poseban znak (npr. Hulk27!Wolverine58);
+  // 'jaka' = 16 znakova (velika/mala/broj + 1 poseban znak); inače obična (12 znakova).
+  function predloziLozinkuCentra_(vrsta) {
+    var iz = function(skup) { return skup.charAt(slucajno_(skup.length)); };
+    var dv = function() { return ('0' + slucajno_(100)).slice(-2); };
+    var posebni = '!@#$%&*?';
+    var mala = 'abcdefghjkmnpqrstuvwxyz', velika = 'ABCDEFGHJKLMNPQRSTUVWXYZ', brojevi = '23456789';
+    if (vrsta === 'junak') {
+      var h1 = LOZINKA_JUNACI_[slucajno_(LOZINKA_JUNACI_.length)], h2 = h1;
+      while (h2 === h1) { h2 = LOZINKA_JUNACI_[slucajno_(LOZINKA_JUNACI_.length)]; }
+      return h1 + dv() + iz(posebni) + h2 + dv();
+    }
+    var z = [], sve = mala + velika + brojevi, duljina = vrsta === 'jaka' ? 16 : 12;
+    if (vrsta === 'jaka') { z.push(iz(velika), iz(mala), iz(brojevi), iz(posebni)); }
+    while (z.length < duljina) { z.push(iz(sve)); }
+    for (var i = z.length - 1; i > 0; i--) { var j = slucajno_(i + 1), t = z[i]; z[i] = z[j]; z[j] = t; }
+    return z.join('');
+  }
+
+  function buildCentarPostavke_(centar) {
+    var naziv = centar.naziv, pr = centar.pristup || {};
+    var box = document.createElement('div');
+    box.className = 'lp-postavke';
+    box.innerHTML =
+      '<div class="lp-postavke-sek">📧 Slanje maila</div>' +
+      '<label>Primatelji maila (zarezom; prazno = e-mail centra iz kartice "Logistički centri": <em>' + esc(centar.email || '—') + '</em>)</label>' +
+      '<input type="text" class="lp-p-primatelji" value="' + esc(pr.primatelji || '') + '" placeholder="npr. centar@in-time.hr, voditelj@in-time.hr">' +
+      '<label>Automatsko slanje — svakih <input type="number" min="0" max="365" step="1" class="lp-p-dana" style="width:80px;display:inline-block;" value="' + esc(pr.autoDana || 0) + '"> dana (0 = isključeno)</label>' +
+      '<div class="lp-postavke-hint">Npr. 15 ili 30. Automatika šalje Excel čim prođe zadani broj dana od zadnjeg slanja (ručno slanje se također računa). Ne šalje ako centar nema klijenata.</div>' +
+      '<div class="lp-postavke-sek">🔐 Portal za centar (centar vidi SAMO svoje klijente)</div>' +
+      '<label>E-mail za prijavu (korisničko ime)</label>' +
+      '<input type="text" class="lp-p-login" value="' + esc(pr.loginEmail || '') + '" placeholder="npr. voditelj.zagreb@in-time.hr">' +
+      '<label style="display:flex;gap:6px;align-items:center;font-weight:600;"><input type="checkbox" class="lp-p-aktivan"' + (pr.aktivan ? ' checked' : '') + '> Portal aktivan za ovaj centar</label>' +
+      '<div class="lp-postavke-hint">Adresa portala: <code>' + esc(portalUrlZadani_()) + '</code> <button type="button" class="lp-mini-btn lp-p-kopiraj-url">📋</button>' +
+      (pr.zadnjaPrijava ? ' · zadnja prijava: ' + esc(pr.zadnjaPrijava) : '') + '</div>' +
+      '<div class="lp-card-actions" style="margin-top:8px;">' +
+        '<button type="button" class="btn btn-small lp-p-spremi">💾 Spremi postavke</button>' +
+      '</div>' +
+      '<div class="lp-postavke-sek">🔑 Lozinka centra (bilježi se u bazi — uvijek je možeš vidjeti i promijeniti)</div>' +
+      '<div class="lp-loz-red"><span class="lp-postavke-hint" style="margin:0;">Trenutna lozinka:</span> ' +
+        (pr.lozinka
+          ? '<code class="lp-loz-vr" data-skriveno="1">••••••••••</code> <button type="button" class="lp-mini-btn lp-loz-oko" title="Prikaži/sakrij">👁</button> <button type="button" class="lp-mini-btn lp-loz-kopiraj" title="Kopiraj">📋</button>'
+          : (pr.imaLozinku ? '<em class="lp-postavke-hint">postoji, ali nije zabilježena u čitljivom obliku — postavi ili generiraj novu</em>' : '<em class="lp-postavke-hint">još nije postavljena</em>')) +
+      '</div>' +
+      '<label>Lozinka (upiši svoju ili predloži dolje; min. 8 znakova, bez razmaka)</label>' +
+      '<div class="lp-card-actions" style="margin:0 0 6px;"><input type="text" class="lp-p-nova-loz" autocomplete="off" placeholder="upiši novu lozinku" style="max-width:280px;">' +
+        '<button type="button" class="btn btn-small lp-p-loz-postavi">💾 Postavi ovu lozinku</button></div>' +
+      '<label>ili predloži lozinku (klikni "Predloži" koliko god puta želiš dok ti se neka ne svidi):</label>' +
+      '<div class="lp-card-actions" style="margin:0 0 6px;">' +
+        '<select class="lp-p-loz-vrsta" style="max-width:320px;"><option value="junak">🦸 Superjunak (npr. Hulk27!Wolverine58)</option><option value="jaka">💪 Super jaka (16 znakova + 1 poseban znak)</option><option value="obicna">Obična (12 znakova, slova i brojevi)</option></select>' +
+        '<button type="button" class="btn btn-outline btn-small lp-p-loz-predlozi">🎲 Predloži lozinku</button>' +
+      '</div>' +
+      '<label style="font-weight:600;display:flex;gap:5px;align-items:center;margin:0;"><input type="checkbox" class="lp-p-posalji-lozinku"> pošalji pristupne podatke mailom centru (uz bilo koju od gornje dvije opcije)</label>' +
+      '<div class="lp-p-status faq-admin-status"></div>';
+    var statusEl = box.querySelector('.lp-p-status');
+    var poruka = function(t, g) { statusEl.textContent = t; statusEl.className = 'lp-p-status faq-admin-status' + (g ? ' error' : ''); };
+    var citaj = function() {
+      return {
+        primatelji: box.querySelector('.lp-p-primatelji').value.trim(),
+        autoDana: parseInt(box.querySelector('.lp-p-dana').value, 10) || 0,
+        loginEmail: box.querySelector('.lp-p-login').value.trim(),
+        aktivan: box.querySelector('.lp-p-aktivan').checked,
+        portalUrl: portalUrlZadani_()
+      };
+    };
+    var kopiraj = function(t, btn) { var ok = logPodaciKopiraj_(t); var s = btn.textContent; btn.textContent = ok ? '✓' : '✗'; setTimeout(function() { btn.textContent = s; }, 1100); };
+    box.querySelector('.lp-p-kopiraj-url').addEventListener('click', function() { kopiraj(portalUrlZadani_(), this); });
+    var lvr = box.querySelector('.lp-loz-vr');
+    if (lvr) {
+      box.querySelector('.lp-loz-oko').addEventListener('click', function() {
+        var skriveno = lvr.getAttribute('data-skriveno') === '1';
+        lvr.textContent = skriveno ? pr.lozinka : '••••••••••';
+        lvr.setAttribute('data-skriveno', skriveno ? '0' : '1');
+      });
+      box.querySelector('.lp-loz-kopiraj').addEventListener('click', function() { kopiraj(pr.lozinka, this); });
+    }
+    var spremi = function(poslije) {
+      poruka('Spremanje…', false);
+      return gasCall({ action: 'adminCentarPostavkeSpremi', token: adminToken, naziv: naziv, postavke: citaj() }).then(function(res) {
+        if (handleAuthError(res)) { return false; }
+        if (res.status !== 'ok') { poruka(res.message || 'Greška.', true); return false; }
+        centar.pristup = res.pristup;
+        if (poslije) { return true; }
+        poruka('✓ Postavke spremljene.', false);
+        renderEntries();
+        return true;
+      }).catch(function() { poruka('Greška u komunikaciji s poslužiteljem.', true); return false; });
+    };
+    box.querySelector('.lp-p-spremi').addEventListener('click', function() { spremi(false); });
+    var postaviLozinku = function(rucna) {
+      var vrsta = box.querySelector('.lp-p-loz-vrsta').value;
+      if (rucna !== null && (rucna.length < 8 || /\s/.test(rucna))) { poruka('Lozinka mora imati najmanje 8 znakova i bez razmaka.', true); return; }
+      if (pr.imaLozinku && !window.confirm('Postaviti NOVU lozinku? Stara prestaje važiti.')) { return; }
+      spremi(true).then(function(ok) {
+        if (!ok) { return; }
+        var posalji = box.querySelector('.lp-p-posalji-lozinku').checked;
+        poruka('Postavljanje lozinke…', false);
+        var payload = { action: 'adminCentarLozinkaNova', token: adminToken, naziv: naziv, posaljiMail: posalji, portalUrl: portalUrlZadani_(), vrsta: vrsta };
+        if (rucna !== null) { payload.rucnaLozinka = rucna; }
+        gasCall(payload).then(function(res) {
+          if (handleAuthError(res)) { return; }
+          if (res.status !== 'ok') { poruka(res.message || 'Greška.', true); return; }
+          centriStatusPoruke_[naziv] = { tekst: '✓ Lozinka postavljena: ' + res.lozinka + (res.mailPoruka ? ' · ' + res.mailPoruka : '') + ' (vidiš je i u "Trenutna lozinka")', greska: false };
+          ucitajCentriPregled_(true);
+          renderEntries();
+        }).catch(function() { poruka('Greška u komunikaciji s poslužiteljem.', true); });
+      });
+    };
+    box.querySelector('.lp-p-loz-predlozi').addEventListener('click', function() {
+      var polje = box.querySelector('.lp-p-nova-loz');
+      polje.value = predloziLozinkuCentra_(box.querySelector('.lp-p-loz-vrsta').value);
+      poruka('Prijedlog je upisan u polje — klikni "Postavi ovu lozinku" ili "Predloži" ponovno za drugu.', false);
+    });
+    box.querySelector('.lp-p-loz-postavi').addEventListener('click', function() { postaviLozinku(box.querySelector('.lp-p-nova-loz').value); });
+    return box;
+  }
+
+  function buildLogPodaciPanel_() {
+    var wrap = document.createElement('div');
+    var klijenti = allEntries.filter(function(e) { return e.status === 'Interes' && jeOtvorenKlijent(e); });
+    // Najnoviji klijent prvi (po datumu otvaranja u sustavu).
+    klijenti.sort(function(x, y) {
+      var dx = parsirajDatumUnosa_(fieldVal(x, 'Datum otvaranja klijenta u sustavu (admin)'));
+      var dy = parsirajDatumUnosa_(fieldVal(y, 'Datum otvaranja klijenta u sustavu (admin)'));
+      return (dy ? dy.getTime() : 0) - (dx ? dx.getTime() : 0);
+    });
+    var uvod = document.createElement('p');
+    uvod.className = 'faq-admin-hint';
+    uvod.textContent = 'Za svakog klijenta iz kartice "Klijenti" automatski se ovdje generira kartica s osnovnim logističkim podacima. Podaci se čitaju uživo (admin ispravak ima prednost pred upitnikom), pa se svaka promjena odmah vidi. Crveno "— nije uneseno" znači da podatak još nedostaje. Gumbom "Razvrstaj po distribucijskim centrima" klijenti se grupiraju prema polju "Nadležna poslovnica", a svakom centru možeš poslati Excel samo s njegovim klijentima (ručno ili automatski svakih N dana) ili mu otvoriti portal u kojem vidi samo svoje klijente.';
+    wrap.appendChild(uvod);
+    var stanje = searchFilterState.LogPodaci;
+    if (!stanje.kat) { stanje.kat = 'sve'; }
+    var katRed = document.createElement('div');
+    katRed.className = 'lp-toolbar';
+    katRed.innerHTML = '<label style="font-size:12.5px;font-weight:700;">Pretraži u kategoriji:</label>' +
+      '<select class="lp-kat-select">' + LOG_KATEGORIJE_.map(function(c) { return '<option value="' + c.k + '"' + (stanje.kat === c.k ? ' selected' : '') + '>' + esc(c.l) + '</option>'; }).join('') + '</select>';
+    katRed.querySelector('select').addEventListener('change', function() { stanje.kat = this.value; renderEntries(); });
+    wrap.appendChild(katRed);
+    wrap.appendChild(buildSearchFilterBar_(stanje, 'Pretraži (' + (LOG_KATEGORIJE_.filter(function(c) { return c.k === stanje.kat; })[0] || LOG_KATEGORIJE_[0]).l.toLowerCase() + ')…'));
+    var raspon = izracunajDatumskiRaspon_(stanje.raspon);
+    var prikaz = klijenti.filter(function(e) { return logPodaciOdgovara_(e, stanje.q, stanje.kat) && entryOdgovaraRasponu_(e, raspon); });
+    var traka = document.createElement('div');
+    traka.className = 'lp-toolbar';
+    traka.innerHTML = '<span class="imenik-brojac-label" style="font-size:13px;"><strong>' + prikaz.length + '</strong> od ' + klijenti.length + ' klijenata</span>' +
+      '<button type="button" class="btn btn-small lp-razvrstaj' + (logPodaciRazvrstano_ ? '' : ' btn-outline') + '">🏭 ' + (logPodaciRazvrstano_ ? 'Prikaži bez razvrstavanja' : 'Razvrstaj po distribucijskim centrima') + '</button>' +
+      '<button type="button" class="btn btn-outline btn-small lp-izvezi">⬇ Izvezi u CSV (Excel, bez lozinki)</button>';
+    wrap.appendChild(traka);
+    traka.querySelector('.lp-izvezi').addEventListener('click', function() { logPodaciIzvezi_(prikaz); });
+    traka.querySelector('.lp-razvrstaj').addEventListener('click', function() {
+      logPodaciRazvrstano_ = !logPodaciRazvrstano_;
+      if (logPodaciRazvrstano_) { ucitajCentriPregled_(true); }
+      renderEntries();
+    });
+    if (klijenti.length === 0) {
+      var h = document.createElement('div');
+      h.className = 'empty-hint';
+      h.textContent = 'Još nema klijenata — kartica se automatski pojavi čim se klijent prebaci u karticu "Klijenti".';
+      wrap.appendChild(h);
+      return wrap;
+    }
+    if (prikaz.length === 0) {
+      var h2 = document.createElement('div');
+      h2.className = 'empty-hint';
+      h2.textContent = 'Nema klijenata koji odgovaraju pretrazi/filteru.';
+      wrap.appendChild(h2);
+      return wrap;
+    }
+    if (!logPodaciRazvrstano_) {
+      prikaz.forEach(function(e) { wrap.appendChild(logPodaciKartica_(e)); });
+      return wrap;
+    }
+    // ---- Razvrstano po centrima ----
+    if (!centriPregledCache_ || centriPregledUcitava_) {
+      var uc = document.createElement('div');
+      uc.className = 'empty-hint';
+      uc.textContent = 'Učitavanje distribucijskih centara…';
+      wrap.appendChild(uc);
+      if (!centriPregledUcitava_) { ucitajCentriPregled_(true); }
+      return wrap;
+    }
+    if (centriPregledCache_.greska) {
+      var er = document.createElement('div');
+      er.className = 'empty-hint';
+      er.textContent = centriPregledCache_.greska;
+      wrap.appendChild(er);
+      return wrap;
+    }
+    var globalno = document.createElement('div');
+    globalno.className = 'lp-postavke';
+    globalno.innerHTML = '<strong>Automatsko slanje:</strong> ' + (centriPregledCache_.triger
+      ? '<span class="lp-badge-ok">✓ uključeno (provjera svaki dan oko 7:30)</span>'
+      : '<span class="lp-badge-nedostaje">nije uključeno</span> <button type="button" class="btn btn-small lp-auto-triger">⏱ Uključi automatsko slanje</button>') +
+      ' <span class="lp-postavke-hint">Broj dana (npr. 15 ili 30) upisuješ po centru u "⚙ Postavke centra". Ručno slanje radi i bez ovoga.</span> <span class="lp-auto-status faq-admin-status"></span>';
+    wrap.appendChild(globalno);
+    var trigBtn = globalno.querySelector('.lp-auto-triger');
+    if (trigBtn) {
+      trigBtn.addEventListener('click', function() {
+        var st = globalno.querySelector('.lp-auto-status');
+        st.textContent = 'Postavljanje…'; st.className = 'lp-auto-status faq-admin-status';
+        gasCall({ action: 'adminCentriAutoTrigerPostavi', token: adminToken }).then(function(res) {
+          if (handleAuthError(res)) { return; }
+          if (res.status !== 'ok') { st.textContent = res.message || 'Greška.'; st.className = 'lp-auto-status faq-admin-status error'; return; }
+          ucitajCentriPregled_(true);
+        }).catch(function() { st.textContent = 'Greška u komunikaciji s poslužiteljem.'; st.className = 'lp-auto-status faq-admin-status error'; });
+      });
+    }
+    var grupe = {};
+    centriPregledCache_.centri.forEach(function(c) { grupe[c.naziv.toLowerCase()] = []; });
+    var bezCentra = [];
+    prikaz.forEach(function(e) {
+      var pos = logPodaciPoslovniceKlijenta_(e), pogodio = false;
+      pos.forEach(function(n) { var g = grupe[n.toLowerCase()]; if (g) { g.push(e); pogodio = true; } });
+      if (!pogodio) { bezCentra.push(e); }
+    });
+    centriPregledCache_.centri.forEach(function(c) {
+      var lista = grupe[c.naziv.toLowerCase()];
+      if (!lista.length && (stanje.q || stanje.raspon)) { return; } // uz aktivnu pretragu sakrij prazne centre
+      wrap.appendChild(buildCentarGrupa_(c, lista));
+    });
+    if (bezCentra.length) { wrap.appendChild(buildCentarGrupa_(null, bezCentra)); }
+    return wrap;
   }
 
   function buildLogistickiCentriPanel_() {

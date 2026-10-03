@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="hr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex,nofollow">
+<title>In Time — portal distribucijskih centara</title>
+<style>
+  :root{
+    --teal:#229891; --teal-dark:#1b7a74; --black:#131313; --bg:#ffffff; --panel:#f6f9f9;
+    --border:#e1e8e7; --muted:#5b6664; --danger:#c0392b; --ok:#1e8449;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:'Segoe UI',Roboto,Arial,sans-serif;background:var(--bg);color:var(--black);line-height:1.5;font-size:14.5px;}
+  header{background:var(--teal);color:#fff;padding:22px 16px 18px;text-align:center;}
+  header .brand{font-size:13px;letter-spacing:2px;text-transform:uppercase;opacity:.9;}
+  header h1{margin:4px 0 2px;font-size:22px;}
+  header p{margin:0;font-size:13.5px;opacity:.92;}
+  main{max-width:1500px;margin:0 auto;padding:18px 14px 40px;}
+  .card{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:18px;max-width:440px;margin:24px auto;}
+  .card h2{margin:0 0 12px;font-size:17px;color:var(--teal-dark);}
+  label{display:block;font-size:12.5px;font-weight:700;margin:10px 0 4px;}
+  input[type=text],input[type=email],input[type=password],select{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:8px;font-size:14.5px;background:#fff;font-family:inherit;}
+  button,.btn{background:var(--teal);color:#fff;border:0;border-radius:8px;padding:10px 18px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;}
+  button:hover{background:var(--teal-dark);}
+  button.sec{background:#fff;color:var(--teal-dark);border:1.5px solid var(--teal);}
+  button.sec:hover{background:#eaf6f5;}
+  button:disabled{opacity:.6;cursor:default;}
+  .status{margin-top:10px;font-size:13px;color:var(--muted);}
+  .status.error{color:var(--danger);font-weight:700;}
+  .toolbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 0 12px;}
+  .toolbar input[type=text]{flex:1 1 260px;width:auto;}
+  .toolbar select{flex:0 0 auto;width:auto;min-width:190px;}
+  .meta{font-size:13px;color:var(--muted);margin:0 0 10px;}
+  .meta strong{color:var(--black);}
+  .tablewrap{overflow:auto;border:1px solid var(--border);border-radius:10px;max-height:72vh;}
+  table{border-collapse:collapse;width:100%;font-size:13px;}
+  th,td{padding:8px 10px;border-bottom:1px solid var(--border);text-align:left;vertical-align:top;white-space:nowrap;}
+  th{background:#e8f4f3;position:sticky;top:0;z-index:1;font-size:12px;cursor:pointer;user-select:none;}
+  th:hover{background:#d9eeed;}
+  tr:nth-child(even) td{background:#fafcfc;}
+  td.naziv{font-weight:700;white-space:normal;min-width:180px;}
+  td.novo-marker{color:var(--ok);font-weight:700;}
+  .hidden{display:none !important;}
+  .empty{padding:24px;text-align:center;color:var(--muted);}
+  footer{text-align:center;font-size:12px;color:var(--muted);padding:16px;}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">In Time d.o.o.</div>
+  <h1>Portal distribucijskih centara</h1>
+  <p id="podnaslov">Prijavite se da vidite popis klijenata za koje je nadležan Vaš centar.</p>
+</header>
+<main>
+  <div class="card" id="prijavaCard">
+    <h2>🔒 Prijava</h2>
+    <label for="email">E-mail (korisničko ime)</label>
+    <input type="email" id="email" autocomplete="username" placeholder="ime@centar.hr">
+    <label for="lozinka">Lozinka</label>
+    <input type="password" id="lozinka" autocomplete="current-password" placeholder="Lozinka">
+    <div style="margin-top:14px;"><button type="button" id="prijavaBtn">Prijava</button></div>
+    <div class="status" id="prijavaStatus">Pristupne podatke dodjeljuje In Time d.o.o.</div>
+  </div>
+
+  <div id="podaciWrap" class="hidden">
+    <div class="toolbar">
+      <select id="kategorija" title="Pretraži po kategoriji"></select>
+      <input type="text" id="trazi" placeholder="Pretraži klijente…">
+      <button type="button" class="sec" id="osvjeziBtn">↻ Osvježi</button>
+      <button type="button" id="excelBtn">⬇ Preuzmi Excel</button>
+      <button type="button" class="sec" id="odjavaBtn">Odjava</button>
+    </div>
+    <p class="meta" id="meta"></p>
+    <div class="tablewrap"><table id="tablica"><thead></thead><tbody></tbody></table></div>
+    <div class="empty hidden" id="prazno">Nema klijenata koji odgovaraju pretrazi.</div>
+  </div>
+</main>
+<footer>Prikazani su isključivo klijenti za koje je nadležan Vaš centar. Podaci su povjerljivi.</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js" async></script>
+<script>
+var GAS_URL = "https://script.google.com/macros/s/AKfycbz73zkx72GhrDZ-t3CamF5wuz-9V7Uxe5z9IkFxHA8F5FBlrIlc7zMUd4_EHTILD9FTAw/exec";
+var LS_EMAIL = 'intime_centar_email_v1';
+var uneseniEmail = '', unesenaLozinka = '';   // samo u memoriji, dok je kartica otvorena
+var podaci = null;                            // zadnji odgovor poslužitelja
+var sortKljuc = 'naziv', sortSmjer = 1;
+
+function gas(payload){
+  return fetch(GAS_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(payload) })
+    .then(function(r){ return r.json(); });
+}
+function el(id){ return document.getElementById(id); }
+function esc(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+
+try { var sp = localStorage.getItem(LS_EMAIL); if(sp){ el('email').value = sp; } } catch(e){}
+
+function prijava(tiho){
+  var email = el('email').value.trim(), lozinka = el('lozinka').value;
+  if(tiho){ email = uneseniEmail; lozinka = unesenaLozinka; }
+  var st = el('prijavaStatus');
+  if(!email || !lozinka){ st.textContent = 'Upišite e-mail i lozinku.'; st.className = 'status error'; return; }
+  if(!tiho){ st.textContent = 'Provjera podataka…'; st.className = 'status'; el('prijavaBtn').disabled = true; }
+  else { el('osvjeziBtn').disabled = true; }
+  gas({ action: 'centarPrijava', email: email, lozinka: lozinka }).then(function(res){
+    el('prijavaBtn').disabled = false; el('osvjeziBtn').disabled = false;
+    if(!res || res.status !== 'ok'){
+      st.textContent = (res && res.message) ? res.message : 'Prijava nije uspjela.'; st.className = 'status error';
+      if(tiho){ odjava(); st.textContent = (res && res.message) ? res.message : 'Sesija je istekla — prijavite se ponovno.'; st.className = 'status error'; }
+      return;
+    }
+    uneseniEmail = email; unesenaLozinka = lozinka; podaci = res;
+    try { localStorage.setItem(LS_EMAIL, email); } catch(e){}
+    el('lozinka').value = '';
+    el('prijavaCard').classList.add('hidden');
+    el('podaciWrap').classList.remove('hidden');
+    el('podnaslov').textContent = 'Distribucijski centar: ' + res.centar;
+    gradiKategorije();
+    prikazi();
+  }).catch(function(){
+    el('prijavaBtn').disabled = false; el('osvjeziBtn').disabled = false;
+    st.textContent = 'Greška u komunikaciji s poslužiteljem — pokušajte ponovno.'; st.className = 'status error';
+  });
+}
+
+function odjava(){
+  uneseniEmail = ''; unesenaLozinka = ''; podaci = null;
+  el('podaciWrap').classList.add('hidden');
+  el('prijavaCard').classList.remove('hidden');
+  el('podnaslov').textContent = 'Prijavite se da vidite popis klijenata za koje je nadležan Vaš centar.';
+  el('prijavaStatus').textContent = 'Odjavljeni ste.'; el('prijavaStatus').className = 'status';
+}
+
+function gradiKategorije(){
+  var sel = el('kategorija');
+  var staro = sel.value;
+  sel.innerHTML = '<option value="*">Sve kategorije</option>' + podaci.stupci.map(function(s){ return '<option value="' + esc(s.kljuc) + '">' + esc(s.naziv) + '</option>'; }).join('');
+  if(staro && Array.prototype.some.call(sel.options, function(o){ return o.value === staro; })){ sel.value = staro; }
+}
+
+function filtriraj(){
+  var q = el('trazi').value.trim().toLowerCase();
+  var kat = el('kategorija').value;
+  var lista = podaci.klijenti.filter(function(k){
+    if(!q){ return true; }
+    if(kat === '*'){ return podaci.stupci.some(function(s){ return String(k[s.kljuc] || '').toLowerCase().indexOf(q) !== -1; }); }
+    return String(k[kat] || '').toLowerCase().indexOf(q) !== -1;
+  });
+  lista.sort(function(a, b){ return String(a[sortKljuc] || '').localeCompare(String(b[sortKljuc] || ''), 'hr', { numeric: true }) * sortSmjer; });
+  return lista;
+}
+
+function prikazi(){
+  if(!podaci){ return; }
+  var lista = filtriraj();
+  var th = '<tr>' + podaci.stupci.map(function(s){
+    var strelica = (s.kljuc === sortKljuc) ? (sortSmjer === 1 ? ' ▲' : ' ▼') : '';
+    return '<th data-k="' + esc(s.kljuc) + '">' + esc(s.naziv) + strelica + '</th>';
+  }).join('') + '</tr>';
+  el('tablica').querySelector('thead').innerHTML = th;
+  el('tablica').querySelector('tbody').innerHTML = lista.map(function(k){
+    return '<tr>' + podaci.stupci.map(function(s){ return '<td class="' + (s.kljuc === 'naziv' ? 'naziv' : '') + '">' + esc(k[s.kljuc]) + '</td>'; }).join('') + '</tr>';
+  }).join('');
+  el('prazno').classList.toggle('hidden', lista.length > 0);
+  el('meta').innerHTML = 'Prikazano <strong>' + lista.length + '</strong> od <strong>' + podaci.klijenti.length + '</strong> klijenata · stanje na dan ' + esc(podaci.azurirano);
+  Array.prototype.forEach.call(el('tablica').querySelectorAll('th'), function(h){
+    h.addEventListener('click', function(){
+      var k = h.getAttribute('data-k');
+      if(sortKljuc === k){ sortSmjer = -sortSmjer; } else { sortKljuc = k; sortSmjer = 1; }
+      prikazi();
+    });
+  });
+}
+
+function preuzmiExcel(){
+  if(!podaci){ return; }
+  var lista = filtriraj();
+  var zaglavlje = podaci.stupci.map(function(s){ return s.naziv; });
+  var retci = lista.map(function(k){ return podaci.stupci.map(function(s){ return k[s.kljuc] || ''; }); });
+  var d = new Date();
+  var datum = d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2);
+  var ime = 'InTime_klijenti_' + String(podaci.centar).replace(/[^A-Za-z0-9_-]+/g, '_') + '_' + datum;
+  if(window.XLSX){
+    var ws = XLSX.utils.aoa_to_sheet([zaglavlje].concat(retci));
+    var wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Klijenti');
+    XLSX.writeFile(wb, ime + '.xlsx');
+    return;
+  }
+  // Rezerva ako se Excel biblioteka nije učitala: CSV (otvara se u Excelu)
+  var q = function(v){ return '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"'; };
+  var csv = '﻿' + [zaglavlje].concat(retci).map(function(r){ return r.map(q).join(';'); }).join('\r\n');
+  var blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+  var a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = ime + '.csv';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+}
+
+el('prijavaBtn').addEventListener('click', function(){ prijava(false); });
+el('lozinka').addEventListener('keydown', function(e){ if(e.key === 'Enter'){ prijava(false); } });
+el('email').addEventListener('keydown', function(e){ if(e.key === 'Enter'){ el('lozinka').focus(); } });
+el('osvjeziBtn').addEventListener('click', function(){ prijava(true); });
+el('odjavaBtn').addEventListener('click', odjava);
+el('excelBtn').addEventListener('click', preuzmiExcel);
+el('trazi').addEventListener('input', prikazi);
+el('kategorija').addEventListener('change', prikazi);
+</script>
+</body>
+</html>

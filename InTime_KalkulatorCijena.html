@@ -4728,6 +4728,89 @@ function ucitajAdminPrijavuIzUrlaAkoPostoji_(){
   return true;
 }
 
+// ---------- Most za usporedbu (admin "KALKULACIJE") — izvoz/uvoz podataka o pošiljci ----------
+// NOVO (3.10.2026., Sašin zahtjev — "što unesem u jedan kalkulator da se
+// odmah prenese u druge, a ne da moram kliknuti Izračunaj"): roditeljska
+// admin stranica NE MOŽE čitati/pisati ove varijable izravno (zonaPolaziste,
+// tezinaJedinica, pojedinacneTezineVrijednosti, koletoDim* ... su deklarirane
+// s `let`/`const` na vrhu skripte, a takve NISU svojstva window objekta — pa
+// je raniji izravan pristup izvana tiho ostajao bez učinka). Zato se čitanje i
+// pisanje radi OVDJE, unutar skripte gdje su te varijable u dosegu, a admin
+// samo poziva ove dvije funkcije. Prenosi se SAMO kartica "Podaci o pošiljci"
+// (datum, mjesto/zona, jedinice, težine i dimenzije po koletu, paleta, broj
+// koleta u pošiljci) — NE način obračuna, NE dopunske usluge, NE ograničenje
+// broja koleta (to je uvjet cjenika svakog kalkulatora zasebno).
+function kalkKopijaNiza_(a){ var o = []; for(var i = 0; i < a.length; i++){ o.push(a[i]); } return o; }
+// Je li u OVOM kalkulatoru učitan vlastiti cjenik (ručno, preko trake u adminu) — uvjet za početak usporedbe odstupanja.
+window.kalkJeUcitanVlastitiCjenik_ = function(){ return !!korisnikUcitaoVlastitiCjenik_; };
+window.kalkSinhroIzvezi_ = function(){
+  var v = function(id){ var el = document.getElementById(id); return el ? el.value : ''; };
+  var b = function(id){ var el = document.getElementById(id); return el ? { t: el.textContent, c: el.className } : { t: '', c: '' }; };
+  return {
+    datum: v('datum'),
+    mjestoPolaziste: v('mjestoPolaziste'),
+    mjestoOdrediste: v('mjestoOdrediste'),
+    zonaPolaziste: zonaPolaziste,
+    zonaOdrediste: zonaOdrediste,
+    badgeP: b('mjestoPolazisteZonaBadge'),
+    badgeO: b('mjestoOdredisteZonaBadge'),
+    tezinaJedinica: tezinaJedinica,
+    duzinaJedinica: duzinaJedinica,
+    tez: kalkKopijaNiza_(pojedinacneTezineVrijednosti),
+    dimS: kalkKopijaNiza_(koletoDimS),
+    dimD: kalkKopijaNiza_(koletoDimD),
+    dimV: kalkKopijaNiza_(koletoDimV),
+    naPaleti: kalkKopijaNiza_(koletoNaPaleti),
+    paletaTip: kalkKopijaNiza_(koletoPaletaTip),
+    paletaRucno: kalkKopijaNiza_(koletoPaletaRucno),
+    brojKoletaStvarni: v('brojKoletaStvarni'),
+    pdv: !!(document.getElementById('pdvToggle') && document.getElementById('pdvToggle').checked)
+  };
+};
+window.kalkSinhroUvezi_ = function(snap){
+  if(!snap){ return; }
+  var el;
+  // 1) datum (sezonski dodatak ovisi o njemu)
+  el = document.getElementById('datum');
+  if(el && el.value !== snap.datum){ el.value = snap.datum; updateSezonskiPctBox(); }
+  // 2) mjesto + zona
+  document.getElementById('mjestoPolaziste').value = snap.mjestoPolaziste;
+  document.getElementById('mjestoOdrediste').value = snap.mjestoOdrediste;
+  zonaPolaziste = snap.zonaPolaziste;
+  zonaOdrediste = snap.zonaOdrediste;
+  [['mjestoPolazisteZonaBadge', snap.badgeP], ['mjestoOdredisteZonaBadge', snap.badgeO]].forEach(function(par){
+    var be = document.getElementById(par[0]);
+    if(be){ be.textContent = par[1].t; be.className = par[1].c; }
+  });
+  updateZonaObracuna();
+  // 3) jedinice — PRIJE nizova (brojevi se tumače prema trenutnoj jedinici)
+  tezinaJedinica = snap.tezinaJedinica;
+  duzinaJedinica = snap.duzinaJedinica;
+  Array.prototype.forEach.call(document.querySelectorAll('#tezinaJedinicaToggle button'), function(bt){ bt.classList.toggle('active', bt.getAttribute('data-unit') === tezinaJedinica); });
+  Array.prototype.forEach.call(document.querySelectorAll('#duzinaJedinicaToggle button'), function(bt){ bt.classList.toggle('active', bt.getAttribute('data-unit') === duzinaJedinica); });
+  if(typeof applyDuzinaJedinicaToDropdowns === 'function'){ applyDuzinaJedinicaToDropdowns(); }
+  // 4) nizovi po koletu
+  pojedinacneTezineVrijednosti = kalkKopijaNiza_(snap.tez);
+  koletoDimS = kalkKopijaNiza_(snap.dimS);
+  koletoDimD = kalkKopijaNiza_(snap.dimD);
+  koletoDimV = kalkKopijaNiza_(snap.dimV);
+  koletoNaPaleti = kalkKopijaNiza_(snap.naPaleti);
+  koletoPaletaTip = kalkKopijaNiza_(snap.paletaTip);
+  koletoPaletaRucno = kalkKopijaNiza_(snap.paletaRucno);
+  // 5) broj koleta u pošiljci → okida updateDimNacinUI (iscrtava retke, zbraja težinu u #tezina)
+  var bk = document.getElementById('brojKoletaStvarni');
+  bk.value = snap.brojKoletaStvarni;
+  bk.dispatchEvent(new Event('input', { bubbles: true }));
+  if(typeof updateDuzinaJedinicaLock === 'function'){ updateDuzinaJedinicaLock(); }
+  if(typeof updateTezinaJedinicaLock === 'function'){ updateTezinaJedinicaLock(); }
+  if(typeof updateVolTezinaCompare === 'function'){ updateVolTezinaCompare(); }
+  // 5b) prikaz s/bez PDV-a (da usporedba odstupanja uspoređuje iste iznose)
+  var pdvEl = document.getElementById('pdvToggle');
+  if(pdvEl && typeof snap.pdv === 'boolean'){ pdvEl.checked = snap.pdv; }
+  // 6) odmah preračunaj cijenu (isto kao da je operater upisao podatke ručno)
+  scheduleLiveIzracunaj();
+};
+
 if(!ucitajAdminPrijavuIzUrlaAkoPostoji_()){
   ucitajPrijavuIzUrlaAkoPostoji_();
 }
