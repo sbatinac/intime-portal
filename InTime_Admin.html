@@ -356,18 +356,40 @@
   .search-filter-chip:hover{border-color:var(--purple);}
   .search-filter-chip.active{background:var(--purple);border-color:var(--purple);color:#fff;}
 
-  .tabs{display:flex;gap:8px;margin-bottom:16px;border-bottom:2px solid var(--line);}
+  /* ---- GLAVNE KARTICE: uokvireno + efekt podizanja pri prelasku mišem (3.10.2026., Sašin zahtjev) ---- */
+  .tabs{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:10px;margin-bottom:18px;padding-bottom:4px;}
+  @media (max-width:900px){.tabs{grid-template-columns:repeat(auto-fill,minmax(130px,1fr));}}
   .tab-btn{
-    padding:10px 16px;
-    background:none;
-    border:none;
-    border-bottom:2px solid transparent;
-    margin-bottom:-2px;
-    font-size:14px;
-    font-weight:600;
-    color:var(--grey);
+    text-align:center;
+    padding:11px 10px;
+    background:#fff;
+    border:1.5px solid #cfdcdf;
+    border-radius:12px;
+    font-family:inherit;
+    font-size:13.5px;
+    font-weight:700;
+    line-height:1.3;
+    color:#41525a;
+    cursor:pointer;
+    box-shadow:0 1px 3px rgba(19,84,80,.08);
+    transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease,background .18s ease,color .18s ease;
   }
-  .tab-btn.active{color:var(--purple-dark);border-bottom-color:var(--purple);}
+  .tab-btn:hover{
+    transform:translateY(-4px) scale(1.03);
+    border-color:var(--purple);
+    background:#f0fbfa;
+    color:var(--purple-dark);
+    box-shadow:0 10px 20px rgba(34,152,145,.25);
+  }
+  .tab-btn:active{transform:translateY(-1px) scale(1.01);box-shadow:0 4px 10px rgba(34,152,145,.22);}
+  .tab-btn.active{
+    background:linear-gradient(135deg,#229891 0%,#1b7f8a 100%);
+    border-color:#1b7f8a;
+    color:#fff;
+    box-shadow:0 6px 16px rgba(34,152,145,.38);
+  }
+  .tab-btn.active:hover{background:linear-gradient(135deg,#27a79f 0%,#1f8d99 100%);color:#fff;border-color:#1b7f8a;}
+  @media (prefers-reduced-motion:reduce){.tab-btn,.tab-btn:hover{transition:none;transform:none;}}
 
   .empty-hint{color:var(--grey);font-size:13px;padding:24px;text-align:center;}
 
@@ -1252,6 +1274,15 @@
   .af-slanje-guard-uvjeti .uvjet.fail{border-color:#f3c7c0;}
   .af-slanje-guard-hint{font-size:11px;color:var(--red-dark);margin:6px 0 0;}
   .af-slanje-guard.spremno .af-slanje-guard-hint{color:var(--green);}
+  /* GIF "sve spremno za prvu ponudu" + GIF "paljba" pri slanju — vanjske datoteke, ne base64 */
+  .af-gif-spremno{margin-top:10px;text-align:center;border-radius:12px;overflow:hidden;background:#0b2a35;}
+  .af-gif-spremno[hidden]{display:none;}
+  .af-gif-spremno img{display:block;width:100%;max-width:820px;height:auto;margin:0 auto;}
+  .af-gif-spremno .af-gif-opis{color:#d9f3ee;font-size:12.5px;font-weight:700;padding:7px 10px 9px;letter-spacing:.02em;}
+  .gif-paljba-overlay{position:fixed;inset:0;z-index:99999;background:rgba(5,20,28,.82);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:16px;cursor:pointer;}
+  .gif-paljba-overlay[hidden]{display:none;}
+  .gif-paljba-overlay img{width:min(94vw,1000px);max-height:80vh;object-fit:contain;height:auto;border-radius:14px;box-shadow:0 10px 40px rgba(0,0,0,.55);}
+  .gif-paljba-overlay .gif-paljba-opis{color:#fff;font-size:20px;font-weight:800;letter-spacing:.02em;text-align:center;}
   .af-slanje-posalji-btn:disabled{opacity:.5;cursor:not-allowed;}
   /* Traka napretka slanja (Sašin izričit zahtjev, 21.9.2026., nastavak —
      "neku statusnu traku dolje koja pokazuje slanje... brzo početi ali
@@ -2162,6 +2193,46 @@
     var el = document.getElementById('login-error');
     el.textContent = msg;
     el.hidden = false;
+  }
+
+  // ---- GIF animacije (vanjske datoteke uz HTML stranice, ne base64) ----
+  // GIF 1: pojavi se u okviru "Uvjeti za slanje ponude" kad su svi uvjeti za
+  // PRVU ponudu zeleni. GIF 2: preko cijelog ekrana u trenutku stvarnog slanja.
+  // Za prebacivanje na vanjske (npr. imgur) linkove promijeni ove dvije konstante.
+  var GIF_SPREMNO_URL_ = 'gif_sidro.gif';
+  var GIF_PALJBA_URL_ = 'gif_paljba.gif';
+  var GIF_PALJBA_MIN_MS_ = 3200;
+  var gifPaljbaEl_ = null;
+  var gifPaljbaOtvorenoU_ = 0;
+  var gifPaljbaTimer_ = null;
+  function gifPreducitaj_(url) { try { var i = new Image(); i.src = url; } catch (e) {} }
+  function gifPaljbaOtvori_() {
+    if (!gifPaljbaEl_) {
+      gifPaljbaEl_ = document.createElement('div');
+      gifPaljbaEl_.className = 'gif-paljba-overlay';
+      gifPaljbaEl_.hidden = true;
+      gifPaljbaEl_.innerHTML = '<img alt="" src=""><div class="gif-paljba-opis">📨 Šaljem ponudu…</div>';
+      gifPaljbaEl_.addEventListener('click', function() { gifPaljbaZatvoriOdmah_(); });
+      document.body.appendChild(gifPaljbaEl_);
+    }
+    if (gifPaljbaTimer_) { clearTimeout(gifPaljbaTimer_); gifPaljbaTimer_ = null; }
+    var img = gifPaljbaEl_.querySelector('img');
+    // novi src svaki put => GIF krene ispočetka
+    img.src = GIF_PALJBA_URL_ + (GIF_PALJBA_URL_.indexOf('?') < 0 ? '?' : '&') + 't=' + Date.now();
+    gifPaljbaEl_.hidden = false;
+    gifPaljbaOtvorenoU_ = Date.now();
+  }
+  function gifPaljbaZatvoriOdmah_() {
+    if (gifPaljbaTimer_) { clearTimeout(gifPaljbaTimer_); gifPaljbaTimer_ = null; }
+    if (gifPaljbaEl_) { gifPaljbaEl_.hidden = true; }
+  }
+  // Zatvara se nakon odgovora servera, ali tek kad je GIF bio vidljiv min. ~3 s.
+  function gifPaljbaZatvori_() {
+    if (!gifPaljbaEl_ || gifPaljbaEl_.hidden) { return; }
+    var preostalo = GIF_PALJBA_MIN_MS_ - (Date.now() - gifPaljbaOtvorenoU_);
+    if (preostalo <= 0) { gifPaljbaZatvoriOdmah_(); return; }
+    if (gifPaljbaTimer_) { clearTimeout(gifPaljbaTimer_); }
+    gifPaljbaTimer_ = setTimeout(gifPaljbaZatvoriOdmah_, preostalo);
   }
 
   function handleLogin(e) {
@@ -6018,13 +6089,18 @@
   var KK_MAIL_BANNER_ = 'https://i.imgur.com/XP1FZ4n.png'; // jedina slika u mailu (gore)
   var KK_MAIL_ZAV_ = 'Lijep pozdrav,\nSaša Batinac\nIn Time d.o.o.';
   // Jedan zadani predložak (Sašin zahtjev: ne 5 predložaka, nego jedan s tekstovima koje može mijenjati).
-  var KK_PREDLOZAK_ = {
-    predmet: 'In Time — pristupni podaci za alat KALKULACIJE',
-    uvod: 'Pozdrav {IME},\n\notvoren Vam je pristup internom alatu KALKULACIJE za usporedbu cijena dostave. Pristupni podaci nalaze se u nastavku.',
-    napomena: 'Podatke u kalkulator unosite u obliku OSNOVNOG cjenika koji se nalazi u prilogu ovog maila — mijenjate isključivo vrijednosti, a struktura cjenika ostaje ista. Ako se slučajno nešto promijeni, ponovno učitajte cjenik iz priloga.',
-    usp: 'Kalkulator omogućuje usporedbu do 3 cjenika istodobno (glavni kalkulator i još dva), uz označene razlike u cijenama na prvi pogled.',
-    zav: KK_MAIL_ZAV_
-  };
+  // Broj kalkulatora u tekstu o usporedbi prati broj koji je postavljen za tog korisnika (2–5).
+  function kkPredlozak_(k) {
+    var n = k.brojKalkulatora || 3;
+    var rijec = { 1: 'jedan', 2: 'dva', 3: 'tri', 4: 'četiri' }[n - 1] || String(n - 1);
+    return {
+      predmet: 'In Time — pristupni podaci za alat KALKULACIJE',
+      uvod: 'Pozdrav {IME},\n\notvoren Vam je pristup internom alatu KALKULACIJE za usporedbu cijena dostave. Pristupni podaci nalaze se u nastavku.',
+      napomena: 'Podatke u kalkulator unosite u obliku OSNOVNOG cjenika koji se nalazi u prilogu ovog maila — mijenjate isključivo vrijednosti, a struktura cjenika ostaje ista. Ako se slučajno nešto promijeni, ponovno učitajte cjenik iz priloga.',
+      usp: 'Kalkulator omogućuje usporedbu do ' + n + ' cjenika istodobno (glavni kalkulator i još ' + rijec + '), uz označene razlike u cijenama na prvi pogled.',
+      zav: KK_MAIL_ZAV_
+    };
+  }
   function kkFmtKB_(n) { return n >= 1048576 ? (n / 1048576).toFixed(1).replace('.', ',') + ' MB' : Math.max(1, Math.round(n / 1024)) + ' KB'; }
   function kkTekstUHtml_(t) {
     var e = esc(String(t || '')).replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1" style="color:#0f8b7e;">$1</a>');
@@ -6104,7 +6180,7 @@
       var prim = q('.kk-mail-primatelji'), status = q('.kk-mail-status'), chips = q('.kk-mail-prilozi'), zapChips = q('.kk-mail-zapamceni'), inp = q('.kk-mail-prilog-inp'), pregled = q('.kk-mail-pregled');
       var izmijenjeno = false, zapamceni = [];
       function primijeni() {
-        var p = KK_PREDLOZAK_;
+        var p = kkPredlozak_(k);
         predmet.value = p.predmet; uvod.value = p.uvod; nap.value = p.napomena; usp.value = p.usp; zav.value = p.zav; izmijenjeno = false; osvjeziPregled();
       }
       function osvjeziPregled() { pregled.srcdoc = '<!doctype html><meta charset="utf-8"><body style="margin:0;padding:10px;background:#f4f6f8;">' + kkMailHtml_(k, url, uvod.value, nap.value, usp.value, zav.value) + '</body>'; }
@@ -6295,6 +6371,7 @@
           '<span>Mobitel: ' + esc(k.telefon || '—') + '</span>' +
           '<span>Lozinka: <strong class="kk-loz-prikaz">••••••••</strong> <a href="#" class="kk-loz-oko">👁 prikaži</a></span></div>' +
         '<div class="kalk-korisnik-red2"><span>Zadnja prijava: ' + esc(zadnja) + '</span><span>Prijava: <strong>' + k.brojPrijava + '</strong></span><span>Izračuna: <strong>' + k.brojIzracuna + '</strong></span><span>Učitanih cjenika: <strong>' + k.brojCjenika + '</strong></span></div>' +
+        '<div class="kalk-korisnik-red2"><span>🧮 Broj kalkulatora za usporedbu: <select class="kk-broj-kalk" style="padding:3px 6px;border:1px solid #ccd2da;border-radius:6px;font-weight:700;">' + [2, 3, 4, 5].map(function(n) { return '<option value="' + n + '"' + ((k.brojKalkulatora || 3) === n ? ' selected' : '') + '>' + n + '</option>'; }).join('') + '</select> <span class="kk-broj-kalk-st" style="font-size:11.5px;"></span></span></div>' +
         '<div class="kalk-korisnik-red2"><span>📨 Zadnje slanje pristupa: <strong class="kk-zadnje-slanje">' + esc(k.zadnjeSlanje ? (k.zadnjeSlanje + (k.brojSlanja > 1 ? ' (poslano ' + k.brojSlanja + '×)' : '')) : 'još nije poslano') + '</strong></span></div>' +
         '<div class="kk-akcije" style="margin-top:8px;">' +
           '<button type="button" class="btn btn-outline btn-small kk-uredi">✎ Uredi</button>' +
@@ -6326,6 +6403,20 @@
         poruka_(por, kopirajTekstUMedjuspremnik_(t) ? '✓ Kopirano (link + korisničko ime + lozinka).' : 'Kopiranje nije uspjelo — kopiraj ručno.', false);
         setTimeout(function() { poruka_(por, '', false); }, 3500);
       });
+      (function() {
+        var selB = red.querySelector('.kk-broj-kalk'), stB = red.querySelector('.kk-broj-kalk-st');
+        selB.addEventListener('change', function() {
+          var n = parseInt(selB.value, 10), staro = k.brojKalkulatora || 3;
+          selB.disabled = true; stB.style.color = '#666'; stB.textContent = 'Spremam…';
+          gasCall({ action: 'adminKolegaBrojKalkulatora', token: adminToken, id: k.id, broj: n }).then(function(res) {
+            selB.disabled = false;
+            if (handleAuthError(res)) { return; }
+            if (res.status !== 'ok') { selB.value = String(staro); stB.style.color = '#c0392b'; stB.textContent = res.message || 'Greška.'; return; }
+            k.brojKalkulatora = n; stB.style.color = '#1e8449'; stB.textContent = '✓ Spremljeno — vrijedi pri sljedećoj prijavi/osvježavanju stranice korisnika';
+            setTimeout(function() { stB.textContent = ''; }, 5000);
+          }).catch(function() { selB.disabled = false; selB.value = String(staro); stB.style.color = '#c0392b'; stB.textContent = 'Greška u komunikaciji s poslužiteljem.'; });
+        });
+      })();
       kkPosaljiPristupWire_(k, url, red.querySelector('.kk-posalji-blok'), red.querySelector('.kk-posalji-gumb'), function(vrijeme) {
         k.brojSlanja = (k.brojSlanja || 0) + 1; k.zadnjeSlanje = vrijeme;
         red.querySelector('.kk-zadnje-slanje').textContent = vrijeme + (k.brojSlanja > 1 ? ' (poslano ' + k.brojSlanja + '×)' : '');
@@ -13637,6 +13728,25 @@
         }).join('');
         var sveOk = uvjeti.every(function(u) { return u.ok; }) && !cekaOdgovor;
         slanjeGuardBox.classList.toggle('spremno', sveOk);
+        // GIF 1 — samo za PRVU ponudu (status 'nije_poslano' i prazna povijest
+        // prijašnjih slanja), i samo kad su SVI uvjeti zeleni.
+        var povijestZaGif_ = fieldVal(entry, 'Povijest prijašnjih slanja ponude (admin, JSON)');
+        var prvaPonuda_ = (trenutniStatus_ === 'nije_poslano') && (!povijestZaGif_ || povijestZaGif_ === '[]');
+        var gifBox_ = slanjeGuardBox.querySelector('.af-gif-spremno');
+        if (!gifBox_) {
+          gifBox_ = document.createElement('div');
+          gifBox_.className = 'af-gif-spremno';
+          gifBox_.hidden = true;
+          gifBox_.innerHTML = '<img alt="" loading="lazy"><div class="af-gif-opis">⚓ Sve je spremno za slanje prve ponude</div>';
+          slanjeGuardBox.appendChild(gifBox_);
+        }
+        var gifPokazi_ = sveOk && prvaPonuda_;
+        if (gifPokazi_) {
+          var gifImg_ = gifBox_.querySelector('img');
+          if (!gifImg_.getAttribute('src')) { gifImg_.setAttribute('src', GIF_SPREMNO_URL_); }
+          gifPreducitaj_(GIF_PALJBA_URL_);
+        }
+        gifBox_.hidden = !gifPokazi_;
         if (slanjePosaljiBtn) { slanjePosaljiBtn.disabled = !sveOk; }
         // Sašin izričit zahtjev (21.9.2026., nastavak — "testirati možemo
         // jedino ako je sve napravljeno, isto uvijek kao i za ponudu, mora
@@ -13775,7 +13885,8 @@
           // krug 22.9.2026.: "makni sidro i paljbu... obriši") — poziva se
           // i dalje na više mjesta niže (isti obrazac kao traka napretka),
           // ali više ne prikazuje animaciju.
-          var zatvoriPaljbu_ = function() {};
+          var zatvoriPaljbu_ = function() { gifPaljbaZatvori_(); };
+          gifPaljbaOtvori_();
           osiguurajDirektorijPrijeSlanja_().then(function(dirRes) {
             if (dirRes.status !== 'ok') {
               zatvoriPaljbu_();

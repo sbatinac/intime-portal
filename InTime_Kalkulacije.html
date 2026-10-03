@@ -126,7 +126,7 @@
 
 <script>
 var GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbz73zkx72GhrDZ-t3CamF5wuz-9V7Uxe5z9IkFxHA8F5FBlrIlc7zMUd4_EHTILD9FTAw/exec";
-var kolegaSesija_ = null; // { token, ime, prezime, funkcija }
+var kolegaSesija_ = null; // { token, ime, prezime, funkcija, brojKalkulatora }
 var ipCache_ = ''; // javna IP adresa (dohvaća se jednom; kasnije se ne čeka na mrežu dok kalkulatori opterećuju preglednik)
 function osvjeziIp_() { return dohvatiIP_().then(function(ip) { if (ip) { ipCache_ = ip; } return ip; }); }
 
@@ -195,7 +195,7 @@ document.getElementById('prijavaForma').addEventListener('submit', function(ev) 
   }).then(function(res) {
     gumb.disabled = false;
     if (!res || res.status !== 'ok') { statusPrijave_((res && res.message) || 'Prijava nije uspjela.', true); return; }
-    kolegaSesija_ = { token: res.token, ime: res.ime, prezime: res.prezime, funkcija: res.funkcija };
+    kolegaSesija_ = { token: res.token, ime: res.ime, prezime: res.prezime, funkcija: res.funkcija, brojKalkulatora: res.brojKalkulatora };
     spremiSesiju_(kolegaSesija_);
     statusPrijave_('', false);
     prikaziApp_();
@@ -211,11 +211,12 @@ document.getElementById('odjavaGumb').addEventListener('click', function() {
   prikaziPrijavu_('');
 });
 
-// ---------- KALKULACIJE (iz admin sučelja, bez arhive; max 3 kalkulatora) ----------
+// ---------- KALKULACIJE (iz admin sučelja, bez arhive; 2–5 kalkulatora po korisniku) ----------
   function buildKalkulatorUsporedbaPanel_() {
     var wrap = document.createElement('div');
     wrap.className = 'faq-admin-card';
-    var MIN_SLOTS_ = 2, MAX_SLOTS_ = 3;
+    // Koliko kalkulatora korisnik smije otvoriti postavlja admin (2–5, zadano 3).
+    var MIN_SLOTS_ = 2, MAX_SLOTS_ = Math.max(2, Math.min(5, parseInt(kolegaSesija_ && kolegaSesija_.brojKalkulatora, 10) || 3));
     var slotovi_ = []; // { wrapEl, iframeEl, jeGlavni }
 
     wrap.innerHTML =
@@ -671,7 +672,7 @@ document.getElementById('odjavaGumb').addEventListener('click', function() {
   var s = ucitajSesiju_();
   if (!s || !s.token) { return; }
   gasCall({ action: 'kalkulatorKolegaToken', token: s.token }).then(function(res) {
-    if (res && res.status === 'ok') { kolegaSesija_ = s; prikaziApp_(); }
+    if (res && res.status === 'ok') { s.brojKalkulatora = res.brojKalkulatora || s.brojKalkulatora; kolegaSesija_ = s; prikaziApp_(); }
     else { obrisiSesiju_(); }
   }).catch(function() { /* ostaje prijava */ });
 })();
