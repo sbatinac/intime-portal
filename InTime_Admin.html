@@ -1457,6 +1457,14 @@
      kalkulator-stranice, dovoljno visok da stane cijeli alat bez previše
      unutarnjeg scrolla (kalkulator ima dosta polja + cjenik desno). */
   .kalk-isprobaj-iframe{width:100%;height:1500px;border:1px solid var(--line);border-radius:8px;display:block;}
+  /* "KALKULACIJE" — usporedba više cjenika istovremeno (2.10.2026., Sašin
+     izričit zahtjev). Slotovi se slažu u red, vodoravno skrolabilan ako ih
+     je više (max 5), svaki je puni ugrađeni kalkulator (isti iframe-obrazac
+     kao "Isprobaj kalkulator" iznad). */
+  .kalk-usporedba-grid{display:flex;gap:14px;overflow-x:auto;padding-bottom:8px;}
+  .kalk-usporedba-slot{flex:0 0 480px;border:1px solid var(--line);border-radius:10px;padding:10px;background:#fafafa;}
+  .kalk-usporedba-slot-naslov{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px;font-size:13px;color:var(--graphite);}
+  .kalk-usporedba-iframe{width:100%;height:1500px;border:1px solid var(--line);border-radius:8px;display:block;background:#fff;}
   /* Zatvorene/otvorene kartice centara i servisa (26.9.2026., Sašin
      izričit zahtjev — "neka kartice budu zatvorene dok se ne klikne").
      .lc-centar-detalji nosi SVE uređivo polje i akcije, skriveno dok
@@ -4485,6 +4493,7 @@
       '<button type="button" class="lc-podtab-btn' + (kalkulatorPodTab_ === 'Evidencija' ? ' active' : '') + '" data-podtab="Evidencija">📋 Evidencija</button>' +
       '<button type="button" class="lc-podtab-btn' + (kalkulatorPodTab_ === 'Postavke' ? ' active' : '') + '" data-podtab="Postavke">⚙️ Postavke osnovnog kalkulatora</button>' +
       '<button type="button" class="lc-podtab-btn' + (kalkulatorPodTab_ === 'Isprobaj' ? ' active' : '') + '" data-podtab="Isprobaj">🧪 Isprobaj kalkulator</button>' +
+      '<button type="button" class="lc-podtab-btn' + (kalkulatorPodTab_ === 'Usporedba' ? ' active' : '') + '" data-podtab="Usporedba" style="color:#c0392b;font-weight:800;">KALKULACIJE</button>' +
       '<button type="button" class="lc-podtab-btn' + (kalkulatorPodTab_ === 'Napomene' ? ' active' : '') + '" data-podtab="Napomene">NAPOMENE</button>';
     Array.prototype.forEach.call(podtabs.querySelectorAll('.lc-podtab-btn'), function(btn) {
       btn.addEventListener('click', function() {
@@ -4501,6 +4510,8 @@
       outer.appendChild(buildKalkulatorCjenikPanel_());
     } else if (kalkulatorPodTab_ === 'Isprobaj') {
       outer.appendChild(buildKalkulatorIsprobajPanel_());
+    } else if (kalkulatorPodTab_ === 'Usporedba') {
+      outer.appendChild(buildKalkulatorUsporedbaPanel_());
     } else if (kalkulatorPodTab_ === 'Napomene') {
       outer.appendChild(buildKalkulatorNapomenePanel_());
     }
@@ -5061,6 +5072,181 @@
         '<a href="' + esc(kalkUrlAdmin_) + '" target="_blank" rel="noopener" class="btn btn-outline btn-small">↗ Otvori u novom prozoru</a>' +
       '</div>' +
       '<iframe src="' + esc(kalkUrlAdmin_) + '" title="In Time — kalkulator cijene dostave (isprobavanje u adminu, otključano)" loading="lazy" class="kalk-isprobaj-iframe"></iframe>';
+    return wrap;
+  }
+
+  // "KALKULACIJE" — usporedba više cjenika (2.10.2026., Sašin izričit
+  // zahtjev: "napravimo usporedbu kalkulacija... 2 i 3 komada... maksimalno
+  // 5 cjenika... što unesem u glavni kalkulator (taj prvi, zvat ćemo
+  // glavni) sve se kopira i u druge što se tiče težine i dimenzija, ali
+  // uvjeti cijena su drugačije"). Svaki slot je PUNI ugrađeni kalkulator —
+  // isti obrazac kao "🧪 Isprobaj kalkulator" iznad, svaki sa svojim
+  // "Učitaj cjenik" (ručno učitavanje .xlsx, već postojeća javna značajka,
+  // ostaje omogućena jer je kalkulator u adminu otključan preko
+  // ?kalk_admin=, vidi InTime_KalkulatorCijena.html). Slot 1 je "glavni" —
+  // ADMIN unosi podatke o pošiljci ISKLJUČIVO tu; svi ostali slotovi
+  // ("pratioci", ?kalk_uloga=pratilac) imaju tu karticu zaključanu
+  // (vidi .usporedba-pratilac-locked u InTime_KalkulatorCijena.html) i
+  // automatski preuzimaju iste podatke — vidi opširnu napomenu uz
+  // primijeniSinhroNaPratioca_ niže za TOČNO što se sinhronizira i zašto
+  // izravnim pristupom varijablama umjesto simuliranjem tipkanja/klikova.
+  function buildKalkulatorUsporedbaPanel_() {
+    var wrap = document.createElement('div');
+    wrap.className = 'faq-admin-card';
+    var MIN_SLOTS_ = 2, MAX_SLOTS_ = 5;
+    var slotovi_ = []; // { wrapEl, iframeEl, jeGlavni }
+
+    wrap.innerHTML =
+      '<h3 style="color:#c0392b;">KALKULACIJE — usporedba cjenika</h3>' +
+      '<p class="faq-admin-hint">Unesi podatke o pošiljci (mjesto, način obračuna, broj koleta, težinu, dimenzije) SAMO u <strong>Kalkulator 1 (glavni)</strong> — isti podaci se odmah prenose u sve ostale kalkulatore niže, svaki sa svojim (drugačijim) učitanim cjenikom preko gumba "Učitaj cjenik" na toj stranici, da odmah vidiš usporedbu cijena po istoj pošiljci. Dopunske usluge (otkupnina, SMS, iskazana vrijednost...) se NE prenose — unose se zasebno po kalkulatoru ako treba.</p>' +
+      '<div class="faq-admin-card-actions" style="margin-bottom:10px;">' +
+        '<button type="button" class="btn btn-small" id="kalkUsporedbaDodajBtn">+ Dodaj kalkulator za usporedbu</button>' +
+      '</div>' +
+      '<div class="kalk-usporedba-grid" id="kalkUsporedbaGrid"></div>';
+
+    var gridEl_ = wrap.querySelector('#kalkUsporedbaGrid');
+    var dodajBtn_ = wrap.querySelector('#kalkUsporedbaDodajBtn');
+
+    function azurirajDodajBtn_() {
+      dodajBtn_.disabled = slotovi_.length >= MAX_SLOTS_;
+      dodajBtn_.textContent = slotovi_.length >= MAX_SLOTS_
+        ? ('Dosegnut je maksimalan broj od ' + MAX_SLOTS_ + ' kalkulatora')
+        : '+ Dodaj kalkulator za usporedbu';
+    }
+
+    function dodajSlot_() {
+      if (slotovi_.length >= MAX_SLOTS_) { return; }
+      var idx = slotovi_.length;
+      var jeGlavni = (idx === 0);
+      var slotWrap = document.createElement('div');
+      slotWrap.className = 'kalk-usporedba-slot';
+      var urlZaIframe = 'InTime_KalkulatorCijena.html' + (adminToken ? ('?kalk_admin=' + encodeURIComponent(adminToken)) : '') + (jeGlavni ? '' : '&kalk_uloga=pratilac');
+      var naslovHtml = jeGlavni
+        ? '<span style="color:#c0392b;font-weight:800;">Kalkulator 1 — GLAVNI (unosi se ovdje)</span>'
+        : ('<span>Kalkulator ' + (idx + 1) + '</span>' + ' <button type="button" class="btn btn-outline btn-small kalk-usporedba-ukloni-btn">✕ Ukloni</button>');
+      slotWrap.innerHTML =
+        '<div class="kalk-usporedba-slot-naslov">' + naslovHtml + '</div>' +
+        '<iframe src="' + esc(urlZaIframe) + '" title="In Time — kalkulator cijene (usporedba)" loading="lazy" class="kalk-usporedba-iframe"></iframe>';
+      gridEl_.appendChild(slotWrap);
+      var iframeEl = slotWrap.querySelector('iframe');
+      var slot = { wrapEl: slotWrap, iframeEl: iframeEl, jeGlavni: jeGlavni };
+      slotovi_.push(slot);
+      if (jeGlavni) {
+        iframeEl.addEventListener('load', function() { povezanaGlavniListener_(iframeEl); });
+      } else {
+        slotWrap.querySelector('.kalk-usporedba-ukloni-btn').addEventListener('click', function() {
+          var pos = slotovi_.indexOf(slot);
+          if (pos === -1) { return; }
+          slotovi_.splice(pos, 1);
+          slotWrap.remove();
+          azurirajDodajBtn_();
+        });
+      }
+      azurirajDodajBtn_();
+    }
+
+    // Budući da InTime_Admin.html i InTime_KalkulatorCijena.html žive na
+    // ISTOJ domeni/putanji (vidi napomena uz buildKalkulatorIsprobajPanel_
+    // iznad), iframeovi su ISTOG porijekla (same-origin) pa je moguć
+    // IZRAVAN pristup varijablama i DOM-u unutar njih iz ovog roditelja —
+    // NE treba postMessage protokol. Umjesto simuliranja tipkanja/klikova
+    // (fragilno — zaključavanje jedinice težine nakon unosa, padajući
+    // panel "dimenzije po koletu" koji se iznova crta prema internim
+    // nizovima te stranice...), izravno kopiramo ISTE globalne varijable
+    // koje stranica već koristi (zonaPolaziste/Odrediste, tezinaJedinica/
+    // duzinaJedinica, nizove pojedinacneTezineVrijednosti/koletoDimS/D/V/
+    // koletoNaPaleti/koletoPaletaTip/koletoPaletaRucno) i zovemo ISTE
+    // funkcije koje stranica već poziva (setBezVolumena, updateZonaObracuna,
+    // 'input' na brojKoletaStvarni → renderDimPojedinacno, scheduleLiveIzracunaj)
+    // — isti rezultat kao da je admin sve to ručno upisao u svaki
+    // kalkulator, bez dupliciranja ~800 KB logike i bez repliciranja njenih
+    // brojnih rubnih slučajeva. Sinhronizira SAMO karticu "Podaci o
+    // pošiljci" — NE "Dopunske usluge" (otkupnina/SMS/iskazana vrijednost
+    // itd.), koje Saša nije tražio da se prenose i ostaju zasebne po
+    // kalkulatoru.
+    var sinkroTajmer_ = null;
+    function povezanaGlavniListener_(glavniIframe) {
+      var doc;
+      try { doc = glavniIframe.contentDocument; } catch (eDoc) { return; }
+      if (!doc) { return; }
+      var kartica = doc.getElementById('podaciOPosiljciCard');
+      if (!kartica) { return; }
+      var pokreniSinhro_ = function() {
+        clearTimeout(sinkroTajmer_);
+        sinkroTajmer_ = setTimeout(function() { sinhronizirajSvePratioce_(glavniIframe); }, 150);
+      };
+      kartica.addEventListener('input', pokreniSinhro_);
+      kartica.addEventListener('change', pokreniSinhro_);
+      kartica.addEventListener('click', pokreniSinhro_);
+    }
+
+    function sinhronizirajSvePratioce_(glavniIframe) {
+      var mWin;
+      try { mWin = glavniIframe.contentWindow; } catch (eWin) { return; }
+      if (!mWin || typeof mWin.pojedinacneTezineVrijednosti === 'undefined') { return; }
+      slotovi_.forEach(function(slot) {
+        if (slot.jeGlavni) { return; }
+        var fWin;
+        try { fWin = slot.iframeEl.contentWindow; } catch (eFWin) { return; }
+        if (!fWin || typeof fWin.pojedinacneTezineVrijednosti === 'undefined') { return; }
+        try { primijeniSinhroNaPratioca_(mWin, fWin); } catch (ePrimjeni) { /* best-effort, ne prekida ostale slotove */ }
+      });
+    }
+
+    function primijeniSinhroNaPratioca_(mWin, fWin) {
+      var mDoc = mWin.document, fDoc = fWin.document;
+      // 1) Mjesto + zona.
+      fDoc.getElementById('mjestoPolaziste').value = mDoc.getElementById('mjestoPolaziste').value;
+      fDoc.getElementById('mjestoOdrediste').value = mDoc.getElementById('mjestoOdrediste').value;
+      fWin.zonaPolaziste = mWin.zonaPolaziste;
+      fWin.zonaOdrediste = mWin.zonaOdrediste;
+      var bPolBadge = mDoc.getElementById('mjestoPolazisteZonaBadge'), fPolBadge = fDoc.getElementById('mjestoPolazisteZonaBadge');
+      fPolBadge.textContent = bPolBadge.textContent;
+      fPolBadge.className = bPolBadge.className;
+      var bOdrBadge = mDoc.getElementById('mjestoOdredisteZonaBadge'), fOdrBadge = fDoc.getElementById('mjestoOdredisteZonaBadge');
+      fOdrBadge.textContent = bOdrBadge.textContent;
+      fOdrBadge.className = bOdrBadge.className;
+      if (typeof fWin.updateZonaObracuna === 'function') { fWin.updateZonaObracuna(); }
+
+      // 2) Jedinice — MORA prije kopiranja nizova (brojevi se tumače prema trenutnoj jedinici).
+      fWin.tezinaJedinica = mWin.tezinaJedinica;
+      fWin.duzinaJedinica = mWin.duzinaJedinica;
+      Array.prototype.forEach.call(fDoc.querySelectorAll('#tezinaJedinicaToggle button'), function(b) { b.classList.toggle('active', b.getAttribute('data-unit') === fWin.tezinaJedinica); });
+      Array.prototype.forEach.call(fDoc.querySelectorAll('#duzinaJedinicaToggle button'), function(b) { b.classList.toggle('active', b.getAttribute('data-unit') === fWin.duzinaJedinica); });
+
+      // 3) Način obračuna (volumenski / nestandardna) — Sašin naknadni zahtjev
+      // (2.10.2026., "želio bih da mogu na drugima način obračuna
+      // mijenjati... da vidim razlike"): OVO SE NE PRENOSI u pratioce.
+      // Svaki kalkulator (osim glavnog) zadržava svoj NEOVISNI način
+      // obračuna — blok "Način obračuna pošiljke" je u pratiocima namjerno
+      // ostavljen otključan (vidi zakljucajPodaciOPosiljciZaPratioca_ u
+      // InTime_KalkulatorCijena.html), baš da se može ručno postaviti
+      // drugačije od glavnog, radi usporedbe.
+
+      // 4) Nizovi po koletu (težina/dimenzije/paleta) — kopirani PRIJE promjene broja koleta
+      // (korak 5), da renderDimPojedinacno() odmah iscrta ispravno popunjene retke.
+      fWin.pojedinacneTezineVrijednosti = mWin.pojedinacneTezineVrijednosti.slice();
+      fWin.koletoDimS = mWin.koletoDimS.slice();
+      fWin.koletoDimD = mWin.koletoDimD.slice();
+      fWin.koletoDimV = mWin.koletoDimV.slice();
+      fWin.koletoNaPaleti = mWin.koletoNaPaleti.slice();
+      fWin.koletoPaletaTip = mWin.koletoPaletaTip.slice();
+      fWin.koletoPaletaRucno = mWin.koletoPaletaRucno.slice();
+
+      // 5) Broj koleta — postavljanje brojKoletaStvarni okida renderDimPojedinacno() preko
+      // postojećeg 'input' rukovatelja na toj stranici (updateDimNacinUI), koji čita gornje nizove.
+      fDoc.getElementById('brojKoletaTip').value = mDoc.getElementById('brojKoletaTip').value;
+      fDoc.getElementById('brojKoleta').value = mDoc.getElementById('brojKoleta').value;
+      fDoc.getElementById('brojKoletaStvarni').value = mDoc.getElementById('brojKoletaStvarni').value;
+      fDoc.getElementById('brojKoletaStvarni').dispatchEvent(new fWin.Event('input', { bubbles: true }));
+
+      if (typeof fWin.scheduleLiveIzracunaj === 'function') { fWin.scheduleLiveIzracunaj(); }
+    }
+
+    dodajBtn_.addEventListener('click', dodajSlot_);
+    dodajSlot_(); // Kalkulator 1 — glavni.
+    dodajSlot_(); // Kalkulator 2 — minimalno 2 odmah vidljiva (Sašin zahtjev: "minimalno 2").
+
     return wrap;
   }
 

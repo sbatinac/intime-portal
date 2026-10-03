@@ -946,7 +946,7 @@
 <div class="layout-grid">
   <div class="col-left">
 
-  <div class="card">
+  <div class="card" id="podaciOPosiljciCard">
     <div class="card-header-row" style="display:flex; justify-content:space-between; align-items:center; gap:20px; flex-wrap:wrap; margin-bottom:14px;">
       <div>
         <h2 style="font-weight:800; font-size:21.5px; margin-bottom:6px;">Podaci o pošiljci</h2>
@@ -986,7 +986,7 @@
       <div class="zona-rule-badge"><strong>Pravilo više zone:</strong> zona obračuna je uvijek viša (skuplja) od zone polazišta i zone odredišta — npr. Zona 1 → Zona 2 = Zona 2, Zona 1 → Zona 3 = Zona 3.</div>
     </div>
 
-    <div class="field" style="margin-bottom:10px;">
+    <div class="field" id="nacinObracunaBlok" style="margin-bottom:10px;">
       <label style="margin-bottom:6px;">Način obračuna pošiljke</label>
       <input type="checkbox" id="bezVolumena" style="display:none">
       <div class="volumen-mode-group">
@@ -4638,6 +4638,51 @@ function ucitajPrijavuIzUrlaAkoPostoji_(){
 // prijavljeniKorisnickoIme_/prijavljenaLozinka_ (nije stvarni klijent), i NE
 // bilježi evidenciju prijave — samo otključava prikaz
 // (prijavaPostaviAktivnoStanje_), isto kao uspješna klijentska prijava.
+// NOVO (2.10.2026., Sašin izričit zahtjev — "KALKULACIJE... što unesem u
+// glavni kalkulator sve se kopira i u druge"): kad je ova stranica jedan od
+// "pratećih" slotova u admin kartici "KALKULACIJE" (?kalk_uloga=pratilac),
+// cijela kartica "Podaci o pošiljci" se vizualno i funkcionalno zaključava
+// (pointer-events isključen) — te podatke upisuje ISKLJUČIVO glavni
+// kalkulator (Kalkulator 1), a roditeljska admin stranica
+// (buildKalkulatorUsporedbaPanel_ u InTime_Admin.html) ih izravno
+// prepisuje u ovu stranicu preko iste-domene DOM/varijable pristupa — ovaj
+// kalkulator ih SAM ne prikuplja. Svejedno ostaje potpuno samostalan za
+// SVE ostalo (učitavanje svog vlastitog cjenika, dopunske usluge).
+function zakljucajPodaciOPosiljciZaPratioca_(){
+  var params;
+  try{ params = new URLSearchParams(window.location.search); }catch(eUrl){ return; }
+  if(params.get('kalk_uloga') !== 'pratilac'){ return; }
+  var kartica = document.getElementById('podaciOPosiljciCard');
+  if(!kartica){ return; }
+  kartica.style.position = 'relative';
+  var napomena = document.createElement('div');
+  napomena.textContent = '🔗 Mjesto, broj koleta, težina i dimenzije se preuzimaju automatski iz Kalkulatora 1 (glavni). Način obračuna pošiljke ispod MOŽETE mijenjati neovisno, radi usporedbe.';
+  napomena.style.background = '#fdecea';
+  napomena.style.border = '2px solid #c0392b';
+  napomena.style.borderRadius = '8px';
+  napomena.style.padding = '10px 14px';
+  napomena.style.fontWeight = '700';
+  napomena.style.fontSize = '12.5px';
+  napomena.style.color = '#c0392b';
+  napomena.style.textAlign = 'center';
+  napomena.style.marginBottom = '10px';
+  kartica.insertBefore(napomena, kartica.firstChild);
+  // NOVO (2.10.2026., Sašin naknadni zahtjev — "želio bih da mogu na
+  // drugima način obračuna mijenjati... da vidim razlike"): zaključava se
+  // SVAKO direktno dijete kartice OSIM ove napomene i #nacinObracunaBlok
+  // ("Način obračuna pošiljke" — radio volumenski/nestandardna) — taj
+  // blok ostaje potpuno interaktivan i neovisan po kalkulatoru, da admin
+  // može usporediti isti teret obračunat na oba načina. primijeniSinhroNaPratioca_
+  // u InTime_Admin.html (korak 3) više NE prepisuje "bezVolumena" u
+  // pratioce, baš zbog ovoga.
+  Array.prototype.forEach.call(kartica.children, function(child){
+    if(child === napomena){ return; }
+    if(child.id === 'nacinObracunaBlok'){ return; }
+    child.style.pointerEvents = 'none';
+    child.style.opacity = '0.55';
+  });
+}
+
 function ucitajAdminPrijavuIzUrlaAkoPostoji_(){
   var params;
   try{ params = new URLSearchParams(window.location.search); }catch(eUrl){ return false; }
@@ -4653,6 +4698,7 @@ function ucitajAdminPrijavuIzUrlaAkoPostoji_(){
       return;
     }
     prijavaPostaviAktivnoStanje_(res.naziv || 'Administrator (osnovni cjenik)');
+    zakljucajPodaciOPosiljciZaPratioca_();
   }).catch(function(){
     var statusEl = document.getElementById('prijavaStatus');
     if(statusEl){
