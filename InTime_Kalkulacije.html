@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html lang="hr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>In Time — KALKULACIJE</title>
+<style>
+  :root{--purple:#229891;--purple-dark:#135450;--graphite:#131313;--grey:#6b6b6b;--line:#e2e6ea;}
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:#f4f6f8;color:var(--graphite);}
+  .btn{display:inline-block;padding:9px 16px;border-radius:8px;border:1px solid var(--purple);background:var(--purple);color:#fff;font-weight:700;font-size:14px;cursor:pointer;font-family:inherit;}
+  .btn:hover{background:var(--purple-dark);border-color:var(--purple-dark);}
+  .btn:disabled{opacity:.55;cursor:not-allowed;}
+  .btn-outline{background:#fff;color:var(--purple);}
+  .btn-outline:hover{background:#eefaf9;color:var(--purple-dark);}
+  .btn-small{padding:5px 11px;font-size:12.5px;}
+  input[type=text],input[type=password]{width:100%;padding:11px 12px;border:1.5px solid #cfd6dc;border-radius:8px;font-size:15px;font-family:inherit;}
+  input[type=text]:focus,input[type=password]:focus{outline:none;border-color:var(--purple);}
+
+  /* ---- Prijava ---- */
+  #prijavaView{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px 16px;position:relative;overflow:hidden;
+    background:radial-gradient(1200px 700px at 15% -10%,#0e5f5a 0%,rgba(14,95,90,0) 60%),radial-gradient(900px 600px at 100% 110%,#0b3f6b 0%,rgba(11,63,107,0) 55%),linear-gradient(160deg,#04141a 0%,#071f2a 55%,#050d14 100%);}
+  #prijavaView::before,#prijavaView::after{content:"";position:absolute;border-radius:50%;filter:blur(70px);opacity:.45;pointer-events:none;animation:plutaj 14s ease-in-out infinite alternate;}
+  #prijavaView::before{width:420px;height:420px;left:-120px;top:8%;background:#16c1b4;}
+  #prijavaView::after{width:380px;height:380px;right:-100px;bottom:4%;background:#1f7bd8;animation-delay:-6s;}
+  @keyframes plutaj{from{transform:translate(0,0) scale(1);}to{transform:translate(40px,-30px) scale(1.15);}}
+  .prijava-kartica{position:relative;z-index:1;width:100%;max-width:780px;background:rgba(10,24,32,.72);border:1px solid rgba(120,220,210,.22);border-radius:22px;
+    box-shadow:0 30px 80px rgba(0,0,0,.6),0 0 0 1px rgba(255,255,255,.03) inset,0 0 60px rgba(34,152,145,.18);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);overflow:hidden;text-align:center;}
+  .prijava-hero{position:relative;line-height:0;}
+  .prijava-slika{display:block;width:100%;height:auto;margin:0;border-radius:0;}
+  .prijava-hero::after{content:"";position:absolute;left:0;right:0;bottom:0;height:46%;background:linear-gradient(180deg,rgba(10,24,32,0) 0%,rgba(10,24,32,.92) 100%);}
+  .prijava-tijelo{padding:4px 34px 30px;margin-top:-18px;position:relative;z-index:2;}
+  .prijava-naslov{margin:0 0 6px;font-size:26px;font-weight:800;letter-spacing:.32em;text-transform:uppercase;color:#fff;text-shadow:0 0 22px rgba(34,200,190,.55);}
+  .prijava-podnaslov{margin:0 auto 22px;font-size:13.5px;color:#9fb8bf;}
+  .prijava-podnaslov::after{content:"";display:block;width:64px;height:3px;margin:14px auto 0;border-radius:3px;background:linear-gradient(90deg,#16c1b4,#1f7bd8);}
+  .prijava-forma{max-width:420px;margin:0 auto;}
+  .prijava-polje{text-align:left;margin-bottom:14px;}
+  .prijava-polje label{display:block;font-size:11px;font-weight:700;color:#7fa3ab;margin-bottom:6px;text-transform:uppercase;letter-spacing:.12em;}
+  #prijavaView input[type=text],#prijavaView input[type=password]{background:rgba(255,255,255,.06);color:#fff;border:1.5px solid rgba(160,230,225,.2);border-radius:12px;padding:13px 14px;font-size:15px;transition:border-color .15s,box-shadow .15s,background .15s;}
+  #prijavaView input::placeholder{color:#6d8a92;}
+  #prijavaView input[type=text]:focus,#prijavaView input[type=password]:focus{outline:none;background:rgba(255,255,255,.09);border-color:#22c8bc;box-shadow:0 0 0 4px rgba(34,200,188,.18),0 0 24px rgba(34,200,188,.25);}
+  .prijava-napomena{margin-top:8px;font-size:12px;line-height:1.5;color:#8fb0b8;background:rgba(34,200,188,.08);border:1px solid rgba(34,200,188,.2);border-radius:10px;padding:8px 11px;}
+  .prijava-napomena strong,.prijava-napomena em{color:#d6f3f0;font-style:normal;}
+  .prijava-napomena em{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11.5px;}
+  .prijava-gumb{width:100%;padding:14px;font-size:15px;letter-spacing:.12em;text-transform:uppercase;margin-top:6px;border:0;border-radius:12px;color:#fff;
+    background:linear-gradient(135deg,#16c1b4 0%,#1b8f9a 50%,#1f6fd0 100%);box-shadow:0 10px 28px rgba(22,193,180,.35);transition:transform .15s,box-shadow .15s,filter .15s;}
+  .prijava-gumb:hover{background:linear-gradient(135deg,#1ad6c8 0%,#1fa3ae 50%,#2a82ea 100%);transform:translateY(-2px);box-shadow:0 14px 34px rgba(22,193,180,.5);}
+  .prijava-gumb:active{transform:translateY(0);}
+  .prijava-status{min-height:20px;margin-top:12px;font-size:13px;color:#9fb8bf;}
+  .prijava-status.greska{color:#ff7b6e;font-weight:700;}
+  .prijava-podnozje{margin-top:18px;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#587780;}
+  @media (max-width:600px){.prijava-tijelo{padding:2px 20px 24px;}.prijava-naslov{font-size:20px;letter-spacing:.22em;}}
+
+  /* ---- Aplikacija ---- */
+  #appView{display:none;padding:14px 18px 30px;}
+  .app-traka{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px;}
+  .app-traka .app-logo{height:34px;width:auto;border-radius:6px;}
+  .app-traka h1{margin:0;font-size:18px;color:var(--purple-dark);}
+  .app-korisnik{margin-left:auto;font-size:13px;color:var(--grey);}
+  .faq-admin-card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:16px 18px;}
+  .faq-admin-card h3{margin:0 0 6px;font-size:16px;}
+  .faq-admin-hint{font-size:12.5px;color:var(--grey);line-height:1.5;margin:0 0 10px;}
+  .faq-admin-card-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+  /* ---- KALKULACIJE (isti izgled kao u adminu) ---- */
+    .kalk-usporedba-grid{display:flex;gap:14px;overflow-x:auto;padding-bottom:8px;}
+  .kalk-usporedba-slot{flex:0 0 480px;border:1px solid var(--line);border-radius:10px;padding:10px;background:#fafafa;}
+  .kalk-usporedba-slot-naslov{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px;font-size:13px;color:var(--graphite);}
+  .kalk-usporedba-cjenik-bar{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:8px 10px;margin-bottom:8px;background:#fdecea;border:2px solid #c0392b;border-radius:8px;}
+  .kalk-usporedba-cjenik-bar input[type=file]{font-size:12px;max-width:100%;flex:1 1 200px;}
+  .af-poslano-bedz{margin-left:auto;margin-right:8px;font-size:11.5px;font-weight:800;padding:2px 9px;border-radius:12px;background:#eceff1;color:#78909c;white-space:nowrap;}
+  .af-poslano-bedz.ok{background:#e6f4ea;color:#1e8449;}
+  .kalk-usporedba-arhiva-info{flex:1 1 100%;font-size:11.5px;font-weight:700;color:#1e8449;}
+  .kalk-arh-panel{margin:-2px 0 8px;padding:8px 10px;border:2px solid #229891;border-radius:8px;background:#f2fbfa;}
+  .kalk-arh-head{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:6px;font-size:12.5px;}
+  .kalk-arh-red{display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:6px 0;border-top:1px solid #cfe8e6;}
+  .kalk-arh-red .kalk-arh-tekst{flex:1 1 180px;min-width:0;}
+  .kalk-arh-red .kalk-arh-naziv{font-weight:800;font-size:13px;word-break:break-word;}
+  .kalk-arh-red .kalk-arh-meta{font-size:11px;color:#666;word-break:break-word;}
+  .kalk-arh-prazno{font-size:12px;color:#666;padding:6px 0;}
+  .kalk-arh-modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:100000;display:flex;align-items:center;justify-content:center;padding:16px;}
+  .kalk-arh-modal{background:#fff;border-radius:12px;padding:18px 20px;max-width:460px;width:100%;box-shadow:0 10px 40px rgba(0,0,0,.4);}
+  .kalk-arh-modal h4{margin:0 0 6px;font-size:16px;}
+  .kalk-arh-modal input[type=text]{width:100%;box-sizing:border-box;margin:6px 0 12px;}
+  .kalk-arh-modal .kalk-arh-akcije{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;}
+  .kalk-usporedba-cjenik-status{flex:1 1 100%;font-size:11.5px;color:var(--graphite);line-height:1.35;word-break:break-word;}
+  .kalk-usporedba-iframe{width:100%;height:1500px;border:1px solid var(--line);border-radius:8px;display:block;background:#fff;}
+  /* Prošireni prikaz (cijela stranica) — ista kartica, samo position:fixed; iframeovi se NE ponovno stvaraju pa ostaju učitani cjenici i uneseni podaci. */
+  .kalk-usporedba-fs{position:fixed;top:0;left:0;right:0;bottom:0;z-index:99999;background:#fff;overflow:auto;padding:14px 18px;border-radius:0;margin:0;box-sizing:border-box;}
+  .kalk-usporedba-fs .kalk-usporedba-grid{overflow-x:auto;}
+  .kalk-usporedba-fs .kalk-usporedba-slot{flex:1 1 0;min-width:420px;}
+  .kalk-usporedba-fs .kalk-usporedba-iframe{height:calc(100vh - 170px);min-height:700px;}
+  .kalk-usporedba-fs .faq-admin-hint{display:none;}
+  body.kalk-usporedba-fs-open{overflow:hidden;}
+  .kalk-arh-modal-bg{display:none;}
+</style>
+</head>
+<body>
+
+<div id="prijavaView">
+  <div class="prijava-kartica">
+    <div class="prijava-hero"><img class="prijava-slika" src="https://i.imgur.com/pedfVN3.png" alt="In Time"></div>
+    <div class="prijava-tijelo">
+      <h1 class="prijava-naslov">Kalkulacije</h1>
+      <p class="prijava-podnaslov">Prijavite se korisničkim imenom i lozinkom.</p>
+      <form id="prijavaForma" class="prijava-forma" autocomplete="on">
+        <div class="prijava-polje"><label for="prijavaUser">Korisničko ime</label><input type="text" id="prijavaUser" name="username" autocomplete="username" placeholder="e-mail ili broj mobitela" autocapitalize="none" spellcheck="false">
+          <div class="prijava-napomena">Upišite svoj <strong>e-mail</strong> ili <strong>broj mobitela</strong>. Mobitel možete upisati bilo kako: <em>091 234 5678</em>, <em>0912345678</em> ili <em>+385 91 234 5678</em> (razmaci i crtice nisu bitni).</div></div>
+        <div class="prijava-polje"><label for="prijavaPass">Lozinka</label><input type="password" id="prijavaPass" name="password" autocomplete="current-password" placeholder="••••••••"></div>
+        <button type="submit" class="btn prijava-gumb" id="prijavaGumb">Prijava</button>
+        <div class="prijava-status" id="prijavaStatus"></div>
+      </form>
+      <div class="prijava-podnozje">In Time d.o.o. · interni alat</div>
+    </div>
+  </div>
+</div>
+
+<div id="appView">
+  <div class="app-traka">
+    <h1>In Time — KALKULACIJE</h1>
+    <div class="app-korisnik"><span id="appKorisnik"></span> <button type="button" class="btn btn-outline btn-small" id="odjavaGumb">Odjava</button></div>
+  </div>
+  <div id="panelMjesto"></div>
+</div>
+
+<script>
+var GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbz73zkx72GhrDZ-t3CamF5wuz-9V7Uxe5z9IkFxHA8F5FBlrIlc7zMUd4_EHTILD9FTAw/exec";
+var kolegaSesija_ = null; // { token, ime, prezime, funkcija }
+var ipCache_ = ''; // javna IP adresa (dohvaća se jednom; kasnije se ne čeka na mrežu dok kalkulatori opterećuju preglednik)
+function osvjeziIp_() { return dohvatiIP_().then(function(ip) { if (ip) { ipCache_ = ip; } return ip; }); }
+
+function esc(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, function(c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; });
+}
+
+function gasCall(payload) {
+  return fetch(GAS_WEB_APP_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify(payload)
+  }).then(function(res) { return res.json(); });
+}
+
+// Javna IP adresa preglednika (Apps Script je ne vidi) — čisto informativno, kratak timeout.
+function dohvatiIP_() {
+  var kontroler = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+  var timeoutId = kontroler ? setTimeout(function() { kontroler.abort(); }, 3000) : null;
+  return fetch('https://api.ipify.org?format=json', kontroler ? { signal: kontroler.signal } : {})
+    .then(function(res) { return res.json(); })
+    .then(function(data) { return (data && data.ip) ? String(data.ip) : ''; })
+    .catch(function() { return ''; })
+    .then(function(ip) { if (timeoutId) { clearTimeout(timeoutId); } return ip; });
+}
+
+function spremiSesiju_(s) { try { sessionStorage.setItem('kolegaSesija', JSON.stringify(s)); } catch (e) { /* nije dostupno */ } }
+function ucitajSesiju_() { try { var r = sessionStorage.getItem('kolegaSesija'); return r ? JSON.parse(r) : null; } catch (e) { return null; } }
+function obrisiSesiju_() { try { sessionStorage.removeItem('kolegaSesija'); } catch (e) { /* nije dostupno */ } }
+
+function statusPrijave_(tekst, greska) {
+  var el = document.getElementById('prijavaStatus');
+  el.textContent = tekst || '';
+  el.className = 'prijava-status' + (greska ? ' greska' : '');
+}
+
+function prikaziApp_() {
+  document.getElementById('prijavaView').style.display = 'none';
+  document.getElementById('appView').style.display = 'block';
+  if (!ipCache_) { osvjeziIp_(); }
+  document.getElementById('appKorisnik').textContent = (kolegaSesija_.ime + ' ' + kolegaSesija_.prezime + (kolegaSesija_.funkcija ? ' · ' + kolegaSesija_.funkcija : ''));
+  var mjesto = document.getElementById('panelMjesto');
+  mjesto.innerHTML = '';
+  mjesto.appendChild(buildKalkulatorUsporedbaPanel_());
+}
+
+function prikaziPrijavu_(poruka) {
+  document.getElementById('appView').style.display = 'none';
+  document.getElementById('prijavaView').style.display = 'flex';
+  document.getElementById('panelMjesto').innerHTML = ''; // uklanja i iframeove
+  document.body.classList.remove('kalk-usporedba-fs-open');
+  document.getElementById('prijavaPass').value = '';
+  statusPrijave_(poruka || '', !!poruka);
+}
+
+document.getElementById('prijavaForma').addEventListener('submit', function(ev) {
+  ev.preventDefault();
+  var u = document.getElementById('prijavaUser').value.trim();
+  var p = document.getElementById('prijavaPass').value;
+  if (!u || !p) { statusPrijave_('Unesite korisničko ime i lozinku.', true); return; }
+  var gumb = document.getElementById('prijavaGumb');
+  gumb.disabled = true;
+  statusPrijave_('Prijava…', false);
+  osvjeziIp_().then(function(ip) {
+    return gasCall({ action: 'kalkulatorKolegaPrijava', username: u, lozinka: p, ipAdresa: ip });
+  }).then(function(res) {
+    gumb.disabled = false;
+    if (!res || res.status !== 'ok') { statusPrijave_((res && res.message) || 'Prijava nije uspjela.', true); return; }
+    kolegaSesija_ = { token: res.token, ime: res.ime, prezime: res.prezime, funkcija: res.funkcija };
+    spremiSesiju_(kolegaSesija_);
+    statusPrijave_('', false);
+    prikaziApp_();
+  }).catch(function() {
+    gumb.disabled = false;
+    statusPrijave_('Greška u komunikaciji s poslužiteljem.', true);
+  });
+});
+
+document.getElementById('odjavaGumb').addEventListener('click', function() {
+  kolegaSesija_ = null;
+  obrisiSesiju_();
+  prikaziPrijavu_('');
+});
+
+// ---------- KALKULACIJE (iz admin sučelja, bez arhive; max 3 kalkulatora) ----------
+  function buildKalkulatorUsporedbaPanel_() {
+    var wrap = document.createElement('div');
+    wrap.className = 'faq-admin-card';
+    var MIN_SLOTS_ = 2, MAX_SLOTS_ = 3;
+    var slotovi_ = []; // { wrapEl, iframeEl, jeGlavni }
+
+    wrap.innerHTML =
+      '<h3 style="color:#c0392b;">KALKULACIJE — usporedba cjenika</h3>' +
+      '<p class="faq-admin-hint">Podatke o pošiljci (mjesto, broj koleta, težinu, dimenzije) unosite SAMO u <strong>Kalkulator 1 (glavni)</strong> — isti se podaci odmah prenose u ostale kalkulatore. Svaki kalkulator ima svoju crvenu traku "Cjenik za ovaj kalkulator" za učitavanje drugačijeg cjenika, pa odmah vidite usporedbu cijena za istu pošiljku (uz odstupanja od Kalkulatora 1). Dopunske usluge unose se zasebno po kalkulatoru. Najviše 3 kalkulatora istovremeno.</p>' +
+      '<div class="faq-admin-card-actions" style="margin-bottom:10px;">' +
+        '<button type="button" class="btn btn-small" id="kalkUsporedbaDodajBtn">+ Dodaj kalkulator za usporedbu</button> ' +
+        '<button type="button" class="btn btn-outline btn-small" id="kalkUsporedbaFsBtn">⛶ Proširi na cijelu stranicu</button>' +
+        '<label style="margin-left:10px;font-size:12.5px;font-weight:700;cursor:pointer;"><input type="checkbox" id="kalkUsporedbaOdstupanjaChk" checked> Prikaži odstupanja od Kalkulatora 1</label>' +
+      '</div>' +
+      '<div class="kalk-usporedba-grid" id="kalkUsporedbaGrid"></div>';
+
+    var gridEl_ = wrap.querySelector('#kalkUsporedbaGrid');
+    var dodajBtn_ = wrap.querySelector('#kalkUsporedbaDodajBtn');
+
+    // NOVO (3.10.2026., Sašin zahtjev — "napravi mogućnost da se može
+    // raširiti na cijelu stranicu"): prebacivanje CSS klase na istu karticu
+    // (position:fixed preko cijelog prozora). Iframeovi se NE premještaju u
+    // DOM-u niti ponovno učitavaju, pa učitani cjenici i uneseni podaci ostaju.
+    var fsBtn_ = wrap.querySelector('#kalkUsporedbaFsBtn');
+    function postaviFs_(uklj) {
+      wrap.classList.toggle('kalk-usporedba-fs', !!uklj);
+      document.body.classList.toggle('kalk-usporedba-fs-open', !!uklj);
+      fsBtn_.textContent = uklj ? '✕ Zatvori cijelu stranicu (Esc)' : '⛶ Proširi na cijelu stranicu';
+    }
+    fsBtn_.addEventListener('click', function() { postaviFs_(!wrap.classList.contains('kalk-usporedba-fs')); });
+    var escHandler_ = function(e) {
+      if (!document.body.contains(wrap)) { document.removeEventListener('keydown', escHandler_); document.body.classList.remove('kalk-usporedba-fs-open'); return; }
+      if (e.key === 'Escape' && wrap.classList.contains('kalk-usporedba-fs')) { postaviFs_(false); }
+    };
+    document.addEventListener('keydown', escHandler_);
+
+    function azurirajDodajBtn_() {
+      dodajBtn_.disabled = slotovi_.length >= MAX_SLOTS_;
+      dodajBtn_.textContent = slotovi_.length >= MAX_SLOTS_
+        ? ('Dosegnut je maksimalan broj od ' + MAX_SLOTS_ + ' kalkulatora')
+        : '+ Dodaj kalkulator za usporedbu';
+    }
+
+
+    // ---------------- TIHO BILJEŽENJE CJENIKA (3.10.2026.) ----------------
+    // Sašin zahtjev: svaki cjenik koji kolega učita (bilo preko trake iznad
+    // kalkulatora, bilo izravno u kalkulatoru) tiho se sprema na Drive u
+    // direktorij korisnika (naziv: ime korisnika + datum + vrijeme) i upisuje
+    // u evidenciju. Kolega NIŠTA ne vidi — bez poruka, bez traženja naziva.
+    var zapisRed_ = Promise.resolve();
+
+    function bufToBase64_(buf) {
+      var bytes = new Uint8Array(buf), bin = '';
+      for (var i = 0; i < bytes.length; i += 0x8000) { bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000)); }
+      return btoa(bin);
+    }
+
+    function tihoZabiljeziCjenik_(slot, file) {
+      var cekaj = function() {
+        return new Promise(function(res) {
+          var t0 = Date.now();
+          var iter = function() {
+            var st = '';
+            try { st = slot.iframeEl.contentWindow.document.getElementById('cjenikStatus').textContent || ''; } catch (e) { st = ''; }
+            if (st.indexOf('Učitan cjenik: "' + file.name + '"') === 0) { res(true); return; }
+            if (/^(Nije prepoznat|Greška pri čitanju)/.test(st) || Date.now() - t0 > 8000) { res(false); return; }
+            setTimeout(iter, 300);
+          };
+          setTimeout(iter, 500);
+        });
+      };
+      zapisRed_ = zapisRed_.then(function() {
+        return cekaj().then(function(uspjelo) {
+          if (!uspjelo || file.size > 8 * 1024 * 1024) { return; }
+          return file.arrayBuffer().then(function(buf) {
+            return gasCall({ action: 'kalkulatorKolegaCjenikZabiljezi', token: kolegaSesija_.token, slot: slot.broj, nazivDatoteke: file.name, base64: bufToBase64_(buf), ipAdresa: ipCache_ });
+          });
+        });
+      }).catch(function() { /* best-effort, ništa se ne prikazuje korisniku */ });
+    }
+
+    // Ubacuje datoteku u polje #cjenikFile unutar kalkulatora (isti put kao ručni odabir).
+    function ucitajDatotekuUSlot_(slot, file) {
+      var fWin = slot.iframeEl.contentWindow;
+      var inp = fWin.document.getElementById('cjenikFile');
+      if (!inp) { throw new Error('Kalkulator se još učitava — pokušajte za trenutak.'); }
+      inp.disabled = false;
+      var dt = new fWin.DataTransfer();
+      dt.items.add(file);
+      inp.files = dt.files;
+      inp.dispatchEvent(new fWin.Event('change', { bubbles: true }));
+    }
+
+    // Hvata i učitavanje izravno u kalkulatoru (polje "Učitaj cjenik" unutar stranice).
+    function spojiKvaciloNaCjenik_(slot) {
+      try {
+        var inp = slot.iframeEl.contentWindow.document.getElementById('cjenikFile');
+        if (!inp || inp.__kolegaKvacilo) { return; }
+        inp.__kolegaKvacilo = true;
+        inp.addEventListener('change', function() {
+          var f = inp.files && inp.files[0];
+          if (f) { tihoZabiljeziCjenik_(slot, f); }
+        });
+      } catch (eK) { /* iframe se još učitava */ }
+    }
+
+    function slobodanBroj_() {
+      for (var n = 1; n <= MAX_SLOTS_; n++) {
+        if (!slotovi_.some(function(s) { return s.broj === n; })) { return n; }
+      }
+      return slotovi_.length + 1;
+    }
+
+    function dodajSlot_() {
+      if (slotovi_.length >= MAX_SLOTS_) { return; }
+      var broj = slobodanBroj_();
+      var jeGlavni = (slotovi_.length === 0);
+      var slotWrap = document.createElement('div');
+      slotWrap.className = 'kalk-usporedba-slot';
+      var urlParams_ = ['kalk_kolega=' + encodeURIComponent(kolegaSesija_.token), 'kalk_slot=' + broj];
+      if (!jeGlavni) { urlParams_.push('kalk_uloga=pratilac'); }
+      var urlZaIframe = 'InTime_KalkulatorCijena.html' + (urlParams_.length ? ('?' + urlParams_.join('&')) : '');
+      var naslovHtml = jeGlavni
+        ? '<span style="color:#c0392b;font-weight:800;">Kalkulator 1 — GLAVNI (unosi se ovdje)</span>'
+        : ('<span>Kalkulator ' + broj + '</span>' + ' <button type="button" class="btn btn-outline btn-small kalk-usporedba-ukloni-btn">✕ Ukloni</button>');
+      slotWrap.innerHTML =
+        '<div class="kalk-usporedba-slot-naslov">' + naslovHtml + '</div>' +
+        '<div class="kalk-usporedba-cjenik-bar">' +
+          '<strong style="color:#c0392b;font-size:12.5px;">📂 Cjenik za ovaj kalkulator:</strong>' +
+          '<input type="file" class="kalk-usporedba-cjenik-file" accept=".xlsx,.xls,.xltx,.xlsm">' +
+          '<button type="button" class="btn btn-outline btn-small kalk-usporedba-cjenik-reset">↺ Zadani cjenik</button>' +
+          '<div class="kalk-usporedba-cjenik-status">Trenutno: zadani (osnovni) cjenik.</div>' +
+        '</div>' +
+        '<iframe src="' + esc(urlZaIframe) + '" title="In Time — kalkulator cijene (usporedba)" loading="lazy" class="kalk-usporedba-iframe"></iframe>';
+      gridEl_.appendChild(slotWrap);
+      var iframeEl = slotWrap.querySelector('iframe');
+      var slot = { wrapEl: slotWrap, iframeEl: iframeEl, jeGlavni: jeGlavni, broj: broj };
+      slotovi_.push(slot);
+      // Učitavanje cjenika za OVAJ kalkulator izravno iz trake iznad (Sašin zahtjev,
+      // 3.10.2026.: "želim imati mogućnost da unesem svoj cjenik za svaki") —
+      // datoteka se prosljeđuje u postojeće polje #cjenikFile unutar kalkulatora,
+      // pa vrijedi ISTI postupak/parser kao pri ručnom učitavanju na samoj stranici.
+      var cjFile_ = slotWrap.querySelector('.kalk-usporedba-cjenik-file');
+      var cjReset_ = slotWrap.querySelector('.kalk-usporedba-cjenik-reset');
+      var cjStatus_ = slotWrap.querySelector('.kalk-usporedba-cjenik-status');
+      slot.statusEl = cjStatus_;
+      cjFile_.addEventListener('change', function() {
+        var file = cjFile_.files && cjFile_.files[0];
+        if (!file) { return; }
+        try {
+          ucitajDatotekuUSlot_(slot, file);
+          cjStatus_.textContent = 'Učitavanje cjenika "' + file.name + '"…';
+        } catch (eCj) {
+          cjStatus_.textContent = 'Učitavanje cjenika nije uspjelo: ' + (eCj && eCj.message ? eCj.message : eCj);
+        }
+      });
+      cjReset_.addEventListener('click', function() {
+        try {
+          var fWin = iframeEl.contentWindow;
+          if (typeof fWin.resetCjenik === 'function') { fWin.resetCjenik(); }
+          cjFile_.value = '';
+          if (typeof fWin.scheduleLiveIzracunaj === 'function') { fWin.scheduleLiveIzracunaj(); }
+          slot.zadnjiSig = null; // ponovno prepiši podatke o pošiljci (reset je možda promijenio zaključavanja)
+        } catch (eRs) { /* ignorira */ }
+      });
+      // Kad se iframe (ponovno) učita, zaboravi zadnji prenos da se podaci opet prepišu.
+      iframeEl.addEventListener('load', function() { slot.zadnjiSig = null; spojiKvaciloNaCjenik_(slot); });
+      if (!jeGlavni) {
+        slotWrap.querySelector('.kalk-usporedba-ukloni-btn').addEventListener('click', function() {
+          var pos = slotovi_.indexOf(slot);
+          if (pos === -1) { return; }
+          slotovi_.splice(pos, 1);
+          slotWrap.remove();
+          azurirajDodajBtn_();
+        });
+      }
+      azurirajDodajBtn_();
+    }
+
+    // Budući da InTime_Admin.html i InTime_KalkulatorCijena.html žive na
+    // ISTOJ domeni/putanji (vidi napomena uz buildKalkulatorIsprobajPanel_
+    // iznad), iframeovi su ISTOG porijekla (same-origin) pa je moguć
+    // IZRAVAN pristup varijablama i DOM-u unutar njih iz ovog roditelja —
+    // NE treba postMessage protokol. Umjesto simuliranja tipkanja/klikova
+    // (fragilno — zaključavanje jedinice težine nakon unosa, padajući
+    // panel "dimenzije po koletu" koji se iznova crta prema internim
+    // nizovima te stranice...), izravno kopiramo ISTE globalne varijable
+    // koje stranica već koristi (zonaPolaziste/Odrediste, tezinaJedinica/
+    // duzinaJedinica, nizove pojedinacneTezineVrijednosti/koletoDimS/D/V/
+    // koletoNaPaleti/koletoPaletaTip/koletoPaletaRucno) i zovemo ISTE
+    // funkcije koje stranica već poziva (setBezVolumena, updateZonaObracuna,
+    // 'input' na brojKoletaStvarni → renderDimPojedinacno, scheduleLiveIzracunaj)
+    // — isti rezultat kao da je admin sve to ručno upisao u svaki
+    // kalkulator, bez dupliciranja ~800 KB logike i bez repliciranja njenih
+    // brojnih rubnih slučajeva. Sinhronizira SAMO karticu "Podaci o
+    // pošiljci" — NE "Dopunske usluge" (otkupnina/SMS/iskazana vrijednost
+    // itd.), koje Saša nije tražio da se prenose i ostaju zasebne po
+    // kalkulatoru.
+    // IZMJENA (3.10.2026., Sašin zahtjev — "da se redovito prenosi/refresha
+    // što stavim u jedan od osnovnih podataka"): raniji pristup (izravan
+    // pristup varijablama kalkulatora iz ove stranice) NIJE radio jer su te
+    // varijable `let` (nisu svojstva window objekta) — sve je tiho ostajalo
+    // bez učinka dok se ne klikne "Izračunaj". Sad kalkulator sam izlaže dvije
+    // funkcije (kalkSinhroIzvezi_ / kalkSinhroUvezi_ na dnu njegove skripte),
+    // a ovdje se svakih ~400 ms uspoređuje potpis podataka glavnog
+    // kalkulatora s onim što je zadnje preneseno u svaki pratilac; čim se
+    // išta promijeni (upis, odabir mjesta, promjena težine/dimenzija...),
+    // odmah se prepiše u pratioce i oni sami preračunaju cijenu. Bez
+    // oslanjanja na događaje (input/change/click), pa hvata i programske
+    // promjene i odabir iz padajućeg izbornika.
+    // ---- Odstupanja od referentnog kalkulatora (Kalkulator 1) ----
+    // Sašin zahtjev (3.10.2026.): u svim kalkulatorima osim prvog uz svaku
+    // vrijednost stoji mala zagrada s odstupanjem od Kalkulatora 1 (koji je
+    // uvijek REFERENTNI, bez obzira koji cjenik ima učitan): postotak za
+    // cijene u tablici cjenika, razlika u EUR za sve ostale iznose (izračun,
+    // dopunske usluge). Veće = zeleno, manje = crveno, jednako = ništa.
+    // Anotacije se ubacuju u DOM svakog pratioca (iste domene); kalkulator ih
+    // sam obriše kad iznova iscrta tablicu/izračun, pa ih ovo na sljedećem
+    // otkucaju (≤400 ms) vraća. Bez izmjene samog kalkulatora.
+    var DEV_CSS_ = '.kalk-dev{font-size:10.5px;font-weight:700;margin-left:5px;white-space:nowrap;}' +
+      '.kalk-dev.up{color:#1e8449;}.kalk-dev.down{color:#c0392b;}' +
+      'td>.kalk-dev.blok{display:block;margin-left:0;text-align:right;}' +
+      '.kalk-isto:not(.hit-cell){background-color:#fff3a0 !important;}' +
+      '.kalk-isto{box-shadow:inset 0 -3px 0 #f1c40f;}' +
+      '.kalk-isklj{font-size:10.5px;font-weight:700;font-style:italic;color:#7f8c8d;margin-left:6px;white-space:nowrap;}' +
+      'tr.kalk-dev-row td{color:#7f8c8d;font-style:italic;}';
+    function ownText_(el) {
+      var t = '';
+      for (var i = 0; i < el.childNodes.length; i++) { if (el.childNodes[i].nodeType === 3) { t += el.childNodes[i].nodeValue; } }
+      return t;
+    }
+    function parseVr_(txt) {
+      var m = /^\s*([-−]?\d[\d.]*(?:,\d+)?)\s*(EUR|%)/.exec(txt || '');
+      if (!m) { return null; }
+      return { v: parseFloat(m[1].replace('−', '-').replace(/\./g, '').replace(',', '.')), jed: m[2] };
+    }
+    function fmtBr_(n, minDec, maxDec) { return n.toLocaleString('hr-HR', { minimumFractionDigits: minDec, maximumFractionDigits: maxDec }); }
+    function znak_(n) { return n > 0 ? '+' : '−'; }
+    function ukloniDev_(el) {
+      var old = el.querySelector(':scope > span.kalk-dev');
+      if (old) { old.remove(); }
+    }
+    function postaviDev_(el, tekst, cls, blok) {
+      var old = el.querySelector(':scope > span.kalk-dev');
+      var klasa = 'kalk-dev ' + cls + (blok ? ' blok' : '');
+      if (old && old.textContent === tekst && old.className === klasa) { return; }
+      if (old) { old.remove(); }
+      var sp = el.ownerDocument.createElement('span');
+      sp.className = klasa;
+      sp.textContent = tekst;
+      el.appendChild(sp);
+    }
+    function oznaci_(el, ref, val, opcije) {
+      // ref/val: {v, jed}; opcije: {pct:true, eur:true, blok:true}
+      if (!ref || !val || ref.jed !== val.jed) { ukloniDev_(el); el.classList.remove('kalk-isto'); return; }
+      var d = val.v - ref.v;
+      // Iste vrijednosti kao u referentnom kalkulatoru → zažućeno (bez zagrade).
+      if (Math.abs(d) < 0.005) { ukloniDev_(el); el.classList.add('kalk-isto'); return; }
+      el.classList.remove('kalk-isto');
+      var dijelovi = [];
+      if (val.jed === 'EUR') {
+        if (!opcije.samoPct) { dijelovi.push(znak_(d) + fmtBr_(Math.abs(d), 2, 2) + ' EUR'); }
+        if ((opcije.pct || opcije.samoPct) && ref.v > 0) {
+          var p = d / ref.v * 100;
+          dijelovi.push(znak_(p) + fmtBr_(Math.abs(p), 0, Math.abs(p) < 0.1 ? 2 : 1) + '%');
+        }
+      } else {
+        dijelovi.push(znak_(d) + fmtBr_(Math.abs(d), 0, 2) + '%');
+      }
+      if (!dijelovi.length) { ukloniDev_(el); return; }
+      postaviDev_(el, '(' + dijelovi.join(' · ') + ')', d > 0 ? 'up' : 'down', !!opcije.blok);
+    }
+    function ocistiSveDev_(doc) {
+      Array.prototype.forEach.call(doc.querySelectorAll('span.kalk-dev, span.kalk-isklj, tr.kalk-dev-row'), function(n) { n.remove(); });
+      Array.prototype.forEach.call(doc.querySelectorAll('.kalk-isto'), function(n) { n.classList.remove('kalk-isto'); });
+    }
+    function kljucRetka_(tr, brojac) {
+      var oznaka;
+      if (tr.classList.contains('total-row')) { oznaka = '#UKUPNO'; }
+      else { oznaka = (tr.cells[0].textContent || '').toLowerCase().replace(/\([^)]*\)/g, '').replace(/\s+/g, ' ').trim(); }
+      brojac[oznaka] = (brojac[oznaka] || 0) + 1;
+      return oznaka + '|' + brojac[oznaka];
+    }
+    function jeCijenaIzTablice_(kljuc) {
+      return /^(osnovna cijena|međuzbroj|ukupno|#ukupno)/.test(kljuc.toLowerCase());
+    }
+    function osvjeziOdstupanja_() {
+      var chk = wrap.querySelector('#kalkUsporedbaOdstupanjaChk');
+      var ukljuceno = !chk || chk.checked;
+      var glavni = slotovi_[0];
+      var rDoc = null;
+      try { rDoc = glavni && glavni.iframeEl.contentDocument; } catch (eR) { rDoc = null; }
+      slotovi_.forEach(function(slot) {
+        if (slot.jeGlavni) { return; }
+        var fDoc;
+        try { fDoc = slot.iframeEl.contentDocument; } catch (eF) { return; }
+        if (!fDoc || !fDoc.body) { return; }
+        if (!ukljuceno || !rDoc || !rDoc.body) { ocistiSveDev_(fDoc); return; }
+        // Usporedba KREĆE tek kad je u OVOM kalkulatoru učitan vlastiti cjenik (Sašin zahtjev,
+        // 3.10.2026.: "dok se ne učitaju cjenici nemoj ništa zažutiti"). Dok koristi zadani/osnovni
+        // cjenik, ništa se ne označava (ni žuto, ni zagrade, ni "isključeno").
+        var fWinU = null;
+        try { fWinU = slot.iframeEl.contentWindow; } catch (eU) { fWinU = null; }
+        if (!fWinU || typeof fWinU.kalkJeUcitanVlastitiCjenik_ !== 'function' || !fWinU.kalkJeUcitanVlastitiCjenik_()) { ocistiSveDev_(fDoc); return; }
+        if (!fDoc.getElementById('kalkDevStyle')) {
+          var st = fDoc.createElement('style'); st.id = 'kalkDevStyle'; st.textContent = DEV_CSS_;
+          (fDoc.head || fDoc.body).appendChild(st);
+        }
+        // 1) Tablica cjenika — postotak po ćeliji.
+        var refCjenik = {};
+        Array.prototype.forEach.call(rDoc.querySelectorAll('#cjenikTableBody tr[data-kg]'), function(tr) {
+          var o = {};
+          ['z1', 'z2', 'z3'].forEach(function(z) { var td = tr.querySelector('td[data-zone="' + z + '"]'); o[z] = td ? parseVr_(ownText_(td)) : null; });
+          refCjenik[tr.getAttribute('data-kg')] = o;
+        });
+        Array.prototype.forEach.call(fDoc.querySelectorAll('#cjenikTableBody tr[data-kg]'), function(tr) {
+          var ref = refCjenik[tr.getAttribute('data-kg')];
+          ['z1', 'z2', 'z3'].forEach(function(z) {
+            var td = tr.querySelector('td[data-zone="' + z + '"]');
+            if (!td) { return; }
+            if (!ref) { ukloniDev_(td); td.classList.remove('kalk-isto'); return; }
+            oznaci_(td, ref[z], parseVr_(ownText_(td)), { samoPct: true, blok: true });
+          });
+        });
+        // 2) Izračun — razlika u EUR po retku (uz postotak za cijene iz tablice i ukupno).
+        var refRetci = {};
+        var refOznake = [];
+        var rTbl = rDoc.getElementById('breakdownTable');
+        if (rTbl) {
+          var br = {};
+          Array.prototype.forEach.call(rTbl.querySelectorAll('tr'), function(tr) {
+            if (!tr.cells || tr.cells.length < 2 || tr.classList.contains('kalk-dev-row')) { return; }
+            var amt = parseVr_(ownText_(tr.cells[1]));
+            var k = kljucRetka_(tr, br);
+            if (amt) { refRetci[k] = amt; refOznake.push({ k: k, label: (tr.cells[0].textContent || '').trim() }); }
+          });
+        }
+        var fTbl = fDoc.getElementById('breakdownTable');
+        if (fTbl) {
+          var br2 = {};
+          var imaF = {};
+          Array.prototype.forEach.call(fTbl.querySelectorAll('tr'), function(tr) {
+            if (!tr.cells || tr.cells.length < 2 || tr.classList.contains('kalk-dev-row')) { return; }
+            var amt = parseVr_(ownText_(tr.cells[1]));
+            var k = kljucRetka_(tr, br2);
+            if (!amt) { ukloniDev_(tr.cells[1]); tr.cells[1].classList.remove('kalk-isto'); return; }
+            imaF[k] = true;
+            var ref = refRetci[k];
+            if (!ref) { ref = { v: 0, jed: 'EUR' }; }
+            oznaci_(tr.cells[1], ref, amt, { pct: jeCijenaIzTablice_(k) });
+          });
+          // Stavke koje postoje u referentnom izračunu, a u ovom ne (npr. isključena dopunska usluga) → redak "isključeno".
+          var fali = refOznake.filter(function(o) { return !imaF[o.k] && !jeCijenaIzTablice_(o.k); });
+          var zeljeni = fali.map(function(o) { return o.label + '|isključeno'; }).join('#');
+          var postojeci = Array.prototype.map.call(fTbl.querySelectorAll('tr.kalk-dev-row'), function(tr) { return tr.cells[0].textContent + '|' + tr.cells[1].textContent; }).join('#');
+          if (zeljeni !== postojeci) {
+            Array.prototype.forEach.call(fTbl.querySelectorAll('tr.kalk-dev-row'), function(tr) { tr.remove(); });
+            var ukupnoTr = fTbl.querySelector('tr.total-row');
+            fali.forEach(function(o) {
+              var tr = fDoc.createElement('tr');
+              tr.className = 'kalk-dev-row';
+              var t1 = fDoc.createElement('td'); t1.textContent = o.label;
+              var t2 = fDoc.createElement('td'); t2.textContent = 'isključeno';
+              tr.appendChild(t1); tr.appendChild(t2);
+              if (ukupnoTr) { ukupnoTr.parentNode.insertBefore(tr, ukupnoTr); } else { (fTbl.tBodies[0] || fTbl).appendChild(tr); }
+            });
+          }
+        }
+        // 3) Ostali iznosi (dopunske usluge, naknade...) — razlika u EUR / postotnim bodovima.
+        Array.prototype.forEach.call(rDoc.querySelectorAll('.live-fee-value[id], .price-tag[id]'), function(rEl) {
+          var id = rEl.id;
+          if (/^(dimNestandardnaSummary|dimPojedinacnoTotalValue|nestandardnaStandardnaMsg)/.test(id)) { return; }
+          var fEl = fDoc.getElementById(id);
+          if (!fEl) { return; }
+          oznaci_(fEl, parseVr_(ownText_(rEl)), parseVr_(ownText_(fEl)), {});
+        });
+        // 3b) Cijena JEDNE SMS poruke ("0,30" u opisu usluge — mijenja se kad cjenik ima drugu cijenu):
+        // zagrada odmah uz broj, npr. "0,30 (+0,05) EUR / poruka". Razlika za 2 poruke vidi se već u "Iznos (SMS poruke)".
+        ['smsCijenaStaticLabel'].forEach(function(id) {
+          var rEl = rDoc.getElementById(id), fEl = fDoc.getElementById(id);
+          if (!rEl || !fEl) { return; }
+          var pv = function(el) { var m = /^\s*(\d[\d.]*(?:,\d+)?)\s*$/.exec(ownText_(el)); return m ? parseFloat(m[1].replace(/\./g, '').replace(',', '.')) : null; };
+          var rv = pv(rEl), fv = pv(fEl);
+          var sus = fEl.nextElementSibling;
+          if (sus && !(sus.classList && sus.classList.contains('kalk-dev'))) { sus = null; }
+          var ukloniSus = function() { if (sus) { sus.remove(); } };
+          if (rv === null || fv === null) { ukloniSus(); fEl.classList.remove('kalk-isto'); return; }
+          var d = fv - rv;
+          if (Math.abs(d) < 0.005) { ukloniSus(); fEl.classList.add('kalk-isto'); return; }
+          fEl.classList.remove('kalk-isto');
+          var tekst = '(' + znak_(d) + fmtBr_(Math.abs(d), 2, 2) + ')';
+          var klasa = 'kalk-dev ' + (d > 0 ? 'up' : 'down');
+          if (sus && sus.textContent === tekst && sus.className === klasa) { return; }
+          ukloniSus();
+          var sp = fDoc.createElement('span'); sp.className = klasa; sp.textContent = tekst;
+          fEl.parentNode.insertBefore(sp, fEl.nextSibling);
+        });
+        // 4) Dopunske usluge koje su u OVOM kalkulatoru isključene → oznaka "isključeno" (kvačice se NE prenose iz glavnog;
+        // svaka usluga se uključuje zasebno po kalkulatoru, ili ostaje isključena).
+        Array.prototype.forEach.call(fDoc.querySelectorAll('input[type=checkbox][id^="dop_"]'), function(cb) {
+          var lab = fDoc.querySelector('label[for="' + cb.id + '"]');
+          if (!lab) { return; }
+          var tag = lab.querySelector(':scope > span.kalk-isklj');
+          if (cb.checked) { if (tag) { tag.remove(); } return; }
+          if (tag) { return; }
+          var sp = fDoc.createElement('span'); sp.className = 'kalk-isklj'; sp.textContent = 'isključeno';
+          lab.appendChild(sp);
+        });
+      });
+    }
+
+    var sinkroInterval_ = setInterval(function() {
+      if (!document.body.contains(wrap)) { clearInterval(sinkroInterval_); return; }
+      sinhronizirajSvePratioce_();
+      try { osvjeziOdstupanja_(); } catch (eOds) { /* best-effort */ }
+      // Prikaz statusa učitanog cjenika iz svakog kalkulatora (npr. 'Učitan cjenik: "X.xlsx" (…)').
+      slotovi_.forEach(function(slot) {
+        if (!slot.statusEl) { return; }
+        try {
+          var st = slot.iframeEl.contentWindow.document.getElementById('cjenikStatus');
+          if (st && st.textContent && st.textContent !== slot.zadnjiStatus) {
+            slot.zadnjiStatus = st.textContent;
+            slot.statusEl.textContent = st.textContent;
+            slot.statusEl.style.color = (st.style.color && /danger|c0392b|rgb\(2[0-9]{2}, ?[0-9]{1,2}, ?[0-9]{1,2}\)/i.test(st.style.color)) ? '#c0392b' : '';
+          }
+        } catch (eSt) { /* iframe se još učitava */ }
+      });
+    }, 400);
+
+    function sinhronizirajSvePratioce_() {
+      var glavni = slotovi_[0];
+      if (!glavni) { return; }
+      var mWin;
+      try { mWin = glavni.iframeEl.contentWindow; } catch (eWin) { return; }
+      if (!mWin || typeof mWin.kalkSinhroIzvezi_ !== 'function') { return; }
+      var snap, sig;
+      try { snap = mWin.kalkSinhroIzvezi_(); sig = JSON.stringify(snap); } catch (eIzv) { return; }
+      slotovi_.forEach(function(slot) {
+        if (slot.jeGlavni) { return; }
+        var fWin;
+        try { fWin = slot.iframeEl.contentWindow; } catch (eFWin) { return; }
+        if (!fWin || typeof fWin.kalkSinhroUvezi_ !== 'function') { return; }
+        if (slot.zadnjiSig === sig) { return; }
+        try { fWin.kalkSinhroUvezi_(snap); slot.zadnjiSig = sig; } catch (ePrimjeni) { /* pokušat će ponovno pri sljedećem otkucaju */ }
+      });
+    }
+
+    dodajBtn_.addEventListener('click', dodajSlot_);
+    dodajSlot_(); // Kalkulator 1 — glavni.
+    dodajSlot_(); // Kalkulator 2 — minimalno 2 odmah vidljiva (Sašin zahtjev: "minimalno 2").
+
+    return wrap;
+  }
+
+// ---------- Pokretanje: nastavi postojeću sesiju (isti tab) ako je još važeća ----------
+(function() {
+  var s = ucitajSesiju_();
+  if (!s || !s.token) { return; }
+  gasCall({ action: 'kalkulatorKolegaToken', token: s.token }).then(function(res) {
+    if (res && res.status === 'ok') { kolegaSesija_ = s; prikaziApp_(); }
+    else { obrisiSesiju_(); }
+  }).catch(function() { /* ostaje prijava */ });
+})();
+</script>
+</body>
+</html>

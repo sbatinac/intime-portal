@@ -1539,6 +1539,10 @@ let korisnikUcitaoVlastitiCjenik_ = false;
 // Koristi ga ISKLJUČIVO zabiljeziIzracunEvidencija_()/prijava-log niže da zna kojem klijentu pripisati
 // zapis; anonimni posjetitelji (bez prijave) se ne evidentiraju — nemaju kome pripisati zapis.
 let prijavljeniKorisnickoIme_ = null;
+// NOVO (3.10.2026.): način rada za radne kolege (?kalk_kolega=<token>&kalk_slot=N) — vidi ucitajKolegaPrijavuIzUrlaAkoPostoji_.
+let kolegaToken_ = null;
+let kolegaSlot_ = '1';
+let kolegaIp_ = '';
 // Lozinka PRIJAVLJENOG klijenta, čisto u memoriji stranice — NIKAD u localStorage/sessionStorage (1.10.2026.,
 // Sašin izričit zahtjev — "reset obračuna ne smije odjaviti korisnika"). Koristi je ISKLJUČIVO
 // resetObracunaBtn niže da nakon punog reloada stranice (jedini pouzdan način da se SIGURNO vrati baš
@@ -4728,6 +4732,88 @@ function ucitajAdminPrijavuIzUrlaAkoPostoji_(){
   return true;
 }
 
+// NOVO (3.10.2026., Sašin izričit zahtjev): ulaz za RADNE KOLEGE —
+// ?kalk_kolega=<sesijski token>&kalk_slot=<1-3> (stranica InTime_Kalkulacije.html
+// nakon prijave ugrađuje ovaj kalkulator u iframe). Token provjerava server
+// (kalkulatorKolegaToken). Ponašanje isto kao admin način (otključan, vlastiti
+// cjenik po kalkulatoru), uz dodatak: svaki izračun bilježi se u evidenciju
+// kolege (IP, unesene vrijednosti, rezultat) — odgođeno 4 s nakon zadnje
+// promjene i samo kad se rezultat stvarno promijenio, jer se u KALKULACIJAMA
+// cijena preračunava uživo (bez klika na "Izračunaj").
+var kolegaZadnjiZapis_ = '';
+var kolegaLogTimer_ = null;
+function kolegaPlanirajZapis_(){
+  if(!kolegaToken_){ return; }
+  clearTimeout(kolegaLogTimer_);
+  kolegaLogTimer_ = setTimeout(function(){
+    try{
+      var breakdownEl = document.getElementById('breakdownTable');
+      if(!breakdownEl){ return; }
+      // Kopija bez oznaka odstupanja koje admin/usporedba ubacuje u DOM (kalk-dev, kalk-isklj) — u zapis ide čist rezultat.
+      var cista = breakdownEl.cloneNode(true);
+      Array.prototype.forEach.call(cista.querySelectorAll('span.kalk-dev, span.kalk-isklj, tr.kalk-dev-row'), function(n){ n.remove(); });
+      var totalRow = cista.querySelector('tr.total-row');
+      var sazetak = totalRow ? totalRow.textContent.replace(/\s+/g, ' ').trim() : '';
+      if(!sazetak){ return; }
+      var ulazni = prikupiUlazneVrijednostiZaEvidenciju_();
+      var potpis = JSON.stringify(ulazni) + '|' + sazetak;
+      if(potpis === kolegaZadnjiZapis_){ return; }
+      kolegaZadnjiZapis_ = potpis;
+      var html = cista.innerHTML;
+      var ipPromise = kolegaIp_ ? Promise.resolve(kolegaIp_) : dohvatiIP_().then(function(ip){ if(ip){ kolegaIp_ = ip; } return ip; });
+      ipPromise.then(function(ip){
+        gorivoGasCall_({
+          action: 'kalkulatorKolegaZabiljezi',
+          token: kolegaToken_,
+          slot: kolegaSlot_,
+          ulazniPodaci: JSON.stringify(ulazni),
+          rezultatSazetak: sazetak,
+          rezultatHtml: html,
+          ipAdresa: ip
+        }).catch(function(){ /* best-effort */ });
+      });
+    }catch(eK){ /* best-effort, nikad ne prekida rad */ }
+  }, 4000);
+}
+
+function ucitajKolegaPrijavuIzUrlaAkoPostoji_(){
+  var params;
+  try{ params = new URLSearchParams(window.location.search); }catch(eUrl){ return false; }
+  var tok = params.get('kalk_kolega');
+  if(!tok){ return false; }
+  gorivoGasCall_({ action: 'kalkulatorKolegaToken', token: tok }).then(function(res){
+    if(!res || res.status !== 'ok'){
+      var statusEl = document.getElementById('prijavaStatus');
+      if(statusEl){
+        statusEl.textContent = (res && res.message) ? res.message : 'Prijava nije uspjela.';
+        statusEl.classList.add('error');
+      }
+      return;
+    }
+    kolegaToken_ = tok;
+    kolegaSlot_ = params.get('kalk_slot') || '1';
+    dohvatiIP_().then(function(ip){ if(ip){ kolegaIp_ = ip; } });
+    prijavaPostaviAdminStanje_();
+    zakljucajPodaciOPosiljciZaPratioca_();
+    // Svaki izračun (klik ili uživo preračunavanje) → odgođeni zapis u evidenciju.
+    var izvorni = window.izracunaj;
+    if(typeof izvorni === 'function'){
+      window.izracunaj = function(){
+        var r = izvorni.apply(this, arguments);
+        kolegaPlanirajZapis_();
+        return r;
+      };
+    }
+  }).catch(function(){
+    var statusEl = document.getElementById('prijavaStatus');
+    if(statusEl){
+      statusEl.textContent = 'Greška u komunikaciji s poslužiteljem.';
+      statusEl.classList.add('error');
+    }
+  });
+  return true;
+}
+
 // ---------- Most za usporedbu (admin "KALKULACIJE") — izvoz/uvoz podataka o pošiljci ----------
 // NOVO (3.10.2026., Sašin zahtjev — "što unesem u jedan kalkulator da se
 // odmah prenese u druge, a ne da moram kliknuti Izračunaj"): roditeljska
@@ -4738,7 +4824,7 @@ function ucitajAdminPrijavuIzUrlaAkoPostoji_(){
 // pisanje radi OVDJE, unutar skripte gdje su te varijable u dosegu, a admin
 // samo poziva ove dvije funkcije. Prenosi se SAMO kartica "Podaci o pošiljci"
 // (datum, mjesto/zona, jedinice, težine i dimenzije po koletu, paleta, broj
-// koleta u pošiljci) — NE način obračuna, NE dopunske usluge, NE ograničenje
+// koleta u pošiljci, iskazana vrijednost, iznos otkupnine) — NE način obračuna, NE dopunske usluge, NE ograničenje
 // broja koleta (to je uvjet cjenika svakog kalkulatora zasebno).
 function kalkKopijaNiza_(a){ var o = []; for(var i = 0; i < a.length; i++){ o.push(a[i]); } return o; }
 // Je li u OVOM kalkulatoru učitan vlastiti cjenik (ručno, preko trake u adminu) — uvjet za početak usporedbe odstupanja.
@@ -4764,6 +4850,8 @@ window.kalkSinhroIzvezi_ = function(){
     paletaTip: kalkKopijaNiza_(koletoPaletaTip),
     paletaRucno: kalkKopijaNiza_(koletoPaletaRucno),
     brojKoletaStvarni: v('brojKoletaStvarni'),
+    iskazanaVrijednost: v('dop_vrijednost_iznos'),
+    otkupninaIznos: v('dop_otkupnina_iznos'),
     pdv: !!(document.getElementById('pdvToggle') && document.getElementById('pdvToggle').checked)
   };
 };
@@ -4804,6 +4892,16 @@ window.kalkSinhroUvezi_ = function(snap){
   if(typeof updateDuzinaJedinicaLock === 'function'){ updateDuzinaJedinicaLock(); }
   if(typeof updateTezinaJedinicaLock === 'function'){ updateTezinaJedinicaLock(); }
   if(typeof updateVolTezinaCompare === 'function'){ updateVolTezinaCompare(); }
+  // 5a) iskazana vrijednost i iznos otkupnine (3.10.2026., Sašin zahtjev: uz dimenzije i težine
+  // prenose se i ovi iznosi, pa se odmah vidi razlika naknada između cjenika). Samo iznosi —
+  // kvačice/načini plaćanja ostaju po kalkulatoru.
+  [['dop_vrijednost_iznos', snap.iskazanaVrijednost], ['dop_otkupnina_iznos', snap.otkupninaIznos]].forEach(function(par){
+    var inp = document.getElementById(par[0]);
+    if(inp && typeof par[1] === 'string' && inp.value !== par[1]){
+      inp.value = par[1];
+      inp.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+  });
   // 5b) prikaz s/bez PDV-a (da usporedba odstupanja uspoređuje iste iznose)
   var pdvEl = document.getElementById('pdvToggle');
   if(pdvEl && typeof snap.pdv === 'boolean'){ pdvEl.checked = snap.pdv; }
@@ -4811,7 +4909,7 @@ window.kalkSinhroUvezi_ = function(snap){
   scheduleLiveIzracunaj();
 };
 
-if(!ucitajAdminPrijavuIzUrlaAkoPostoji_()){
+if(!ucitajAdminPrijavuIzUrlaAkoPostoji_() && !ucitajKolegaPrijavuIzUrlaAkoPostoji_()){
   ucitajPrijavuIzUrlaAkoPostoji_();
 }
 </script>
