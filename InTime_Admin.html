@@ -1678,7 +1678,7 @@
   <button type="button" class="settings-fab" onclick="openSettingsModal()" title="Postavke">⚙️</button>
   <div class="wrap">
 
-    <img src="https://i.imgur.com/mqcayJ4.png" alt="In Time" class="dashboard-banner">
+    <img src="https://i.imgur.com/soFb4wc.png" alt="In Time" class="dashboard-banner">
 
     <header class="topbar">
       <h1>In Time — Admin pregled upita</h1>
@@ -5044,9 +5044,10 @@
       // adminDodijeliKalkulatorPristup u InTime_Code.gs.
       var jeUcitan = z.vrsta === 'Učitan cjenik';
       var jeCjenik = z.vrsta === 'Promjena cjenika' || jeUcitan;
-      var znackaIcon = jeIzracun ? '🧮' : (jeUcitan ? '📂' : (jeCjenik ? '📄' : '🔑'));
-      var znackaTxt = jeIzracun ? 'Izračun' : (jeUcitan ? 'Učitan cjenik' : (jeCjenik ? 'Promjena cjenika' : 'Prijava'));
-      var znackaCls = jeIzracun ? ' izracun' : (jeCjenik ? ' cjenik' : '');
+      var jePoslan = z.vrsta === 'Poslan pristup';
+      var znackaIcon = jeIzracun ? '🧮' : (jeUcitan ? '📂' : (jeCjenik ? '📄' : (jePoslan ? '📨' : '🔑')));
+      var znackaTxt = jeIzracun ? 'Izračun' : (jeUcitan ? 'Učitan cjenik' : (jeCjenik ? 'Promjena cjenika' : (jePoslan ? 'Poslan pristup' : 'Prijava')));
+      var znackaCls = jeIzracun ? ' izracun' : ((jeCjenik || jePoslan) ? ' cjenik' : '');
       return '<div class="kalk-evid-red' + (jeIzracun ? ' kalk-evid-red-izracun' : '') + '">' +
         '<div class="kalk-evid-glavno' + (jeIzracun ? ' kalk-evid-klik' : '') + '" data-idx="' + idx + '">' +
           '<span class="kalk-evid-vrsta-znacka' + znackaCls + '">' + znackaIcon + ' ' + znackaTxt + '</span>' +
@@ -5435,6 +5436,94 @@
       } catch (eK) { /* iframe se još učitava */ }
     }
 
+
+    // ---------- CJENICI DRUGIH KORISNIKA (3.10.2026.) ----------
+    // Sašin zahtjev: u Arhivi cjenika gumb "Cjenici drugih korisnika" — popis
+    // cjenika koje su kolege (KALKULACIJE → Korisnici) učitali, odvojen od
+    // Sašine arhive. Svaki se može učitati u kalkulator (nakon čega se, kao i
+    // za svaki učitani cjenik, nudi spremanje u arhivu pod zadanim imenom) ili
+    // izravno spremiti u Sašinu arhivu pod odabranim imenom.
+    var kolegeCj_ = { lista: null, ucitava: false, greska: '', filter: '' };
+
+    function kolegeCjOsvjezi_() {
+      if (kolegeCj_.ucitava) { return Promise.resolve(); }
+      kolegeCj_.ucitava = true; kolegeCj_.greska = '';
+      arhivaSviRender_();
+      return gasCall({ action: 'adminKolegeCjeniciPopis', token: adminToken }).then(function(res) {
+        kolegeCj_.ucitava = false;
+        if (handleAuthError(res)) { return; }
+        if (res.status !== 'ok') { kolegeCj_.greska = res.message || 'Greška pri učitavanju cjenika korisnika.'; }
+        else { kolegeCj_.lista = res.lista || []; }
+        arhivaSviRender_();
+      }).catch(function() {
+        kolegeCj_.ucitava = false; kolegeCj_.greska = 'Greška u komunikaciji s poslužiteljem.';
+        arhivaSviRender_();
+      });
+    }
+
+    function tudjiCjeniciBuild_(slot, panel) {
+      var info = document.createElement('div');
+      info.className = 'kalk-arh-prazno';
+      info.style.textAlign = 'left';
+      info.innerHTML = '<strong>👥 Cjenici koje su učitali drugi korisnici</strong> — samo pregled; njihove datoteke se ne mijenjaju. ' +
+        'Učitaj ih u kalkulator ili ih spremi u svoju arhivu pod vlastitim imenom.' +
+        ' <button type="button" class="btn btn-outline btn-small kalk-tudji-osvjezi">⟳ Osvježi</button>';
+      panel.appendChild(info);
+      info.querySelector('.kalk-tudji-osvjezi').addEventListener('click', function() { kolegeCjOsvjezi_(); });
+      if (kolegeCj_.ucitava && !kolegeCj_.lista) { var u = document.createElement('div'); u.className = 'kalk-arh-prazno'; u.textContent = 'Učitavanje…'; panel.appendChild(u); return; }
+      if (kolegeCj_.greska) { var e = document.createElement('div'); e.className = 'kalk-arh-prazno'; e.style.color = '#c0392b'; e.textContent = kolegeCj_.greska; panel.appendChild(e); }
+      if (!kolegeCj_.lista) { return; }
+      if (!kolegeCj_.lista.length) { var pr = document.createElement('div'); pr.className = 'kalk-arh-prazno'; pr.textContent = 'Nijedan korisnik još nije učitao cjenik.'; panel.appendChild(pr); return; }
+      // filter po korisniku
+      var imena = [];
+      kolegeCj_.lista.forEach(function(z) { if (imena.indexOf(z.korisnik) === -1) { imena.push(z.korisnik); } });
+      imena.sort();
+      var filt = document.createElement('div');
+      filt.style.cssText = 'margin:6px 0;';
+      filt.innerHTML = '<label style="font-size:12.5px;">Korisnik: <select class="kalk-tudji-filter"><option value="">Svi korisnici (' + kolegeCj_.lista.length + ')</option>' +
+        imena.map(function(n) { return '<option value="' + esc(n) + '"' + (kolegeCj_.filter === n ? ' selected' : '') + '>' + esc(n) + '</option>'; }).join('') + '</select></label>';
+      panel.appendChild(filt);
+      filt.querySelector('select').addEventListener('change', function() { kolegeCj_.filter = this.value; arhivaPanelBuild_(slot); });
+      kolegeCj_.lista.filter(function(z) { return !kolegeCj_.filter || z.korisnik === kolegeCj_.filter; }).forEach(function(z) {
+        var red = document.createElement('div');
+        red.className = 'kalk-arh-red';
+        red.innerHTML = '<div class="kalk-arh-tekst"><div class="kalk-arh-naziv">👤 ' + esc(z.korisnik) + '</div>' +
+          '<div class="kalk-arh-meta">' + esc(z.datoteka) + ' · ' + esc(z.datum) + ' · ' + fmtKB_(z.velicina || 0) + '</div></div>' +
+          '<button type="button" class="btn btn-small kalk-tudji-ucitaj">⬇ Učitaj u ovaj kalkulator</button>' +
+          '<button type="button" class="btn btn-outline btn-small kalk-tudji-spremi">💾 Spremi u moju arhivu…</button>';
+        panel.appendChild(red);
+        red.querySelector('.kalk-tudji-ucitaj').addEventListener('click', function() {
+          var btn = this; btn.disabled = true; var staro = btn.textContent; btn.textContent = 'Dohvaćam…';
+          gasCall({ action: 'adminKolegeCjenikDohvati', token: adminToken, fileId: z.id }).then(function(res) {
+            btn.disabled = false; btn.textContent = staro;
+            if (handleAuthError(res)) { return; }
+            if (res.status !== 'ok') { arhivaPoruka_(slot, res.message || 'Dohvat cjenika nije uspio.', true); return; }
+            var bin = atob(res.base64), bytes = new Uint8Array(bin.length);
+            for (var i = 0; i < bin.length; i++) { bytes[i] = bin.charCodeAt(i); }
+            var file = new File([bytes], z.datoteka, { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+            try {
+              // izArhive = false → nakon uspješnog čitanja kalkulator ponudi spremanje u arhivu (uz zadano ime).
+              ucitajDatotekuUSlot_(slot, file, false);
+              slot.statusEl.textContent = 'Učitavanje cjenika korisnika ' + z.korisnik + '…';
+              arhivaPoruka_(slot, '✓ Učitano: cjenik korisnika ' + z.korisnik + ' (' + z.datum + '). Nakon učitavanja možeš ga spremiti u svoju arhivu pod vlastitim imenom.', false);
+            } catch (eU) { arhivaPoruka_(slot, 'Učitavanje nije uspjelo: ' + (eU && eU.message ? eU.message : eU), true); }
+          }).catch(function() { btn.disabled = false; btn.textContent = staro; arhivaPoruka_(slot, 'Greška u komunikaciji s poslužiteljem.', true); });
+        });
+        red.querySelector('.kalk-tudji-spremi').addEventListener('click', function() {
+          arhivaDijalogNaziv_('💾 Spremi u moju arhivu', 'Cjenik korisnika ' + z.korisnik + ' (' + z.datum + '). Upiši naziv pod kojim će biti u tvojoj arhivi.', bezEkstenzije_(z.datoteka)).then(function(naziv) {
+            if (!naziv) { return; }
+            arhivaPoruka_(slot, 'Spremanje u arhivu…', false);
+            gasCall({ action: 'adminKolegeCjenikUArhivu', token: adminToken, fileId: z.id, naziv: naziv }).then(function(res) {
+              if (handleAuthError(res)) { return; }
+              if (res.status !== 'ok') { arhivaPoruka_(slot, res.message || 'Spremanje u arhivu nije uspjelo.', true); return; }
+              arhivaPoruka_(slot, res.vecPostoji ? ('ℹ Ovaj cjenik je već u tvojoj arhivi kao „' + res.zapis.naziv + '“.') : ('✓ Spremljeno u tvoju arhivu kao „' + res.zapis.naziv + '“.'), false);
+              arhiva_.lista = null; arhivaOsvjezi_();
+            }).catch(function() { arhivaPoruka_(slot, 'Greška u komunikaciji s poslužiteljem.', true); });
+          });
+        });
+      });
+    }
+
     function arhivaPanelBuild_(slot) {
       var panel = slot.arhivaPanelEl;
       panel.innerHTML = '';
@@ -5443,11 +5532,18 @@
       head.innerHTML = '<strong>🗄️ Arhiva cjenika' + (arhiva_.lista ? ' (' + arhiva_.lista.length + ')' : '') + '</strong>' +
         '<button type="button" class="btn btn-outline btn-small kalk-arh-osvjezi">⟳ Osvježi</button>' +
         '<button type="button" class="btn btn-outline btn-small kalk-arh-dodaj">＋ Dodaj cjenik u arhivu</button>' +
+        '<button type="button" class="btn btn-outline btn-small kalk-arh-tudji">' + (slot.tudjiOtvoreno_ ? '← Natrag na moju arhivu' : '👥 Cjenici drugih korisnika') + '</button>' +
         '<input type="file" class="kalk-arh-dodaj-file" accept=".xlsx,.xls,.xltx,.xlsm" style="display:none;">' +
         '<button type="button" class="btn btn-outline btn-small kalk-arh-zatvori" style="margin-left:auto;">✕ Zatvori</button>';
       panel.appendChild(head);
       head.querySelector('.kalk-arh-osvjezi').addEventListener('click', function() { arhivaOsvjezi_(); });
       head.querySelector('.kalk-arh-zatvori').addEventListener('click', function() { slot.arhivaOtvorena_ = false; panel.style.display = 'none'; });
+      head.querySelector('.kalk-arh-tudji').addEventListener('click', function() {
+        slot.tudjiOtvoreno_ = !slot.tudjiOtvoreno_;
+        if (slot.tudjiOtvoreno_ && !kolegeCj_.lista) { kolegeCjOsvjezi_(); }
+        arhivaPanelBuild_(slot);
+      });
+      if (slot.tudjiOtvoreno_) { tudjiCjeniciBuild_(slot, panel); return; }
       var dodajInp = head.querySelector('.kalk-arh-dodaj-file');
       head.querySelector('.kalk-arh-dodaj').addEventListener('click', function() { dodajInp.click(); });
       dodajInp.addEventListener('change', function() {
@@ -5912,6 +6008,208 @@
     return outer;
   }
 
+  // ---- SLANJE PRISTUPA KOLEGI MAILOM (3.10.2026.) ----
+  // Sašin zahtjev: kartica "Pošalji" na korisniku kalkulacija, isti obrazac kao
+  // panel "Pošalji obavijest poslovnicama": 5 predložaka teksta, mail istog
+  // izgleda kao ostali (banner PANTHER, crvena kućica korisničko ime, plava
+  // kućica lozinka, zeleni gumb, napomena o osnovnom cjeniku), prilog koji se
+  // ZAPAMTI za sljedeća slanja, točan datum i vrijeme slanja u evidenciji.
+  var KK_MAIL_PRILOG_MAX_B_ = 8 * 1024 * 1024, KK_MAIL_PRILOZI_MAX_B_ = 15 * 1024 * 1024;
+  var KK_MAIL_BANNER_ = 'https://i.imgur.com/XP1FZ4n.png'; // jedina slika u mailu (gore)
+  var KK_MAIL_ZAV_ = 'Lijep pozdrav,\nSaša Batinac\nIn Time d.o.o.';
+  // Jedan zadani predložak (Sašin zahtjev: ne 5 predložaka, nego jedan s tekstovima koje može mijenjati).
+  var KK_PREDLOZAK_ = {
+    predmet: 'In Time — pristupni podaci za alat KALKULACIJE',
+    uvod: 'Pozdrav {IME},\n\notvoren Vam je pristup internom alatu KALKULACIJE za usporedbu cijena dostave. Pristupni podaci nalaze se u nastavku.',
+    napomena: 'Podatke u kalkulator unosite u obliku OSNOVNOG cjenika koji se nalazi u prilogu ovog maila — mijenjate isključivo vrijednosti, a struktura cjenika ostaje ista. Ako se slučajno nešto promijeni, ponovno učitajte cjenik iz priloga.',
+    usp: 'Kalkulator omogućuje usporedbu do 3 cjenika istodobno (glavni kalkulator i još dva), uz označene razlike u cijenama na prvi pogled.',
+    zav: KK_MAIL_ZAV_
+  };
+  function kkFmtKB_(n) { return n >= 1048576 ? (n / 1048576).toFixed(1).replace('.', ',') + ' MB' : Math.max(1, Math.round(n / 1024)) + ' KB'; }
+  function kkTekstUHtml_(t) {
+    var e = esc(String(t || '')).replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1" style="color:#0f8b7e;">$1</a>');
+    return e.split(/\n{2,}/).map(function(par) {
+      return '<p style="margin:0 0 12px;">' + par.replace(/\n/g, '<br>') + '</p>';
+    }).join('');
+  }
+  // Isti vizualni obrazac kao ostali mailovi sustava (620 px stupac, banner, crvena/plava kućica, zeleni gumb).
+  function kkMailHtml_(k, url, uvod, napomena, usp, zav) {
+    var imeZ = function(t) { return String(t || '').replace(/\{IME\}/g, k.ime); };
+    return '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;"><tr><td align="center">' +
+      '<table role="presentation" width="620" cellpadding="0" cellspacing="0" border="0" style="width:620px;max-width:620px;border-collapse:collapse;"><tr><td style="font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.7;color:#222222;text-align:left;">' +
+      '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 18px;border-collapse:collapse;"><tr><td align="center"><img src="' + KK_MAIL_BANNER_ + '" alt="In Time d.o.o. — PANTHER" width="620" style="display:block;border:0;outline:none;text-decoration:none;width:100%;max-width:620px;height:auto;border-radius:10px;"></td></tr></table>' +
+      kkTekstUHtml_(imeZ(uvod)) +
+      '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:16px 0 8px;border-collapse:collapse;"><tr><td align="center" style="background-color:#fdeceb;border:2px solid #e57368;border-radius:8px;padding:12px 14px;">' +
+        '<div style="font-size:11px;font-weight:700;letter-spacing:.03em;text-transform:uppercase;color:#a93226;margin-bottom:4px;">Korisničko ime</div>' +
+        '<div style="font-size:16px;font-weight:800;color:#7b241c;">' + esc(k.korisnickoIme) + '</div></td></tr></table>' +
+      '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 18px;border-collapse:collapse;"><tr><td align="center" style="background-color:#eaf1fb;border:2px solid #5b8fd6;border-radius:8px;padding:12px 14px;">' +
+        '<div style="font-size:11px;font-weight:700;letter-spacing:.03em;text-transform:uppercase;color:#2354a0;margin-bottom:4px;">Lozinka</div>' +
+        '<div style="font-size:16px;font-weight:800;color:#1a3d73;">' + esc(k.lozinka) + '</div></td></tr></table>' +
+      // Mali gumb u bojama PANTHERA (tamna noćna podloga, tirkizni rub i tekst) — vodi na aplikaciju.
+      '<table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center" style="margin:6px auto 14px;border-collapse:separate;"><tr><td align="center" bgcolor="#071f2a" style="background-color:#071f2a;border:2px solid #22c8bc;border-radius:10px;">' +
+        '<a href="' + esc(url) + '" target="_blank" rel="noopener" style="display:inline-block;padding:13px 34px;font-family:Arial,Helvetica,sans-serif;font-size:15px;font-weight:bold;letter-spacing:.06em;text-transform:uppercase;color:#22c8bc;text-decoration:none;">Otvori <span style="color:#ffffff;">PANTHER</span> aplikaciju &rarr;</a></td></tr></table>' +
+      '<p style="margin:0 0 16px;font-size:12px;color:#6b7280;text-align:center;">Ako gumb ne radi, kopiraj link: <a href="' + esc(url) + '" style="color:#0f8b7e;">' + esc(url) + '</a></p>' +
+      '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 18px;border-collapse:collapse;"><tr><td style="background-color:#fff7e0;border:2px solid #f0b429;border-radius:8px;padding:12px 14px;">' +
+        '<div style="font-size:11px;font-weight:700;letter-spacing:.03em;text-transform:uppercase;color:#8a5a00;margin-bottom:4px;">⚠ Napomena</div>' +
+        '<div style="font-size:14px;line-height:1.6;color:#5c3d00;">' + esc(imeZ(napomena)).replace(/\n/g, '<br>') + '</div></td></tr></table>' +
+      '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 18px;border-collapse:collapse;"><tr><td style="background-color:#e6f7f5;border:2px solid #22c8bc;border-radius:8px;padding:12px 14px;">' +
+        '<div style="font-size:11px;font-weight:700;letter-spacing:.03em;text-transform:uppercase;color:#0b6b63;margin-bottom:4px;">📊 Usporedba cjenika</div>' +
+        '<div style="font-size:14px;line-height:1.6;color:#0b4f49;">' + esc(imeZ(usp)).replace(/\n/g, '<br>') + '</div></td></tr></table>' +
+      kkTekstUHtml_(imeZ(zav)) +
+      '</td></tr></table></td></tr></table>';
+  }
+  function kkMailPlain_(k, url, uvod, napomena, usp, zav) {
+    var imeZ = function(t) { return String(t || '').replace(/\{IME\}/g, k.ime); };
+    return imeZ(uvod) + '\n\nKorisničko ime: ' + k.korisnickoIme + '\nLozinka: ' + k.lozinka + '\nLink: ' + url + '\n\nNAPOMENA: ' + imeZ(napomena) + '\n\nUSPOREDBA CJENIKA: ' + imeZ(usp) + '\n\n' + imeZ(zav);
+  }
+  var kkZapamceniCache_ = null; // zapamćeni prilozi (zajednički za sve kartice)
+  function kkPosaljiPristupWire_(k, url, blok, gumbOtvori, naPoslano) {
+    var traka = blok.querySelector('.af-posl-mail-traka'), panel = blok.querySelector('.af-posl-mail-panel');
+    var izgradjen = false, prilozi = [];
+    function izgradi() {
+      izgradjen = true;
+      panel.innerHTML =
+        '<p class="af-posl-mail-hint">Mail kolegi s pristupom do stranice KALKULACIJE — izgledom isti kao ostali mailovi (banner, crvena kućica korisničko ime, plava kućica lozinka, mali PANTHER gumb koji vodi na aplikaciju). Korisničko ime i lozinka ovog korisnika ubacuju se automatski u trenutku slanja. Tekst je već ispunjen — slobodno ga mijenjaj prije slanja.</p>' +
+        '<div class="af-posl-predlozak-okvir">' +
+          '<label class="af-posl-uvodni-label">Predmet</label>' +
+          '<input type="text" class="kk-mail-predmet" style="width:100%;box-sizing:border-box;padding:8px 10px;border:1px solid #a6d9c1;border-radius:8px;font-size:13px;margin-bottom:10px;">' +
+          '<label class="af-posl-uvodni-label">Tekst iznad kućica s pristupom ({IME} = ime korisnika)</label>' +
+          '<textarea class="af-posl-uvodni-textarea kk-mail-uvod" style="min-height:120px;"></textarea>' +
+          '<label class="af-posl-uvodni-label">Napomena o cjeniku (žuta kućica)</label>' +
+          '<textarea class="af-posl-uvodni-textarea kk-mail-nap" style="min-height:70px;"></textarea>' +
+          '<label class="af-posl-uvodni-label">Usporedba cjenika (tirkizna kućica)</label>' +
+          '<textarea class="af-posl-uvodni-textarea kk-mail-usp" style="min-height:60px;"></textarea>' +
+          '<label class="af-posl-uvodni-label">Završetak / potpis</label>' +
+          '<textarea class="af-posl-uvodni-textarea kk-mail-zav" style="min-height:60px;"></textarea>' +
+          '<div class="af-posl-uvodni-alati"><button type="button" class="af-posl-btn kk-mail-reset">↺ Vrati zadani tekst</button></div>' +
+          '<label class="af-posl-uvodni-label" style="margin-top:8px;">Pregled maila</label>' +
+          '<iframe class="kk-mail-pregled" sandbox="" style="width:100%;height:640px;border:1px dashed #ccd2da;border-radius:8px;background:#fff;"></iframe>' +
+        '</div>' +
+        '<div class="af-posl-slanje-okvir">' +
+          '<label class="af-posl-uvodni-label">📎 Prilozi</label>' +
+          '<div class="af-posl-uvodni-chips kk-mail-zapamceni"><span class="af-posl-uvodni-prazno">Učitavanje zapamćenih priloga…</span></div>' +
+          '<label class="af-posl-uvodni-label">Dodaj novi prilog (odaberi datoteku, npr. osnovni cjenik)</label>' +
+          '<input type="file" class="kk-mail-prilog-inp" multiple style="margin-bottom:6px;">' +
+          '<div class="af-posl-uvodni-chips kk-mail-prilozi"></div>' +
+          '<label class="af-posl-kopija-red"><input type="checkbox" class="kk-mail-zapamti" checked> 💾 Zapamti nove priloge za sljedeća slanja (ne moraš ih ponovno unositi)</label>' +
+          '<div class="af-posl-primatelji-red"><textarea class="af-posl-primatelji-textarea kk-mail-primatelji" placeholder="primatelji (e-mail adrese odvojene zarezom)"></textarea></div>' +
+          '<p class="af-posl-primatelji-hint">Automatski upisan e-mail korisnika. Slobodno dodaj/ukloni adrese, odvojene zarezom.</p>' +
+          '<div class="af-posl-test-red"><input type="email" class="af-posl-test-input kk-mail-test-adr" placeholder="test adresa za probno slanje"><button type="button" class="af-posl-btn kk-mail-test">✉ Pošalji test</button></div>' +
+          '<label class="af-posl-kopija-red"><input type="checkbox" class="kk-mail-kopija"> Pošalji i meni kopiju (sbatinac.intime@gmail.com)</label>' +
+          '<button type="button" class="af-posl-btn af-posl-posalji-btn uspjeh kk-mail-posalji">📨 Pošalji</button>' +
+          '<div class="af-posl-slanje-status kk-mail-status"></div>' +
+        '</div>';
+      var q = function(c) { return panel.querySelector(c); };
+      var predmet = q('.kk-mail-predmet'), uvod = q('.kk-mail-uvod'), nap = q('.kk-mail-nap'), usp = q('.kk-mail-usp'), zav = q('.kk-mail-zav');
+      var prim = q('.kk-mail-primatelji'), status = q('.kk-mail-status'), chips = q('.kk-mail-prilozi'), zapChips = q('.kk-mail-zapamceni'), inp = q('.kk-mail-prilog-inp'), pregled = q('.kk-mail-pregled');
+      var izmijenjeno = false, zapamceni = [];
+      function primijeni() {
+        var p = KK_PREDLOZAK_;
+        predmet.value = p.predmet; uvod.value = p.uvod; nap.value = p.napomena; usp.value = p.usp; zav.value = p.zav; izmijenjeno = false; osvjeziPregled();
+      }
+      function osvjeziPregled() { pregled.srcdoc = '<!doctype html><meta charset="utf-8"><body style="margin:0;padding:10px;background:#f4f6f8;">' + kkMailHtml_(k, url, uvod.value, nap.value, usp.value, zav.value) + '</body>'; }
+      [predmet, uvod, nap, usp, zav].forEach(function(el) { el.addEventListener('input', function() { izmijenjeno = true; osvjeziPregled(); }); });
+      q('.kk-mail-reset').addEventListener('click', function() {
+        if (izmijenjeno && !window.confirm('Vratiti zadani tekst? Tvoje izmjene bit će izgubljene.')) { return; }
+        primijeni();
+      });
+      primijeni(); prim.value = k.email || '';
+      function st(t, greska) { status.textContent = t || ''; status.className = 'af-posl-slanje-status kk-mail-status ' + (t ? (greska ? 'error' : 'ok') : ''); }
+      function ukupno() {
+        return prilozi.reduce(function(a, p) { return a + p.velicina; }, 0) + zapamceni.filter(function(z) { return z.oznaceno; }).reduce(function(a, z) { return a + (z.velicina || 0); }, 0);
+      }
+      function crtajZapamcene() {
+        zapChips.innerHTML = '';
+        if (!zapamceni.length) { zapChips.innerHTML = '<span class="af-posl-uvodni-prazno">Nema zapamćenih priloga — dodaj prilog ispod i ostat će zapamćen.</span>'; return; }
+        zapamceni.forEach(function(z) {
+          var c = document.createElement('label'); c.className = 'af-posl-uvodni-chip';
+          c.innerHTML = '<input type="checkbox"' + (z.oznaceno ? ' checked' : '') + '><span class="af-posl-uvodni-chip-tekst">📎 ' + esc(z.naziv) + ' (' + kkFmtKB_(z.velicina || 0) + ') — zapamćeno ' + esc(z.datum || '') + '</span><button type="button" class="af-posl-uvodni-chip-x" title="Ukloni iz zapamćenih">×</button>';
+          c.querySelector('input').addEventListener('change', function() { z.oznaceno = this.checked; });
+          c.querySelector('button').addEventListener('click', function(ev) {
+            ev.preventDefault();
+            if (!window.confirm('Ukloniti „' + z.naziv + '“ iz zapamćenih priloga? (Neće se više nuditi pri slanju.)')) { return; }
+            gasCall({ action: 'adminKolegeMailPrilogObrisi', token: adminToken, id: z.id }).then(function(res) {
+              if (handleAuthError(res)) { return; }
+              if (res.status !== 'ok') { st(res.message || 'Brisanje nije uspjelo.', true); return; }
+              zapamceni = zapamceni.filter(function(x) { return x.id !== z.id; }); kkZapamceniCache_ = zapamceni; crtajZapamcene();
+            }).catch(function() { st('Greška u komunikaciji s poslužiteljem.', true); });
+          });
+          zapChips.appendChild(c);
+        });
+      }
+      function ucitajZapamcene(prisilno) {
+        if (kkZapamceniCache_ && !prisilno) { zapamceni = kkZapamceniCache_.map(function(z) { return Object.assign({}, z, { oznaceno: z.oznaceno !== false }); }); crtajZapamcene(); return; }
+        gasCall({ action: 'adminKolegeMailPriloziPopis', token: adminToken }).then(function(res) {
+          if (handleAuthError(res)) { return; }
+          if (res.status !== 'ok') { zapChips.innerHTML = '<span class="af-posl-uvodni-prazno">' + esc(res.message || 'Greška pri učitavanju priloga.') + '</span>'; return; }
+          zapamceni = (res.lista || []).map(function(z) { z.oznaceno = true; return z; });
+          kkZapamceniCache_ = zapamceni; crtajZapamcene();
+        }).catch(function() { zapChips.innerHTML = '<span class="af-posl-uvodni-prazno">Greška u komunikaciji s poslužiteljem.</span>'; });
+      }
+      ucitajZapamcene(false);
+      function crtajPriloge() {
+        chips.innerHTML = '';
+        prilozi.forEach(function(p, i) {
+          var c = document.createElement('span'); c.className = 'af-posl-uvodni-chip';
+          c.innerHTML = '<span class="af-posl-uvodni-chip-tekst">🆕 ' + esc(p.naziv) + ' (' + kkFmtKB_(p.velicina) + ')</span><button type="button" class="af-posl-uvodni-chip-x" title="Ukloni">×</button>';
+          c.querySelector('button').addEventListener('click', function() { prilozi.splice(i, 1); crtajPriloge(); });
+          chips.appendChild(c);
+        });
+      }
+      inp.addEventListener('change', function() {
+        var files = Array.prototype.slice.call(inp.files || []);
+        inp.value = '';
+        files.forEach(function(f) {
+          if (f.size > KK_MAIL_PRILOG_MAX_B_) { st('„' + f.name + '“ je veći od 8 MB — preskočeno.', true); return; }
+          if (ukupno() + f.size > KK_MAIL_PRILOZI_MAX_B_) { st('Prilozi ukupno ne smiju biti veći od 15 MB.', true); return; }
+          var fr = new FileReader();
+          fr.onload = function() {
+            var bytes = new Uint8Array(fr.result), bin = '';
+            for (var i = 0; i < bytes.length; i += 0x8000) { bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000)); }
+            prilozi.push({ naziv: f.name, mime: f.type || 'application/octet-stream', velicina: f.size, base64: btoa(bin) });
+            crtajPriloge();
+          };
+          fr.readAsArrayBuffer(f);
+        });
+      });
+      function salji(test) {
+        var testAdr = test ? q('.kk-mail-test-adr').value.trim() : '';
+        if (test && !testAdr) { st('Upiši test adresu.', true); return; }
+        var oznaceni = zapamceni.filter(function(z) { return z.oznaceno; });
+        var brPriloga = oznaceni.length + prilozi.length;
+        if (!test && !window.confirm('Poslati mail na: ' + prim.value.trim() + (brPriloga ? ' (priloga: ' + brPriloga + ')' : ' — BEZ priloga') + '?')) { return; }
+        var gumbi = panel.querySelectorAll('.kk-mail-posalji, .kk-mail-test');
+        Array.prototype.forEach.call(gumbi, function(g) { g.disabled = true; });
+        st(test ? 'Šaljem probni mail…' : 'Šaljem…', false);
+        var zapamtiNove = q('.kk-mail-zapamti').checked;
+        gasCall({ action: 'adminKolegaPosaljiPristup', token: adminToken, id: k.id, primatelji: prim.value, predmet: predmet.value,
+          tijelo: kkMailPlain_(k, url, uvod.value, nap.value, usp.value, zav.value), html: kkMailHtml_(k, url, uvod.value, nap.value, usp.value, zav.value),
+          kopijaSebi: q('.kk-mail-kopija').checked, testAdresa: testAdr,
+          zapamceniIds: oznaceni.map(function(z) { return z.id; }), zapamtiNove: zapamtiNove,
+          prilozi: prilozi.map(function(p) { return { naziv: p.naziv, mime: p.mime, base64: p.base64 }; }) }).then(function(res) {
+          Array.prototype.forEach.call(gumbi, function(g) { g.disabled = false; });
+          if (handleAuthError(res)) { return; }
+          if (res.status !== 'ok') { st(res.message || 'Slanje nije uspjelo.', true); return; }
+          st((res.test ? '✓ Probni mail poslan na ' : '✓ Mail poslan na ') + (res.poslanoNa || []).join(', ') + (res.brojPriloga ? ' (priloga: ' + res.brojPriloga + ')' : '') + ' — ' + res.vrijeme + (res.test ? '' : ' (zabilježeno u evidenciji)') + '.', false);
+          if (!res.test) {
+            if (naPoslano) { naPoslano(res.vrijeme); }
+            if (zapamtiNove && prilozi.length) { prilozi = []; crtajPriloge(); kkZapamceniCache_ = null; ucitajZapamcene(true); }
+          }
+        }).catch(function() { Array.prototype.forEach.call(gumbi, function(g) { g.disabled = false; }); st('Greška u komunikaciji s poslužiteljem.', true); });
+      }
+      q('.kk-mail-posalji').addEventListener('click', function() { salji(false); });
+      q('.kk-mail-test').addEventListener('click', function() { salji(true); });
+    }
+    function prebaci(otvori) {
+      var nova = (typeof otvori === 'boolean') ? otvori : !blok.classList.contains('expanded');
+      if (nova && !izgradjen) { izgradi(); }
+      blok.classList.toggle('expanded', nova);
+      if (nova && blok.scrollIntoView) { try { blok.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); } catch (e) {} }
+    }
+    traka.addEventListener('click', function() { prebaci(); });
+    gumbOtvori.addEventListener('click', function() { prebaci(true); });
+  }
+
   function buildKalkulacijeKorisniciPanel_() {
     var wrap = document.createElement('div');
     wrap.className = 'faq-admin-card';
@@ -5997,15 +6295,21 @@
           '<span>Mobitel: ' + esc(k.telefon || '—') + '</span>' +
           '<span>Lozinka: <strong class="kk-loz-prikaz">••••••••</strong> <a href="#" class="kk-loz-oko">👁 prikaži</a></span></div>' +
         '<div class="kalk-korisnik-red2"><span>Zadnja prijava: ' + esc(zadnja) + '</span><span>Prijava: <strong>' + k.brojPrijava + '</strong></span><span>Izračuna: <strong>' + k.brojIzracuna + '</strong></span><span>Učitanih cjenika: <strong>' + k.brojCjenika + '</strong></span></div>' +
+        '<div class="kalk-korisnik-red2"><span>📨 Zadnje slanje pristupa: <strong class="kk-zadnje-slanje">' + esc(k.zadnjeSlanje ? (k.zadnjeSlanje + (k.brojSlanja > 1 ? ' (poslano ' + k.brojSlanja + '×)' : '')) : 'još nije poslano') + '</strong></span></div>' +
         '<div class="kk-akcije" style="margin-top:8px;">' +
           '<button type="button" class="btn btn-outline btn-small kk-uredi">✎ Uredi</button>' +
           '<button type="button" class="btn btn-outline btn-small kk-nova-loz">🔁 Nova lozinka</button>' +
           '<button type="button" class="btn btn-outline btn-small kk-kopiraj">📋 Kopiraj pristup</button>' +
+          '<button type="button" class="btn btn-small kk-posalji-gumb">📨 Pošalji</button>' +
           '<button type="button" class="btn btn-outline btn-small kk-zamrzni">' + (k.zamrznuto ? '▶️ Odmrzni' : '🧊 Zamrzni') + '</button>' +
           '<button type="button" class="btn btn-outline btn-small kk-evid">📊 Evidencija korištenja</button>' +
           '<button type="button" class="btn btn-danger btn-small kk-ukloni">✕ Ukloni</button>' +
         '</div>' +
         '<div class="kk-poruka kk-red-poruka"></div>' +
+        '<div class="af-posl-mail-blok kk-posalji-blok">' +
+          '<div class="af-posl-mail-traka"><span>📨 Pošalji pristup kolegi (link + korisničko ime + lozinka + napomena o cjeniku)</span><span class="chevron">▾</span></div>' +
+          '<div class="af-posl-mail-panel"></div>' +
+        '</div>' +
         '<div class="kk-uredi-panel" hidden></div>' +
         '<div class="kk-loz-panel" hidden></div>' +
         '<div class="kk-evid-panel kalk-korisnik-evidencija-panel" hidden></div>';
@@ -6021,6 +6325,10 @@
         var t = 'In Time — KALKULACIJE\nLink: ' + url + '\nKorisničko ime: ' + k.korisnickoIme + '\nLozinka: ' + k.lozinka;
         poruka_(por, kopirajTekstUMedjuspremnik_(t) ? '✓ Kopirano (link + korisničko ime + lozinka).' : 'Kopiranje nije uspjelo — kopiraj ručno.', false);
         setTimeout(function() { poruka_(por, '', false); }, 3500);
+      });
+      kkPosaljiPristupWire_(k, url, red.querySelector('.kk-posalji-blok'), red.querySelector('.kk-posalji-gumb'), function(vrijeme) {
+        k.brojSlanja = (k.brojSlanja || 0) + 1; k.zadnjeSlanje = vrijeme;
+        red.querySelector('.kk-zadnje-slanje').textContent = vrijeme + (k.brojSlanja > 1 ? ' (poslano ' + k.brojSlanja + '×)' : '');
       });
       red.querySelector('.kk-zamrzni').addEventListener('click', function() {
         var novo = !k.zamrznuto;
