@@ -4363,6 +4363,25 @@ function prijavaPostaviAktivnoStanje_(nazivFirme){
   if(gateEl){ gateEl.style.display = ''; }
 }
 
+// NOVO (3.10.2026., Sašin izričit zahtjev — "kalkulacije moraju biti totalno
+// otkljucane, bez šifri i usernamea, samo glavna šifra (admin) koja otključava
+// tu mogućnost, ne mora biti vezana za cjenik"): ADMIN način (?kalk_admin=)
+// NIJE klijentska prijava. Cijela kartica "Prijava — pristup kalkulatoru"
+// (korisničko ime/lozinka, "Prijavljeni ste kao", Odjava) se SAKRIJE, a
+// ručno učitavanje cjenika (#cjenikFile) i "Vrati zadani cjenik" ostaju
+// OMOGUĆENI — svaki slot u KALKULACIJE učitava vlastiti cjenik. Jedino što
+// otključava kalkulator jest valjan admin token (kalkulatorAdminPrijava).
+function prijavaPostaviAdminStanje_(){
+  var card = document.getElementById('prijavaKlijentaCard');
+  if(card){ card.style.display = 'none'; }
+  var fileInput = document.getElementById('cjenikFile');
+  if(fileInput){ fileInput.disabled = false; }
+  var resetBtn = document.querySelector('button[onclick="resetCjenik()"]');
+  if(resetBtn){ resetBtn.disabled = false; resetBtn.title = ''; }
+  var gateEl = document.getElementById('kalkSadrzajGate');
+  if(gateEl){ gateEl.style.display = ''; }
+}
+
 function prijavaPostaviNeaktivnoStanje_(){
   document.getElementById('prijavaKlijentaForma').style.display = 'block';
   document.getElementById('prijavaKlijentaAktivna').style.display = 'none';
@@ -4697,7 +4716,7 @@ function ucitajAdminPrijavuIzUrlaAkoPostoji_(){
       }
       return;
     }
-    prijavaPostaviAktivnoStanje_(res.naziv || 'Administrator (osnovni cjenik)');
+    prijavaPostaviAdminStanje_();
     zakljucajPodaciOPosiljciZaPratioca_();
   }).catch(function(){
     var statusEl = document.getElementById('prijavaStatus');

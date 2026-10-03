@@ -1465,6 +1465,13 @@
   .kalk-usporedba-slot{flex:0 0 480px;border:1px solid var(--line);border-radius:10px;padding:10px;background:#fafafa;}
   .kalk-usporedba-slot-naslov{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px;font-size:13px;color:var(--graphite);}
   .kalk-usporedba-iframe{width:100%;height:1500px;border:1px solid var(--line);border-radius:8px;display:block;background:#fff;}
+  /* Prošireni prikaz (cijela stranica) — ista kartica, samo position:fixed; iframeovi se NE ponovno stvaraju pa ostaju učitani cjenici i uneseni podaci. */
+  .kalk-usporedba-fs{position:fixed;top:0;left:0;right:0;bottom:0;z-index:99999;background:#fff;overflow:auto;padding:14px 18px;border-radius:0;margin:0;box-sizing:border-box;}
+  .kalk-usporedba-fs .kalk-usporedba-grid{overflow-x:auto;}
+  .kalk-usporedba-fs .kalk-usporedba-slot{flex:1 1 0;min-width:420px;}
+  .kalk-usporedba-fs .kalk-usporedba-iframe{height:calc(100vh - 170px);min-height:700px;}
+  .kalk-usporedba-fs .faq-admin-hint{display:none;}
+  body.kalk-usporedba-fs-open{overflow:hidden;}
   /* Zatvorene/otvorene kartice centara i servisa (26.9.2026., Sašin
      izričit zahtjev — "neka kartice budu zatvorene dok se ne klikne").
      .lc-centar-detalji nosi SVE uređivo polje i akcije, skriveno dok
@@ -5098,14 +5105,32 @@
 
     wrap.innerHTML =
       '<h3 style="color:#c0392b;">KALKULACIJE — usporedba cjenika</h3>' +
-      '<p class="faq-admin-hint">Unesi podatke o pošiljci (mjesto, način obračuna, broj koleta, težinu, dimenzije) SAMO u <strong>Kalkulator 1 (glavni)</strong> — isti podaci se odmah prenose u sve ostale kalkulatore niže, svaki sa svojim (drugačijim) učitanim cjenikom preko gumba "Učitaj cjenik" na toj stranici, da odmah vidiš usporedbu cijena po istoj pošiljci. Dopunske usluge (otkupnina, SMS, iskazana vrijednost...) se NE prenose — unose se zasebno po kalkulatoru ako treba.</p>' +
+      '<p class="faq-admin-hint">Unesi podatke o pošiljci (mjesto, način obračuna, broj koleta, težinu, dimenzije) SAMO u <strong>Kalkulator 1 (glavni)</strong> — isti podaci se odmah prenose u sve ostale kalkulatore niže, svaki sa svojim (drugačijim) učitanim cjenikom preko gumba "Učitaj cjenik" na toj stranici, da odmah vidiš usporedbu cijena po istoj pošiljci. Dopunske usluge (otkupnina, SMS, iskazana vrijednost...) se NE prenose — unose se zasebno po kalkulatoru ako treba. Kalkulatori su potpuno otključani (bez korisničkog imena i lozinke klijenta) — otključava ih samo ova admin prijava. Gumbom "Proširi na cijelu stranicu" dobivaš puni prikaz usporedbe.</p>' +
       '<div class="faq-admin-card-actions" style="margin-bottom:10px;">' +
-        '<button type="button" class="btn btn-small" id="kalkUsporedbaDodajBtn">+ Dodaj kalkulator za usporedbu</button>' +
+        '<button type="button" class="btn btn-small" id="kalkUsporedbaDodajBtn">+ Dodaj kalkulator za usporedbu</button> ' +
+        '<button type="button" class="btn btn-outline btn-small" id="kalkUsporedbaFsBtn">⛶ Proširi na cijelu stranicu</button>' +
       '</div>' +
       '<div class="kalk-usporedba-grid" id="kalkUsporedbaGrid"></div>';
 
     var gridEl_ = wrap.querySelector('#kalkUsporedbaGrid');
     var dodajBtn_ = wrap.querySelector('#kalkUsporedbaDodajBtn');
+
+    // NOVO (3.10.2026., Sašin zahtjev — "napravi mogućnost da se može
+    // raširiti na cijelu stranicu"): prebacivanje CSS klase na istu karticu
+    // (position:fixed preko cijelog prozora). Iframeovi se NE premještaju u
+    // DOM-u niti ponovno učitavaju, pa učitani cjenici i uneseni podaci ostaju.
+    var fsBtn_ = wrap.querySelector('#kalkUsporedbaFsBtn');
+    function postaviFs_(uklj) {
+      wrap.classList.toggle('kalk-usporedba-fs', !!uklj);
+      document.body.classList.toggle('kalk-usporedba-fs-open', !!uklj);
+      fsBtn_.textContent = uklj ? '✕ Zatvori cijelu stranicu (Esc)' : '⛶ Proširi na cijelu stranicu';
+    }
+    fsBtn_.addEventListener('click', function() { postaviFs_(!wrap.classList.contains('kalk-usporedba-fs')); });
+    var escHandler_ = function(e) {
+      if (!document.body.contains(wrap)) { document.removeEventListener('keydown', escHandler_); document.body.classList.remove('kalk-usporedba-fs-open'); return; }
+      if (e.key === 'Escape' && wrap.classList.contains('kalk-usporedba-fs')) { postaviFs_(false); }
+    };
+    document.addEventListener('keydown', escHandler_);
 
     function azurirajDodajBtn_() {
       dodajBtn_.disabled = slotovi_.length >= MAX_SLOTS_;
@@ -5120,7 +5145,10 @@
       var jeGlavni = (idx === 0);
       var slotWrap = document.createElement('div');
       slotWrap.className = 'kalk-usporedba-slot';
-      var urlZaIframe = 'InTime_KalkulatorCijena.html' + (adminToken ? ('?kalk_admin=' + encodeURIComponent(adminToken)) : '') + (jeGlavni ? '' : '&kalk_uloga=pratilac');
+      var urlParams_ = [];
+      if (adminToken) { urlParams_.push('kalk_admin=' + encodeURIComponent(adminToken)); }
+      if (!jeGlavni) { urlParams_.push('kalk_uloga=pratilac'); }
+      var urlZaIframe = 'InTime_KalkulatorCijena.html' + (urlParams_.length ? ('?' + urlParams_.join('&')) : '');
       var naslovHtml = jeGlavni
         ? '<span style="color:#c0392b;font-weight:800;">Kalkulator 1 — GLAVNI (unosi se ovdje)</span>'
         : ('<span>Kalkulator ' + (idx + 1) + '</span>' + ' <button type="button" class="btn btn-outline btn-small kalk-usporedba-ukloni-btn">✕ Ukloni</button>');
