@@ -7195,7 +7195,18 @@
   // Povećanje Tess balončića (Jotform ne nudi postavku veličine). Dok je widget "zatvoren"
   // (mali element u kutu) povećava ga CSS-om; kad se chat otvori (velik prozor), vraća na 100 %.
   (function(){
-    var TESS_BALONCIC_SKALA_ = 1.4;   // 1.0 = Jotformova zadana veličina; veće = veći balončić
+    // 4.10.2026. (Sašin zahtjev — "još malo povećati da bude usklađen s veličinom kruga In Time
+    // preko puta"): umjesto fiksne skale (bila 1.4) skala se izračuna iz STVARNE veličine
+    // Jotformova balončića tako da on bude otprilike jednak promjeru In Time kruga
+    // (#mainBtn, 144 px), uz granice 1.4–2.4. Ako je i dalje premalen/prevelik, promijeni
+    // TESS_CILJ_PROMJER_ (px) ili granice.
+    var TESS_CILJ_PROMJER_ = 140;
+    var TESS_SKALA_MIN_ = 1.4, TESS_SKALA_MAX_ = 2.4;
+    function tessSkala_(el){
+      var baza = Math.min(el.offsetWidth, el.offsetHeight);
+      var skala = baza > 0 ? (TESS_CILJ_PROMJER_ / baza) : TESS_SKALA_MIN_;
+      return Math.max(TESS_SKALA_MIN_, Math.min(TESS_SKALA_MAX_, skala));
+    }
     function jeJotformWidget_(el){
       if(!el || el.nodeType !== 1 || el.parentNode !== document.body){ return false; }
       var oznaka = ((el.id || '') + ' ' + (el.className && el.className.baseVal === undefined ? el.className : '')).toLowerCase();
@@ -7209,7 +7220,7 @@
       var mali = el.offsetWidth > 0 && el.offsetWidth <= 360 && el.offsetHeight > 0 && el.offsetHeight <= 220;
       var lijevo = cs.left !== 'auto' && parseFloat(cs.left) < (window.innerWidth / 2);
       el.style.transformOrigin = (lijevo ? 'bottom left' : 'bottom right');
-      el.style.transform = mali ? ('scale(' + TESS_BALONCIC_SKALA_ + ')') : '';
+      el.style.transform = mali ? ('scale(' + tessSkala_(el).toFixed(2) + ')') : '';
     }
     function sve_(){ Array.prototype.forEach.call(document.body.children, primijeni_); }
     var obs = new MutationObserver(sve_);
