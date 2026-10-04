@@ -655,6 +655,17 @@
   .ecom-item p{margin:0;font-size:14px;color:#333;}
 
   /* CTA / PISMO NAMJERE */
+  /* ---- RUČNI UNOS KLIJENTA (brzi modul, 4.10.2026.) — otvara se iz InTime_Brzi.html s #rucno=<token>:
+     prikazuje se SAMO upitnik (bez naslovnice, galerija, widgeta); osoba koja unosi je unaprijed Saša Batinac. ---- */
+  #rucni-traka{display:none;position:sticky;top:0;z-index:9990;align-items:center;justify-content:space-between;gap:10px;padding:10px 14px;background:linear-gradient(120deg,#0d2230,#135450);color:#fff;font-weight:700;font-size:14px;}
+  #rucni-traka a{color:#fff;text-decoration:none;border:1.5px solid rgba(255,255,255,.6);border-radius:8px;padding:6px 12px;font-size:13px;white-space:nowrap;}
+  html.rucni-mod #rucni-traka{display:flex;}
+  html.rucni-mod .hero-banner, html.rucni-mod section:not(#rucni-sekcija), html.rucni-mod footer,
+  html.rucni-mod #mainBtn, html.rucni-mod #mainMenu, html.rucni-mod #kontaktMenu, html.rucni-mod #shareMenu,
+  html.rucni-mod .gorivo-fab, html.rucni-mod .gorivo-fab-panel, html.rucni-mod .cta-box,
+  html.rucni-mod #anketa-embed-wrap, html.rucni-mod #panel-odbijenica, html.rucni-mod .panel-close-btn{display:none !important;}
+  #rucni-potvrda-red{display:none;margin:14px 0 6px;padding:10px 12px;border:1.5px dashed #135450;border-radius:10px;background:#f2fbfa;font-size:13.5px;}
+  html.rucni-mod #rucni-potvrda-red{display:block;}
   .cta-box{
     background:
       linear-gradient(120deg, rgba(10,30,48,.78), rgba(19,84,80,.78)),
@@ -1467,6 +1478,9 @@
 </style>
 </head>
 <body>
+<script>(function(){try{if(/(^|[#&])rucno=/.test(location.hash)){document.documentElement.classList.add('rucni-mod');}}catch(e){}})();</script>
+<div id="rucni-traka"><span>⚡ Ručni unos klijenta (brzi modul)</span><a href="InTime_Brzi.html">← Natrag</a></div>
+
 
   <!-- HERO / BANNER -->
   <div class="hero-banner">
@@ -1789,7 +1803,7 @@
   </section>
 
   <!-- PISMO NAMJERE / CTA -->
-  <section class="alt">
+  <section class="alt" id="rucni-sekcija">
     <div class="wrap">
 
       <div class="cta-box" onclick="handleCtaBoxBackgroundClick(event)">
@@ -3016,12 +3030,14 @@
   // čekamo/čitamo odgovor) prema InTime_Code.gs (action: 'trackVisit'), koji
   // uvećava brojač u PropertiesService. Prikazuje se na admin stranici
   // (InTime_Admin.html). Ne blokira ništa na stranici, ne traži dopuštenja.
+  if (!document.documentElement.classList.contains('rucni-mod')) {
   fetch(GAS_WEB_APP_URL, {
-    method: 'POST',
-    mode: 'no-cors',
-    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-    body: JSON.stringify({ action: 'trackVisit' })
-  }).catch(function(){ /* ignoriramo eventualnu grešku — ne utječe na obrazac */ });
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ action: 'trackVisit' })
+    }).catch(function(){ /* ignoriramo eventualnu grešku — ne utječe na obrazac */ });
+  }
 
   // ---- DINAMIČKE DRIVE GALERIJE (PDF, slike, video) ----
   // Svaka dohvaća svoj popis datoteka s backenda (akcije listPdfGalerija/
@@ -6665,6 +6681,13 @@
     // forget" POST s mode:'no-cors' jer se odgovor nije čitao — sad se čita,
     // ali "fail-open" ostaje: ako sam poziv ne uspije, klijent svejedno vidi
     // zahvalu (bez broja), infrastrukturni problem ne smije blokirati potvrdu.
+    // Ručni unos (brzi modul): token iz URL-a (#rucno=...) ide uz upitnik, poslužitelj ga provjerava.
+    var _rucni = !!window.RUCNI_TOKEN_;
+    if (_rucni) {
+      payload.brzi_token = window.RUCNI_TOKEN_;
+      var _pcb = document.getElementById('rucni-posalji-potvrdu');
+      payload.brzi_potvrda_klijentu = (_pcb && _pcb.checked) ? 'Da' : 'Ne';
+    }
     var _submitBtnFinal = form.querySelector('button[type="submit"]');
     if (_submitBtnFinal) { _submitBtnFinal.disabled = true; _submitBtnFinal.textContent = 'Šaljem...'; }
     var _broj = '';
@@ -6676,14 +6699,25 @@
       });
       var _posaljiJson = await _posaljiResp.json();
       _broj = (_posaljiJson && _posaljiJson.broj) || '';
+      if (_rucni && _posaljiJson && _posaljiJson.code === 'auth') {
+        if (_submitBtnFinal) { _submitBtnFinal.disabled = false; _submitBtnFinal.textContent = 'Spremi klijenta'; }
+        alert('Sesija brzog modula je istekla. Vrati se u brzi modul, prijavi se PIN-om i ponovno otvori obrazac (ovdje upisani podaci nisu spremljeni).');
+        return false;
+      }
     } catch (posaljiErr) {
       _broj = '';
     }
 
+    if (_rucni && !_broj) {
+      // Ručni unos NE smije "tiho uspjeti" — Saša mora znati da spremanje nije potvrđeno.
+      if (_submitBtnFinal) { _submitBtnFinal.disabled = false; _submitBtnFinal.textContent = 'Spremi klijenta'; }
+      alert('Spremanje nije potvrđeno (nema odgovora poslužitelja ili je sesija istekla). Provjeri vezu i pokušaj ponovno — podaci u obrascu su sačuvani.');
+      return false;
+    }
     document.getElementById('panel-interes').classList.remove('active');
     document.getElementById('panel-odbijenica').classList.remove('active');
 
-    var msg = which === 'interes'
+    var msg = _rucni ? ('Klijent je spremljen (ručni unos) — broj ' + _broj + '. Nalazi se u kartici "Zainteresirani" u adminu.') : which === 'interes'
       ? 'Predali ste prodajni upitnik' + (_broj ? ' — broj ' + _broj : '') + '. Hvala na interesu! Naš prodajni predstavnik javit će Vam se u najkraćem mogućem roku radi dogovora oko prezentacije.'
       : 'Predali ste odbijenicu' + (_broj ? ' — broj ' + _broj : '') + '. Hvala Vam na odvojenom vremenu i povratnoj informaciji.';
     document.getElementById('confirm-text').textContent = msg;
@@ -7123,7 +7157,66 @@
 })();
 </script>
 
+  <script>
+  // ---- RUČNI UNOS (brzi modul): inicijalizacija ----
+  (function(){
+    if (!document.documentElement.classList.contains('rucni-mod')) { return; }
+    var m = location.hash.match(/rucno=([A-Za-z0-9\-]+)/);
+    window.RUCNI_TOKEN_ = m ? m[1] : '';
+    try { history.replaceState(null, '', location.pathname + location.search); } catch (e) {}
+    if (!window.RUCNI_TOKEN_) { alert('Nedostaje prijava — otvori ovaj obrazac iz brzog modula.'); location.href = 'InTime_Brzi.html'; return; }
+    function postavi(name, vr){ var el = document.querySelector('#panel-interes [name="' + name + '"]'); if (el) { el.value = vr; } }
+    postavi('unosnik_ime', 'Saša Batinac');
+    postavi('unosnik_telefon', '+385 91 6262 171');
+    postavi('unosnik_email', 'sasa.batinac@in-time.hr');
+    var forma = document.getElementById('panel-interes');
+    var gumb = forma.querySelector('button[type="submit"]');
+    if (gumb) {
+      gumb.textContent = 'Spremi klijenta';
+      var red = document.createElement('div');
+      red.id = 'rucni-potvrda-red';
+      red.innerHTML = '<label style="display:flex;gap:8px;align-items:flex-start;font-weight:600;"><input type="checkbox" id="rucni-posalji-potvrdu" style="margin-top:3px;"> <span>Pošalji klijentu potvrdu mailom (s poveznicom za naknadni ispravak podataka)<br><small style="font-weight:400;">Zadano isključeno — klijent neće dobiti mail dok ovo ne označiš.</small></span></label>';
+      gumb.parentNode.insertBefore(red, gumb);
+    }
+    var conf = document.getElementById('confirm-box');
+    if (conf) {
+      var natrag = document.createElement('a');
+      natrag.href = 'InTime_Brzi.html'; natrag.textContent = '← Natrag u brzi modul';
+      natrag.style.cssText = 'display:inline-block;margin-top:12px;padding:8px 14px;border-radius:8px;background:#135450;color:#fff;text-decoration:none;font-weight:700;';
+      conf.appendChild(natrag);
+    }
+    showPanel('interes');
+    setTimeout(function(){ window.scrollTo(0, 0); }, 150);
+  })();
+  </script>
   <!-- AI SAVJETNIK TESS (Jotform) — plutajući chat balončić -->
-  <script src='https://cdn.jotfor.ms/agent/embedjs/01a10344b1a070008b5b9101c3ddbf7f423b/embed.js'></script>
+  <script>if(!document.documentElement.classList.contains('rucni-mod')){var tessS_=document.createElement('script');tessS_.src='https://cdn.jotfor.ms/agent/embedjs/01a10344b1a070008b5b9101c3ddbf7f423b/embed.js';document.body.appendChild(tessS_);}</script>
+  <script>
+  // Povećanje Tess balončića (Jotform ne nudi postavku veličine). Dok je widget "zatvoren"
+  // (mali element u kutu) povećava ga CSS-om; kad se chat otvori (velik prozor), vraća na 100 %.
+  (function(){
+    var TESS_BALONCIC_SKALA_ = 1.4;   // 1.0 = Jotformova zadana veličina; veće = veći balončić
+    function jeJotformWidget_(el){
+      if(!el || el.nodeType !== 1 || el.parentNode !== document.body){ return false; }
+      var oznaka = ((el.id || '') + ' ' + (el.className && el.className.baseVal === undefined ? el.className : '')).toLowerCase();
+      var src = (el.tagName === 'IFRAME' ? (el.src || '') : '').toLowerCase();
+      return /jotform|jotfor\.ms|agent/.test(oznaka + ' ' + src) && !/^(gorivoFab|mainBtn|mainMenu|kontaktMenu|shareMenu)/.test(el.id || '');
+    }
+    function primijeni_(el){
+      if(!jeJotformWidget_(el)){ return; }
+      var cs = getComputedStyle(el);
+      if(cs.position !== 'fixed'){ return; }
+      var mali = el.offsetWidth > 0 && el.offsetWidth <= 360 && el.offsetHeight > 0 && el.offsetHeight <= 220;
+      var lijevo = cs.left !== 'auto' && parseFloat(cs.left) < (window.innerWidth / 2);
+      el.style.transformOrigin = (lijevo ? 'bottom left' : 'bottom right');
+      el.style.transform = mali ? ('scale(' + TESS_BALONCIC_SKALA_ + ')') : '';
+    }
+    function sve_(){ Array.prototype.forEach.call(document.body.children, primijeni_); }
+    var obs = new MutationObserver(sve_);
+    obs.observe(document.body, { childList: true, subtree: false, attributes: false });
+    window.addEventListener('resize', sve_);
+    setInterval(sve_, 1000);   // widget mijenja veličinu pri otvaranju/zatvaranju chata
+  })();
+  </script>
 </body>
 </html>

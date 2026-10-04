@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html lang="hr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<meta name="theme-color" content="#0d2230">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="In Time Brzi">
+<link rel="apple-touch-icon" href="https://i.imgur.com/VBHeTCW.png">
+<title>In Time — brzi pristup</title>
+<style>
+  :root{
+    --teal:#229891; --teal-dark:#135450; --navy:#0a1e30; --ink:#131313; --bg:#f3f7f7; --card:#ffffff;
+    --line:#dde6e5; --muted:#5b6664; --red:#c0392b; --ok:#1e8449; --amber:#b9770e;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;}
+  body{font-family:'Segoe UI',Roboto,Arial,sans-serif;background:var(--bg);color:var(--ink);font-size:16px;line-height:1.45;padding-bottom:calc(76px + env(safe-area-inset-bottom));}
+  [hidden]{display:none !important;}
+  body:has(#prijava:not([hidden])){padding-bottom:0;overflow:hidden;}
+  button{font-family:inherit;font-size:15px;font-weight:700;border:0;border-radius:12px;padding:12px 16px;cursor:pointer;background:var(--teal);color:#fff;}
+  button:active{transform:scale(.98);}
+  button:disabled{opacity:.55;}
+  button.sec{background:#fff;color:var(--teal-dark);border:1.5px solid var(--teal);}
+  button.sivo{background:#e8eeee;color:var(--ink);}
+  button.crv{background:var(--red);}
+  button.mali{padding:8px 12px;font-size:13.5px;border-radius:10px;}
+  input,select,textarea{width:100%;font-family:inherit;font-size:16px;padding:12px 13px;border:1.5px solid var(--line);border-radius:12px;background:#fff;color:var(--ink);}
+  textarea{min-height:90px;resize:vertical;}
+  label{display:block;font-size:13px;font-weight:700;margin:12px 0 5px;color:var(--muted);}
+  .poruka{margin:10px 0 0;font-size:14px;color:var(--muted);}
+  .poruka.err{color:var(--red);font-weight:700;}
+  .poruka.ok{color:var(--ok);font-weight:700;}
+
+  /* Prijava — isti izgled kao prijava u Admin (aurora pozadina, staklena kartica, hero slika) */
+  #prijava{min-height:100vh;min-height:100dvh;display:flex;align-items:center;justify-content:center;padding:18px 14px;position:relative;overflow:hidden;color:#fff;
+    background:radial-gradient(900px 600px at 15% -10%,#0e5f5a 0%,rgba(14,95,90,0) 60%),radial-gradient(700px 500px at 100% 110%,#0b3f6b 0%,rgba(11,63,107,0) 55%),linear-gradient(160deg,#04141a 0%,#071f2a 55%,#050d14 100%);}
+  #prijava::before,#prijava::after{content:"";position:absolute;border-radius:50%;filter:blur(60px);opacity:.45;pointer-events:none;animation:prijavaPlutaj 14s ease-in-out infinite alternate;}
+  #prijava::before{width:300px;height:300px;left:-110px;top:6%;background:#16c1b4;}
+  #prijava::after{width:280px;height:280px;right:-100px;bottom:4%;background:#1f7bd8;animation-delay:-6s;}
+  @keyframes prijavaPlutaj{from{transform:translate(0,0) scale(1);}to{transform:translate(34px,-26px) scale(1.15);}}
+  .prijava-kartica{position:relative;z-index:1;width:100%;max-width:430px;background:rgba(10,24,32,.72);border:1px solid rgba(120,220,210,.22);border-radius:22px;
+    box-shadow:0 30px 80px rgba(0,0,0,.6),0 0 0 1px rgba(255,255,255,.03) inset,0 0 60px rgba(34,152,145,.18);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);overflow:hidden;text-align:center;}
+  .prijava-hero{position:relative;line-height:0;background:#071f2a;}
+  .prijava-slika{display:block;width:100%;height:auto;margin:0;}
+  .prijava-hero::after{content:"";position:absolute;left:0;right:0;bottom:0;height:46%;background:linear-gradient(180deg,rgba(10,24,32,0) 0%,rgba(10,24,32,.92) 100%);}
+  .prijava-tijelo{padding:2px 18px 20px;margin-top:-14px;position:relative;z-index:2;}
+  .prijava-naslov{margin:0 0 4px;font-size:21px;font-weight:800;letter-spacing:.28em;text-transform:uppercase;color:#fff;text-shadow:0 0 22px rgba(34,200,190,.55);}
+  .prijava-podnaslov{margin:0 auto 14px;font-size:12.5px;color:#9fb8bf;}
+  .prijava-podnaslov::after{content:"";display:block;width:56px;height:3px;margin:11px auto 0;border-radius:3px;background:linear-gradient(90deg,#16c1b4,#1f7bd8);}
+  .pin-tocke{display:flex;justify-content:center;gap:12px;margin:2px 0 14px;height:18px;}
+  .pin-tocke span{width:15px;height:15px;border-radius:50%;border:2px solid rgba(160,230,225,.55);transition:background .12s,box-shadow .12s;}
+  .pin-tocke span.puna{background:#22c8bc;border-color:#22c8bc;box-shadow:0 0 14px rgba(34,200,188,.7);}
+  .tipkovnica{display:grid;grid-template-columns:repeat(3,68px);gap:10px;justify-content:center;}
+  .tipkovnica button{height:56px;width:68px;font-size:22px;border-radius:16px;padding:0;background:rgba(255,255,255,.07);color:#fff;border:1.5px solid rgba(160,230,225,.22);font-weight:700;transition:background .12s,border-color .12s;}
+  .tipkovnica button:active{background:rgba(34,200,188,.28);border-color:#22c8bc;transform:scale(.96);}
+  .tipkovnica button[data-k="ok"]{background:linear-gradient(135deg,#16c1b4 0%,#1b8f9a 50%,#1f6fd0 100%);border-color:transparent;box-shadow:0 8px 22px rgba(22,193,180,.35);}
+  .tipkovnica button.prazno{visibility:hidden;}
+  #prijava .poruka{color:#ff7b6e;min-height:22px;text-align:center;font-weight:700;font-size:13px;margin:10px 0 0;}
+  .prijava-podnozje{margin-top:8px;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:#587780;}
+  @media (max-height:700px){.tipkovnica{gap:8px;}.tipkovnica button{height:48px;font-size:20px;}.prijava-naslov{font-size:18px;}}
+
+  /* Aplikacija */
+  .zaglavlje{position:sticky;top:0;z-index:20;background:linear-gradient(120deg,#0d2230,#135450);color:#fff;padding:calc(10px + env(safe-area-inset-top)) 14px 10px;display:flex;align-items:center;gap:10px;}
+  .zaglavlje{background:linear-gradient(120deg,#04141a 0%,#08333a 60%,#0e5f5a 100%);border-bottom:1px solid rgba(120,220,210,.25);box-shadow:0 4px 18px rgba(0,0,0,.25);}
+  .banner{display:block;width:100%;height:auto;border-radius:14px;margin:0 0 14px;box-shadow:0 6px 20px rgba(4,20,26,.28);}
+  .zaglavlje img{width:34px;height:34px;border-radius:50%;object-fit:cover;background:#fff;}
+  .zaglavlje h1{flex:1;margin:0;font-size:17px;}
+  .zaglavlje button{background:rgba(255,255,255,.16);padding:8px 11px;font-size:18px;border-radius:10px;}
+  main{padding:14px 14px 10px;max-width:640px;margin:0 auto;}
+  .ekran{display:none;}
+  .ekran.aktivan{display:block;}
+  h2{font-size:17px;margin:18px 0 8px;color:var(--teal-dark);}
+  .kartica{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin:0 0 12px;box-shadow:0 1px 3px rgba(0,0,0,.05);}
+  .upozorenje{background:#fff7e6;border:1.5px solid #f0c36d;color:#7a5200;border-radius:12px;padding:10px 12px;margin:0 0 12px;font-size:14px;}
+
+  .brojke{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .broj{background:var(--card);border:1px solid var(--line);border-left:5px solid var(--teal);border-radius:12px;padding:12px;}
+  .broj b{display:block;font-size:26px;line-height:1.1;}
+  .broj span{font-size:12.5px;color:var(--muted);}
+  .broj.crv{border-left-color:var(--red);}
+  .broj.zut{border-left-color:#e0a21a;}
+  .broj.zel{border-left-color:var(--ok);}
+
+  .stavka{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin:0 0 10px;}
+  .stavka .naslov{font-weight:800;font-size:16px;}
+  .stavka .pod{font-size:13.5px;color:var(--muted);margin-top:2px;}
+  .stavka .akcije{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;}
+  .stavka a.gumb{display:inline-block;text-decoration:none;background:var(--teal);color:#fff;font-weight:700;border-radius:10px;padding:8px 13px;font-size:14px;}
+  .stavka a.gumb.sec{background:#fff;color:var(--teal-dark);border:1.5px solid var(--teal);}
+  .oznaka{display:inline-block;font-size:11.5px;font-weight:800;border-radius:20px;padding:2px 9px;background:#e4f3f2;color:var(--teal-dark);margin-left:6px;vertical-align:middle;}
+  .oznaka.rucni{background:#fde9c8;color:#7a5200;}
+  .oznaka.faza{background:#eef0f7;color:#33407a;}
+  .zakasnjelo{border-left:5px solid var(--red);}
+  .biljeska-tekst{white-space:pre-wrap;margin-top:6px;}
+
+  .veliki-gumb{width:100%;padding:18px;font-size:18px;border-radius:16px;}
+
+  /* Donja navigacija */
+  nav{position:fixed;left:0;right:0;bottom:0;z-index:30;background:#fff;border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(5,1fr);padding-bottom:env(safe-area-inset-bottom);}
+  nav button{background:none;color:var(--muted);border-radius:0;padding:9px 2px 7px;font-size:11.5px;font-weight:700;display:flex;flex-direction:column;align-items:center;gap:2px;}
+  nav button .ik{font-size:21px;line-height:1;}
+  nav button.aktivan{color:var(--teal-dark);box-shadow:inset 0 3px 0 var(--teal);}
+  nav button .bedz{position:absolute;margin:-4px 0 0 18px;background:var(--red);color:#fff;border-radius:10px;font-size:10.5px;padding:1px 6px;}
+
+  /* Donji list (bottom sheet) */
+  .zavjesa{position:fixed;inset:0;background:rgba(5,15,22,.55);z-index:50;display:flex;align-items:flex-end;justify-content:center;}
+  .list{background:#fff;width:100%;max-width:640px;max-height:88vh;overflow:auto;border-radius:18px 18px 0 0;padding:16px 16px calc(18px + env(safe-area-inset-bottom));}
+  .list h3{margin:0 0 4px;font-size:18px;}
+  .list .red{display:flex;gap:8px;margin-top:12px;}
+  .list .red button{flex:1;}
+  .seg{display:flex;gap:8px;margin:10px 0 2px;}
+  .seg button{flex:1;background:#e8eeee;color:var(--ink);}
+  .seg button.on{background:var(--teal);color:#fff;}
+  .cip{display:flex;align-items:center;gap:8px;background:#e4f3f2;color:var(--teal-dark);border-radius:20px;padding:6px 8px 6px 12px;font-weight:800;font-size:14px;margin-top:6px;}
+  .cip button{background:none;color:var(--teal-dark);padding:0 6px;font-size:18px;margin-left:auto;}
+  .izbor{border:1px solid var(--line);border-radius:12px;margin-top:6px;overflow:hidden;}
+  .izbor button{display:block;width:100%;text-align:left;background:#fff;color:var(--ink);border-radius:0;border-bottom:1px solid var(--line);font-weight:600;padding:10px 12px;}
+  .izbor button small{display:block;color:var(--muted);font-weight:400;}
+  .oznaka.poziv{background:#dff3e6;color:#1e6b3a;}
+  .oznaka.mail{background:#eef0f7;color:#33407a;}
+  .redak2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .ocj{display:inline-block;min-width:44px;text-align:center;font-weight:800;border-radius:10px;padding:4px 9px;color:#fff;background:#8a9694;margin-left:6px;}
+  .ocj.dobra{background:var(--ok);} .ocj.srednja{background:#d68910;} .ocj.losa{background:var(--red);}
+  .katblok{margin:12px 0 4px;font-weight:800;color:var(--teal-dark);display:flex;justify-content:space-between;gap:8px;}
+  .pitanje{border-top:1px solid var(--line);padding:7px 0;font-size:14.5px;}
+  .pitanje .o{font-weight:800;float:right;margin-left:10px;}
+  .pitanje .k{color:var(--muted);font-size:13.5px;margin-top:3px;font-style:italic;}
+  .ulaz{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:0 0 6px;}
+  .ulaz button{display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;background:#fff;color:var(--ink);border:1px solid var(--line);border-left:5px solid var(--teal);border-radius:12px;padding:12px;}
+  .ulaz button b{font-size:24px;line-height:1.1;}
+  .ulaz button span{font-size:12.5px;color:var(--muted);font-weight:600;}
+  .ulaz button.crv{border-left-color:var(--red);}
+  .mala-nap{font-size:12.5px;color:var(--muted);margin:4px 0 0;}
+</style>
+</head>
+<body>
+
+<!-- PRIJAVA PIN-om -->
+<section id="prijava" hidden>
+  <div class="prijava-kartica">
+    <div class="prijava-hero"><img class="prijava-slika" src="https://i.imgur.com/czZmH1C.png" alt="In Time — FedEx"></div>
+    <div class="prijava-tijelo">
+      <h1 class="prijava-naslov">Brzi pristup</h1>
+      <p class="prijava-podnaslov">In Time d.o.o. · mobilni admin · upiši PIN</p>
+      <div class="pin-tocke" id="pinTocke"></div>
+      <div class="tipkovnica" id="tipkovnica"></div>
+      <div class="poruka" id="prijavaPoruka"></div>
+      <div class="prijava-podnozje">In Time d.o.o. · interni alat</div>
+    </div>
+  </div>
+</section>
+
+<!-- APLIKACIJA -->
+<div id="app" hidden>
+  <div class="zaglavlje">
+    <img src="https://i.imgur.com/VBHeTCW.png" alt="">
+    <h1 id="zagNaslov">Početna</h1>
+    <button type="button" id="gumbPostavke" aria-label="Postavke">⚙</button>
+  </div>
+  <main>
+
+    <!-- POČETNA -->
+    <section class="ekran aktivan" id="ekran-pocetna">
+      <img class="banner" src="https://i.imgur.com/soFb4wc.png" alt="In Time">
+      <div class="upozorenje" id="pinUpozorenje" hidden>Još koristiš <b>zadani PIN</b>. Promijeni ga u postavkama (⚙).</div>
+      <div class="brojke" id="brojke"></div>
+      <div class="ulaz" style="margin-top:10px;">
+        <button type="button" id="gumbAnkete"><b id="brAnkete">–</b><span>📊 Ankete kvalitete</span></button>
+        <button type="button" class="crv" id="gumbOdbijenice"><b id="brOdbijenice">–</b><span>🚫 Nisu zainteresirani</span></button>
+      </div>
+      <h2>⏰ Podsjetnici za danas i zakašnjeli</h2>
+      <div id="dospjeli"></div>
+      <h2 id="klijentiNaslov">🆕 Zadnji klijenti</h2>
+      <div id="klijentiFilter" class="seg" style="flex-wrap:wrap;" hidden></div>
+      <div id="zadnji"></div>
+      <button type="button" class="sec" style="width:100%;margin-top:6px;" id="gumbSviKlijenti">Prikaži sve klijente</button>
+      <button type="button" class="sec" style="width:100%;margin-top:6px;" id="gumbOsvjezi">↻ Osvježi</button>
+    </section>
+
+    <!-- KLIJENT -->
+    <section class="ekran" id="ekran-klijent">
+      <div class="kartica">
+        <b>Ručni unos klijenta</b>
+        <p style="margin:6px 0 12px;color:var(--muted);font-size:14.5px;">Isti upitnik kao na web stranici. Dio "osoba koja unosi" je unaprijed popunjen (Saša Batinac). Klijent ulazi u karticu <b>Zainteresirani</b> s oznakom <i>Ručni unos</i>.</p>
+        <button type="button" class="veliki-gumb" id="gumbNoviKlijent">➕ Unesi klijenta</button>
+      </div>
+      <div class="kartica" style="opacity:.75;">
+        <b>✉ Pismo namjere</b>
+        <p style="margin:6px 0 0;color:var(--muted);font-size:14.5px;">Slanje pisma namjere odavde — dolazi kad ga napravimo.</p>
+      </div>
+    </section>
+
+    <!-- IMENIK -->
+    <section class="ekran" id="ekran-imenik">
+      <div class="kartica">
+        <b>Novi kontakt u telefonski imenik</b>
+        <p style="margin:4px 0 0;color:var(--muted);font-size:13.5px;">Sprema se u bazu imenika (oznaka <i>Ručni unos</i>) i odmah u Google Contacts — na mobitelu se pojavi ako je prijavljen istim Google računom.</p>
+        <label for="imIme">Ime i prezime *</label><input id="imIme" type="text" autocomplete="off">
+        <label for="imTvrtka">Tvrtka</label><input id="imTvrtka" type="text" autocomplete="off">
+        <label for="imTel">Telefon *</label><input id="imTel" type="tel" inputmode="tel" autocomplete="off">
+        <label for="imEmail">E-mail</label><input id="imEmail" type="email" inputmode="email" autocomplete="off">
+        <label for="imNap">Napomena</label><textarea id="imNap" style="min-height:70px;"></textarea>
+        <button type="button" class="veliki-gumb" style="margin-top:14px;" id="gumbImenikSpremi">💾 Spremi kontakt</button>
+        <div class="poruka" id="imPoruka"></div>
+      </div>
+    </section>
+
+    <!-- TRAŽI -->
+    <section class="ekran" id="ekran-trazi">
+      <input id="trQ" type="search" placeholder="Ime, tvrtka, OIB, grad ili telefon…" autocomplete="off">
+      <div class="poruka" id="trPoruka"></div>
+      <div id="trKlijenti"></div>
+      <div id="trKontakti"></div>
+    </section>
+
+    <!-- ANKETE KVALITETE -->
+    <section class="ekran" id="ekran-ankete">
+      <button type="button" class="mali sec" data-ekran-natrag="pocetna">← Natrag</button>
+      <div class="poruka" id="ankSazetak"></div>
+      <div id="ankLista"></div>
+    </section>
+
+    <!-- NISU ZAINTERESIRANI (ODBIJENICE) -->
+    <section class="ekran" id="ekran-odbijenice">
+      <button type="button" class="mali sec" data-ekran-natrag="pocetna">← Natrag</button>
+      <div class="poruka" id="odbSazetak"></div>
+      <div id="odbLista"></div>
+    </section>
+
+    <!-- BILJEŠKE -->
+    <section class="ekran" id="ekran-biljeske">
+      <button type="button" class="veliki-gumb" id="gumbNoviPoziv">📞 Podsjetnik na poziv</button>
+      <button type="button" class="sec" style="width:100%;margin-top:8px;" id="gumbNovaBiljeska">📝 Nova bilješka / podsjetnik</button>
+      <h2>Otvoreno</h2>
+      <div id="biljOtvorene"></div>
+      <h2>Riješeno</h2>
+      <div id="biljRijesene"></div>
+    </section>
+  </main>
+
+  <nav>
+    <button type="button" data-ekran="pocetna" class="aktivan"><span class="ik">🏠</span>Početna</button>
+    <button type="button" data-ekran="klijent"><span class="ik">➕</span>Klijent</button>
+    <button type="button" data-ekran="imenik"><span class="ik">📒</span>Imenik</button>
+    <button type="button" data-ekran="trazi"><span class="ik">🔎</span>Traži</button>
+    <button type="button" data-ekran="biljeske"><span class="ik">⏰</span>Podsjetnici<span class="bedz" id="bedzBilj" hidden></span></button>
+  </nav>
+</div>
+
+<div id="sloj"></div>
+
+<script>
+(function(){
+  var GAS_URL = "https://script.google.com/macros/s/AKfycbz73zkx72GhrDZ-t3CamF5wuz-9V7Uxe5z9IkFxHA8F5FBlrIlc7zMUd4_EHTILD9FTAw/exec";
+  var PISMO_URL = "InTime_PismoNamjere.html";
+  var TOKEN_KLJUC = "intime_brzi_token";
+  var token = '';
+  try { token = localStorage.getItem(TOKEN_KLJUC) || ''; } catch (e) { token = ''; }
+
+  function $(id){ return document.getElementById(id); }
+  function esc(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+  function telLink(t){ return String(t || '').split(',')[0].replace(/[^\d+]/g, ''); }
+
+  function api(payload){
+    return fetch(GAS_URL, { method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body: JSON.stringify(payload) })
+      .then(function(r){ return r.json(); })
+      .then(function(res){
+        if (res && res.code === 'auth') { odjava(true); throw new Error('auth'); }
+        return res;
+      });
+  }
+  function odjava(istekla){
+    token = '';
+    try { localStorage.removeItem(TOKEN_KLJUC); } catch (e) {}
+    $('app').hidden = true; zatvoriSloj();
+    pokaziPrijavu(istekla ? 'Sesija je istekla — upiši PIN.' : '');
+  }
+
+  // ---------- PRIJAVA ----------
+  var pin = '';
+  function nacrtajTocke(){
+    var h = ''; for (var i = 0; i < Math.max(4, pin.length); i++) { h += '<span class="' + (i < pin.length ? 'puna' : '') + '"></span>'; }
+    $('pinTocke').innerHTML = h;
+  }
+  function izgradiTipkovnicu(){
+    var t = $('tipkovnica'); if (t.children.length) { return; }
+    var h = '';
+    ['1','2','3','4','5','6','7','8','9'].forEach(function(n){ h += '<button type="button" data-k="' + n + '">' + n + '</button>'; });
+    h += '<button type="button" data-k="del">⌫</button><button type="button" data-k="0">0</button><button type="button" data-k="ok">✓</button>';
+    t.innerHTML = h;
+    t.addEventListener('click', function(ev){
+      var b = ev.target.closest('button'); if (!b) { return; }
+      var k = b.getAttribute('data-k');
+      if (k === 'del') { pin = pin.slice(0, -1); }
+      else if (k === 'ok') { posaljiPin(); return; }
+      else if (pin.length < 8) { pin += k; }
+      $('prijavaPoruka').textContent = '';
+      nacrtajTocke();
+      if (pin.length === 4 && k !== 'del') { setTimeout(function(){ if (pin.length === 4) { posaljiPin(); } }, 250); }
+    });
+  }
+  var saljePin = false;
+  function posaljiPin(){
+    if (saljePin || pin.length < 4) { return; }
+    saljePin = true; $('prijavaPoruka').textContent = 'Provjera…';
+    api({ action:'brziLogin', pin: pin }).then(function(res){
+      saljePin = false;
+      if (res.status === 'ok') {
+        token = res.token; try { localStorage.setItem(TOKEN_KLJUC, token); } catch (e) {}
+        pin = ''; nacrtajTocke(); $('prijavaPoruka').textContent = '';
+        pokaziApp();
+      } else {
+        // Ako je PIN dulji od 4 znamenke, korisnik ga je možda tek počeo upisivati — poruku prikaži tek na ✓ ili 4. znamenci.
+        $('prijavaPoruka').textContent = res.message || 'Prijava nije uspjela.';
+        pin = ''; nacrtajTocke();
+      }
+    }).catch(function(e){ saljePin = false; if (e && e.message === 'auth') { return; } $('prijavaPoruka').textContent = 'Nema veze s poslužiteljem.'; });
+  }
+  function pokaziPrijavu(poruka){
+    $('app').hidden = true; $('prijava').hidden = false;
+    pin = ''; izgradiTipkovnicu(); nacrtajTocke();
+    $('prijavaPoruka').textContent = poruka || '';
+  }
+
+  // ---------- NAVIGACIJA ----------
+  var NASLOVI = { pocetna:'Početna', klijent:'Klijent', imenik:'Imenik', trazi:'Traži', biljeske:'Podsjetnici', ankete:'Ankete kvalitete', odbijenice:'Nisu zainteresirani' };
+  function idiNa(ekran){
+    Array.prototype.forEach.call(document.querySelectorAll('.ekran'), function(e){ e.classList.toggle('aktivan', e.id === 'ekran-' + ekran); });
+    var navEkran = (ekran === 'ankete' || ekran === 'odbijenice') ? 'pocetna' : ekran;
+    Array.prototype.forEach.call(document.querySelectorAll('nav button'), function(b){ b.classList.toggle('aktivan', b.getAttribute('data-ekran') === navEkran); });
+    $('zagNaslov').textContent = NASLOVI[ekran] || '';
+    window.scrollTo(0, 0);
+    if (ekran === 'pocetna') { ucitajPregled(); }
+    if (ekran === 'biljeske') { ucitajBiljeske(); }
+    if (ekran === 'ankete') { ucitajAnkete(); }
+    if (ekran === 'odbijenice') { ucitajOdbijenice(); }
+    if (ekran === 'trazi') { setTimeout(function(){ $('trQ').focus(); }, 50); }
+  }
+  document.querySelector('nav').addEventListener('click', function(ev){
+    var b = ev.target.closest('button'); if (!b) { return; }
+    idiNa(b.getAttribute('data-ekran'));
+  });
+
+  function pokaziApp(){
+    $('prijava').hidden = true; $('app').hidden = false;
+    idiNa('pocetna');
+  }
+
+  // ---------- POČETNA ----------
+  function stavkaKlijenta(u){
+    var h = '<div class="stavka" data-row="' + u.rowIndex + '"><div class="naslov">' + esc(u.naziv || '(bez naziva)') +
+      (u.rucni ? '<span class="oznaka rucni">Ručni unos</span>' : '') + '<span class="oznaka faza">' + esc(u.faza) + '</span></div>' +
+      '<div class="pod">' + esc([u.kontakt, u.grad, u.oib ? 'OIB ' + u.oib : ''].filter(Boolean).join(' · ')) + '</div>' +
+      '<div class="pod">' + esc(u.datum) + '</div><div class="akcije">';
+    var t = telLink(u.telefon);
+    if (t) { h += '<a class="gumb" href="tel:' + esc(t) + '">📞 Nazovi</a>'; }
+    if (u.email) { h += '<a class="gumb sec" href="mailto:' + esc(u.email) + '">✉ Mail</a>'; }
+    h += '<button type="button" class="mali sec" data-biljeska="klijent" data-ref="' + u.rowIndex + '" data-naziv="' + esc(u.naziv) + '" data-tel="' + esc(u.telefon || '') + '">⏰ Podsjetnik</button></div></div>';
+    return h;
+  }
+  function ucitajPregled(){
+    api({ action:'brziPregled', token: token }).then(function(res){
+      if (res.status !== 'ok') { return; }
+      var b = res.brojke;
+      $('brojke').innerHTML =
+        '<div class="broj"><b>' + b.zainteresirani + '</b><span>Zainteresirani</span></div>' +
+        '<div class="broj zut"><b>' + b.naCekanju + '</b><span>Ponude čekaju odgovor</span></div>' +
+        '<div class="broj crv"><b>' + b.istekle + '</b><span>Istekle ponude</span></div>' +
+        '<div class="broj zel"><b>' + b.klijenti + '</b><span>Klijenti u sustavu</span></div>' +
+        '<div class="broj"><b>' + b.ponude + '</b><span>Ponude ukupno</span></div>' +
+        '<div class="broj"><b>' + res.kontakata + '</b><span>Kontakata u imeniku</span></div>';
+      $('brAnkete').textContent = (b.ankete != null) ? b.ankete : '–'; $('brOdbijenice').textContent = (b.odbijenice != null) ? b.odbijenice : '–';
+      $('pinUpozorenje').hidden = !res.pinZadani;
+      $('dospjeli').innerHTML = res.dospjeli.length ? res.dospjeli.map(kartaBiljeske).join('') : '<div class="poruka">Nema podsjetnika za danas.</div>';
+      if (!sviMod) $('zadnji').innerHTML = res.zadnji.length ? res.zadnji.map(stavkaKlijenta).join('') : '<div class="poruka">Još nema klijenata.</div>';
+      var bedz = $('bedzBilj');
+      bedz.hidden = !res.dospjeli.length; bedz.textContent = res.dospjeli.length;
+    }).catch(function(){});
+  }
+  // "Prikaži sve klijente": cijeli popis s filterom po fazi
+  var sviMod = false, sviPodaci = [], sviFilter = 'svi';
+  var FILTERI = [['svi', 'Svi'], ['interes', 'Zainteresirani'], ['ponuda', 'Ponude'], ['klijent', 'Klijenti'], ['arhiva', 'Arhiva'], ['rucni', 'Ručni unos']];
+  function pripadaFilteru(u, f){
+    if (f === 'svi') { return true; }
+    if (f === 'rucni') { return !!u.rucni; }
+    if (f === 'ponuda') { return String(u.fazaKljuc).indexOf('ponuda') === 0; }
+    return u.fazaKljuc === f;
+  }
+  function iscrtajSve(){
+    var l = sviPodaci.filter(function(u){ return pripadaFilteru(u, sviFilter); });
+    $('klijentiFilter').innerHTML = FILTERI.map(function(f){
+      var n = sviPodaci.filter(function(u){ return pripadaFilteru(u, f[0]); }).length;
+      return '<button type="button" class="mali' + (f[0] === sviFilter ? ' on' : '') + '" data-kf="' + f[0] + '" style="flex:0 0 auto;">' + f[1] + ' (' + n + ')</button>';
+    }).join('');
+    $('zadnji').innerHTML = l.length ? l.map(stavkaKlijenta).join('') : '<div class="poruka">Nema klijenata u ovom prikazu.</div>';
+  }
+  $('klijentiFilter').addEventListener('click', function(ev){
+    var b = ev.target.closest('[data-kf]'); if (!b) { return; }
+    sviFilter = b.getAttribute('data-kf'); iscrtajSve();
+  });
+  function postaviSviMod(uklj){
+    sviMod = uklj;
+    $('klijentiFilter').hidden = !uklj;
+    $('klijentiNaslov').textContent = uklj ? '👥 Svi klijenti' : '🆕 Zadnji klijenti';
+    $('gumbSviKlijenti').textContent = uklj ? 'Prikaži samo zadnjih 5' : 'Prikaži sve klijente';
+  }
+  $('gumbSviKlijenti').addEventListener('click', function(){
+    if (sviMod) { postaviSviMod(false); ucitajPregled(); return; }
+    var gumb = this; gumb.disabled = true; $('zadnji').innerHTML = '<div class="poruka">Učitavam…</div>';
+    api({ action:'brziKlijentiLista', token: token }).then(function(res){
+      gumb.disabled = false;
+      if (res.status !== 'ok') { $('zadnji').innerHTML = '<div class="poruka err">' + esc(res.message || 'Učitavanje nije uspjelo.') + '</div>'; return; }
+      sviPodaci = res.klijenti; sviFilter = 'svi'; postaviSviMod(true); iscrtajSve();
+    }).catch(function(e){ gumb.disabled = false; if (e && e.message === 'auth') { return; } $('zadnji').innerHTML = '<div class="poruka err">Nema veze s poslužiteljem.</div>'; });
+  });
+  $('gumbOsvjezi').addEventListener('click', function(){
+    if (sviMod) { postaviSviMod(false); }
+    ucitajPregled();
+  });
+
+  // ---------- KLIJENT ----------
+  $('gumbNoviKlijent').addEventListener('click', function(){
+    location.href = PISMO_URL + '#rucno=' + encodeURIComponent(token);
+  });
+
+  // ---------- IMENIK ----------
+  $('gumbImenikSpremi').addEventListener('click', function(){
+    var gumb = this, por = $('imPoruka');
+    var ime = $('imIme').value.trim(), tel = $('imTel').value.trim();
+    por.className = 'poruka';
+    if (!ime || !tel) { por.className = 'poruka err'; por.textContent = 'Ime i telefon su obavezni.'; return; }
+    gumb.disabled = true; por.textContent = 'Spremam…';
+    api({ action:'brziImenikUnos', token: token, ime: ime, tvrtka: $('imTvrtka').value, telefon: tel, email: $('imEmail').value, napomena: $('imNap').value }).then(function(res){
+      gumb.disabled = false;
+      if (res.status === 'ok') {
+        por.className = 'poruka ok';
+        por.textContent = res.googleOk ? '✓ Spremljeno u imenik i u Google Contacts.' : '✓ Spremljeno u imenik. ⚠ Google Contacts: ' + (res.googlePoruka || 'prijenos nije uspio') ;
+        ['imIme','imTvrtka','imTel','imEmail','imNap'].forEach(function(id){ $(id).value = ''; });
+      } else { por.className = 'poruka err'; por.textContent = res.message || 'Spremanje nije uspjelo.'; }
+    }).catch(function(e){ gumb.disabled = false; if (e && e.message === 'auth') { return; } por.className = 'poruka err'; por.textContent = 'Nema veze s poslužiteljem.'; });
+  });
+
+  // ---------- TRAŽI ----------
+  var trTimer = null, trZadnji = '';
+  $('trQ').addEventListener('input', function(){
+    clearTimeout(trTimer);
+    var q = this.value.trim();
+    if (q.length < 2) { $('trKlijenti').innerHTML = ''; $('trKontakti').innerHTML = ''; $('trPoruka').textContent = q ? 'Upiši barem 2 znaka.' : ''; return; }
+    trTimer = setTimeout(function(){ trazi(q); }, 350);
+  });
+  function trazi(q){
+    trZadnji = q; $('trPoruka').textContent = 'Tražim…';
+    api({ action:'brziPretraga', token: token, q: q }).then(function(res){
+      if (q !== trZadnji || res.status !== 'ok') { return; }
+      $('trPoruka').textContent = (res.klijenti.length || res.kontakti.length) ? '' : 'Nema rezultata.';
+      $('trKlijenti').innerHTML = res.klijenti.length ? '<h2>Klijenti</h2>' + res.klijenti.map(stavkaKlijenta).join('') : '';
+      $('trKontakti').innerHTML = res.kontakti.length ? '<h2>Imenik</h2>' + res.kontakti.map(function(k){
+        var t = telLink(k.telefoni), mail = String(k.emailovi || '').split(',')[0].trim();
+        return '<div class="stavka"><div class="naslov">' + esc(k.ime) + '</div><div class="pod">' + esc([k.tvrtka, k.telefoni, k.emailovi].filter(Boolean).join(' · ')) + '</div>' +
+          (k.napomena ? '<div class="pod">' + esc(k.napomena) + '</div>' : '') +
+          '<div class="akcije">' + (t ? '<a class="gumb" href="tel:' + esc(t) + '">📞 Nazovi</a>' : '') + (mail ? '<a class="gumb sec" href="mailto:' + esc(mail) + '">✉ Mail</a>' : '') +
+          '<button type="button" class="mali sec" data-biljeska="kontakt" data-ref="imenik-' + k.rowIndex + '" data-naziv="' + esc(k.ime) + '" data-tel="' + esc(k.telefoni || '') + '">⏰ Podsjetnik</button></div></div>';
+      }).join('') : '';
+    }).catch(function(e){ if (e && e.message === 'auth') { return; } $('trPoruka').textContent = 'Nema veze s poslužiteljem.'; });
+  }
+
+  // ---------- ANKETE KVALITETE i NISU ZAINTERESIRANI ----------
+  function ocjKlasa(p){ return p == null ? '' : (p >= 8 ? 'dobra' : (p >= 6 ? 'srednja' : 'losa')); }
+  function ocjOznaka(p){ return '<span class="ocj ' + ocjKlasa(p) + '">' + (p == null ? '–' : String(p).replace('.', ',')) + '</span>'; }
+  $('gumbAnkete').addEventListener('click', function(){ idiNa('ankete'); });
+  $('gumbOdbijenice').addEventListener('click', function(){ idiNa('odbijenice'); });
+  document.addEventListener('click', function(ev){
+    var n = ev.target.closest('[data-ekran-natrag]'); if (n) { idiNa(n.getAttribute('data-ekran-natrag')); }
+  });
+
+  function ucitajAnkete(){
+    $('ankLista').innerHTML = '<div class="poruka">Učitavam…</div>';
+    api({ action:'brziAnketeLista', token: token }).then(function(res){
+      if (res.status !== 'ok') { $('ankLista').innerHTML = '<div class="poruka err">' + esc(res.message || 'Učitavanje nije uspjelo.') + '</div>'; return; }
+      $('ankSazetak').innerHTML = res.ukupno ? ('<b>' + res.ukupno + '</b> ispunjenih anketa · prosječna ocjena ' + ocjOznaka(res.prosjek) + ' <span style="color:var(--muted);">od 10</span>') : '';
+      $('ankLista').innerHTML = res.ankete.length ? res.ankete.map(function(a){
+        var t = telLink(a.telefon);
+        return '<div class="stavka"><div class="naslov">' + esc(a.naziv || '(bez naziva)') + ocjOznaka(a.prosjek) + '</div>' +
+          '<div class="pod">' + esc([a.osoba, a.broj].filter(Boolean).join(' · ')) + '</div><div class="pod">' + esc(a.datum) + '</div>' +
+          '<div class="akcije"><button type="button" class="mali" data-anketa="' + a.rowIndex + '">📋 Odgovori</button>' +
+          (t ? '<a class="gumb" href="tel:' + esc(t) + '">📞 Nazovi</a>' : '') +
+          (a.email ? '<a class="gumb sec" href="mailto:' + esc(a.email) + '">✉ Mail</a>' : '') +
+          '<button type="button" class="mali sec" data-biljeska="klijent" data-ref="" data-naziv="' + esc(a.naziv) + '" data-tel="' + esc(a.telefon || '') + '">⏰ Podsjetnik</button></div></div>';
+      }).join('') : '<div class="poruka">Još nema ispunjenih anketa.</div>';
+    }).catch(function(e){ if (e && e.message === 'auth') { return; } $('ankLista').innerHTML = '<div class="poruka err">Nema veze s poslužiteljem.</div>'; });
+  }
+
+  document.addEventListener('click', function(ev){
+    var b = ev.target.closest('[data-anketa]'); if (!b) { return; }
+    var ri = b.getAttribute('data-anketa');
+    $('sloj').innerHTML = '<div class="zavjesa" id="zav"><div class="list"><h3>📋 Anketa</h3><div class="poruka">Učitavam…</div></div></div>';
+    $('zav').addEventListener('click', function(e2){ if (e2.target.id === 'zav' || e2.target.id === 'aZatvori') { zatvoriSloj(); } });
+    api({ action:'brziAnketaDetalj', token: token, rowIndex: ri }).then(function(a){
+      if (a.status !== 'ok') { $('sloj').querySelector('.list').innerHTML = '<h3>📋 Anketa</h3><div class="poruka err">' + esc(a.message || 'Nije uspjelo.') + '</div><div class="red"><button type="button" class="sivo" id="aZatvori">Zatvori</button></div>'; return; }
+      var h = '<h3>' + esc(a.naziv || 'Anketa') + ocjOznaka(a.prosjek) + '</h3>' +
+        '<div class="pod" style="color:var(--muted);font-size:13.5px;">' + esc([a.osoba, a.telefon, a.email].filter(Boolean).join(' · ')) + '</div>' +
+        '<div class="pod" style="color:var(--muted);font-size:13.5px;">' + esc([a.broj, a.datum].filter(Boolean).join(' · ')) + '</div>';
+      a.kategorije.forEach(function(k){
+        if (!k.pitanja.length) { return; }
+        h += '<div class="katblok"><span>' + esc(k.naziv) + '</span>' + ocjOznaka(k.prosjek) + '</div>';
+        k.pitanja.forEach(function(p){
+          h += '<div class="pitanje"><span class="o">' + esc(p.ocjena || '–') + '</span>' + esc(p.pitanje) + (p.komentar ? '<div class="k">„' + esc(p.komentar) + '“</div>' : '') + '</div>';
+        });
+      });
+      [['Najveća prednost suradnje', a.prednost], ['Što prvo poboljšati', a.poboljsati], ['Dodatni komentar', a.komentar]].forEach(function(x){
+        if (x[1]) { h += '<div class="katblok"><span>' + x[0] + '</span></div><div class="biljeska-tekst">' + esc(x[1]) + '</div>'; }
+      });
+      h += '<div class="red"><button type="button" class="sivo" id="aZatvori">Zatvori</button></div>';
+      $('sloj').querySelector('.list').innerHTML = h;
+    }).catch(function(e){ if (e && e.message === 'auth') { return; } $('sloj').querySelector('.list').innerHTML = '<h3>📋 Anketa</h3><div class="poruka err">Nema veze s poslužiteljem.</div><div class="red"><button type="button" class="sivo" id="aZatvori">Zatvori</button></div>'; });
+  });
+
+  function ucitajOdbijenice(){
+    $('odbLista').innerHTML = '<div class="poruka">Učitavam…</div>';
+    api({ action:'brziOdbijeniceLista', token: token }).then(function(res){
+      if (res.status !== 'ok') { $('odbLista').innerHTML = '<div class="poruka err">' + esc(res.message || 'Učitavanje nije uspjelo.') + '</div>'; return; }
+      $('odbSazetak').innerHTML = res.ukupno ? ('<b>' + res.ukupno + '</b> tvrtki nije zainteresirano za suradnju') : '';
+      $('odbLista').innerHTML = res.odbijenice.length ? res.odbijenice.map(function(o){
+        var t = telLink(o.telefon);
+        return '<div class="stavka zakasnjelo"><div class="naslov">' + esc(o.naziv || '(bez naziva)') + '</div>' +
+          '<div class="pod">' + esc([o.kontakt, o.oib ? 'OIB ' + o.oib : '', o.broj].filter(Boolean).join(' · ')) + '</div>' +
+          (o.razlog ? '<div class="biljeska-tekst"><b>Razlog:</b> ' + esc(o.razlog) + '</div>' : '<div class="pod">Razlog nije naveden.</div>') +
+          '<div class="pod">' + esc(o.datum) + (o.newsletter ? ' · newsletter: ' + esc(o.newsletter) : '') + '</div>' +
+          '<div class="akcije">' + (t ? '<a class="gumb" href="tel:' + esc(t) + '">📞 Nazovi</a>' : '') +
+          (o.email ? '<a class="gumb sec" href="mailto:' + esc(o.email) + '">✉ Mail</a>' : '') +
+          '<button type="button" class="mali sec" data-biljeska="klijent" data-ref="" data-naziv="' + esc(o.naziv) + '" data-tel="' + esc(o.telefon || '') + '">⏰ Podsjetnik</button></div></div>';
+      }).join('') : '<div class="poruka">Nema zapisa.</div>';
+    }).catch(function(e){ if (e && e.message === 'auth') { return; } $('odbLista').innerHTML = '<div class="poruka err">Nema veze s poslužiteljem.</div>'; });
+  }
+
+  // ---------- BILJEŠKE ----------
+  var biljMapa = {};
+  function kartaBiljeske(b){
+    biljMapa[b.id] = b;
+    var danas = new Date().toISOString().slice(0, 10);
+    var kasni = !b.rijeseno && b.podsjetnik && b.podsjetnik <= danas;
+    var pod = b.podsjetnik ? ('⏰ ' + b.podsjetnik.split('-').reverse().join('.') + '.' + (b.vrijeme ? ' u ' + b.vrijeme : '')) : '';
+    var t = telLink(b.telefon);
+    var mail = '';
+    if (b.podsjetnik && !b.rijeseno) { mail = b.mailPoslan ? '<span class="oznaka mail">✉ mail poslan</span>' : '<span class="oznaka mail">✉ mail čeka</span>'; }
+    return '<div class="stavka' + (kasni ? ' zakasnjelo' : '') + '"><div class="naslov">' + esc(b.naziv || (b.tip === 'poziv' ? 'Poziv' : 'Bilješka')) +
+      (b.tip === 'poziv' ? '<span class="oznaka poziv">📞 Poziv</span>' : '') + mail + '</div>' +
+      '<div class="pod">' + esc(b.datum) + (pod ? ' · ' + esc(pod) : '') + '</div><div class="biljeska-tekst">' + esc(b.tekst) + '</div>' +
+      '<div class="akcije">' +
+      (t && !b.rijeseno ? '<a class="gumb" href="tel:' + esc(t) + '">📞 Nazovi</a>' : '') +
+      (b.rijeseno ? '<button type="button" class="mali sivo" data-bilj-akcija="otvori" data-id="' + esc(b.id) + '">↩ Vrati</button>' : '<button type="button" class="mali" data-bilj-akcija="rijeseno" data-id="' + esc(b.id) + '">✓ Riješeno</button>') +
+      (b.rijeseno ? '' : '<button type="button" class="mali sec" data-bilj-akcija="uredi" data-id="' + esc(b.id) + '">✏ Uredi</button>') +
+      '<button type="button" class="mali sivo" data-bilj-akcija="obrisi" data-id="' + esc(b.id) + '">🗑 Obriši</button></div></div>';
+  }
+  function ucitajBiljeske(){
+    api({ action:'brziBiljeskeLista', token: token }).then(function(res){
+      if (res.status !== 'ok') { return; }
+      if (res.primatelji) { cachePrim = res.primatelji; }
+      var otv = res.biljeske.filter(function(b){ return !b.rijeseno; });
+      var rij = res.biljeske.filter(function(b){ return b.rijeseno; });
+      $('biljOtvorene').innerHTML = otv.length ? otv.map(kartaBiljeske).join('') : '<div class="poruka">Nema otvorenih podsjetnika.</div>';
+      $('biljRijesene').innerHTML = rij.length ? rij.slice(0, 20).map(kartaBiljeske).join('') : '<div class="poruka">—</div>';
+    }).catch(function(){});
+  }
+
+  // Klikovi na akcije bilješki (delegirano — rade na Početnoj i u Podsjetnicima)
+  document.addEventListener('click', function(ev){
+    var a = ev.target.closest('[data-bilj-akcija]');
+    if (a) {
+      var id = a.getAttribute('data-id'), ak = a.getAttribute('data-bilj-akcija');
+      if (ak === 'uredi') { var b0 = biljMapa[id]; if (b0) { otvoriBiljesku({ id: b0.id, tip: b0.tip, ref: b0.ref, naziv: b0.naziv, telefon: b0.telefon, tekst: b0.tekst, podsjetnik: b0.podsjetnik, vrijeme: b0.vrijeme, primatelji: b0.primatelji }); } return; }
+      if (ak === 'obrisi' && !confirm('Obrisati?')) { return; }
+      var p = ak === 'obrisi' ? api({ action:'brziBiljeskaObrisi', token: token, id: id }) : api({ action:'brziBiljeskaRijeseno', token: token, id: id, rijeseno: ak === 'rijeseno' });
+      p.then(function(){ ucitajBiljeske(); ucitajPregled(); }).catch(function(){});
+      return;
+    }
+    var n = ev.target.closest('[data-biljeska]');
+    if (n) {
+      var tip = n.getAttribute('data-biljeska');
+      otvoriBiljesku({ tip: (tip === 'klijent' || tip === 'kontakt') ? 'poziv' : 'slobodno', ref: n.getAttribute('data-ref'), naziv: n.getAttribute('data-naziv'), telefon: n.getAttribute('data-tel') || '' });
+    }
+  });
+  $('gumbNovaBiljeska').addEventListener('click', function(){ otvoriBiljesku({ tip: 'slobodno' }); });
+  $('gumbNoviPoziv').addEventListener('click', function(){ otvoriBiljesku({ tip: 'poziv' }); });
+
+  function zatvoriSloj(){ $('sloj').innerHTML = ''; }
+  var cachePrim = null;
+  function dan(n){ return new Date(Date.now() + n * 86400000).toISOString().slice(0, 10); }
+
+  // opt: { id (uređivanje), tip, ref, naziv, telefon, tekst, podsjetnik, vrijeme, primatelji }
+  function otvoriBiljesku(opt){
+    opt = opt || {};
+    var tip = opt.tip === 'poziv' ? 'poziv' : 'slobodno';
+    var ref = opt.ref || '', naziv = opt.naziv || '';
+    var uredi = !!opt.id;
+    $('sloj').innerHTML = '<div class="zavjesa" id="zav"><div class="list">' +
+      '<h3>' + (uredi ? '✏ Uredi' : '⏰ Novi podsjetnik / bilješka') + '</h3>' +
+      '<div class="seg"><button type="button" data-tip="slobodno">📝 Bilješka</button><button type="button" data-tip="poziv">📞 Poziv</button></div>' +
+      '<div id="bKlijentBlok"></div>' +
+      '<div id="bTelBlok"><label for="bTel">Telefon (za poziv)</label><input id="bTel" type="tel" inputmode="tel" autocomplete="off" value="' + esc(opt.telefon || '') + '"></div>' +
+      '<label for="bTekst">Bilješka</label><textarea id="bTekst" placeholder="npr. nazvati zbog ponude, traži nižu cijenu…">' + esc(opt.tekst || '') + '</textarea>' +
+      '<div class="redak2"><div><label for="bPod">Datum podsjetnika</label><input id="bPod" type="date" min="' + dan(0) + '" value="' + esc(opt.podsjetnik || '') + '"></div>' +
+      '<div><label for="bVr">Vrijeme</label><input id="bVr" type="time" value="' + esc(opt.vrijeme || '') + '"></div></div>' +
+      '<div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;"><button type="button" class="mali sec" data-brzi-dat="0">Danas</button><button type="button" class="mali sec" data-brzi-dat="1">Sutra</button><button type="button" class="mali sec" data-brzi-dat="3">Za 3 dana</button><button type="button" class="mali sec" data-brzi-dat="7">Za tjedan</button></div>' +
+      '<div class="mala-nap">Mail stiže u zadano vrijeme (bez vremena: u 08:00).</div>' +
+      '<label for="bPrim">Mail stiže na</label><input id="bPrim" type="text" inputmode="email" autocomplete="off" placeholder="adresa1@…, adresa2@…">' +
+      '<div class="poruka" id="bPor"></div>' +
+      '<div class="red"><button type="button" class="sivo" id="bOdustani">Odustani</button><button type="button" id="bSpremi">Spremi</button></div></div></div>';
+    function postaviTip(t){
+      tip = t;
+      Array.prototype.forEach.call(document.querySelectorAll('.seg button'), function(b){ b.classList.toggle('on', b.getAttribute('data-tip') === t); });
+      $('bTelBlok').hidden = (t !== 'poziv');
+    }
+    postaviTip(tip);
+    function nacrtajKlijenta(){
+      var blok = $('bKlijentBlok');
+      if (naziv) {
+        blok.innerHTML = '<label>Klijent / kontakt</label><div class="cip"><span>' + esc(naziv) + '</span><button type="button" id="bUkloniKl" aria-label="Ukloni">✕</button></div>';
+        $('bUkloniKl').addEventListener('click', function(){ ref = ''; naziv = ''; nacrtajKlijenta(); });
+      } else {
+        blok.innerHTML = '<label for="bKl">Poveži s klijentom (nije obavezno)</label><input id="bKl" type="search" placeholder="Ime, tvrtka, OIB…" autocomplete="off"><div id="bKlRez"></div>';
+        var tm = null;
+        $('bKl').addEventListener('input', function(){
+          clearTimeout(tm); var q = this.value.trim();
+          if (q.length < 2) { $('bKlRez').innerHTML = ''; return; }
+          tm = setTimeout(function(){
+            api({ action:'brziPretraga', token: token, q: q }).then(function(res){
+              if (res.status !== 'ok') { return; }
+              var l = res.klijenti.slice(0, 6);
+              $('bKlRez').innerHTML = l.length ? '<div class="izbor">' + l.map(function(u){
+                return '<button type="button" data-kl="' + u.rowIndex + '" data-n="' + esc(u.naziv) + '" data-t="' + esc(u.telefon || '') + '">' + esc(u.naziv || '(bez naziva)') + '<small>' + esc([u.kontakt, u.telefon].filter(Boolean).join(' · ')) + '</small></button>';
+              }).join('') + '</div>' : '<div class="mala-nap">Nema rezultata.</div>';
+            }).catch(function(){});
+          }, 350);
+        });
+        $('bKlRez').addEventListener('click', function(ev){
+          var b = ev.target.closest('[data-kl]'); if (!b) { return; }
+          ref = b.getAttribute('data-kl'); naziv = b.getAttribute('data-n');
+          if (!$('bTel').value) { $('bTel').value = b.getAttribute('data-t') || ''; }
+          nacrtajKlijenta();
+        });
+      }
+    }
+    nacrtajKlijenta();
+    function postaviPrim(l){ if (!$('bPrim').value) { $('bPrim').value = (opt.primatelji || (l || []).join(', ')); } }
+    if (opt.primatelji) { $('bPrim').value = opt.primatelji; }
+    else if (cachePrim) { postaviPrim(cachePrim); }
+    else { api({ action:'brziPostavkePodsjetnika', token: token }).then(function(res){ if (res.status === 'ok') { cachePrim = res.primatelji; if ($('bPrim')) { postaviPrim(cachePrim); } } }).catch(function(){}); }
+    $('zav').addEventListener('click', function(ev){
+      if (ev.target.id === 'zav' || ev.target.id === 'bOdustani') { zatvoriSloj(); return; }
+      var t = ev.target.closest('[data-tip]'); if (t) { postaviTip(t.getAttribute('data-tip')); return; }
+      var d = ev.target.closest('[data-brzi-dat]');
+      if (d) { $('bPod').value = dan(parseInt(d.getAttribute('data-brzi-dat'), 10)); }
+    });
+    $('bSpremi').addEventListener('click', function(){
+      var tekst = $('bTekst').value.trim();
+      if (!tekst) { $('bPor').className = 'poruka err'; $('bPor').textContent = 'Upiši bilješku.'; return; }
+      if ($('bVr').value && !$('bPod').value) { $('bPor').className = 'poruka err'; $('bPor').textContent = 'Za vrijeme podsjetnika odaberi i datum.'; return; }
+      this.disabled = true;
+      var tel = tip === 'poziv' ? $('bTel').value.trim() : '';
+      var payload = uredi
+        ? { action:'brziBiljeskaUredi', token: token, id: opt.id, tekst: tekst, podsjetnik: $('bPod').value, vrijeme: $('bVr').value, primatelji: $('bPrim').value, telefon: tel }
+        : { action:'brziBiljeskaDodaj', token: token, tip: tip, ref: ref, naziv: naziv, tekst: tekst, podsjetnik: $('bPod').value, vrijeme: $('bVr').value, primatelji: $('bPrim').value, telefon: tel };
+      api(payload).then(function(res){
+        if (res.status === 'ok') {
+          zatvoriSloj(); ucitajBiljeske(); ucitajPregled();
+          if (res.kalendar && res.kalendar.status === 'error') { alert('Podsjetnik je spremljen, ali obavijest u Google Kalendar nije upisana: ' + res.kalendar.message + '\n\nU Apps Script editoru jednom pokreni brziAutorizirajKalendar.'); }
+        }
+        else { $('bSpremi').disabled = false; $('bPor').className = 'poruka err'; $('bPor').textContent = res.message || 'Spremanje nije uspjelo.'; }
+      }).catch(function(e){ $('bSpremi').disabled = false; if (e && e.message === 'auth') { return; } $('bPor').className = 'poruka err'; $('bPor').textContent = 'Nema veze s poslužiteljem.'; });
+    });
+    setTimeout(function(){ $('bTekst').focus(); }, 80);
+  }
+
+  // ---------- POSTAVKE (promjena PIN-a, odjava) ----------
+  $('gumbPostavke').addEventListener('click', function(){
+    $('sloj').innerHTML = '<div class="zavjesa" id="zav"><div class="list">' +
+      '<h3>⚙ Postavke</h3>' +
+      '<label for="mPrim">E-mail adrese za podsjetnike</label><input id="mPrim" type="text" inputmode="email" autocomplete="off" placeholder="adresa1@…, adresa2@…">' +
+      '<div class="mala-nap">Više adresa odvoji zarezom. Vrijedi za nove podsjetnike (svaki se može i pojedinačno promijeniti).</div>' +
+      '<div class="red"><button type="button" id="mSpremi">Spremi adrese</button><button type="button" class="sec" id="mProba">Probni mail</button></div>' +
+      '<div class="red"><button type="button" class="sec" id="mProbaPush">📲 Probna push obavijest</button></div>' +
+      '<div class="mala-nap">Podsjetnici se upisuju i u Google Kalendar uz skočnu obavijest (u zadano vrijeme i 10 min ranije) — na Androidu iskoči kao push.</div>' +
+      '<div class="poruka" id="mPor"></div>' +
+      '<h3 style="margin-top:18px;">PIN</h3>' +
+      '<label for="pStari">Trenutni PIN</label><input id="pStari" type="password" inputmode="numeric" maxlength="8" autocomplete="off">' +
+      '<label for="pNovi">Novi PIN (4–8 znamenki)</label><input id="pNovi" type="password" inputmode="numeric" maxlength="8" autocomplete="off">' +
+      '<label for="pNovi2">Ponovi novi PIN</label><input id="pNovi2" type="password" inputmode="numeric" maxlength="8" autocomplete="off">' +
+      '<div class="poruka" id="pPor"></div>' +
+      '<div class="red"><button type="button" id="pSpremi">Promijeni PIN</button></div>' +
+      '<div class="red"><button type="button" class="sivo" id="pZatvori">Zatvori</button><button type="button" class="crv" id="pOdjava">Odjava</button></div></div></div>';
+    $('zav').addEventListener('click', function(ev){ if (ev.target.id === 'zav' || ev.target.id === 'pZatvori') { zatvoriSloj(); } });
+    $('pOdjava').addEventListener('click', function(){ odjava(false); });
+    api({ action:'brziPostavkePodsjetnika', token: token }).then(function(res){
+      if (res.status === 'ok' && $('mPrim')) {
+        cachePrim = res.primatelji; $('mPrim').value = res.primatelji.join(', ');
+        if (!res.trigerAktivan) { $('mPor').className = 'poruka'; $('mPor').textContent = 'Automatsko slanje se uključuje pri prvom podsjetniku (ili probnom mailu).'; }
+        if (res.kalendarGreska) { $('mPor').className = 'poruka err'; $('mPor').textContent = 'Kalendar: ' + res.kalendarGreska; }
+        if (res.zadnjaGreska) { $('mPor').className = 'poruka err'; $('mPor').textContent = 'Zadnja greška slanja: ' + res.zadnjaGreska; }
+      }
+    }).catch(function(){});
+    $('mSpremi').addEventListener('click', function(){
+      var por = $('mPor'); this.disabled = true; var gumb = this; por.className = 'poruka'; por.textContent = 'Spremam…';
+      api({ action:'brziPostaviPrimatelje', token: token, primatelji: $('mPrim').value }).then(function(res){
+        gumb.disabled = false;
+        if (res.status === 'ok') { cachePrim = res.primatelji; $('mPrim').value = res.primatelji.join(', '); por.className = 'poruka ok'; por.textContent = '✓ Adrese spremljene.'; }
+        else { por.className = 'poruka err'; por.textContent = res.message || 'Spremanje nije uspjelo.'; }
+      }).catch(function(e){ gumb.disabled = false; if (e && e.message === 'auth') { return; } por.className = 'poruka err'; por.textContent = 'Nema veze s poslužiteljem.'; });
+    });
+    $('mProbaPush').addEventListener('click', function(){
+      var por = $('mPor'); this.disabled = true; var gumb = this; por.className = 'poruka'; por.textContent = 'Upisujem probni događaj…';
+      api({ action:'brziProbniKalendar', token: token }).then(function(res){
+        gumb.disabled = false;
+        if (res.status === 'ok') { por.className = 'poruka ok'; por.textContent = '✓ Obavijest bi trebala iskočiti u ' + res.vrijeme + ' (Google Kalendar: ' + res.kalendar + '). Provjeri da je u aplikaciji Kalendar na mobitelu uključena sinkronizacija i obavijesti.'; }
+        else { por.className = 'poruka err'; por.textContent = res.message || 'Nije uspjelo.'; }
+      }).catch(function(e){ gumb.disabled = false; if (e && e.message === 'auth') { return; } por.className = 'poruka err'; por.textContent = 'Nema veze s poslužiteljem.'; });
+    });
+    $('mProba').addEventListener('click', function(){
+      var por = $('mPor'); this.disabled = true; var gumb = this; por.className = 'poruka'; por.textContent = 'Šaljem probni mail…';
+      api({ action:'brziProbniMail', token: token }).then(function(res){
+        gumb.disabled = false;
+        if (res.status === 'ok') { por.className = 'poruka ok'; por.textContent = '✓ Probni mail poslan na: ' + res.primatelji.join(', ') + '. Provjeri i spam.'; }
+        else { por.className = 'poruka err'; por.textContent = res.message || 'Slanje nije uspjelo.'; }
+      }).catch(function(e){ gumb.disabled = false; if (e && e.message === 'auth') { return; } por.className = 'poruka err'; por.textContent = 'Nema veze s poslužiteljem.'; });
+    });
+    $('pSpremi').addEventListener('click', function(){
+      var st = $('pStari').value.trim(), n1 = $('pNovi').value.trim(), n2 = $('pNovi2').value.trim(), por = $('pPor');
+      por.className = 'poruka err';
+      if (!/^\d{4,8}$/.test(n1)) { por.textContent = 'Novi PIN mora imati 4 do 8 znamenki.'; return; }
+      if (n1 !== n2) { por.textContent = 'Novi PIN i ponovljeni PIN se ne podudaraju.'; return; }
+      this.disabled = true;
+      api({ action:'brziPromijeniPin', token: token, stariPin: st, noviPin: n1 }).then(function(res){
+        $('pSpremi').disabled = false;
+        if (res.status === 'ok') { por.className = 'poruka ok'; por.textContent = '✓ PIN je promijenjen.'; ['pStari','pNovi','pNovi2'].forEach(function(id){ $(id).value = ''; }); $('pinUpozorenje').hidden = true; }
+        else { por.textContent = res.message || 'Promjena nije uspjela.'; }
+      }).catch(function(e){ $('pSpremi').disabled = false; if (e && e.message === 'auth') { return; } por.textContent = 'Nema veze s poslužiteljem.'; });
+    });
+  });
+
+  // ---------- START ----------
+  if (token) {
+    $('app').hidden = true;
+    api({ action:'brziPregled', token: token }).then(function(res){
+      if (res.status === 'ok') { pokaziApp(); } else { odjava(false); }
+    }).catch(function(e){
+      if (e && e.message === 'auth') { return; }
+      // Nema mreže — ostani na prijavi, ali token ne briši.
+      pokaziPrijavu('Nema veze s poslužiteljem.');
+    });
+  } else {
+    pokaziPrijavu('');
+  }
+})();
+</script>
+</body>
+</html>
