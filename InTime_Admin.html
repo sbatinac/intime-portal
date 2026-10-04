@@ -8837,6 +8837,10 @@
       '.pisma-wrap .pm-ved-tagovi{display:flex;flex-wrap:wrap;gap:5px;align-items:center;padding:7px 9px;background:#faf6fd;border:1px solid #d8c6ee;border-bottom:none;font-size:12px;color:#4a3a5e;}' +
       '.pisma-wrap .pm-ved-tagovi code{background:#e9dcf8;border-radius:5px;padding:2px 7px;font-size:11.5px;cursor:pointer;color:#3a0f6b;}' +
       '.pisma-wrap .pm-ved-tagovi code:hover{background:#d8c6ee;}' +
+      '.pisma-wrap .pm-dvije{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px;align-items:start;margin-bottom:8px;}' +
+      '.pisma-wrap .pm-dvije.jedan{grid-template-columns:minmax(0,1fr);}' +
+      '@media (max-width:760px){.pisma-wrap .pm-dvije{grid-template-columns:minmax(0,1fr);}}' +
+      '.pisma-wrap .pm-dvije .pm-prikaz{height:640px;border-radius:0 0 10px 10px;border-color:#d8c6ee;display:block;}' +
       '.pisma-wrap .pm-vizualni{width:100%;height:640px;border:1px solid #d8c6ee;border-radius:0 0 10px 10px;background:#fff;display:block;resize:vertical;overflow:auto;}' +
       '</style>' +
       '<div class="lc-podtabs pm-tabovi"><button type="button" class="lc-podtab-btn pm-tab active" data-tab="pojedinacno">✉ Pojedinačno slanje</button><button type="button" class="lc-podtab-btn pm-tab" data-tab="kampanje">📣 Kampanje</button><button type="button" class="lc-podtab-btn pm-tab" data-tab="predlosci">📝 Predlošci maila</button><button type="button" class="lc-podtab-btn pm-tab" data-tab="arhiva">🗄 Arhiva pisama namjere</button><button type="button" class="lc-podtab-btn pm-tab" data-tab="postavke">⚙ Postavke izlaznog maila</button></div>' +
@@ -8872,6 +8876,7 @@
         '<p class="pm-hint pm-tagovi-predmet" style="margin:0 0 4px;">Tagovi u predmetu (klik za umetanje): <code>[IME I PREZIME]</code><code>[NAZIV TVRTKE]</code><code>[GRAD]</code><code>[POŠTANSKI BROJ]</code> — vrijede i u tekstu maila. Ako primatelj nema upisano ime, taj dio predmeta se izostavi. Novi predmet koji napišeš zapamti se pri "Spremi" i ostaje na popisu.</p>' +
         '<div class="pm-hint" id="pm-predmet-pregled" style="margin:0 0 6px;font-weight:700;color:#1f3d3a;"></div>' +
         '<div style="margin:0 0 10px;"><button type="button" class="pm-gumb sek" id="pm-predmet-ukloni">🗑 Ukloni predmet iz mog popisa</button></div>' +
+        '<div class="pm-dvije" id="pm-dvije"><div class="pm-stup">' +
         '<div class="pm-polje" style="margin:6px 0 6px;font-size:13px;font-weight:800;color:#3a0f6b;">✎ Uredi pismo — klikni u pismo i tipkaj izravno u njemu (vidiš ga baš kako izgleda)</div>' +
         '<div class="pm-ved-alat" id="pm-ved-alat">' +
           '<button type="button" data-ved="bold" title="Podebljano"><b>B</b></button><button type="button" data-ved="italic" title="Kurziv"><i>I</i></button><button type="button" data-ved="underline" title="Podcrtano"><u>U</u></button>' +
@@ -8886,15 +8891,19 @@
           '<code>[IME I PREZIME]</code><code>[NAZIV TVRTKE]</code><code>[GRAD]</code><code>[POŠTANSKI BROJ]</code><code>[OIB]</code><code>{{PREDMET}}</code><code>{{BLOK_PRIMATELJA}}</code><code>{{LINK}}</code>' +
         '</div>' +
         '<iframe class="pm-vizualni" id="pm-vizualni" sandbox="allow-same-origin" title="Uređivač pisma"></iframe>' +
-        '<p class="pm-hint" style="margin-top:6px;">Oznake u uglatim/vitičastim zagradama pri slanju se zamijene podacima primatelja. Gumb ostaje vezan na <code>{{LINK}}</code> — mijenjaš samo njegov natpis. Provjeri izgled s podacima u pregledu ispod.</p>' +
+        '<p class="pm-hint" style="margin-top:6px;">Oznake u uglatim/vitičastim zagradama pri slanju se zamijene podacima primatelja. Gumb ostaje vezan na <code>{{LINK}}</code> — mijenjaš samo njegov natpis. Izgled s podacima vidiš uživo u pregledu pokraj (ili ispod).</p>' +
+        '</div><div class="pm-stup">' +
+          '<div class="pm-polje" style="margin:6px 0 6px;font-size:13px;font-weight:800;color:#3a0f6b;">👁 Pregled uživo — popunjen podacima <button type="button" class="pm-gumb sek" id="pm-raspored" style="padding:3px 9px;font-size:11.5px;margin-left:8px;">↕ Jedno ispod drugog</button></div>' +
+          '<div class="pm-ved-alat" id="pm-pregled-glava"><span id="pm-pregled-izvor" style="font-size:12.5px;font-weight:700;color:#3a0f6b;"></span><select id="pm-pregled-red" hidden style="max-width:260px;"></select></div>' +
+          '<div class="pm-ved-tagovi" id="pm-pregled-predmet" style="font-weight:700;color:#1f3d3a;"></div>' +
+          '<iframe class="pm-prikaz" id="pm-prikaz" sandbox="allow-same-origin" title="Pregled pisma"></iframe>' +
+        '</div></div>' +
         '<details id="pm-uredi-detalji"><summary>Napredno: HTML kod pisma</summary>' +
           '<label class="pm-polje">Tekst maila (HTML)<textarea id="pm-tijelo" rows="12" style="font-family:Consolas,monospace;font-size:12px;"></textarea></label>' +
           '<p class="pm-hint pm-tagovi" style="margin-top:8px;">Tagovi (klik za umetanje): <code>{{PREDMET}}</code><code>{{BLOK_PRIMATELJA}}</code><code>{{IME_OSOBE}}</code><code>{{IME_FIRME}}</code><code>{{POSTANSKI_BROJ}}</code><code>{{GRAD}}</code><code>{{OIB}}</code><code>{{LINK}}</code><code>{{LINK_GLAVNA}}</code><code>{{LINK_REBRANDLY}}</code> — <code>{{PREDMET}}</code> ispisuje isti naslov kao predmet maila (prazna polja se izostave); <code>{{BLOK_PRIMATELJA}}</code> ispisuje ime i prezime, NAZIV FIRME velikim slovima te poštanski broj i grad jedno ispod drugog (prazna polja se preskaču); <code>{{LINK}}</code> je Rebrandly ako je upisan, inače glavna stranica.</p>' +
         '</details>' +
         '<div style="margin:6px 0 10px;"><button type="button" class="pm-gumb" id="pm-spremi">💾 Spremi predložak i poveznice</button> ' +
           '<button type="button" class="pm-gumb sek" id="pm-reset">↺ Vrati zadani tekst</button><span class="pm-status" id="pm-spremi-status"></span></div>' +
-        '<div class="pm-polje" style="margin-bottom:6px;">Pregled (s primjerom podataka)</div>' +
-        '<iframe class="pm-prikaz" id="pm-prikaz" sandbox="allow-same-origin"></iframe>' +
         '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:10px;">' +
           '<input type="email" id="pm-test-adresa" value="' + PISMA_TEST_MAIL_ + '" placeholder="test adresa" style="padding:8px 10px;border:1px solid #c9d6d3;border-radius:8px;min-width:260px;">' +
           '<button type="button" class="pm-gumb sek" id="pm-test">✉ Pošalji test</button><span class="pm-status" id="pm-test-status"></span></div>' +
@@ -9006,9 +9015,16 @@
     tplOsvjeziIzbornike();
     // ---- predmet: popis prijedloga, ručni unos, pregled ----
     var predmeti = { ugradeni: [], vlastiti: [] };
-    function predmetPrimjer(tpl) {
-      var r = String(tpl || '').replace(/\[IME I PREZIME\]|\{\{IME_OSOBE\}\}/gi, 'Ivan Horvat').replace(/\[NAZIV TVRTKE\]|\{\{IME_FIRME\}\}/gi, 'Primjer d.o.o.').replace(/\[GRAD\]|\{\{GRAD\}\}/gi, 'Osijek').replace(/\[PO[ŠS]TANSKI BROJ\]|\{\{POSTANSKI_BROJ\}\}/gi, '31000');
-      return r.replace(/\{\{[A-Z_]+\}\}/g, '');
+    var PREGLED_UZORAK = { naziv: 'Primjer d.o.o.', osoba: 'Ivan Horvat', grad: 'Osijek', posta: '31000', oib: '12345678903' };
+    function predmetPrimjer(tpl, p) {
+      p = p || PREGLED_UZORAK;
+      var r = String(tpl || '').replace(/\[IME I PREZIME\]/gi, '{{IME_OSOBE}}').replace(/\[NAZIV TVRTKE\]/gi, '{{IME_FIRME}}').replace(/\[GRAD\]/gi, '{{GRAD}}').replace(/\[PO[ŠS]TANSKI BROJ\]/gi, '{{POSTANSKI_BROJ}}');
+      [['IME_OSOBE', p.osoba], ['GRAD', p.grad], ['POSTANSKI_BROJ', p.posta]].forEach(function(par) {
+        if (!String(par[1] || '').trim()) { r = r.replace(new RegExp('\\{\\{' + par[0] + '\\}\\}', 'g'), '\u0001'); }
+      });
+      r = r.replace(/\{\{IME_OSOBE\}\}/g, p.osoba).replace(/\{\{IME_FIRME\}\}/g, p.naziv).replace(/\{\{GRAD\}\}/g, p.grad).replace(/\{\{POSTANSKI_BROJ\}\}/g, p.posta).replace(/\{\{[A-Z_]+\}\}/g, '');
+      r = r.replace(/\s*[–—-]\s*\u0001/g, '').replace(/\u0001\s*[–—-]\s*/g, '').replace(/\u0001/g, '');
+      return r.replace(/[\r\n]+/g, ' ').replace(/\s{2,}/g, ' ').trim();
     }
     function predmetOsvjezi() {
       var sel = $('pm-predmet-izbor'), cur = $('pm-predmet').value;
@@ -9018,7 +9034,7 @@
       sel.innerHTML = h;
       sel.value = (predmeti.ugradeni.concat(predmeti.vlastiti).indexOf(cur) !== -1) ? cur : '';
       $('pm-predmet-ukloni').disabled = (predmeti.vlastiti.indexOf(cur) === -1);
-      $('pm-predmet-pregled').textContent = cur ? 'Pregled predmeta: ' + predmetPrimjer(cur) : '';
+      $('pm-predmet-pregled').textContent = cur ? 'Pregled predmeta: ' + predmetPrimjer(cur, podaciPregleda().p) : '';
     }
     $('pm-predmet-izbor').addEventListener('change', function() { var v = $('pm-predmet-izbor').value; if (v) { $('pm-predmet').value = v; tplOznaciIzmjenu(); } predmetOsvjezi(); nacrtajPregled(); });
     $('pm-predmet').addEventListener('input', function() { tplOznaciIzmjenu(); predmetOsvjezi(); clearTimeout(nacrtajPregled._t); nacrtajPregled._t = setTimeout(nacrtajPregled, 300); });
@@ -9039,15 +9055,49 @@
     });
 
     // ---- predložak: dohvat, pregled, spremanje ----
+    // podaci za pregled uživo: u "Pojedinačno slanje" iz obrasca, u "Kampanje" iz odabranog retka popisa, inače primjer
+    function pregledKampRed() {
+      var sel = $('pm-pregled-red'); if (!sel || sel.hidden || !sel.options.length) { return null; }
+      return (redciKampanje || [])[Number(sel.value)] || null;
+    }
+    function podaciPregleda() {
+      var src = null;
+      if (aktivnaKartica === 'pojedinacno') {
+        src = { naziv: $('pm-naziv').value.trim(), osoba: $('pm-osoba').value.trim(), grad: $('pm-grad').value.trim(), posta: $('pm-posta').value.trim(), oib: $('pm-oib').value.trim() };
+      } else if (aktivnaKartica === 'kampanje') {
+        var r = pregledKampRed();
+        if (r) { src = { naziv: String(r.naziv || ''), osoba: String(r.osoba || ''), grad: String(r.grad || ''), posta: String(r.posta || ''), oib: String(r.oib || '') }; }
+      }
+      var ima = !!src && Object.keys(src).some(function(k) { return !!src[k]; }), p = {}, prazna = 0;
+      Object.keys(PREGLED_UZORAK).forEach(function(k) { if (ima) { p[k] = src[k]; if (!src[k]) { prazna++; } } else { p[k] = PREGLED_UZORAK[k]; } });
+      var opis;
+      if (aktivnaKartica === 'pojedinacno') { opis = ima ? 'Podaci iz obrasca iznad' + (prazna ? ' (prazna polja ostaju prazna, kao u pravom mailu)' : '') : 'Primjer podataka — upiši podatke firme u obrazac iznad pa će se pismo popuniti'; }
+      else if (aktivnaKartica === 'kampanje') { opis = ima ? 'Podaci iz popisa: ' + p.naziv : 'Primjer podataka — učitaj popis (Excel) pa će se pismo popuniti podacima iz njega'; }
+      else { opis = 'Primjer podataka'; }
+      return { p: p, opis: opis };
+    }
+    function blokPrimatelja(p) {
+      var h = '', mjesto = (p.posta + ' ' + p.grad).trim();
+      if (p.osoba) { h += '<div>' + esc(p.osoba) + '</div>'; }
+      if (p.naziv) { h += '<div>' + esc(p.naziv.toUpperCase()) + '</div>'; }
+      if (mjesto) { h += '<div>' + esc(mjesto) + '</div>'; }
+      return h ? '<div style="margin:0 0 18px;font-size:17px;line-height:1.5;">' + h + '</div>' : '';
+    }
+    function pmZoom(el) { var w = el ? el.clientWidth : 0; return w ? Math.max(0.45, Math.min(1, (w - 6) / 650)) : 1; }
     function nacrtajPregled() {
       var linkG = $('pm-link-glavna').value.trim(), linkR = $('pm-link-rebrandly').value.trim();
       var link = linkR || linkG || '#';
-      var blokPrimjer = '<div style="margin:0 0 18px;font-size:17px;line-height:1.5;"><div>Ivan Horvat</div><div>PRIMJER D.O.O.</div><div>31000 Osijek</div></div>';
-      var uzorak = { 'PREDMET': predmetPrimjer($('pm-predmet').value), 'BLOK_PRIMATELJA': blokPrimjer, 'IME_FIRME': 'Primjer d.o.o.', 'IME_OSOBE': 'Ivan Horvat', 'GRAD': 'Osijek', 'POSTANSKI_BROJ': '31000', 'OIB': '12345678903', 'LINK': link, 'LINK_GLAVNA': linkG || link, 'LINK_REBRANDLY': linkR || link };
+      var pd = podaciPregleda(), p = pd.p;
+      var predmetTekst = predmetPrimjer($('pm-predmet').value, p);
+      var uzorak = { 'PREDMET': predmetTekst, 'BLOK_PRIMATELJA': blokPrimatelja(p), 'IME_FIRME': p.naziv, 'IME_OSOBE': p.osoba || 'kolege', 'GRAD': p.grad, 'POSTANSKI_BROJ': p.posta, 'OIB': p.oib, 'LINK': link, 'LINK_GLAVNA': linkG || link, 'LINK_REBRANDLY': linkR || link };
       var html = $('pm-tijelo').value.replace(/\[IME I PREZIME\]/gi, '{{IME_OSOBE}}').replace(/\[NAZIV TVRTKE\]/gi, '{{IME_FIRME}}').replace(/\[GRAD\]/gi, '{{GRAD}}').replace(/\[OIB\]/gi, '{{OIB}}').replace(/\[PO[ŠS]TANSKI BROJ\]/gi, '{{POSTANSKI_BROJ}}').replace(/\{\{([A-Z_]+)\}\}/g, function(m, k) { return uzorak.hasOwnProperty(k) ? (k === 'BLOK_PRIMATELJA' ? uzorak[k] : esc(uzorak[k])) : m; });
       html = html.replace(/\.(<\/strong>)\./g, '.$1');
-      $('pm-prikaz').srcdoc = html;
+      $('pm-pregled-izvor').textContent = pd.opis;
+      $('pm-pregled-predmet').textContent = 'Predmet maila: ' + predmetTekst;
+      $('pm-prikaz').srcdoc = '<!doctype html><html><head><meta charset="utf-8"><style>html{zoom:' + pmZoom($('pm-prikaz')).toFixed(3) + ';}body{margin:0;}</style></head><body>' + html + '</body></html>';
+      if ($('pm-predmet').value) { $('pm-predmet-pregled').textContent = 'Pregled predmeta: ' + predmetTekst; }
     }
+    function nacrtajPregledOdgodeno() { clearTimeout(nacrtajPregled._t); nacrtajPregled._t = setTimeout(nacrtajPregled, 250); }
     // ---- vizualni uređivač pisma: iframe u načinu uređivanja, vidiš pismo kako izgleda i tipkaš izravno u njemu; HTML kod ostaje u "Napredno" ----
     var vedF = $('pm-vizualni'), vedRange = null;
     function vedDoc() { try { return vedF.contentDocument; } catch (e) { return null; } }
@@ -9073,6 +9123,7 @@
     vedF.addEventListener('load', function() {
       var d = vedDoc(); if (!d) { return; }
       vedAktiviraj();
+      try { d.documentElement.style.zoom = pmZoom(vedF); } catch (e) {}
       d.addEventListener('input', vedPrenesi);
       d.addEventListener('keyup', vedZapamtiOznaku);
       d.addEventListener('mouseup', vedZapamtiOznaku);
@@ -9104,6 +9155,38 @@
       vedPrenesi(); vedZapamtiOznaku();
     });
     $('pm-tijelo').addEventListener('input', function() { tplOznaciIzmjenu(); clearTimeout(vedUcitaj._t); vedUcitaj._t = setTimeout(vedUcitaj, 600); });
+    // ---- raspored: uređivač i pregled jedno do drugog (zadano) ili jedno ispod drugog; pismo se smanji da stane u stupac ----
+    var raspored = 'dvije';
+    try { raspored = localStorage.getItem('pm_raspored') || 'dvije'; } catch (e) {}
+    function pmZoomOsvjezi() {
+      var d = vedDoc();
+      if (d && d.documentElement) { try { d.documentElement.style.zoom = pmZoom(vedF); } catch (e) {} }
+      nacrtajPregledOdgodeno();
+    }
+    function rasporedPrimijeni() {
+      $('pm-dvije').classList.toggle('jedan', raspored === 'jedan');
+      $('pm-raspored').textContent = raspored === 'jedan' ? '↔ Jedno do drugog' : '↕ Jedno ispod drugog';
+      pmZoomOsvjezi();
+    }
+    $('pm-raspored').addEventListener('click', function() {
+      raspored = (raspored === 'jedan') ? 'dvije' : 'jedan';
+      try { localStorage.setItem('pm_raspored', raspored); } catch (e) {}
+      rasporedPrimijeni();
+    });
+    rasporedPrimijeni();
+    (function() {
+      var h = function() { if (!wrap.isConnected) { window.removeEventListener('resize', h); return; } pmZoomOsvjezi(); };
+      window.addEventListener('resize', h);
+    })();
+    // pregled uživo: svaka promjena u obrascu / odabranom retku popisa odmah osvježava pismo desno
+    ['pm-oib', 'pm-naziv', 'pm-posta', 'pm-grad', 'pm-osoba'].forEach(function(id) { $(id).addEventListener('input', nacrtajPregledOdgodeno); });
+    $('pm-pregled-red').addEventListener('change', nacrtajPregled);
+    function pregledRedovaOsvjezi() {
+      var sel = $('pm-pregled-red'), staro = sel.value, h = '', n = 0;
+      (redciKampanje || []).forEach(function(r, i) { if (!r.greska && n < 200) { n++; h += '<option value="' + i + '">' + esc((r.naziv || '(bez naziva)') + ' — ' + (r.email || '')) + '</option>'; } });
+      sel.innerHTML = h; sel.hidden = !n;
+      if (n && Array.prototype.some.call(sel.options, function(o) { return o.value === staro; })) { sel.value = staro; }
+    }
     function primijeniPostavke(res) {
       $('pm-link-glavna').value = res.postavke.linkGlavna || '';
       $('pm-link-rebrandly').value = res.postavke.linkRebrandly || '';
@@ -9275,7 +9358,7 @@
         if (res.status === 'ok') {
           rucnoPotvrdaReset_();
           status($('pm-posalji-status'), 'Poslano na ' + p.email + '.', 'ok');
-          ['pm-oib', 'pm-naziv', 'pm-email', 'pm-posta', 'pm-grad', 'pm-osoba'].forEach(function(id) { $(id).value = ''; });
+          ['pm-oib', 'pm-naziv', 'pm-email', 'pm-posta', 'pm-grad', 'pm-osoba'].forEach(function(id) { $(id).value = ''; }); nacrtajPregledOdgodeno();
           kvotaPrikaz(res.kvota); osvjeziEvidenciju();
         } else if (res.status === 'duplikat') {
           status($('pm-posalji-status'), '');
@@ -9291,7 +9374,7 @@
       poziv({ action: 'adminPismoPosalji', oib: p.oib, naziv: p.naziv, email: p.email, grad: p.grad, posta: p.posta, osoba: p.osoba, potvrdiDuplikat: true, predlozakId: $('pm-rucno-tpl').value }).then(function(res) {
         rucnoSlanjeUToku = false; gifPaljbaZatvori_();
         status($('pm-posalji-status'), res.status === 'ok' ? 'Poslano na ' + p.email + '.' : (res.message || 'Slanje nije uspjelo.'), res.status === 'ok' ? 'ok' : 'greska');
-        if (res.status === 'ok') { ['pm-oib', 'pm-naziv', 'pm-email', 'pm-posta', 'pm-grad', 'pm-osoba'].forEach(function(id) { $(id).value = ''; }); kvotaPrikaz(res.kvota); osvjeziEvidenciju(); rucnoPotvrdaReset_(); } else { rucnoAzuriraj(); }
+        if (res.status === 'ok') { ['pm-oib', 'pm-naziv', 'pm-email', 'pm-posta', 'pm-grad', 'pm-osoba'].forEach(function(id) { $(id).value = ''; }); nacrtajPregledOdgodeno(); kvotaPrikaz(res.kvota); osvjeziEvidenciju(); rucnoPotvrdaReset_(); } else { rucnoAzuriraj(); }
       }).catch(function(e) { rucnoSlanjeUToku = false; gifPaljbaZatvoriOdmah_(); status($('pm-posalji-status'), e.message, 'greska'); rucnoAzuriraj(); });
     }
 
@@ -9317,6 +9400,7 @@
         '';
       $('pm-pregled').innerHTML = html;
       kampanjaZakljucana = false;
+      pregledRedovaOsvjezi(); nacrtajPregledOdgodeno();
       kampAzuriraj();
     }
     function ucitajDatoteku(file) {
@@ -9435,7 +9519,7 @@
         }
         Array.prototype.forEach.call(wrap.querySelectorAll('.pm-tab'), function(x) { x.classList.toggle('active', x === tb); });
         Array.prototype.forEach.call(wrap.querySelectorAll('.pm-pane'), function(pn) { pn.hidden = (pn.getAttribute('data-pane') !== ime); });
-        if (ur) { vedAktiviraj(); }
+        if (ur) { vedAktiviraj(); pmZoomOsvjezi(); }
         if (ime === 'arhiva') { arhivaUcitaj(); }
         if (ime === 'postavke' && !postavkeUcitane) { postavkeUcitaj(); }
       });
