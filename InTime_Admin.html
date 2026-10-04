@@ -8802,8 +8802,8 @@
       '.pisma-wrap .pm-gumb.sek{background:#fff;color:#4d148c;}.pisma-wrap .pm-gumb.sek:hover{background:#f1e9fa;}' +
       '.pisma-wrap .pm-gumb.opasan{background:#c0392b;border-color:#c0392b;}' +
       '.pisma-wrap .pm-gumb[disabled]{opacity:.45;cursor:not-allowed;}' +
-      '.pisma-wrap .pm-potvrdi-tpl{background:#ff6200;border-color:#ff6200;color:#fff;}.pisma-wrap .pm-potvrdi-tpl:hover{background:#e55700;}' +
-      '.pisma-wrap .pm-potvrdi-tpl.potvrdjen{background:#4d148c;border-color:#4d148c;}' +
+      '.pisma-wrap .pm-potvrdi-tpl{background:#d62b1f;border-color:#d62b1f;color:#fff;}.pisma-wrap .pm-potvrdi-tpl:hover{background:#b3220f;}' +
+      '.pisma-wrap .pm-potvrdi-tpl.potvrdjen{background:#1e8449;border-color:#1e8449;}.pisma-wrap .pm-potvrdi-tpl.potvrdjen:hover{background:#17683a;}' +
       '.pisma-wrap #pm-kartica-predlozak[data-nacin="uredi"] .pm-potvrdi-tpl{display:none;}' +
       '.pisma-wrap .pm-potvrda{display:flex;gap:9px;align-items:center;font-size:13.5px;font-weight:700;margin:10px 0 6px;cursor:pointer;color:#1f3d3a;}' +
       '.pisma-wrap .pm-potvrda input{width:19px;height:19px;flex-shrink:0;accent-color:#4d148c;}' +
@@ -8824,7 +8824,7 @@
       '.pisma-wrap details>summary{cursor:pointer;font-weight:800;color:#3a0f6b;margin-bottom:8px;}' +
       '.pisma-wrap .pm-prikaz{border:1px solid #dccdef;border-radius:10px;width:100%;height:380px;background:#fff;}' +
       '.pisma-wrap .pm-tagovi code{background:#f1e9fa;border-radius:5px;padding:1px 6px;font-size:11.5px;margin-right:4px;cursor:pointer;}' +
-      '.pisma-wrap .pm-akb{border:5px solid #4d148c;border-radius:16px;margin-top:26px;background:#fff;overflow:hidden;box-shadow:0 4px 14px rgba(77,20,140,.22);}' +
+      '.pisma-wrap .pm-akb{border:5px solid #4d148c;border-radius:16px;margin-top:4px;background:#fff;overflow:hidden;box-shadow:0 4px 14px rgba(77,20,140,.22);}' +
       '.pisma-wrap .pm-akb-glava{background:#4d148c;color:#fff;padding:14px 18px;font-size:18px;font-weight:900;letter-spacing:.04em;display:flex;align-items:center;gap:10px;flex-wrap:wrap;}' +
       '.pisma-wrap .pm-akb-glava small{font-size:12px;font-weight:600;opacity:.85;letter-spacing:0;}' +
       '.pisma-wrap .pm-akb-tijelo{padding:14px 18px;}' +
@@ -8859,7 +8859,7 @@
       '.pisma-wrap .pm-dvije .pm-prikaz{height:640px;border-radius:10px;border-color:#d8c6ee;display:block;}' +
       '.pisma-wrap .pm-vizualni{width:100%;height:640px;border:1px solid #d8c6ee;border-radius:0 0 10px 10px;background:#fff;display:block;resize:vertical;overflow:auto;}' +
       '</style>' +
-      '<div class="lc-podtabs pm-tabovi"><button type="button" class="lc-podtab-btn pm-tab active" data-tab="pojedinacno">✉ Pojedinačno slanje</button><button type="button" class="lc-podtab-btn pm-tab" data-tab="kampanje">📣 Kampanje</button><button type="button" class="lc-podtab-btn pm-tab" data-tab="predlosci">📝 Predlošci maila</button><button type="button" class="lc-podtab-btn pm-tab" data-tab="arhiva">🗄 Arhiva pisama namjere</button><button type="button" class="lc-podtab-btn pm-tab" data-tab="postavke">⚙ Postavke izlaznog maila</button></div>' +
+      '<div class="lc-podtabs pm-tabovi"><button type="button" class="lc-podtab-btn pm-tab active" data-tab="pojedinacno">✉ Pojedinačno slanje</button><button type="button" class="lc-podtab-btn pm-tab" data-tab="kampanje">📣 Kampanje</button><button type="button" class="lc-podtab-btn pm-tab" data-tab="predlosci">📝 Predlošci maila</button><button type="button" class="lc-podtab-btn pm-tab" data-tab="arhiva">🗄 Arhiva pisama namjere</button><button type="button" class="lc-podtab-btn pm-tab" data-tab="arhkamp">📁 Arhiva kampanja</button><button type="button" class="lc-podtab-btn pm-tab" data-tab="postavke">⚙ Postavke izlaznog maila</button></div>' +
       '<div class="pm-pane" data-pane="pojedinacno">' +
       // 1. Novo pismo
       '<div class="pm-kartica"><div class="pm-glava">✉ Novo pismo namjere<small id="pm-kvota"></small></div><div class="pm-tijelo">' +
@@ -8995,8 +8995,8 @@
           '<button type="button" class="pm-gumb" id="pm-izl-spremi">💾 Spremi postavke</button><span class="pm-status" id="pm-izl-status"></span>' +
         '</div></div>' +
       '</div>' +
-      // ARHIVA KAMPANJA (na dnu kartice, uvijek vidljiva): sve učitane liste
-      '<div class="pm-akb" id="pm-akb"><div class="pm-akb-glava">📁 ARHIVA KAMPANJA<small>sve liste (Excel) koje si učitao i poslao — naziv kampanje, datum slanja i lista primatelja</small><button type="button" class="pm-gumb sek" id="pm-akb-osvjezi" style="margin-left:auto;">↻ Osvježi</button></div>' +
+      // ARHIVA KAMPANJA (podkartica iza Arhive pisama namjere): sve učitane liste
+      '<div class="pm-pane" data-pane="arhkamp" hidden><div class="pm-akb" id="pm-akb"><div class="pm-akb-glava">📁 ARHIVA KAMPANJA<small>sve liste (Excel) koje si učitao i poslao — naziv kampanje, datum slanja i lista primatelja</small><button type="button" class="pm-gumb sek" id="pm-akb-osvjezi" style="margin-left:auto;">↻ Osvježi</button></div>' +
         '<div class="pm-akb-tijelo">' +
           '<div class="pm-brisanje" id="pm-akb-potvrda" hidden>' +
             '<div style="font-weight:800;color:#a93226;margin-bottom:8px;">Trajno brisanje liste kampanje „<span id="pm-akb-potvrda-naziv"></span>" (<span id="pm-akb-potvrda-n"></span> primatelja). Obrisani primatelji više neće biti zaštićeni od ponovnog slanja.</div>' +
@@ -9006,7 +9006,7 @@
             '<span class="pm-status" id="pm-akb-potvrda-status"></span>' +
           '</div>' +
           '<div id="pm-akb-lista"><div class="empty-hint">Učitavam…</div></div>' +
-        '</div></div>';
+        '</div></div></div>';
 
     var $ = function(id) { return wrap.querySelector('#' + id); };
     function status(el, tekst, vrsta) { el.textContent = tekst || ''; el.className = 'pm-status' + (vrsta ? ' ' + vrsta : ''); }
@@ -9401,7 +9401,7 @@
       var pref = potvrdaPref(), b = $('pm-potvrdi-tpl'); if (!b) { return; }
       var ok = !!pref && tplPotvrdaOk(pref, pref + '-tpl');
       b.classList.toggle('potvrdjen', ok);
-      b.textContent = ok ? '✔ Predložak potvrđen' : '✔ Potvrdi predložak';
+      b.textContent = ok ? '✔ Predložak potvrđen!' : '✔ Potvrdi predložak';
       b.title = ok ? 'Klikni za poništavanje potvrde' : 'Potvrdi da se šalje baš ovaj predložak';
     }
     $('pm-potvrdi-tpl').addEventListener('click', function() {
@@ -9638,6 +9638,7 @@
         Array.prototype.forEach.call(wrap.querySelectorAll('.pm-pane'), function(pn) { pn.hidden = (pn.getAttribute('data-pane') !== ime); });
         if (ur) { vedAktiviraj(); pmZoomOsvjezi(); }
         if (ime === 'arhiva') { arhivaUcitaj(); }
+        if (ime === 'arhkamp') { akbUcitaj(); }
         if (ime === 'postavke' && !postavkeUcitane) { postavkeUcitaj(); }
       });
     });
