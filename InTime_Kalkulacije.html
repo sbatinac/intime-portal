@@ -227,6 +227,12 @@ document.getElementById('odjavaGumb').addEventListener('click', function() {
         '<button type="button" class="btn btn-outline btn-small" id="kalkUsporedbaFsBtn">⛶ Proširi na cijelu stranicu</button>' +
         '<label style="margin-left:10px;font-size:12.5px;font-weight:700;cursor:pointer;"><input type="checkbox" id="kalkUsporedbaOdstupanjaChk" checked> Prikaži odstupanja od Kalkulatora 1</label>' +
       '</div>' +
+        '<div id="kalkUsporedbaKazalo" style="display:flex;gap:14px;flex-wrap:wrap;align-items:center;margin:0 0 10px;font-size:12px;font-weight:700;">' +
+          '<span style="color:#555;">Kazalo boja (u odnosu na Kalkulator 1):</span>' +
+          '<span style="display:inline-flex;align-items:center;gap:5px;"><i style="display:inline-block;width:14px;height:14px;border-radius:3px;background:#fff3a0;box-shadow:inset 0 -3px 0 #f1c40f;"></i> žuto = ista vrijednost</span>' +
+          '<span style="display:inline-flex;align-items:center;gap:5px;color:#1e8449;"><i style="display:inline-block;width:14px;height:14px;border-radius:3px;background:#1e8449;"></i> zeleno = veća vrijednost (+)</span>' +
+          '<span style="display:inline-flex;align-items:center;gap:5px;color:#c0392b;"><i style="display:inline-block;width:14px;height:14px;border-radius:3px;background:#c0392b;"></i> crveno = manja vrijednost (−)</span>' +
+        '</div>' +
       '<div class="kalk-usporedba-grid" id="kalkUsporedbaGrid"></div>';
 
     var gridEl_ = wrap.querySelector('#kalkUsporedbaGrid');
@@ -534,7 +540,7 @@ document.getElementById('odjavaGumb').addEventListener('click', function() {
             var td = tr.querySelector('td[data-zone="' + z + '"]');
             if (!td) { return; }
             if (!ref) { ukloniDev_(td); td.classList.remove('kalk-isto'); return; }
-            oznaci_(td, ref[z], parseVr_(ownText_(td)), { samoPct: true, blok: true });
+            oznaci_(td, ref[z], parseVr_(ownText_(td)), { pct: true, blok: true });
           });
         });
         // 2) Izračun — razlika u EUR po retku (uz postotak za cijene iz tablice i ukupno).

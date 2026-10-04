@@ -1687,7 +1687,7 @@
   .pd-filter button{border:1.5px solid #135450;background:#fff;color:#135450;border-radius:20px;padding:6px 14px;font-weight:700;cursor:pointer;font-size:13px;}
   .pd-filter button.on{background:#135450;color:#fff;}
   .pd-stavka{display:grid;grid-template-columns:150px 1fr auto;gap:12px;align-items:start;background:#fff;border:1px solid #dde6e5;border-left:5px solid #229891;border-radius:10px;padding:10px 12px;margin-bottom:8px;}
-  .pd-stavka.kasni{border-left-color:#c0392b;background:#fff7f6;}
+  .pd-stavka.kasni{background:#fff7f6;}
   .pd-stavka.rijeseno{opacity:.65;border-left-color:#9aa8a6;}
   .pd-kada{font-weight:800;font-size:14px;}
   .pd-kada small{display:block;font-weight:600;color:#5b6664;margin-top:2px;}
@@ -1697,6 +1697,11 @@
   .pd-oznaka{display:inline-block;font-size:11px;font-weight:800;border-radius:20px;padding:1px 8px;background:#dff3e6;color:#1e6b3a;margin-left:6px;}
   .pd-oznaka.mail{background:#eef0f7;color:#33407a;}
   .pd-akcije{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;}
+  .pd-rijeseno{background:#c0392b !important;border-color:#c0392b !important;color:#fff !important;}
+  .pd-rijeseno:hover{background:#a52e22 !important;}
+  .pd-boje{display:flex;flex-wrap:wrap;gap:7px;padding-bottom:2px;}
+  .pd-boje button{width:26px;height:26px;border-radius:50%;padding:0;border:2.5px solid #fff;box-shadow:0 0 0 1.5px #cdd8d7;cursor:pointer;color:#fff;font-size:13px;font-weight:900;line-height:1;}
+  .pd-boje button.on{box-shadow:0 0 0 2.5px #131313;}
   .pd-izbor{border:1px solid #dde6e5;border-radius:8px;background:#fff;max-width:420px;margin-top:4px;}
   .pd-izbor button{display:block;width:100%;text-align:left;background:#fff;border:0;border-bottom:1px solid #eef2f1;padding:7px 10px;cursor:pointer;font-weight:600;}
   .pd-izbor button:hover{background:#f2fbfa;}
@@ -2240,6 +2245,48 @@
   // (rastući razmak 0.7s/1.4s) prije nego stvarno prijavi grešku pozivatelju
   // — svi postojeći pozivi (`.then(...)`) ostaju nepromijenjeni, jer je
   // vanjsko ponašanje (Promise koji vrati parsirani JSON) isto kao prije.
+  // "📋 Kopiraj korisničko ime i lozinku" (4.10.2026., Sašin zahtjev) — jedna
+  // tipka kopira OBA podatka (kalkulator pristup) u međuspremnik, u obliku
+  // "Korisničko ime: …\nLozinka: …". Delegirani listener: radi i za kartice
+  // koje se naknadno iscrtaju (kartica klijenta + popis kalkulator korisnika).
+  document.addEventListener('click', function(ev) {
+    var btn = ev.target && ev.target.closest ? ev.target.closest('.kopiraj-pristup-btn') : null;
+    if (!btn) { return; }
+    ev.stopPropagation();
+    var tekst = 'Korisničko ime: ' + (btn.getAttribute('data-u') || '') + '\nLozinka: ' + (btn.getAttribute('data-p') || '');
+    var original = btn.getAttribute('data-orig') || btn.textContent;
+    btn.setAttribute('data-orig', original);
+    var gotovo = function(ok) {
+      btn.textContent = ok ? '✓ Kopirano' : 'Kopiranje nije uspjelo';
+      clearTimeout(btn._kopTimeout);
+      btn._kopTimeout = setTimeout(function() { btn.textContent = original; }, 2000);
+    };
+    var fallback = function() {
+      try {
+        var ta = document.createElement('textarea');
+        ta.value = tekst; ta.style.position = 'fixed'; ta.style.opacity = '0';
+        document.body.appendChild(ta); ta.select();
+        var ok = document.execCommand('copy');
+        document.body.removeChild(ta);
+        gotovo(ok);
+      } catch (e) { gotovo(false); }
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(tekst).then(function() { gotovo(true); }).catch(fallback);
+    } else { fallback(); }
+  }, true);
+
+  // Datum dodjele cjenika ponekad stigne kao sirovi JS Date ("Thu Oct 01 2026
+  // 17:21:14 GMT+0200 (…)") — prikazuje se kao "01.10.2026. 17:21" (4.10.2026.).
+  function formatirajDatumKalk_(v) {
+    var t = String(v || '');
+    if (!t || !/GMT|T\d\d:\d\d/.test(t)) { return t; }
+    var d = new Date(t);
+    if (isNaN(d.getTime())) { return t; }
+    function p2(n) { return (n < 10 ? '0' : '') + n; }
+    return p2(d.getDate()) + '.' + p2(d.getMonth() + 1) + '.' + d.getFullYear() + '. ' + p2(d.getHours()) + ':' + p2(d.getMinutes());
+  }
+
   function gasCall(payload, pokusaj) {
     pokusaj = pokusaj || 1;
     return fetch(GAS_WEB_APP_URL, {
@@ -3260,8 +3307,8 @@
       ? ('<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:6px 0 8px;border-collapse:collapse;"><tr><td align="center" style="padding:0;">' +
            '<img src="https://static-maps.yandex.ru/1.x/?lang=en_US&ll=' + encodeURIComponent(kartaPrikupaLon) + ',' + encodeURIComponent(kartaPrikupaLat) + '&z=16&l=map&size=600,300&pt=' + encodeURIComponent(kartaPrikupaLon) + ',' + encodeURIComponent(kartaPrikupaLat) + ',pm2rdl" width="600" height="300" alt="Karta lokacije prikupa" style="display:block;width:100%;max-width:600px;height:auto;border-radius:8px;border:2px solid #0f8b7e;" />' +
          '</td></tr></table>' +
-         '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 16px;border-collapse:collapse;"><tr><td align="center" bgcolor="#ffffff" style="border-radius:8px;border:2px solid #0f8b7e;background-color:#ffffff;"><a href="https://www.openstreetmap.org/?mlat=' + encodeURIComponent(kartaPrikupaLat) + '&mlon=' + encodeURIComponent(kartaPrikupaLon) + '#map=17/' + encodeURIComponent(kartaPrikupaLat) + '/' + encodeURIComponent(kartaPrikupaLon) + '" target="_blank" rel="noopener" style="display:block;width:100%;box-sizing:border-box;padding:10px 18px;font-family:Arial,Helvetica,sans-serif;font-size:13px;font-weight:bold;color:#0f8b7e;text-decoration:none;text-align:center;">🗺️ Otvori veću, interaktivnu kartu</a></td></tr></table>')
-      : '<p style="font-size:11.5px;color:#888888;margin:0 0 16px;">[Karta lokacije prikupa još nije generirana — klikni "🗺️ Prikaži kartu prikupa" na kartici klijenta (blok "Podaci o prikupu pošiljaka") prije slanja ovog maila.]</p>';
+         '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 16px;border-collapse:collapse;"><tr><td align="center" bgcolor="#ffffff" style="border-radius:8px;border:2px solid #0f8b7e;background-color:#ffffff;"><a href="https://www.openstreetmap.org/?mlat=' + encodeURIComponent(kartaPrikupaLat) + '&mlon=' + encodeURIComponent(kartaPrikupaLon) + '#map=17/' + encodeURIComponent(kartaPrikupaLat) + '/' + encodeURIComponent(kartaPrikupaLon) + '" target="_blank" rel="noopener" style="display:block;width:100%;box-sizing:border-box;padding:10px 18px;font-family:Arial,Helvetica,sans-serif;font-size:13px;font-weight:bold;color:#0f8b7e;text-decoration:none;text-align:center;">Otvori veću, interaktivnu kartu</a></td></tr></table>')
+      : '<p style="font-size:11.5px;color:#888888;margin:0 0 16px;">[Karta lokacije prikupa još nije generirana — klikni "Prikaži kartu prikupa" na kartici klijenta (blok "Podaci o prikupu pošiljaka") prije slanja ovog maila.]</p>';
     var zadnjiRokUnosaAdmin_ = fieldVal(entry, 'Zadnje vrijeme unosa naloga (admin)');
     var zadnjiRokUnosaIzracunat_ = pomakniVrijeme_(fieldVal(entry, 'Vrijeme prikupa pošiljaka (dolazak vozila)'), -30);
     var zadnjiRokUnosa = zadnjiRokUnosaAdmin_ || zadnjiRokUnosaIzracunat_ || '[zadnji rok za unos naloga]';
@@ -3308,7 +3355,18 @@
     var nadlezneposlovnice = nadleznePoslovniceSirovo_
       ? nadleznePoslovniceSirovo_.split(',').map(function(p) { return p.trim(); }).filter(function(p) { return p; }).join(', ')
       : '[nadležna poslovnica nije označena]';
-    return String(tekst || '')
+    // 4.10.2026. (Sašin zahtjev): ako admin u panelu "Pošalji pristupne
+    // podatke klijentu" označi "Klijentu NE dodjeljujem kalkulator" (i
+    // kalkulator stvarno nije dodijeljen), cijeli blok o kalkulatoru
+    // (uvodni pasus + korisničko ime + lozinka + gumb + poveznica) izbacuje
+    // se iz maila — da klijent nikad ne dobije mail s placeholderom
+    // "[kalkulator još nije dodijeljen…]".
+    var bezKalkulatora_ = !!entry._bezKalkulatora && !fieldVal(entry, 'Kalkulator korisničko ime (admin)');
+    var tekstZaZamjenu_ = String(tekst || '');
+    if (bezKalkulatora_) {
+      tekstZaZamjenu_ = tekstZaZamjenu_.replace(/<p[^>]*>Uz Online Booking pripremili smo[\s\S]*?\{\{LINK_KALKULATOR\}\}<\/a><\/p>/, '');
+    }
+    return tekstZaZamjenu_
       .replace(/\{\{IME_FIRME\}\}/g, imeFirme)
       .replace(/\{\{IME_OSOBE\}\}/g, imeOsobe)
       .replace(/\{\{BROJ_PONUDE\}\}/g, brojPonude)
@@ -4888,13 +4946,20 @@
           '<div class="kalk-korisnik-red2">' +
             '<span>📍 ' + esc(k.adresa || '—') + '</span>' +
             '<span>TM broj: ' + esc(k.tmBroj || '—') + '</span>' +
-            '<span>Cjenik dodijeljen: ' + esc(k.cjenikDatum || '—') + '</span>' +
+            '<span>Cjenik dodijeljen: ' + esc(formatirajDatumKalk_(k.cjenikDatum) || '—') + '</span>' +
             (k.cjenikNaziv ? ('<span>Datoteka: ' + esc(k.cjenikNaziv) + '</span>') : '') +
           '</div>' +
           '<div class="kalk-korisnik-red3">' +
             '<span class="af-kalk-pristup-info-oznaka">Korisničko ime</span><span class="af-kalk-pristup-info-vrijednost">' + esc(k.korisnickoIme || '—') + '</span>' +
             '<span class="af-kalk-pristup-info-oznaka">Lozinka</span><span class="af-kalk-pristup-info-vrijednost">' + esc(k.lozinka || '—') + '</span>' +
+            (k.korisnickoIme && k.lozinka ? '<button type="button" class="btn btn-outline btn-small kopiraj-pristup-btn" data-u="' + esc(k.korisnickoIme) + '" data-p="' + esc(k.lozinka) + '" style="margin:4px 0 2px;">📋 Kopiraj korisničko ime i lozinku</button>' : '') +
           '</div>' +
+          // 4.10.2026. (Sašin zahtjev): kartice su zatvorene — vidi se samo
+          // gornji dio (naziv, adresa, korisničko ime/lozinka); sve ostalo
+          // (napomena, novi cjenik, akcije, evidencija, arhiva) je u
+          // .kalk-korisnik-detalji koji se otvara gumbom "Više opcija".
+          '<button type="button" class="btn btn-outline btn-small kalk-korisnik-detalji-btn" style="margin:6px 0 2px;">▾ Više opcija</button>' +
+          '<div class="kalk-korisnik-detalji" hidden style="cursor:default;">' +
           // Napomena o promjeni cjenika — NOVO (30.9.2026., dvadeseti krug,
           // Sašin izričit zahtjev: "možeš li tu istu mogućnost staviti i na
           // karticu kod kalkulatora"): ISTA zaštita kao na punoj kartici
@@ -4930,8 +4995,27 @@
           '<div class="kalk-korisnik-kopiraj-status"></div>' +
           '<div class="kalk-korisnik-evidencija-panel" hidden></div>' +
           '<div class="kalk-korisnik-arhiva-panel" hidden></div>' +
+          '</div>' +
         '</div>';
       }).join('');
+      // Klik na karticu (bilo gdje na gornjem dijelu) otvara/zatvara
+      // detalje; klik na gumbe/polja/označeni tekst (kopiranje) ne okida.
+      Array.prototype.forEach.call(listaEl.querySelectorAll('.kalk-korisnik-red'), function(kartica) {
+        var detBtn = kartica.querySelector('.kalk-korisnik-detalji-btn');
+        var det = kartica.querySelector('.kalk-korisnik-detalji');
+        var prebaci = function() {
+          det.hidden = !det.hidden;
+          detBtn.textContent = det.hidden ? '▾ Više opcija' : '▴ Sakrij opcije';
+          kartica.classList.toggle('otvorena', !det.hidden);
+        };
+        kartica.style.cursor = 'pointer';
+        kartica.addEventListener('click', function(ev) {
+          if (det.contains(ev.target)) { return; }
+          if (ev.target.closest && ev.target.closest('button, input, textarea, a, select') && ev.target !== detBtn) { return; }
+          if (window.getSelection && String(window.getSelection()).length) { return; }
+          prebaci();
+        });
+      });
 
       // Gumb "📋 Kopiraj" — 30.9.2026. (Sašin izričit zahtjev): kopira
       // korisničko ime + lozinku ZAJEDNO, u obliku "Korisničko ime: ...\nLozinka: ..."
@@ -5411,6 +5495,12 @@
         '<button type="button" class="btn btn-outline btn-small" id="kalkUsporedbaFsBtn">⛶ Proširi na cijelu stranicu</button>' +
         '<label style="margin-left:10px;font-size:12.5px;font-weight:700;cursor:pointer;"><input type="checkbox" id="kalkUsporedbaOdstupanjaChk" checked> Prikaži odstupanja od Kalkulatora 1</label>' +
       '</div>' +
+        '<div id="kalkUsporedbaKazalo" style="display:flex;gap:14px;flex-wrap:wrap;align-items:center;margin:0 0 10px;font-size:12px;font-weight:700;">' +
+          '<span style="color:#555;">Kazalo boja (u odnosu na Kalkulator 1):</span>' +
+          '<span style="display:inline-flex;align-items:center;gap:5px;"><i style="display:inline-block;width:14px;height:14px;border-radius:3px;background:#fff3a0;box-shadow:inset 0 -3px 0 #f1c40f;"></i> žuto = ista vrijednost</span>' +
+          '<span style="display:inline-flex;align-items:center;gap:5px;color:#1e8449;"><i style="display:inline-block;width:14px;height:14px;border-radius:3px;background:#1e8449;"></i> zeleno = veća vrijednost (+)</span>' +
+          '<span style="display:inline-flex;align-items:center;gap:5px;color:#c0392b;"><i style="display:inline-block;width:14px;height:14px;border-radius:3px;background:#c0392b;"></i> crveno = manja vrijednost (−)</span>' +
+        '</div>' +
       '<div class="kalk-usporedba-grid" id="kalkUsporedbaGrid"></div>';
 
     var gridEl_ = wrap.querySelector('#kalkUsporedbaGrid');
@@ -5966,7 +6056,7 @@
             var td = tr.querySelector('td[data-zone="' + z + '"]');
             if (!td) { return; }
             if (!ref) { ukloniDev_(td); td.classList.remove('kalk-isto'); return; }
-            oznaci_(td, ref[z], parseVr_(ownText_(td)), { samoPct: true, blok: true });
+            oznaci_(td, ref[z], parseVr_(ownText_(td)), { pct: true, blok: true });
           });
         });
         // 2) Izračun — razlika u EUR po retku (uz postotak za cijene iz tablice i ukupno).
@@ -6242,7 +6332,7 @@
           '<label class="af-posl-kopija-red"><input type="checkbox" class="kk-mail-zapamti" checked> 💾 Zapamti nove priloge za sljedeća slanja (ne moraš ih ponovno unositi)</label>' +
           '<div class="af-posl-primatelji-red"><textarea class="af-posl-primatelji-textarea kk-mail-primatelji" placeholder="primatelji (e-mail adrese odvojene zarezom)"></textarea></div>' +
           '<p class="af-posl-primatelji-hint">Automatski upisan e-mail korisnika. Slobodno dodaj/ukloni adrese, odvojene zarezom.</p>' +
-          '<div class="af-posl-test-red"><input type="email" class="af-posl-test-input kk-mail-test-adr" placeholder="test adresa za probno slanje"><button type="button" class="af-posl-btn kk-mail-test">✉ Pošalji test</button></div>' +
+          '<div class="af-posl-test-red"><input type="email" class="af-posl-test-input kk-mail-test-adr" placeholder="test adresa za probno slanje" value="send.it.again.031@gmail.com"><button type="button" class="af-posl-btn kk-mail-test">✉ Pošalji test</button></div>' +
           '<label class="af-posl-kopija-red"><input type="checkbox" class="kk-mail-kopija"> Pošalji i meni kopiju (sbatinac.intime@gmail.com)</label>' +
           '<button type="button" class="af-posl-btn af-posl-posalji-btn uspjeh kk-mail-posalji">📨 Pošalji</button>' +
           '<div class="af-posl-slanje-status kk-mail-status"></div>' +
@@ -8605,6 +8695,10 @@
   // (admin token vrijedi i za njih).
   // ============================================================
   var podsjetniciFilter_ = 'otvoreni';
+  var BOJE_ = [['11','Rajčica','#d50000'],['4','Flamingo','#e67c73'],['6','Mandarina','#f4511e'],['5','Banana','#f6bf26'],['2','Kadulja','#33b679'],['10','Bosiljak','#0b8043'],['7','Paun','#039be5'],['9','Borovnica','#3f51b5'],['1','Lavanda','#7986cb'],['3','Grožđe','#8e24aa'],['8','Grafit','#616161']];
+  function bojaHex_(n){ for (var i = 0; i < BOJE_.length; i++) { if (BOJE_[i][0] === String(n)) { return BOJE_[i][2]; } } return ''; }
+  function bojaZadana_(tip){ return tip === 'poziv' ? '11' : '1'; }
+
   function buildPodsjetniciPanel_() {
     var wrap = document.createElement('div');
     wrap.className = 'faq-admin-card';
@@ -8622,6 +8716,7 @@
         '<div style="flex:1;min-width:240px;display:flex;flex-direction:column;font-size:12px;font-weight:700;color:#5b6664;gap:3px;">Klijent (nije obavezno)<span id="pd-klijent-blok"></span></div>' +
         '<label>Telefon<input type="text" id="pd-tel" placeholder="+385…"></label></div>' +
       '<div class="pd-red"><label style="flex:1;">Što treba napraviti<textarea id="pd-tekst" placeholder="npr. nazvati zbog ponude"></textarea></label></div>' +
+      '<div class="pd-red"><label>Boja (prenosi se u Google Kalendar)<span class="pd-boje" id="pd-boje"></span></label></div>' +
       '<div class="pd-red"><label>Datum<input type="date" id="pd-datum"></label><label>Vrijeme<input type="time" id="pd-vrijeme"></label>' +
         '<label style="flex:1;min-width:260px;">Mail na (prazno = zadane adrese)<input type="text" id="pd-prim"></label>' +
         '<button type="button" class="btn btn-small" id="pd-spremi">Dodaj podsjetnik</button>' +
@@ -8676,7 +8771,16 @@
       });
     }
 
+    var pdBoja = '';
+    function nacrtajBoje() {
+      var akt = pdBoja || bojaZadana_($('pd-tip').value);
+      $('pd-boje').innerHTML = BOJE_.map(function(c) { return '<button type="button" data-boja="' + c[0] + '" title="' + c[1] + '" style="background:' + c[2] + ';">' + (c[0] === akt ? '✓' : '') + '</button>'; }).join('');
+    }
+    $('pd-boje').addEventListener('click', function(ev) { var b = ev.target.closest('[data-boja]'); if (b) { pdBoja = b.getAttribute('data-boja'); nacrtajBoje(); } });
+    $('pd-tip').addEventListener('change', nacrtajBoje);
+
     function resetForma() {
+      pdBoja = ''; nacrtajBoje();
       uredjivanjeId = null; odabraniKlijent = null;
       $('pd-tip').value = 'poziv'; $('pd-tel').value = ''; $('pd-tekst').value = ''; $('pd-datum').value = ''; $('pd-vrijeme').value = ''; $('pd-prim').value = '';
       $('pd-forma-naslov').textContent = 'Novi podsjetnik'; $('pd-spremi').textContent = 'Dodaj podsjetnik'; $('pd-odustani').style.display = 'none';
@@ -8710,13 +8814,13 @@
         var kada = b.podsjetnik ? (b.podsjetnik.split('-').reverse().join('.') + '.') : 'bez datuma';
         var mail = '';
         if (b.podsjetnik && !b.rijeseno) { mail = b.mailPoslan ? '<span class="pd-oznaka mail">✉ poslan ' + esc(b.mailPoslan) + '</span>' : '<span class="pd-oznaka mail">✉ čeka</span>'; }
-        return '<div class="pd-stavka' + (kasni ? ' kasni' : '') + (b.rijeseno ? ' rijeseno' : '') + '" data-id="' + esc(b.id) + '">' +
+        return '<div class="pd-stavka' + (kasni ? ' kasni' : '') + (b.rijeseno ? ' rijeseno' : '') + '" data-id="' + esc(b.id) + '" style="border-left-color:' + bojaHex_(b.boja || bojaZadana_(b.tip)) + ';">' +
           '<div class="pd-kada">' + esc(kada) + '<small>' + esc(b.vrijeme ? 'u ' + b.vrijeme : (b.podsjetnik ? 'u 08:00 (zadano)' : '')) + '</small></div>' +
           '<div><div class="pd-naziv">' + esc(b.naziv || (b.tip === 'poziv' ? 'Poziv' : 'Bilješka')) + (b.tip === 'poziv' ? '<span class="pd-oznaka">📞 Poziv</span>' : '') + mail + '</div>' +
             '<div class="pd-tekst">' + esc(b.tekst) + '</div>' +
             '<div class="pd-meta">' + (b.telefon ? '📞 ' + esc(b.telefon) + ' · ' : '') + (b.primatelji ? '✉ ' + esc(b.primatelji) + ' · ' : '') + 'uneseno ' + esc(b.datum) + '</div></div>' +
           '<div class="pd-akcije">' +
-            (b.rijeseno ? '<button type="button" class="btn btn-outline btn-small" data-a="otvori">↩ Vrati</button>' : '<button type="button" class="btn btn-small" data-a="rijeseno">✓ Riješeno</button><button type="button" class="btn btn-outline btn-small" data-a="uredi">✏ Uredi</button>') +
+            (b.rijeseno ? '<button type="button" class="btn btn-outline btn-small" data-a="otvori">↩ Vrati</button>' : '<button type="button" class="btn btn-small pd-rijeseno" data-a="rijeseno">✓ Riješeno</button><button type="button" class="btn btn-outline btn-small" data-a="uredi">✏ Uredi</button>') +
             '<button type="button" class="btn btn-outline btn-small" data-a="obrisi">🗑</button></div></div>';
       }).join('');
     }
@@ -8765,8 +8869,8 @@
       if ($('pd-vrijeme').value && !$('pd-datum').value) { status(st, 'Za vrijeme odaberi i datum.', true); return; }
       var tip = $('pd-tip').value, tel = $('pd-tel').value.trim();
       var payload = uredjivanjeId
-        ? { action: 'brziBiljeskaUredi', id: uredjivanjeId, tekst: tekst, podsjetnik: $('pd-datum').value, vrijeme: $('pd-vrijeme').value, primatelji: $('pd-prim').value, telefon: tel }
-        : { action: 'brziBiljeskaDodaj', tip: tip, ref: odabraniKlijent ? odabraniKlijent.ref : '', naziv: odabraniKlijent ? odabraniKlijent.naziv : '', tekst: tekst, podsjetnik: $('pd-datum').value, vrijeme: $('pd-vrijeme').value, primatelji: $('pd-prim').value, telefon: tel };
+        ? { action: 'brziBiljeskaUredi', id: uredjivanjeId, tekst: tekst, podsjetnik: $('pd-datum').value, vrijeme: $('pd-vrijeme').value, primatelji: $('pd-prim').value, telefon: tel, boja: pdBoja }
+        : { action: 'brziBiljeskaDodaj', tip: tip, ref: odabraniKlijent ? odabraniKlijent.ref : '', naziv: odabraniKlijent ? odabraniKlijent.naziv : '', tekst: tekst, podsjetnik: $('pd-datum').value, vrijeme: $('pd-vrijeme').value, primatelji: $('pd-prim').value, telefon: tel, boja: pdBoja };
       status(st, 'Spremam…'); this.disabled = true; var gumb = this;
       poziv(payload).then(function(res) {
         gumb.disabled = false;
@@ -8787,7 +8891,7 @@
       if (a === 'uredi' && b) {
         uredjivanjeId = id; odabraniKlijent = b.naziv ? { ref: b.ref, naziv: b.naziv } : null;
         $('pd-tip').value = b.tip === 'poziv' ? 'poziv' : 'slobodno'; $('pd-tel').value = b.telefon || ''; $('pd-tekst').value = b.tekst || '';
-        $('pd-datum').value = b.podsjetnik || ''; $('pd-vrijeme').value = b.vrijeme || ''; $('pd-prim').value = b.primatelji || '';
+        $('pd-datum').value = b.podsjetnik || ''; $('pd-vrijeme').value = b.vrijeme || ''; $('pd-prim').value = b.primatelji || ''; pdBoja = b.boja || ''; nacrtajBoje();
         $('pd-forma-naslov').textContent = 'Uređivanje podsjetnika'; $('pd-spremi').textContent = 'Spremi izmjene'; $('pd-odustani').style.display = '';
         nacrtajKlijenta(); $('pd-forma-naslov').scrollIntoView({ behavior: 'smooth', block: 'start' });
         return;
@@ -8798,6 +8902,7 @@
     });
 
     nacrtajKlijenta();
+    nacrtajBoje();
     ucitaj();
     return wrap;
   }
@@ -11100,7 +11205,7 @@
             '<div class="af-slanje-zamrznuto-traka" hidden>🔒 Zamrznuto dok se čeka klijentov odgovor — ponovno se otključava tek ako ponuda bude odbijena ili je poništimo.</div>' +
             '<div class="af-slanje-desc">Šalje se TOČNO tekst iz pregleda predloška iznad (uključujući trenutno odabrani predložak) — samo poveznice, bez fizičkih priloga. Direktorij iza poveznice {{LINK_DOKUMENTI}} sadrži: Ponudu za suradnju + sve dokumente dodane u "Ostali dokumenti" (blok "Dokumenti za ponudu" gore), pod nazivima nakon preimenovanja. Analitički cjenik i Cjenik Hrvatska ostaju interni, klijent ih NE vidi.</div>' +
             '<div class="af-slanje-test-red">' +
-              '<input type="email" class="af-slanje-test-input" placeholder="test adresa za probno slanje">' +
+              '<input type="email" class="af-slanje-test-input" placeholder="test adresa za probno slanje" value="send.it.again.031@gmail.com">' +
               '<button type="button" class="af-slanje-btn af-slanje-test-btn">✉ Pošalji test</button>' +
             '</div>' +
             '<label class="af-slanje-kopija-red"><input type="checkbox" class="af-slanje-kopija-cb"> Pošalji i meni kopiju (sbatinac.intime@gmail.com)</label>' +
@@ -11250,7 +11355,7 @@
                 '<input type="email" class="af-ob-primatelj-input" placeholder="primatelj (e-mail)">' +
               '</div>' +
               '<div class="af-ob-test-red">' +
-                '<input type="email" class="af-ob-test-input" placeholder="test adresa za probno slanje">' +
+                '<input type="email" class="af-ob-test-input" placeholder="test adresa za probno slanje" value="send.it.again.031@gmail.com">' +
                 '<button type="button" class="af-ob-btn af-ob-test-btn">✉ Pošalji test</button>' +
               '</div>' +
               '<label class="af-ob-kopija-red"><input type="checkbox" class="af-ob-kopija-cb"> Pošalji i meni kopiju (sbatinac.intime@gmail.com)</label>' +
@@ -11528,8 +11633,12 @@
               '</div>' +
               '<p class="af-kred-primatelji-hint">Automatski predloženo istim adresama na koje je poslana inicijalna ponuda. Slobodno dodaj/ukloni adrese, odvojene zarezom.</p>' +
               '<div class="af-kred-test-red">' +
-                '<input type="email" class="af-kred-test-input" placeholder="test adresa za probno slanje">' +
+                '<input type="email" class="af-kred-test-input" placeholder="test adresa za probno slanje" value="send.it.again.031@gmail.com">' +
                 '<button type="button" class="af-kred-btn af-kred-test-btn">✉ Pošalji test</button>' +
+              '</div>' +
+              '<div class="af-kred-kalk-uvjet" style="margin:8px 0;padding:8px 10px;border-radius:8px;border:1px solid #e57368;background:#fdeceb;font-size:12.5px;">' +
+                '<div class="af-kred-kalk-uvjet-tekst"></div>' +
+                '<label class="af-kred-bez-kalk-red" style="display:flex;gap:6px;align-items:center;margin-top:4px;font-weight:600;"><input type="checkbox" class="af-kred-bez-kalk-cb"> Klijentu NE dodjeljujem kalkulator (blok o kalkulatoru izbacuje se iz maila)</label>' +
               '</div>' +
               '<label class="af-kred-kopija-red"><input type="checkbox" class="af-kred-kopija-cb"> Pošalji i meni kopiju (sbatinac.intime@gmail.com)</label>' +
               '<button type="button" class="af-kred-btn af-kred-posalji-btn uspjeh">🔑 Pošalji pristupne podatke</button>' +
@@ -11590,9 +11699,10 @@
                 '<button type="button" class="af-posl-btn af-posl-primatelji-reset-btn">↺ Vrati zadane adrese</button>' +
                 '<span class="af-posl-primatelji-reset-status"></span>' +
               '</div>' +
+              '<p class="af-posl-primatelji-upozorenje" style="display:none;margin:4px 0;font-size:12px;color:#b3261e;"></p>' +
               '<p class="af-posl-primatelji-hint">Automatski predloženo prema poslovnicama označenim kao "Nadležna poslovnica" gore na kartici (upareno po imenu s mailom iz Logističkih centara). Slobodno dodaj/ukloni adrese, odvojene zarezom — ako nešto slučajno obrišeš, gumb "↺ Vrati zadane adrese" iznad vraća izvorno predložene adrese.</p>' +
               '<div class="af-posl-test-red">' +
-                '<input type="email" class="af-posl-test-input" placeholder="test adresa za probno slanje">' +
+                '<input type="email" class="af-posl-test-input" placeholder="test adresa za probno slanje" value="send.it.again.031@gmail.com">' +
                 '<button type="button" class="af-posl-btn af-posl-test-btn">✉ Pošalji test</button>' +
               '</div>' +
               '<label class="af-posl-kopija-red"><input type="checkbox" class="af-posl-kopija-cb"> Pošalji i meni kopiju (sbatinac.intime@gmail.com)</label>' +
@@ -11661,7 +11771,7 @@
               '</div>' +
               '<p class="af-svep-primatelji-hint">Automatski predloženo SVIM logističkim centrima iz kartice "Logistički centri i servisi" koji imaju upisan mail (ne samo nadležnoj poslovnici ovog klijenta). Slobodno dodaj/ukloni adrese, odvojene zarezom.</p>' +
               '<div class="af-svep-test-red">' +
-                '<input type="email" class="af-svep-test-input" placeholder="test adresa za probno slanje">' +
+                '<input type="email" class="af-svep-test-input" placeholder="test adresa za probno slanje" value="send.it.again.031@gmail.com">' +
                 '<button type="button" class="af-svep-btn af-svep-test-btn">✉ Pošalji test</button>' +
               '</div>' +
               '<label class="af-svep-kopija-red"><input type="checkbox" class="af-svep-kopija-cb"> Pošalji i meni kopiju (sbatinac.intime@gmail.com)</label>' +
@@ -11966,6 +12076,7 @@
             poslovnicaStatusEl.textContent = 'Potvrđeno.';
             poslovnicaStatusEl.classList.remove('error');
             if (typeof azurirajOsiguracSlanja_ === 'function') { azurirajOsiguracSlanja_(); }
+            if (typeof wrap._poslOsvjeziPrimatelje_ === 'function') { wrap._poslOsvjeziPrimatelje_(); }
           } else {
             poslovnicaStatusEl.textContent = res.message || 'Greška pri spremanju.';
             poslovnicaStatusEl.classList.add('error');
@@ -13352,7 +13463,8 @@
             (zamrznuto ? '<div class="af-kalk-zamrznuto-znacka">🧊 Pristup trenutno zamrznut — klijent se ne može prijaviti</div>' : '') +
             '<div class="af-kalk-pristup-info-red"><span class="af-kalk-pristup-info-oznaka">Korisničko ime</span><span class="af-kalk-pristup-info-vrijednost">' + esc(korisnickoIme) + '</span></div>' +
             '<div class="af-kalk-pristup-info-red"><span class="af-kalk-pristup-info-oznaka">Lozinka</span><span class="af-kalk-pristup-info-vrijednost">' + esc(lozinka) + '</span></div>' +
-            '<div class="af-kalk-pristup-info-red"><span class="af-kalk-pristup-info-oznaka">Cjenik</span><span>' + esc(cjenikNaziv || '—') + (cjenikDatum ? (' <span style="color:var(--grey);">(dodijeljeno ' + esc(cjenikDatum) + ')</span>') : '') + '</span></div>';
+            '<div class="af-kalk-pristup-info-red">' + '<button type="button" class="btn btn-outline btn-small kopiraj-pristup-btn" data-u="' + esc(korisnickoIme) + '" data-p="' + esc(lozinka) + '" style="margin:4px 0 2px;">📋 Kopiraj korisničko ime i lozinku</button>' + '</div>' +
+            '<div class="af-kalk-pristup-info-red"><span class="af-kalk-pristup-info-oznaka">Cjenik</span><span>' + esc(cjenikNaziv || '—') + (cjenikDatum ? (' <span style="color:var(--grey);">(dodijeljeno ' + esc(formatirajDatumKalk_(cjenikDatum)) + ')</span>') : '') + '</span></div>';
           kalkBtn.hidden = true;
           kalkOsvjeziBtn.hidden = false;
           kalkRegenBtn.hidden = false;
@@ -13379,6 +13491,7 @@
             entry.fields['Kalkulator cjenik - naziv datoteke (admin)'] = res.nazivDatoteke;
             entry.fields['Datum dodjele cjenika u kalkulator (admin)'] = res.datum;
             kalkRenderInfo_();
+            if (typeof wrap._kredPregledOsvjezi_ === 'function') { wrap._kredPregledOsvjezi_(); }
             if (kalkRazlogInput) { kalkRazlogInput.value = ''; }
             kalkStatusEl.textContent = 'Spremljeno — ' + res.brojKategorija + ' kategorija cjenika' + (typeof res.brojPostavki === 'number' ? ', ' + res.brojPostavki + ' od 16 dodatnih postavki' : '') + ' prepoznato.' + (razlog ? ' Zabilježeno u evidenciji.' : '');
             kalkStatusEl.classList.add('ok');
@@ -13466,6 +13579,7 @@
             entry.fields['Datum dodjele cjenika u kalkulator (admin)'] = '';
             entry.fields['Kalkulator pristup zamrznut (admin)'] = '';
             kalkRenderInfo_();
+            if (typeof wrap._kredPregledOsvjezi_ === 'function') { wrap._kredPregledOsvjezi_(); }
             kalkStatusEl.textContent = 'Pristup uklonjen.';
             kalkStatusEl.classList.add('ok');
           } else {
@@ -14776,7 +14890,43 @@
       // password Potvrdi handleri, ista generička OB petlja) — poziva ovu
       // istu funkciju nakon svake potvrde da tagovi u pregledu odmah pokažu
       // novu vrijednost.
-      wrap._kredPregledOsvjezi_ = kredRenderPregled_;
+      // Uvjet za slanje (4.10.2026., Sašin zahtjev — mail je otišao s
+      // "[kalkulator još nije dodijeljen…]"): slanje pristupnih podataka
+      // klijentu moguće je tek kad je kalkulator dodijeljen ILI kad je
+      // izričito označeno "Klijentu NE dodjeljujem kalkulator".
+      var kredKalkUvjetEl = wrap.querySelector('.af-kred-kalk-uvjet');
+      var kredKalkUvjetTekst = wrap.querySelector('.af-kred-kalk-uvjet-tekst');
+      var kredBezKalkCb = wrap.querySelector('.af-kred-bez-kalk-cb');
+      var kredKalkDodijeljen_ = function() {
+        return !!fieldVal(entry, 'Kalkulator korisničko ime (admin)') && !!fieldVal(entry, 'Kalkulator lozinka (admin)');
+      };
+      var kredOsvjeziKalkUvjet_ = function() {
+        if (!kredKalkUvjetEl) { return; }
+        if (kredKalkDodijeljen_()) {
+          kredKalkUvjetEl.style.background = '#e8f5ec';
+          kredKalkUvjetEl.style.borderColor = '#7bbf8e';
+          kredKalkUvjetTekst.textContent = '✓ Kalkulator je dodijeljen klijentu — korisničko ime i lozinka idu u mail.';
+          kredBezKalkCb.checked = false;
+          entry._bezKalkulatora = false;
+          kredBezKalkCb.parentNode.style.display = 'none';
+        } else {
+          kredKalkUvjetEl.style.background = '#fdeceb';
+          kredKalkUvjetEl.style.borderColor = '#e57368';
+          kredKalkUvjetTekst.textContent = '⚠ Kalkulator još nije dodijeljen. Prvo ga dodijeli (blok "Pristup kalkulatoru cijena" iznad) ILI označi da ga klijentu ne dodjeljuješ — inače se mail ne može poslati.';
+          kredBezKalkCb.parentNode.style.display = 'flex';
+        }
+      };
+      if (kredBezKalkCb) {
+        kredBezKalkCb.addEventListener('click', function(ev) { ev.stopPropagation(); });
+        kredBezKalkCb.addEventListener('change', function() {
+          entry._bezKalkulatora = kredBezKalkCb.checked;
+          kredRenderPregled_();
+        });
+      }
+      var kredRenderPregledOriginal_ = kredRenderPregled_;
+      wrap._kredPregledOsvjezi_ = function() { kredOsvjeziKalkUvjet_(); kredRenderPregledOriginal_(); };
+      wrap._kredKalkUvjetOsvjezi_ = kredOsvjeziKalkUvjet_;
+      kredOsvjeziKalkUvjet_();
 
       var kredPopuniIzbornik_ = function(predlosci) {
         // Filtrirano na kategoriju 'klijent_pristup' — dijeljeni cache nosi
@@ -15154,6 +15304,11 @@
           kredPostaviStatus_('Nema teksta za slanje — odaberi predložak iznad.', 'error');
           return;
         }
+        if (!kredKalkDodijeljen_() && !(kredBezKalkCb && kredBezKalkCb.checked)) {
+          kredPostaviStatus_('Slanje nije moguće: kalkulator nije dodijeljen klijentu. Dodijeli ga u bloku "Pristup kalkulatoru cijena" ili označi "Klijentu NE dodjeljujem kalkulator".', 'error');
+          return;
+        }
+        if (kredKalkDodijeljen_()) { entry._bezKalkulatora = false; kredRenderPregled_(); }
         var kopijaSebi = !!(kredKopijaCb && kredKopijaCb.checked);
         if (!confirm('Poslati pristupne podatke klijentu na:\n' + primateljiLista.join(', ') + '?' + (kopijaSebi ? '\n\n(+ kopija tebi na sbatinac.intime@gmail.com)' : ''))) { return; }
         kredTestBtn.disabled = true;
@@ -15375,24 +15530,78 @@
       // bile stavljene") — ISTI izračun koristi i automatsko popunjavanje
       // pri otvaranju kartice ISPOD, i novi gumb "↺ Vrati zadane adrese"
       // niže (kredPrimateljiResetBtn handler), da se logika ne piše dvaput.
+      // ISPRAVAK (4.10.2026., Sašin bug report — "stavio sam nadležne
+      // poslovnice Osijek i Bjelovar, a u zeleni mail dodao samo Osijek"):
+      // izračun je ranije koristio `poslovniceOdabrane` zamrznut u trenutku
+      // otvaranja kartice, pa se poslije odabira/potvrde druge poslovnice
+      // primatelji nikad nisu osvježili. Sad se čita TRENUTNI odabir
+      // (kvačice u padajućem izborniku, a ako ih nema — spremljeno polje),
+      // imena se uspoređuju tolerantno (bez razmaka/velikih slova/dijakritika),
+      // a poslovnice bez e-maila u "Logističkim centrima" ispisuju se kao
+      // upozorenje umjesto da tiho nestanu.
+      var poslNorm_ = function(s) {
+        return String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/g, 'd').replace(/\s+/g, ' ').trim();
+      };
+      var poslTrenutneOdabrane_ = function() {
+        if (typeof poslovnicaCbs !== 'undefined' && poslovnicaCbs && poslovnicaCbs.length) {
+          return poslovnicaCbs.filter(function(cb) { return cb.checked; }).map(function(cb) { return cb.value; });
+        }
+        return (fieldVal(entry, 'Nadležna poslovnica (admin)') || '').split(',').map(function(s) { return s.trim(); }).filter(function(s) { return s; });
+      };
+      var poslUpozorenjeEl = wrap.querySelector('.af-posl-primatelji-upozorenje');
       var poslIzracunajZadanePrimatelje_ = function() {
         return poslDohvatiCentre_().then(function(centri) {
-          var poslovniceSkup_ = {};
-          poslovniceOdabrane.forEach(function(p) { poslovniceSkup_[p] = true; });
-          var mailoviPronadjeni_ = (centri || [])
-            .filter(function(c) { return (c.vrsta || 'centar') === 'centar' && c.email && poslovniceSkup_[c.grad || '']; })
-            .map(function(c) { return c.email; });
+          var odabrane_ = poslTrenutneOdabrane_();
+          var centriMailovi_ = (centri || []).filter(function(c) { return (c.vrsta || 'centar') === 'centar'; });
+          var mailoviPronadjeni_ = [];
+          var bezMaila_ = [];
+          odabrane_.forEach(function(p) {
+            var n = poslNorm_(p);
+            var nadjeni = centriMailovi_.filter(function(c) { return c.email && poslNorm_(c.grad) === n; });
+            if (!nadjeni.length) { bezMaila_.push(p); }
+            nadjeni.forEach(function(c) {
+              String(c.email).split(/[,;\s]+/).forEach(function(m) { m = m.trim(); if (m) { mailoviPronadjeni_.push(m); } });
+            });
+          });
+          if (poslUpozorenjeEl) {
+            if (bezMaila_.length) {
+              poslUpozorenjeEl.textContent = 'Nema upisanog e-maila u "Logistički centri i servisi" za: ' + bezMaila_.join(', ') + ' — dopuni adresu ručno ili ju upiši u Logističke centre (grad mora biti isti kao ime poslovnice).';
+              poslUpozorenjeEl.style.display = '';
+            } else {
+              poslUpozorenjeEl.textContent = '';
+              poslUpozorenjeEl.style.display = 'none';
+            }
+          }
           return mailoviPronadjeni_.filter(function(m, i) { return mailoviPronadjeni_.indexOf(m) === i; });
         });
       };
-      // Automatsko popunjavanje pri otvaranju kartice — NEPROMIJENJENO
-      // ponašanje, i dalje se ne dira već ručno upisana/promijenjena
-      // vrijednost.
-      poslIzracunajZadanePrimatelje_().then(function(mailoviJedinstveni_) {
-        if (mailoviJedinstveni_.length && !poslPrimateljiRucnoPromijenjeno_ && !poslPrimateljiTextarea.value.trim()) {
-          poslPrimateljiTextarea.value = mailoviJedinstveni_.join(', ');
+      // Osvježavanje primatelja pri promjeni odabira poslovnica:
+      //  - polje prazno ili nikad ručno mijenjano → zamijeni predloženima;
+      //  - ručno mijenjano → samo DODAJ predložene koje još nedostaju (ništa
+      //    što je admin upisao/ostavio se ne briše).
+      var poslOsvjeziPrimatelje_ = function() {
+        return poslIzracunajZadanePrimatelje_().then(function(predlozeni_) {
+          if (!predlozeni_.length && poslPrimateljiRucnoPromijenjeno_) { return; }
+          var trenutni_ = poslPrimateljiTextarea.value.split(/[,;\s]+/).map(function(s) { return s.trim(); }).filter(function(s) { return s; });
+          if (!poslPrimateljiRucnoPromijenjeno_ || !trenutni_.length) {
+            poslPrimateljiTextarea.value = predlozeni_.join(', ');
+            return;
+          }
+          var trenutniNorm_ = trenutni_.map(function(s) { return s.toLowerCase(); });
+          var dodaj_ = predlozeni_.filter(function(m) { return trenutniNorm_.indexOf(m.toLowerCase()) === -1; });
+          if (dodaj_.length) { poslPrimateljiTextarea.value = trenutni_.concat(dodaj_).join(', '); }
+        });
+      };
+      wrap._poslOsvjeziPrimatelje_ = poslOsvjeziPrimatelje_;
+      // Automatsko popunjavanje pri otvaranju kartice + svaki put kad se
+      // promijeni kvačica poslovnice (dok se ne dira ručno upisano).
+      poslOsvjeziPrimatelje_();
+      if (typeof poslovnicaCbs !== 'undefined' && poslovnicaCbs) {
+        poslovnicaCbs.forEach(function(cb) { cb.addEventListener('change', function() { poslOsvjeziPrimatelje_(); }); });
+        if (typeof poslovnicaCbSvi !== 'undefined' && poslovnicaCbSvi) {
+          poslovnicaCbSvi.addEventListener('change', function() { poslOsvjeziPrimatelje_(); });
         }
-      });
+      }
 
       // Gumb "↺ Vrati zadane adrese" — za razliku od automatskog popunjavanja
       // iznad, OVDJE se namjerno PREPISUJE polje čak i ako je već ručno

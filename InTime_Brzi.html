@@ -128,11 +128,20 @@
   .pitanje{border-top:1px solid var(--line);padding:7px 0;font-size:14.5px;}
   .pitanje .o{font-weight:800;float:right;margin-left:10px;}
   .pitanje .k{color:var(--muted);font-size:13.5px;margin-top:3px;font-style:italic;}
+  button.broj{display:block;width:100%;text-align:left;font-weight:400;color:var(--ink);background:var(--card);padding:12px;border-radius:12px;border:1px solid var(--line);border-left:5px solid var(--teal);}
+  button.broj.crv{border-left-color:var(--red);} button.broj.zut{border-left-color:#e0a21a;} button.broj.zel{border-left-color:var(--ok);} button.broj.sivo{border-left-color:#6b7775;}
+  .broj.siroko{grid-column:1 / -1;}
+  .broj i{display:block;font-style:normal;font-size:11px;color:var(--teal-dark);font-weight:700;margin-top:3px;}
+  .arh{display:inline-block;font-size:11px;font-weight:800;letter-spacing:.03em;margin-left:6px;vertical-align:middle;}
   .ulaz{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:0 0 6px;}
   .ulaz button{display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;background:#fff;color:var(--ink);border:1px solid var(--line);border-left:5px solid var(--teal);border-radius:12px;padding:12px;}
   .ulaz button b{font-size:24px;line-height:1.1;}
   .ulaz button span{font-size:12.5px;color:var(--muted);font-weight:600;}
   .ulaz button.crv{border-left-color:var(--red);}
+  .boje{display:flex;flex-wrap:wrap;gap:9px;margin:4px 0 2px;}
+  .boje button{width:34px;height:34px;border-radius:50%;padding:0;border:3px solid #fff;box-shadow:0 0 0 1.5px var(--line);}
+  .boje button.on{box-shadow:0 0 0 3px var(--ink);}
+  .boje button.on::after{content:"✓";color:#fff;font-size:16px;font-weight:900;text-shadow:0 0 3px rgba(0,0,0,.6);}
   .mala-nap{font-size:12.5px;color:var(--muted);margin:4px 0 0;}
 </style>
 </head>
@@ -167,10 +176,6 @@
       <img class="banner" src="https://i.imgur.com/soFb4wc.png" alt="In Time">
       <div class="upozorenje" id="pinUpozorenje" hidden>Još koristiš <b>zadani PIN</b>. Promijeni ga u postavkama (⚙).</div>
       <div class="brojke" id="brojke"></div>
-      <div class="ulaz" style="margin-top:10px;">
-        <button type="button" id="gumbAnkete"><b id="brAnkete">–</b><span>📊 Ankete kvalitete</span></button>
-        <button type="button" class="crv" id="gumbOdbijenice"><b id="brOdbijenice">–</b><span>🚫 Nisu zainteresirani</span></button>
-      </div>
       <h2>⏰ Podsjetnici za danas i zakašnjeli</h2>
       <div id="dospjeli"></div>
       <h2 id="klijentiNaslov">🆕 Zadnji klijenti</h2>
@@ -214,6 +219,15 @@
       <div class="poruka" id="trPoruka"></div>
       <div id="trKlijenti"></div>
       <div id="trKontakti"></div>
+    </section>
+
+    <!-- OPĆI POPIS (klik na pločicu s Početne) -->
+    <section class="ekran" id="ekran-lista">
+      <button type="button" class="mali sec" data-ekran-natrag="pocetna">← Natrag</button>
+      <input id="listaQ" type="search" placeholder="Traži u popisu…" autocomplete="off" style="margin-top:10px;" hidden>
+      <div id="listaFilter" class="seg" style="flex-wrap:wrap;" hidden></div>
+      <div class="poruka" id="listaSazetak"></div>
+      <div id="listaSadrzaj"></div>
     </section>
 
     <!-- ANKETE KVALITETE -->
@@ -326,10 +340,10 @@
   }
 
   // ---------- NAVIGACIJA ----------
-  var NASLOVI = { pocetna:'Početna', klijent:'Klijent', imenik:'Imenik', trazi:'Traži', biljeske:'Podsjetnici', ankete:'Ankete kvalitete', odbijenice:'Nisu zainteresirani' };
+  var NASLOVI = { pocetna:'Početna', klijent:'Klijent', imenik:'Imenik', trazi:'Traži', biljeske:'Podsjetnici', ankete:'Ankete kvalitete', odbijenice:'Nisu zainteresirani', lista:'Popis' };
   function idiNa(ekran){
     Array.prototype.forEach.call(document.querySelectorAll('.ekran'), function(e){ e.classList.toggle('aktivan', e.id === 'ekran-' + ekran); });
-    var navEkran = (ekran === 'ankete' || ekran === 'odbijenice') ? 'pocetna' : ekran;
+    var navEkran = (ekran === 'ankete' || ekran === 'odbijenice' || ekran === 'lista') ? 'pocetna' : ekran;
     Array.prototype.forEach.call(document.querySelectorAll('nav button'), function(b){ b.classList.toggle('aktivan', b.getAttribute('data-ekran') === navEkran); });
     $('zagNaslov').textContent = NASLOVI[ekran] || '';
     window.scrollTo(0, 0);
@@ -350,9 +364,15 @@
   }
 
   // ---------- POČETNA ----------
+  var ARH_ = { ABANDON: ['ABANDON', '#c0392b'], ODBIJENA: ['ODBIJENA', '#1a1a1a'], PONISTENA: ['PONIŠTENA', '#8e44ad'], NIJE_DOVRSENA: ['NIJE DOVRŠENO!', '#b8860b'], OSTALO: ['ARHIVA', '#6b7775'] };
+  function arhOznaka(u){
+    if (!u.arhivaKat) { return ''; }
+    var a = ARH_[u.arhivaKat] || ARH_.OSTALO;
+    return '<span class="arh" style="color:' + a[1] + ';">' + a[0] + '</span>';
+  }
   function stavkaKlijenta(u){
     var h = '<div class="stavka" data-row="' + u.rowIndex + '"><div class="naslov">' + esc(u.naziv || '(bez naziva)') +
-      (u.rucni ? '<span class="oznaka rucni">Ručni unos</span>' : '') + '<span class="oznaka faza">' + esc(u.faza) + '</span></div>' +
+      (u.rucni ? '<span class="oznaka rucni">Ručni unos</span>' : '') + '<span class="oznaka faza">' + esc(u.faza) + '</span>' + arhOznaka(u) + '</div>' +
       '<div class="pod">' + esc([u.kontakt, u.grad, u.oib ? 'OIB ' + u.oib : ''].filter(Boolean).join(' · ')) + '</div>' +
       '<div class="pod">' + esc(u.datum) + '</div><div class="akcije">';
     var t = telLink(u.telefon);
@@ -365,14 +385,20 @@
     api({ action:'brziPregled', token: token }).then(function(res){
       if (res.status !== 'ok') { return; }
       var b = res.brojke;
-      $('brojke').innerHTML =
-        '<div class="broj"><b>' + b.zainteresirani + '</b><span>Zainteresirani</span></div>' +
-        '<div class="broj zut"><b>' + b.naCekanju + '</b><span>Ponude čekaju odgovor</span></div>' +
-        '<div class="broj crv"><b>' + b.istekle + '</b><span>Istekle ponude</span></div>' +
-        '<div class="broj zel"><b>' + b.klijenti + '</b><span>Klijenti u sustavu</span></div>' +
-        '<div class="broj"><b>' + b.ponude + '</b><span>Ponude ukupno</span></div>' +
-        '<div class="broj"><b>' + res.kontakata + '</b><span>Kontakata u imeniku</span></div>';
-      $('brAnkete').textContent = (b.ankete != null) ? b.ankete : '–'; $('brOdbijenice').textContent = (b.odbijenice != null) ? b.odbijenice : '–';
+      var plocice = [
+        ['interes', '', b.zainteresirani, 'Zainteresirani'],
+        ['cekaju', 'zut', b.naCekanju, 'Ponude čekaju odgovor'],
+        ['istekle', 'crv', b.istekle, 'Istekle ponude'],
+        ['klijenti', 'zel', b.klijenti, 'Klijenti u sustavu'],
+        ['ponude', '', b.ponude, 'Ponude ukupno'],
+        ['imenik', '', res.kontakata, 'Kontakata u imeniku'],
+        ['arhiva', 'sivo', b.arhiva, '🗄️ Arhiva'],
+        ['ankete', '', b.ankete != null ? b.ankete : '–', '📊 Ankete kvalitete'],
+        ['odbijenice', 'crv', b.odbijenice != null ? b.odbijenice : '–', '🚫 Nisu zainteresirani']
+      ];
+      $('brojke').innerHTML = plocice.map(function(p, i){
+        return '<button type="button" class="broj ' + p[1] + (i === plocice.length - 1 && plocice.length % 2 ? ' siroko' : '') + '" data-otvori="' + p[0] + '"><b>' + p[2] + '</b><span>' + p[3] + '</span></button>';
+      }).join('');
       $('pinUpozorenje').hidden = !res.pinZadani;
       $('dospjeli').innerHTML = res.dospjeli.length ? res.dospjeli.map(kartaBiljeske).join('') : '<div class="poruka">Nema podsjetnika za danas.</div>';
       if (!sviMod) $('zadnji').innerHTML = res.zadnji.length ? res.zadnji.map(stavkaKlijenta).join('') : '<div class="poruka">Još nema klijenata.</div>';
@@ -467,11 +493,80 @@
     }).catch(function(e){ if (e && e.message === 'auth') { return; } $('trPoruka').textContent = 'Nema veze s poslužiteljem.'; });
   }
 
+  // ---------- POPISI S POČETNE (klik na pločicu) ----------
+  var LISTE_ = {
+    interes:  { naslov: 'Zainteresirani', test: function(u){ return u.fazaKljuc === 'interes'; } },
+    cekaju:   { naslov: 'Ponude čekaju odgovor', test: function(u){ return u.fazaKljuc === 'ponuda_na_cekanju'; } },
+    istekle:  { naslov: 'Istekle ponude', test: function(u){ return u.fazaKljuc === 'ponuda_istekla'; } },
+    klijenti: { naslov: 'Klijenti u sustavu', test: function(u){ return u.fazaKljuc === 'klijent'; } },
+    ponude:   { naslov: 'Ponude ukupno', test: function(u){ return String(u.fazaKljuc).indexOf('ponuda_') === 0; },
+      chips: [['sve', 'Sve', function(){ return true; }], ['ns', 'Nije poslana', function(u){ return u.fazaKljuc === 'ponuda_nije_poslano'; }], ['nc', 'Čeka odgovor', function(u){ return u.fazaKljuc === 'ponuda_na_cekanju'; }],
+        ['ist', 'Istekla', function(u){ return u.fazaKljuc === 'ponuda_istekla'; }], ['pot', 'Prihvaćena', function(u){ return u.fazaKljuc === 'ponuda_potvrdjena'; }],
+        ['odb', 'Odbijena', function(u){ return u.fazaKljuc === 'ponuda_odbijena'; }], ['pon', 'Poništena', function(u){ return u.fazaKljuc.indexOf('ponuda_ponistena') === 0; }]] },
+    arhiva:   { naslov: 'Arhiva', test: function(u){ return u.fazaKljuc === 'arhiva'; },
+      chips: [['sve', 'Sve', function(){ return true; }], ['AB', 'Abandon', function(u){ return u.arhivaKat === 'ABANDON'; }], ['OD', 'Odbijena', function(u){ return u.arhivaKat === 'ODBIJENA'; }],
+        ['PO', 'Poništena', function(u){ return u.arhivaKat === 'PONISTENA'; }], ['ND', 'Nije dovršeno', function(u){ return u.arhivaKat === 'NIJE_DOVRSENA'; }], ['OS', 'Ostalo', function(u){ return u.arhivaKat === 'OSTALO'; }]] }
+  };
+  var listaTrenutna = '', listaPodaci = [], listaChip = 'sve';
+
+  function kontaktKartica(k){
+    var t = telLink(k.telefoni), mail = String(k.emailovi || '').split(',')[0].trim();
+    return '<div class="stavka"><div class="naslov">' + esc(k.ime) + '</div><div class="pod">' + esc([k.tvrtka, k.telefoni, k.emailovi].filter(Boolean).join(' · ')) + '</div>' +
+      (k.napomena ? '<div class="pod">' + esc(k.napomena) + '</div>' : '') + (k.tagovi ? '<div class="pod">' + esc(k.tagovi) + '</div>' : '') +
+      '<div class="akcije">' + (t ? '<a class="gumb" href="tel:' + esc(t) + '">📞 Nazovi</a>' : '') + (mail ? '<a class="gumb sec" href="mailto:' + esc(mail) + '">✉ Mail</a>' : '') +
+      '<button type="button" class="mali sec" data-biljeska="kontakt" data-ref="imenik-' + k.rowIndex + '" data-naziv="' + esc(k.ime) + '" data-tel="' + esc(k.telefoni || '') + '">⏰ Podsjetnik</button></div></div>';
+  }
+
+  function iscrtajListu(){
+    var cfg = LISTE_[listaTrenutna];
+    if (listaTrenutna === 'imenik') {
+      var q = $('listaQ').value.trim().toLowerCase();
+      var l = listaPodaci.filter(function(k){ return !q || [k.ime, k.tvrtka, k.telefoni, k.emailovi, k.napomena].join(' ').toLowerCase().indexOf(q) !== -1; });
+      $('listaSazetak').innerHTML = '<b>' + l.length + '</b>' + (q ? ' od ' + listaPodaci.length : '') + ' kontakata';
+      $('listaSadrzaj').innerHTML = l.length ? l.slice(0, 200).map(kontaktKartica).join('') + (l.length > 200 ? '<div class="poruka">Prikazano prvih 200 — suzi pretragu.</div>' : '') : '<div class="poruka">Nema kontakata.</div>';
+      return;
+    }
+    var osnova = listaPodaci.filter(cfg.test);
+    if (cfg.chips) {
+      $('listaFilter').hidden = false;
+      $('listaFilter').innerHTML = cfg.chips.map(function(c){
+        var n = osnova.filter(c[2]).length;
+        return '<button type="button" class="mali' + (c[0] === listaChip ? ' on' : '') + '" data-lchip="' + c[0] + '" style="flex:0 0 auto;">' + c[1] + ' (' + n + ')</button>';
+      }).join('');
+      var aktivni = cfg.chips.filter(function(c){ return c[0] === listaChip; })[0] || cfg.chips[0];
+      osnova = osnova.filter(aktivni[2]);
+    }
+    $('listaSazetak').innerHTML = '<b>' + osnova.length + '</b> ' + (osnova.length === 1 ? 'zapis' : 'zapisa');
+    $('listaSadrzaj').innerHTML = osnova.length ? osnova.map(stavkaKlijenta).join('') : '<div class="poruka">Nema zapisa u ovom prikazu.</div>';
+  }
+
+  function otvoriListu(kljuc){
+    var cfg = kljuc === 'imenik' ? { naslov: 'Imenik' } : LISTE_[kljuc];
+    if (!cfg) { return; }
+    listaTrenutna = kljuc; listaPodaci = []; listaChip = 'sve';
+    idiNa('lista');
+    $('zagNaslov').textContent = cfg.naslov;
+    $('listaFilter').hidden = true; $('listaFilter').innerHTML = '';
+    $('listaQ').hidden = (kljuc !== 'imenik'); $('listaQ').value = '';
+    $('listaSazetak').textContent = ''; $('listaSadrzaj').innerHTML = '<div class="poruka">Učitavam…</div>';
+    var p = kljuc === 'imenik' ? api({ action:'brziImenikLista', token: token }) : api({ action:'brziKlijentiLista', token: token });
+    p.then(function(res){
+      if (res.status !== 'ok') { $('listaSadrzaj').innerHTML = '<div class="poruka err">' + esc(res.message || 'Učitavanje nije uspjelo.') + '</div>'; return; }
+      listaPodaci = kljuc === 'imenik' ? res.kontakti : res.klijenti;
+      iscrtajListu();
+    }).catch(function(e){ if (e && e.message === 'auth') { return; } $('listaSadrzaj').innerHTML = '<div class="poruka err">Nema veze s poslužiteljem.</div>'; });
+  }
+  $('listaFilter').addEventListener('click', function(ev){ var b = ev.target.closest('[data-lchip]'); if (b) { listaChip = b.getAttribute('data-lchip'); iscrtajListu(); } });
+  $('listaQ').addEventListener('input', iscrtajListu);
+  $('brojke').addEventListener('click', function(ev){
+    var b = ev.target.closest('[data-otvori]'); if (!b) { return; }
+    var k = b.getAttribute('data-otvori');
+    if (k === 'ankete') { idiNa('ankete'); } else if (k === 'odbijenice') { idiNa('odbijenice'); } else { otvoriListu(k); }
+  });
+
   // ---------- ANKETE KVALITETE i NISU ZAINTERESIRANI ----------
   function ocjKlasa(p){ return p == null ? '' : (p >= 8 ? 'dobra' : (p >= 6 ? 'srednja' : 'losa')); }
   function ocjOznaka(p){ return '<span class="ocj ' + ocjKlasa(p) + '">' + (p == null ? '–' : String(p).replace('.', ',')) + '</span>'; }
-  $('gumbAnkete').addEventListener('click', function(){ idiNa('ankete'); });
-  $('gumbOdbijenice').addEventListener('click', function(){ idiNa('odbijenice'); });
   document.addEventListener('click', function(ev){
     var n = ev.target.closest('[data-ekran-natrag]'); if (n) { idiNa(n.getAttribute('data-ekran-natrag')); }
   });
@@ -537,6 +632,9 @@
   }
 
   // ---------- BILJEŠKE ----------
+  var BOJE_ = [['11','Rajčica','#d50000'],['4','Flamingo','#e67c73'],['6','Mandarina','#f4511e'],['5','Banana','#f6bf26'],['2','Kadulja','#33b679'],['10','Bosiljak','#0b8043'],['7','Paun','#039be5'],['9','Borovnica','#3f51b5'],['1','Lavanda','#7986cb'],['3','Grožđe','#8e24aa'],['8','Grafit','#616161']];
+  function bojaHex_(n){ for (var i = 0; i < BOJE_.length; i++) { if (BOJE_[i][0] === String(n)) { return BOJE_[i][2]; } } return ''; }
+  function bojaZadana_(tip){ return tip === 'poziv' ? '11' : '1'; }
   var biljMapa = {};
   function kartaBiljeske(b){
     biljMapa[b.id] = b;
@@ -546,12 +644,13 @@
     var t = telLink(b.telefon);
     var mail = '';
     if (b.podsjetnik && !b.rijeseno) { mail = b.mailPoslan ? '<span class="oznaka mail">✉ mail poslan</span>' : '<span class="oznaka mail">✉ mail čeka</span>'; }
-    return '<div class="stavka' + (kasni ? ' zakasnjelo' : '') + '"><div class="naslov">' + esc(b.naziv || (b.tip === 'poziv' ? 'Poziv' : 'Bilješka')) +
+    var bh = bojaHex_(b.boja || bojaZadana_(b.tip));
+    return '<div class="stavka' + (kasni ? ' zakasnjelo' : '') + '" style="border-left:6px solid ' + bh + ';"><div class="naslov">' + esc(b.naziv || (b.tip === 'poziv' ? 'Poziv' : 'Bilješka')) +
       (b.tip === 'poziv' ? '<span class="oznaka poziv">📞 Poziv</span>' : '') + mail + '</div>' +
       '<div class="pod">' + esc(b.datum) + (pod ? ' · ' + esc(pod) : '') + '</div><div class="biljeska-tekst">' + esc(b.tekst) + '</div>' +
       '<div class="akcije">' +
       (t && !b.rijeseno ? '<a class="gumb" href="tel:' + esc(t) + '">📞 Nazovi</a>' : '') +
-      (b.rijeseno ? '<button type="button" class="mali sivo" data-bilj-akcija="otvori" data-id="' + esc(b.id) + '">↩ Vrati</button>' : '<button type="button" class="mali" data-bilj-akcija="rijeseno" data-id="' + esc(b.id) + '">✓ Riješeno</button>') +
+      (b.rijeseno ? '<button type="button" class="mali sivo" data-bilj-akcija="otvori" data-id="' + esc(b.id) + '">↩ Vrati</button>' : '<button type="button" class="mali crv" data-bilj-akcija="rijeseno" data-id="' + esc(b.id) + '">✓ Riješeno</button>') +
       (b.rijeseno ? '' : '<button type="button" class="mali sec" data-bilj-akcija="uredi" data-id="' + esc(b.id) + '">✏ Uredi</button>') +
       '<button type="button" class="mali sivo" data-bilj-akcija="obrisi" data-id="' + esc(b.id) + '">🗑 Obriši</button></div></div>';
   }
@@ -571,7 +670,7 @@
     var a = ev.target.closest('[data-bilj-akcija]');
     if (a) {
       var id = a.getAttribute('data-id'), ak = a.getAttribute('data-bilj-akcija');
-      if (ak === 'uredi') { var b0 = biljMapa[id]; if (b0) { otvoriBiljesku({ id: b0.id, tip: b0.tip, ref: b0.ref, naziv: b0.naziv, telefon: b0.telefon, tekst: b0.tekst, podsjetnik: b0.podsjetnik, vrijeme: b0.vrijeme, primatelji: b0.primatelji }); } return; }
+      if (ak === 'uredi') { var b0 = biljMapa[id]; if (b0) { otvoriBiljesku({ id: b0.id, tip: b0.tip, ref: b0.ref, naziv: b0.naziv, telefon: b0.telefon, tekst: b0.tekst, podsjetnik: b0.podsjetnik, vrijeme: b0.vrijeme, primatelji: b0.primatelji, boja: b0.boja }); } return; }
       if (ak === 'obrisi' && !confirm('Obrisati?')) { return; }
       var p = ak === 'obrisi' ? api({ action:'brziBiljeskaObrisi', token: token, id: id }) : api({ action:'brziBiljeskaRijeseno', token: token, id: id, rijeseno: ak === 'rijeseno' });
       p.then(function(){ ucitajBiljeske(); ucitajPregled(); }).catch(function(){});
@@ -605,6 +704,7 @@
       '<div class="redak2"><div><label for="bPod">Datum podsjetnika</label><input id="bPod" type="date" min="' + dan(0) + '" value="' + esc(opt.podsjetnik || '') + '"></div>' +
       '<div><label for="bVr">Vrijeme</label><input id="bVr" type="time" value="' + esc(opt.vrijeme || '') + '"></div></div>' +
       '<div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;"><button type="button" class="mali sec" data-brzi-dat="0">Danas</button><button type="button" class="mali sec" data-brzi-dat="1">Sutra</button><button type="button" class="mali sec" data-brzi-dat="3">Za 3 dana</button><button type="button" class="mali sec" data-brzi-dat="7">Za tjedan</button></div>' +
+      '<label>Boja (vidi se i u Google Kalendaru)</label><div class="boje" id="bBoje"></div>' +
       '<div class="mala-nap">Mail stiže u zadano vrijeme (bez vremena: u 08:00).</div>' +
       '<label for="bPrim">Mail stiže na</label><input id="bPrim" type="text" inputmode="email" autocomplete="off" placeholder="adresa1@…, adresa2@…">' +
       '<div class="poruka" id="bPor"></div>' +
@@ -613,8 +713,16 @@
       tip = t;
       Array.prototype.forEach.call(document.querySelectorAll('.seg button'), function(b){ b.classList.toggle('on', b.getAttribute('data-tip') === t); });
       $('bTelBlok').hidden = (t !== 'poziv');
+      if (typeof nacrtajBoje === 'function' && $('bBoje')) { nacrtajBoje(); }
+    }
+    var boja = opt.boja || '';
+    function nacrtajBoje(){
+      var zad = bojaZadana_(tip), akt = boja || zad;
+      $('bBoje').innerHTML = BOJE_.map(function(c){ return '<button type="button" data-boja="' + c[0] + '" title="' + c[1] + '" style="background:' + c[2] + ';"' + (c[0] === akt ? ' class="on"' : '') + '></button>'; }).join('');
     }
     postaviTip(tip);
+    nacrtajBoje();
+    $('bBoje').addEventListener('click', function(ev){ var b = ev.target.closest('[data-boja]'); if (b) { boja = b.getAttribute('data-boja'); nacrtajBoje(); } });
     function nacrtajKlijenta(){
       var blok = $('bKlijentBlok');
       if (naziv) {
@@ -662,8 +770,8 @@
       this.disabled = true;
       var tel = tip === 'poziv' ? $('bTel').value.trim() : '';
       var payload = uredi
-        ? { action:'brziBiljeskaUredi', token: token, id: opt.id, tekst: tekst, podsjetnik: $('bPod').value, vrijeme: $('bVr').value, primatelji: $('bPrim').value, telefon: tel }
-        : { action:'brziBiljeskaDodaj', token: token, tip: tip, ref: ref, naziv: naziv, tekst: tekst, podsjetnik: $('bPod').value, vrijeme: $('bVr').value, primatelji: $('bPrim').value, telefon: tel };
+        ? { action:'brziBiljeskaUredi', token: token, id: opt.id, tekst: tekst, podsjetnik: $('bPod').value, vrijeme: $('bVr').value, primatelji: $('bPrim').value, telefon: tel, boja: boja }
+        : { action:'brziBiljeskaDodaj', token: token, tip: tip, ref: ref, naziv: naziv, tekst: tekst, podsjetnik: $('bPod').value, vrijeme: $('bVr').value, primatelji: $('bPrim').value, telefon: tel, boja: boja };
       api(payload).then(function(res){
         if (res.status === 'ok') {
           zatvoriSloj(); ucitajBiljeske(); ucitajPregled();
