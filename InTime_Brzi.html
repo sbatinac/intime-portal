@@ -99,8 +99,8 @@
   .veliki-gumb{width:100%;padding:18px;font-size:18px;border-radius:16px;}
 
   /* Donja navigacija */
-  nav{position:fixed;left:0;right:0;bottom:0;z-index:30;background:#fff;border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(5,1fr);padding-bottom:env(safe-area-inset-bottom);}
-  nav button{background:none;color:var(--muted);border-radius:0;padding:9px 2px 7px;font-size:11.5px;font-weight:700;display:flex;flex-direction:column;align-items:center;gap:2px;}
+  nav{position:fixed;left:0;right:0;bottom:0;z-index:30;background:#fff;border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(6,1fr);padding-bottom:env(safe-area-inset-bottom);}
+  nav button{background:none;color:var(--muted);border-radius:0;padding:9px 1px 7px;font-size:10.5px;font-weight:700;display:flex;flex-direction:column;align-items:center;gap:2px;}
   nav button .ik{font-size:21px;line-height:1;}
   nav button.aktivan{color:var(--teal-dark);box-shadow:inset 0 3px 0 var(--teal);}
   nav button .bedz{position:absolute;margin:-4px 0 0 18px;background:var(--red);color:#fff;border-radius:10px;font-size:10.5px;padding:1px 6px;}
@@ -175,6 +175,7 @@
     <section class="ekran aktivan" id="ekran-pocetna">
       <img class="banner" src="https://i.imgur.com/soFb4wc.png" alt="In Time">
       <div class="upozorenje" id="pinUpozorenje" hidden>Još koristiš <b>zadani PIN</b>. Promijeni ga u postavkama (⚙).</div>
+      <button type="button" class="kartica" id="bsKartica" hidden style="width:100%;text-align:left;background:#f2faff;border:2px solid #2fb1ee;color:var(--ink);font-weight:400;"></button>
       <div class="brojke" id="brojke"></div>
       <h2>⏰ Podsjetnici za danas i zakašnjeli</h2>
       <div id="dospjeli"></div>
@@ -192,9 +193,22 @@
         <p style="margin:6px 0 12px;color:var(--muted);font-size:14.5px;">Isti upitnik kao na web stranici. Dio "osoba koja unosi" je unaprijed popunjen (Saša Batinac). Klijent ulazi u karticu <b>Zainteresirani</b> s oznakom <i>Ručni unos</i>.</p>
         <button type="button" class="veliki-gumb" id="gumbNoviKlijent">➕ Unesi klijenta</button>
       </div>
-      <div class="kartica" style="opacity:.75;">
+    </section>
+
+    <!-- PISMO NAMJERE (pojedinačno) -->
+    <section class="ekran" id="ekran-pismo">
+      <div class="kartica" id="pismoKartica">
         <b>✉ Pismo namjere</b>
-        <p style="margin:6px 0 0;color:var(--muted);font-size:14.5px;">Slanje pisma namjere odavde — dolazi kad ga napravimo.</p>
+        <p style="margin:4px 0 0;color:var(--muted);font-size:13.5px;">Upiši podatke firme i pošalji — ide predložak koji je potvrđen u adminu (Pisma namjere → Mobilno pismo namjere). Samo pojedinačno slanje.</p>
+        <div class="poruka" id="pnStanje" style="margin-top:8px;"></div>
+        <label for="pnOib">OIB * (11 znamenki)</label><input id="pnOib" type="text" inputmode="numeric" maxlength="11" autocomplete="off">
+        <label for="pnNaziv">Naziv firme *</label><input id="pnNaziv" type="text" autocomplete="off">
+        <label for="pnEmail">E-mail * (kamo ide pismo)</label><input id="pnEmail" type="email" inputmode="email" autocomplete="off" autocapitalize="off">
+        <label for="pnOsoba">Ime i prezime primatelja</label><input id="pnOsoba" type="text" autocomplete="off">
+        <div class="redak2"><div><label for="pnPosta">Poštanski broj</label><input id="pnPosta" type="text" inputmode="numeric" maxlength="5" autocomplete="off"></div>
+        <div><label for="pnGrad">Grad</label><input id="pnGrad" type="text" autocomplete="off"></div></div>
+        <button type="button" class="veliki-gumb" style="margin-top:14px;" id="gumbPismoSalji">✉ Pošalji pismo namjere</button>
+        <div class="poruka" id="pnPoruka"></div>
       </div>
     </section>
 
@@ -258,6 +272,7 @@
   <nav>
     <button type="button" data-ekran="pocetna" class="aktivan"><span class="ik">🏠</span>Početna</button>
     <button type="button" data-ekran="klijent"><span class="ik">➕</span>Klijent</button>
+    <button type="button" data-ekran="pismo"><span class="ik">✉️</span>Pismo</button>
     <button type="button" data-ekran="imenik"><span class="ik">📒</span>Imenik</button>
     <button type="button" data-ekran="trazi"><span class="ik">🔎</span>Traži</button>
     <button type="button" data-ekran="biljeske"><span class="ik">⏰</span>Podsjetnici<span class="bedz" id="bedzBilj" hidden></span></button>
@@ -340,15 +355,16 @@
   }
 
   // ---------- NAVIGACIJA ----------
-  var NASLOVI = { pocetna:'Početna', klijent:'Klijent', imenik:'Imenik', trazi:'Traži', biljeske:'Podsjetnici', ankete:'Ankete kvalitete', odbijenice:'Nisu zainteresirani', lista:'Popis' };
+  var NASLOVI = { pocetna:'Početna', klijent:'Klijent', pismo:'Pismo namjere', imenik:'Imenik', trazi:'Traži', biljeske:'Podsjetnici', ankete:'Ankete kvalitete', odbijenice:'Nisu zainteresirani', lista:'Popis' };
   function idiNa(ekran){
     Array.prototype.forEach.call(document.querySelectorAll('.ekran'), function(e){ e.classList.toggle('aktivan', e.id === 'ekran-' + ekran); });
     var navEkran = (ekran === 'ankete' || ekran === 'odbijenice' || ekran === 'lista') ? 'pocetna' : ekran;
     Array.prototype.forEach.call(document.querySelectorAll('nav button'), function(b){ b.classList.toggle('aktivan', b.getAttribute('data-ekran') === navEkran); });
     $('zagNaslov').textContent = NASLOVI[ekran] || '';
     window.scrollTo(0, 0);
-    if (ekran === 'pocetna') { ucitajPregled(); }
+    if (ekran === 'pocetna') { ucitajPregled(); ucitajBattleships(); }
     if (ekran === 'biljeske') { ucitajBiljeske(); }
+    if (ekran === 'pismo') { ucitajPismoStanje(); }
     if (ekran === 'ankete') { ucitajAnkete(); }
     if (ekran === 'odbijenice') { ucitajOdbijenice(); }
     if (ekran === 'trazi') { setTimeout(function(){ $('trQ').focus(); }, 50); }
@@ -362,6 +378,56 @@
     $('prijava').hidden = true; $('app').hidden = false;
     idiNa('pocetna');
   }
+
+  // ---------- PISMO NAMJERE (pojedinačno, predložak potvrđen u adminu) ----------
+  var pnSlanje = false, pnSpremno = false;
+  function ucitajPismoStanje(){
+    api({ action:'brziPismoStanje', token: token }).then(function(res){
+      if (res.status !== 'ok') { $('pnStanje').textContent = res.message || 'Stanje nije učitano.'; return; }
+      pnSpremno = !!res.spremno;
+      var t = pnSpremno ? '✅ Predložak: ' + res.predlozak : '⚠️ Predložak nije potvrđen u adminu — slanje je zaključano.';
+      if (res.kvota !== null && res.kvota !== undefined) { t += ' · kvota maila: ' + res.kvota; }
+      if (res.igra) { t += '\n🎯 Battleships: ' + res.igra.mjesec + ' / ' + res.igra.cilj + ' bod. ovaj mjesec · pogodaka ' + res.igra.pogodaka + ' od ' + res.igra.poslano + ' · klijenata ' + res.igra.klijenti + ' · ' + res.igra.razina; }
+      $('pnStanje').style.whiteSpace = 'pre-line'; $('pnStanje').textContent = t;
+      $('gumbPismoSalji').disabled = !pnSpremno;
+    }).catch(function(e){ if (e && e.message === 'auth') { return; } $('pnStanje').textContent = 'Nema veze s poslužiteljem.'; });
+  }
+  function posaljiPismo(potvrdiDup){
+    if (pnSlanje) { return; }
+    var p = { oib: $('pnOib').value.replace(/\s+/g, ''), naziv: $('pnNaziv').value.trim(), email: $('pnEmail').value.trim(), osoba: $('pnOsoba').value.trim(), posta: $('pnPosta').value.trim(), grad: $('pnGrad').value.trim() };
+    if (!/^\d{11}$/.test(p.oib)) { $('pnPoruka').textContent = 'OIB je obavezan i mora imati 11 znamenki.'; return; }
+    if (!p.naziv) { $('pnPoruka').textContent = 'Upiši naziv firme.'; return; }
+    if (!/^[^\s@,;]+@[^\s@,;]+\.[^\s@,;]{2,}$/.test(p.email)) { $('pnPoruka').textContent = 'Upiši ispravnu e-mail adresu.'; return; }
+    if (potvrdiDup !== true && !confirm('Poslati pismo namjere na ' + p.email + '?')) { return; }
+    pnSlanje = true; $('gumbPismoSalji').disabled = true; $('pnPoruka').textContent = 'Šaljem…';
+    api({ action:'brziPismoPosalji', token: token, oib: p.oib, naziv: p.naziv, email: p.email, grad: p.grad, osoba: p.osoba, posta: p.posta, potvrdiDuplikat: potvrdiDup === true }).then(function(res){
+      pnSlanje = false; $('gumbPismoSalji').disabled = !pnSpremno;
+      if (res.status === 'ok') {
+        $('pnPoruka').textContent = '✅ Poslano na ' + p.email + '.';
+        ['pnOib','pnNaziv','pnEmail','pnOsoba','pnPosta','pnGrad'].forEach(function(id){ $(id).value = ''; });
+        ucitajPismoStanje();
+      } else if (res.status === 'duplikat') {
+        $('pnPoruka').textContent = '';
+        if (confirm(res.message + ' Poslati ponovno?')) { posaljiPismo(true); }
+      } else { $('pnPoruka').textContent = '❌ ' + (res.message || 'Slanje nije uspjelo.'); }
+    }).catch(function(e){ pnSlanje = false; $('gumbPismoSalji').disabled = !pnSpremno; if (e && e.message === 'auth') { return; } $('pnPoruka').textContent = '❌ Nema veze s poslužiteljem.'; });
+  }
+  $('gumbPismoSalji').addEventListener('click', function(){ posaljiPismo(false); });
+
+  // ---------- BATTLESHIPS (sažetak na Početnoj) ----------
+  function ucitajBattleships(){
+    api({ action:'brziPismoStanje', token: token }).then(function(res){
+      var g = res && res.igra; var k = $('bsKartica');
+      if (!g) { k.hidden = true; return; }
+      var p = Math.max(0, Math.min(100, Math.round((g.mjesec || 0) / (g.cilj || 500) * 100)));
+      k.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;"><b style="color:#0a5f8c;">🎯 Battleships</b><span style="font-size:12px;color:var(--muted);">' + esc(g.razina) + '</span></div>' +
+        '<div style="display:flex;align-items:baseline;gap:6px;margin-top:4px;"><span style="font-size:34px;font-weight:900;color:#0a7bb5;line-height:1;">' + (g.mjesec || 0) + '</span><span style="color:var(--muted);font-weight:700;">/ ' + (g.cilj || 500) + ' bod. ovaj mjesec</span></div>' +
+        '<div style="height:10px;background:#e3f4fd;border-radius:6px;margin:8px 0 6px;overflow:hidden;border:1px solid #bfe6fa;"><div style="height:100%;width:' + p + '%;background:linear-gradient(90deg,#2fb1ee,#1e8449);"></div></div>' +
+        '<div style="font-size:13px;color:var(--muted);">Poslano pisama: <b>' + g.poslano + '</b> · pogodaka: <b>' + g.pogodaka + '</b> · klijenata: <b>' + g.klijenti + '</b></div>';
+      k.hidden = false;
+    }).catch(function(){});
+  }
+  $('bsKartica').addEventListener('click', function(){ idiNa('pismo'); });
 
   // ---------- POČETNA ----------
   var ARH_ = { ABANDON: ['ABANDON', '#c0392b'], ODBIJENA: ['ODBIJENA', '#1a1a1a'], PONISTENA: ['PONIŠTENA', '#8e44ad'], NIJE_DOVRSENA: ['NIJE DOVRŠENO!', '#b8860b'], OSTALO: ['ARHIVA', '#6b7775'] };
