@@ -402,10 +402,16 @@
     box-shadow:0 6px 16px rgba(34,152,145,.45);
   }
   .tab-btn.active:hover{background:linear-gradient(135deg,#27a79f 0%,#1f8d99 100%);color:#fff;border-color:#6fe0d6;}
-  /* "Klijenti" — crvena kartica (Sašin zahtjev), ista crvena kao "NE" gumb na javnoj stranici */
-  #tab-btn-novi-klijenti{background:linear-gradient(160deg,#d64545 0%,#a82222 100%);border-color:#8f1b1b;color:#fff;box-shadow:0 2px 6px rgba(120,20,20,.35);}
-  #tab-btn-novi-klijenti:hover{background:linear-gradient(160deg,#e45a5a 0%,#b82a2a 100%);border-color:#ffd0d0;box-shadow:0 10px 22px rgba(120,20,20,.45),0 0 0 1px rgba(255,208,208,.45);}
-  #tab-btn-novi-klijenti.active{background:linear-gradient(160deg,#d64545 0%,#a82222 100%);border-color:#fff;box-shadow:0 0 0 3px #a82222,0 6px 16px rgba(120,20,20,.5);}
+  /* Obojene kartice (Sašin zahtjev, 4.10.2026.): Klijenti = zelena, Nisu zainteresirani = crvena (ista crvena kao "NE" gumb na javnoj stranici), Zainteresirani = žuta */
+  #tab-btn-novi-klijenti{background:linear-gradient(160deg,#2ecc71 0%,#1e8449 100%);border-color:#17683a;color:#fff;box-shadow:0 2px 6px rgba(20,100,50,.35);}
+  #tab-btn-novi-klijenti:hover{background:linear-gradient(160deg,#4bdc88 0%,#239b56 100%);border-color:#d5f5e3;box-shadow:0 10px 22px rgba(20,100,50,.45),0 0 0 1px rgba(213,245,227,.45);}
+  #tab-btn-novi-klijenti.active{background:linear-gradient(160deg,#2ecc71 0%,#1e8449 100%);border-color:#fff;box-shadow:0 0 0 3px #1e8449,0 6px 16px rgba(20,100,50,.5);}
+  #tab-btn-odbijenica{background:linear-gradient(160deg,#d64545 0%,#a82222 100%);border-color:#8f1b1b;color:#fff;box-shadow:0 2px 6px rgba(120,20,20,.35);}
+  #tab-btn-odbijenica:hover{background:linear-gradient(160deg,#e45a5a 0%,#b82a2a 100%);border-color:#ffd0d0;box-shadow:0 10px 22px rgba(120,20,20,.45),0 0 0 1px rgba(255,208,208,.45);}
+  #tab-btn-odbijenica.active{background:linear-gradient(160deg,#d64545 0%,#a82222 100%);border-color:#fff;box-shadow:0 0 0 3px #a82222,0 6px 16px rgba(120,20,20,.5);}
+  #tab-btn-interes{background:linear-gradient(160deg,#ffd84d 0%,#e0a800 100%);border-color:#b78600;color:#3b2d00;box-shadow:0 2px 6px rgba(150,110,0,.35);}
+  #tab-btn-interes:hover{background:linear-gradient(160deg,#ffe27a 0%,#ecb413 100%);border-color:#fff2b8;color:#3b2d00;box-shadow:0 10px 22px rgba(150,110,0,.45),0 0 0 1px rgba(255,242,184,.55);}
+  #tab-btn-interes.active{background:linear-gradient(160deg,#ffd84d 0%,#e0a800 100%);border-color:#fff;color:#3b2d00;box-shadow:0 0 0 3px #b78600,0 6px 16px rgba(150,110,0,.5);}
   @media (prefers-reduced-motion:reduce){.tab-btn,.tab-btn:hover{transition:none;transform:none;}}
 
   .empty-hint{color:var(--grey);font-size:13px;padding:24px;text-align:center;}
@@ -8829,7 +8835,7 @@
       '.pisma-wrap .af-slanje-guard-uvjeti .uvjet.ok .ikona{background:#e9dcf8;color:#4d148c;}' +
       '.pisma-wrap .af-slanje-guard-uvjeti .uvjet{border-color:#e0d4f0;}' +
       '.pisma-wrap .af-slanje-guard-uvjeti .uvjet.fail{border-color:#f3c7c0;}' +
-      '.pisma-wrap .pm-ved-alat{display:flex;flex-wrap:wrap;gap:6px;align-items:center;background:#f1e9fa;border:1px solid #d8c6ee;border-bottom:none;border-radius:10px 10px 0 0;padding:7px 9px;}' +
+      '.pisma-wrap .pm-ved-alat{display:flex;flex-wrap:wrap;gap:6px;align-items:center;background:#f1e9fa;border:1px solid #d8c6ee;border-bottom:none;border-radius:0;padding:7px 9px;}' +
       '.pisma-wrap .pm-ved-alat button{background:#fff;border:1px solid #cdb8e6;color:#4d148c;border-radius:6px;padding:5px 10px;font:inherit;font-size:13px;font-weight:800;cursor:pointer;min-width:32px;}' +
       '.pisma-wrap .pm-ved-alat button:hover{background:#ebddf8;}' +
       '.pisma-wrap .pm-ved-alat input{padding:5px 8px;border:1px solid #cdb8e6;border-radius:6px;font:inherit;font-size:12.5px;min-width:190px;}' +
@@ -8837,10 +8843,13 @@
       '.pisma-wrap .pm-ved-tagovi{display:flex;flex-wrap:wrap;gap:5px;align-items:center;padding:7px 9px;background:#faf6fd;border:1px solid #d8c6ee;border-bottom:none;font-size:12px;color:#4a3a5e;}' +
       '.pisma-wrap .pm-ved-tagovi code{background:#e9dcf8;border-radius:5px;padding:2px 7px;font-size:11.5px;cursor:pointer;color:#3a0f6b;}' +
       '.pisma-wrap .pm-ved-tagovi code:hover{background:#d8c6ee;}' +
-      '.pisma-wrap .pm-dvije{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px;align-items:start;margin-bottom:8px;}' +
+      '.pisma-wrap .pm-dvije{display:grid;grid-template-columns:minmax(0,1fr);gap:14px;align-items:start;margin-bottom:8px;}' +
+      '.pisma-wrap .pm-stup-pregled{display:none;}' +
+      '.pisma-wrap #pm-kartica-predlozak[data-nacin="uredi"] .pm-stup-pregled{display:block;}' +
+      '.pisma-wrap #pm-kartica-predlozak[data-nacin="uredi"] .pm-dvije:not(.jedan){grid-template-columns:minmax(0,1fr) minmax(0,1fr);}' +
       '.pisma-wrap .pm-dvije.jedan{grid-template-columns:minmax(0,1fr);}' +
-      '@media (max-width:760px){.pisma-wrap .pm-dvije{grid-template-columns:minmax(0,1fr);}}' +
-      '.pisma-wrap .pm-dvije .pm-prikaz{height:640px;border-radius:0 0 10px 10px;border-color:#d8c6ee;display:block;}' +
+      '@media (max-width:760px){.pisma-wrap #pm-kartica-predlozak[data-nacin="uredi"] .pm-dvije:not(.jedan){grid-template-columns:minmax(0,1fr);}}' +
+      '.pisma-wrap .pm-dvije .pm-prikaz{height:640px;border-radius:10px;border-color:#d8c6ee;display:block;}' +
       '.pisma-wrap .pm-vizualni{width:100%;height:640px;border:1px solid #d8c6ee;border-radius:0 0 10px 10px;background:#fff;display:block;resize:vertical;overflow:auto;}' +
       '</style>' +
       '<div class="lc-podtabs pm-tabovi"><button type="button" class="lc-podtab-btn pm-tab active" data-tab="pojedinacno">✉ Pojedinačno slanje</button><button type="button" class="lc-podtab-btn pm-tab" data-tab="kampanje">📣 Kampanje</button><button type="button" class="lc-podtab-btn pm-tab" data-tab="predlosci">📝 Predlošci maila</button><button type="button" class="lc-podtab-btn pm-tab" data-tab="arhiva">🗄 Arhiva pisama namjere</button><button type="button" class="lc-podtab-btn pm-tab" data-tab="postavke">⚙ Postavke izlaznog maila</button></div>' +
@@ -8858,7 +8867,7 @@
         '</div>' +
         '<select id="pm-rucno-tpl" hidden></select>' +
         '<div id="pm-tpl-slot-poj">' +
-      '<div class="pm-kartica" id="pm-kartica-predlozak"><div class="pm-glava">📝 Predložak maila</div><div class="pm-tijelo">' +
+      '<div class="pm-kartica" id="pm-kartica-predlozak" data-nacin="uzivo"><div class="pm-glava">📝 Predložak maila</div><div class="pm-tijelo">' +
         '<p class="pm-hint">Možeš imati više predložaka (npr. prvo pismo, podsjetnik, drugi segment). Odaberi predložak s popisa, ili klikni "Novi predložak" (kreće kao kopija ovoga koji vidiš). Predložak koji je ovdje odabran koristi se za slanje u ovoj kartici: u "Pojedinačno slanje" ide na taj jedan mail, u "Kampanje" na cijelu učitanu listu. Izmjene klikom na "Spremi" vrijede svugdje.</p>' +
         '<div class="pm-mreza">' +
           '<label class="pm-polje">Odaberi predložak (njime se šalje)<select id="pm-tpl-izbor"></select></label>' +
@@ -8877,7 +8886,9 @@
         '<div class="pm-hint" id="pm-predmet-pregled" style="margin:0 0 6px;font-weight:700;color:#1f3d3a;"></div>' +
         '<div style="margin:0 0 10px;"><button type="button" class="pm-gumb sek" id="pm-predmet-ukloni">🗑 Ukloni predmet iz mog popisa</button></div>' +
         '<div class="pm-dvije" id="pm-dvije"><div class="pm-stup">' +
-        '<div class="pm-polje" style="margin:6px 0 6px;font-size:13px;font-weight:800;color:#3a0f6b;">✎ Uredi pismo — klikni u pismo i tipkaj izravno u njemu (vidiš ga baš kako izgleda)</div>' +
+        '<div class="pm-polje" style="margin:6px 0 6px;font-size:13px;font-weight:800;color:#3a0f6b;">✎ Pismo — klikni u njega i tipkaj izravno (vidiš ga baš kako izgleda)</div>' +
+        '<div class="pm-ved-tagovi" id="pm-uzivo-traka" style="border-radius:10px 10px 0 0;"><span id="pm-pregled-izvor" style="font-weight:700;color:#3a0f6b;"></span><select id="pm-pregled-red" hidden style="max-width:300px;padding:4px 6px;border:1px solid #cdb8e6;border-radius:6px;font:inherit;font-size:12px;"></select></div>' +
+        '<div class="pm-ved-tagovi" id="pm-pregled-predmet" style="font-weight:700;color:#1f3d3a;"></div>' +
         '<div class="pm-ved-alat" id="pm-ved-alat">' +
           '<button type="button" data-ved="bold" title="Podebljano"><b>B</b></button><button type="button" data-ved="italic" title="Kurziv"><i>I</i></button><button type="button" data-ved="underline" title="Podcrtano"><u>U</u></button>' +
           '<span class="pm-ved-sep"></span>' +
@@ -8891,11 +8902,9 @@
           '<code>[IME I PREZIME]</code><code>[NAZIV TVRTKE]</code><code>[GRAD]</code><code>[POŠTANSKI BROJ]</code><code>[OIB]</code><code>{{PREDMET}}</code><code>{{BLOK_PRIMATELJA}}</code><code>{{LINK}}</code>' +
         '</div>' +
         '<iframe class="pm-vizualni" id="pm-vizualni" sandbox="allow-same-origin" title="Uređivač pisma"></iframe>' +
-        '<p class="pm-hint" style="margin-top:6px;">Oznake u uglatim/vitičastim zagradama pri slanju se zamijene podacima primatelja. Gumb ostaje vezan na <code>{{LINK}}</code> — mijenjaš samo njegov natpis. Izgled s podacima vidiš uživo u pregledu pokraj (ili ispod).</p>' +
-        '</div><div class="pm-stup">' +
-          '<div class="pm-polje" style="margin:6px 0 6px;font-size:13px;font-weight:800;color:#3a0f6b;">👁 Pregled uživo — popunjen podacima <button type="button" class="pm-gumb sek" id="pm-raspored" style="padding:3px 9px;font-size:11.5px;margin-left:8px;">↕ Jedno ispod drugog</button></div>' +
-          '<div class="pm-ved-alat" id="pm-pregled-glava"><span id="pm-pregled-izvor" style="font-size:12.5px;font-weight:700;color:#3a0f6b;"></span><select id="pm-pregled-red" hidden style="max-width:260px;"></select></div>' +
-          '<div class="pm-ved-tagovi" id="pm-pregled-predmet" style="font-weight:700;color:#1f3d3a;"></div>' +
+        '<p class="pm-hint" style="margin-top:6px;">Oznake u uglatim/vitičastim zagradama pri slanju se zamijene podacima primatelja. Gumb ostaje vezan na <code>{{LINK}}</code> — mijenjaš samo njegov natpis. U "Pojedinačno slanje" i "Kampanje" oznake se u pismu odmah zamjenjuju podacima koje upišeš (u okviru su, ne mogu se uništiti slučajno); u "Predlošcima" vidiš oznake lijevo i primjer podataka desno.</p>' +
+        '</div><div class="pm-stup pm-stup-pregled">' +
+          '<div class="pm-polje" style="margin:6px 0 6px;font-size:13px;font-weight:800;color:#3a0f6b;">👁 Pregled s primjerom podataka <button type="button" class="pm-gumb sek" id="pm-raspored" style="padding:3px 9px;font-size:11.5px;margin-left:8px;">↕ Jedno ispod drugog</button></div>' +
           '<iframe class="pm-prikaz" id="pm-prikaz" sandbox="allow-same-origin" title="Pregled pisma"></iframe>' +
         '</div></div>' +
         '<details id="pm-uredi-detalji"><summary>Napredno: HTML kod pisma</summary>' +
@@ -9071,10 +9080,10 @@
       var ima = !!src && Object.keys(src).some(function(k) { return !!src[k]; }), p = {}, prazna = 0;
       Object.keys(PREGLED_UZORAK).forEach(function(k) { if (ima) { p[k] = src[k]; if (!src[k]) { prazna++; } } else { p[k] = PREGLED_UZORAK[k]; } });
       var opis;
-      if (aktivnaKartica === 'pojedinacno') { opis = ima ? 'Podaci iz obrasca iznad' + (prazna ? ' (prazna polja ostaju prazna, kao u pravom mailu)' : '') : 'Primjer podataka — upiši podatke firme u obrazac iznad pa će se pismo popuniti'; }
-      else if (aktivnaKartica === 'kampanje') { opis = ima ? 'Podaci iz popisa: ' + p.naziv : 'Primjer podataka — učitaj popis (Excel) pa će se pismo popuniti podacima iz njega'; }
-      else { opis = 'Primjer podataka'; }
-      return { p: p, opis: opis };
+      if (aktivnaKartica === 'pojedinacno') { opis = ima ? 'Pismo se uživo popunjava podacima iz obrasca iznad' + (prazna ? ' — polja koja još nisu upisana ostaju kao oznake.' : '.') : 'Upiši podatke firme u obrazac iznad — oznake u pismu odmah se zamijene tvojim podacima.'; }
+      else if (aktivnaKartica === 'kampanje') { opis = ima ? 'Pismo je popunjeno podacima iz popisa — odaberi redak:' : 'Učitaj popis (Excel) — oznake u pismu zamijenit će se podacima iz njega (možeš birati redak).'; }
+      else { opis = 'Lijevo uređuješ pismo s oznakama, desno vidiš primjer s podacima.'; }
+      return { p: p, opis: opis, ima: ima };
     }
     function blokPrimatelja(p) {
       var h = '', mjesto = (p.posta + ' ' + p.grad).trim();
@@ -9089,21 +9098,77 @@
       var link = linkR || linkG || '#';
       var pd = podaciPregleda(), p = pd.p;
       var predmetTekst = predmetPrimjer($('pm-predmet').value, p);
+      $('pm-pregled-izvor').textContent = pd.opis;
+      $('pm-pregled-predmet').textContent = (pd.ima || aktivnaKartica === 'predlosci' ? 'Predmet maila: ' + predmetTekst : 'Predmet maila: ' + $('pm-predmet').value);
+      if ($('pm-predmet').value) { $('pm-predmet-pregled').textContent = 'Pregled predmeta: ' + predmetTekst; }
+      vedOsvjeziZnacke();
+      if (aktivnaKartica !== 'predlosci') { return; }
       var uzorak = { 'PREDMET': predmetTekst, 'BLOK_PRIMATELJA': blokPrimatelja(p), 'IME_FIRME': p.naziv, 'IME_OSOBE': p.osoba || 'kolege', 'GRAD': p.grad, 'POSTANSKI_BROJ': p.posta, 'OIB': p.oib, 'LINK': link, 'LINK_GLAVNA': linkG || link, 'LINK_REBRANDLY': linkR || link };
       var html = $('pm-tijelo').value.replace(/\[IME I PREZIME\]/gi, '{{IME_OSOBE}}').replace(/\[NAZIV TVRTKE\]/gi, '{{IME_FIRME}}').replace(/\[GRAD\]/gi, '{{GRAD}}').replace(/\[OIB\]/gi, '{{OIB}}').replace(/\[PO[ŠS]TANSKI BROJ\]/gi, '{{POSTANSKI_BROJ}}').replace(/\{\{([A-Z_]+)\}\}/g, function(m, k) { return uzorak.hasOwnProperty(k) ? (k === 'BLOK_PRIMATELJA' ? uzorak[k] : esc(uzorak[k])) : m; });
       html = html.replace(/\.(<\/strong>)\./g, '.$1');
-      $('pm-pregled-izvor').textContent = pd.opis;
-      $('pm-pregled-predmet').textContent = 'Predmet maila: ' + predmetTekst;
       $('pm-prikaz').srcdoc = '<!doctype html><html><head><meta charset="utf-8"><style>html{zoom:' + pmZoom($('pm-prikaz')).toFixed(3) + ';}body{margin:0;}</style></head><body>' + html + '</body></html>';
-      if ($('pm-predmet').value) { $('pm-predmet-pregled').textContent = 'Pregled predmeta: ' + predmetTekst; }
     }
     function nacrtajPregledOdgodeno() { clearTimeout(nacrtajPregled._t); nacrtajPregled._t = setTimeout(nacrtajPregled, 250); }
     // ---- vizualni uređivač pisma: iframe u načinu uređivanja, vidiš pismo kako izgleda i tipkaš izravno u njemu; HTML kod ostaje u "Napredno" ----
     var vedF = $('pm-vizualni'), vedRange = null;
     function vedDoc() { try { return vedF.contentDocument; } catch (e) { return null; } }
+    // oznake ({{IME_FIRME}}, [GRAD]…) u uređivaču su "čipovi": prikazuju podatke iz obrasca/popisa, a pri spremanju se vraćaju u oznake
+    var TAG_IZRAZ = '\\{\\{(?:IME_FIRME|IME_OSOBE|GRAD|POSTANSKI_BROJ|OIB|LINK_GLAVNA|LINK_REBRANDLY|LINK|PREDMET|BLOK_PRIMATELJA)\\}\\}|\\[(?:IME I PREZIME|NAZIV TVRTKE|GRAD|OIB|PO[ŠS]TANSKI BROJ)\\]';
+    var TAG_KLJUC = { 'IME I PREZIME': 'IME_OSOBE', 'NAZIV TVRTKE': 'IME_FIRME', 'GRAD': 'GRAD', 'OIB': 'OIB', 'POŠTANSKI BROJ': 'POSTANSKI_BROJ', 'POSTANSKI BROJ': 'POSTANSKI_BROJ' };
+    function tagKljuc(t) { var m = /^\{\{(.+)\}\}$/.exec(t); if (m) { return m[1]; } m = /^\[(.+)\]$/.exec(t); return m ? (TAG_KLJUC[m[1].toUpperCase()] || '') : ''; }
+    function vedPodaci() { if (aktivnaKartica === 'predlosci') { return null; } var pd = podaciPregleda(); return pd.ima ? pd.p : null; }
+    function vedVrijednost(tag) {
+      var k = tagKljuc(tag), p = vedPodaci(), v = '';
+      if (p) {
+        var linkG = $('pm-link-glavna').value.trim(), linkR = $('pm-link-rebrandly').value.trim(), link = linkR || linkG;
+        if (k === 'IME_OSOBE') { v = p.osoba; } else if (k === 'IME_FIRME') { v = p.naziv; } else if (k === 'GRAD') { v = p.grad; } else if (k === 'POSTANSKI_BROJ') { v = p.posta; } else if (k === 'OIB') { v = p.oib; }
+        else if (k === 'LINK') { v = link; } else if (k === 'LINK_GLAVNA') { v = linkG || link; } else if (k === 'LINK_REBRANDLY') { v = linkR || link; }
+        else if (k === 'PREDMET') { v = predmetPrimjer($('pm-predmet').value, p); }
+        else if (k === 'BLOK_PRIMATELJA') { var b = blokPrimatelja(p); if (b) { return { html: b, puno: true }; } }
+      }
+      return v ? { html: esc(v), puno: true } : { html: esc(tag), puno: false };
+    }
+    function vedChipHtml(tag) {
+      var f = vedVrijednost(tag), blok = (tagKljuc(tag) === 'BLOK_PRIMATELJA'), t = blok ? 'div' : 'span';
+      return '<' + t + ' data-tag="' + esc(tag) + '" contenteditable="false"' + (f.puno ? '' : ' class="prazno"') + '>' + f.html + '</' + t + '>';
+    }
+    function vedPrikaz(html) {
+      var dom = new DOMParser().parseFromString('<!doctype html><html><body>' + html + '</body></html>', 'text/html');
+      var w = dom.createTreeWalker(dom.body, NodeFilter.SHOW_TEXT, null), cvorovi = [], n;
+      while ((n = w.nextNode())) {
+        var rod = n.parentNode && n.parentNode.nodeName;
+        if (rod === 'STYLE' || rod === 'SCRIPT' || rod === 'TITLE') { continue; }
+        if (new RegExp(TAG_IZRAZ, 'i').test(n.nodeValue)) { cvorovi.push(n); }
+      }
+      cvorovi.forEach(function(c) {
+        var t = c.nodeValue, last = 0, m, re = new RegExp(TAG_IZRAZ, 'gi'), tmp = dom.createElement('div');
+        var out = '';
+        while ((m = re.exec(t))) { out += esc(t.slice(last, m.index)) + vedChipHtml(m[0]); last = m.index + m[0].length; }
+        out += esc(t.slice(last));
+        tmp.innerHTML = out;
+        var frag = dom.createDocumentFragment();
+        while (tmp.firstChild) { frag.appendChild(tmp.firstChild); }
+        c.parentNode.replaceChild(frag, c);
+      });
+      return dom.body.innerHTML;
+    }
+    function vedSerijaliziraj() {
+      var d = vedDoc(); if (!d || !d.body) { return null; }
+      var kl = d.body.cloneNode(true);
+      Array.prototype.forEach.call(kl.querySelectorAll('[data-tag]'), function(el) { el.parentNode.replaceChild(d.createTextNode(el.getAttribute('data-tag')), el); });
+      return kl.innerHTML;
+    }
+    function vedOsvjeziZnacke() {
+      var d = vedDoc(); if (!d || !d.body) { return; }
+      Array.prototype.forEach.call(d.querySelectorAll('[data-tag]'), function(el) {
+        var f = vedVrijednost(el.getAttribute('data-tag'));
+        if (el.innerHTML !== f.html) { el.innerHTML = f.html; }
+        el.className = f.puno ? '' : 'prazno';
+      });
+    }
     function vedUcitaj() {
       vedRange = null;
-      vedF.srcdoc = '<!doctype html><html><head><meta charset="utf-8"><style>body{margin:0;padding:10px;background:#f3f6f6;}</style></head><body>' + $('pm-tijelo').value + '</body></html>';
+      vedF.srcdoc = '<!doctype html><html><head><meta charset="utf-8"><style>body{margin:0;padding:10px;background:#f3f6f6;}[data-tag]{background:#ece0f8;box-shadow:0 0 0 1px #cfb6ea;border-radius:3px;cursor:default;}div[data-tag]{display:block;}[data-tag].prazno{background:#f4eefb;box-shadow:0 0 0 1px #c3a6e6;color:#5b2d96;}</style></head><body>' + vedPrikaz($('pm-tijelo').value) + '</body></html>';
     }
     function vedAktiviraj() { var d = vedDoc(); if (d && d.body) { try { d.designMode = 'on'; } catch (e) {} } }
     function vedZapamtiOznaku() { var d = vedDoc(), sel = d && d.getSelection ? d.getSelection() : null; if (sel && sel.rangeCount) { vedRange = sel.getRangeAt(0).cloneRange(); } }
@@ -9116,7 +9181,7 @@
     }
     function vedPrenesi() {
       var d = vedDoc(); if (!d || !d.body) { return; }
-      $('pm-tijelo').value = d.body.innerHTML;
+      $('pm-tijelo').value = vedSerijaliziraj();
       tplOznaciIzmjenu();
       clearTimeout(nacrtajPregled._t); nacrtajPregled._t = setTimeout(nacrtajPregled, 300);
     }
@@ -9151,7 +9216,10 @@
     $('pm-ved-tagovi').addEventListener('click', function(ev) {
       if (ev.target.tagName !== 'CODE') { return; }
       var d = vedVrati(); if (!d) { return; }
-      d.execCommand('insertText', false, ev.target.textContent);
+      var tmp = d.createElement('div'); tmp.innerHTML = vedChipHtml(ev.target.textContent);
+      var chip = tmp.firstChild, sel = d.getSelection();
+      if (sel && sel.rangeCount) { var r = sel.getRangeAt(0); r.deleteContents(); r.insertNode(chip); r.setStartAfter(chip); r.collapse(true); sel.removeAllRanges(); sel.addRange(r); }
+      else { d.body.appendChild(chip); }
       vedPrenesi(); vedZapamtiOznaku();
     });
     $('pm-tijelo').addEventListener('input', function() { tplOznaciIzmjenu(); clearTimeout(vedUcitaj._t); vedUcitaj._t = setTimeout(vedUcitaj, 600); });
@@ -9514,6 +9582,7 @@
           if (zeljeni && zeljeni !== tplId && tplIzmijenjen && !confirm('Predložak ima nespremljene izmjene koje će biti odbačene ako prijeđeš u ovu karticu. Prijeći ipak?')) { return; }
           $(slotId).appendChild($('pm-kartica-predlozak'));
           aktivnaKartica = ime;
+          $('pm-kartica-predlozak').setAttribute('data-nacin', ime === 'predlosci' ? 'uredi' : 'uzivo');
           if (zeljeni && zeljeni !== tplId) { ucitajPredlozak(zeljeni).then(function() { if (guardPripravan) { guardiOsvjezi(); } }); }
           else { vedUcitaj(); nacrtajPregled(); if (guardPripravan) { guardiOsvjezi(); } }
         }
