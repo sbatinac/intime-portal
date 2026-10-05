@@ -671,6 +671,12 @@
   .tess-sekcija iframe{display:block;height:var(--tess-visina) !important;}
   /* Tess okvir bez ikakvog ruba, sjaja i treperenja (5.10.2026.) */
   .tess-sekcija .tess-okvir{border:0;box-shadow:none;animation:none;}
+  /* Široki prikaz Tess (kao u Jotformu: slika lijevo, razgovor desno): Jotform ga uključuje kad je okvir širok ≥ 1024 px.
+     Zato na ekranima ≥ 1100 px okvir izlazi iz uske stupce stranice (do 1100 px) i visina je 600 px. Na užim ekranima ostaje složeni prikaz (viša visina). */
+  @media (min-width:1100px){
+    .tess-sekcija .tess-okvir{width:min(1100px, calc(100vw - 48px));max-width:none;position:relative;left:50%;transform:translateX(-50%);margin-left:0;}
+    .tess-sekcija{--tess-visina:600px;}
+  }
   @media (max-width:600px){ .tess-sekcija{--tess-visina:860px;} }
   html.rucni-mod #tess-sekcija{display:none !important;}
   html.rucni-mod #rucni-traka{display:flex;}
