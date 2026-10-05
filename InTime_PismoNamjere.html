@@ -659,6 +659,25 @@
      prikazuje se SAMO upitnik (bez naslovnice, galerija, widgeta); osoba koja unosi je unaprijed Saša Batinac. ---- */
   #rucni-traka{display:none;position:sticky;top:0;z-index:9990;align-items:center;justify-content:space-between;gap:10px;padding:10px 14px;background:linear-gradient(120deg,#0d2230,#135450);color:#fff;font-weight:700;font-size:14px;}
   #rucni-traka a{color:#fff;text-decoration:none;border:1.5px solid rgba(255,255,255,.6);border-radius:8px;padding:6px 12px;font-size:13px;white-space:nowrap;}
+  .tess-sekcija{padding-top:10px;padding-bottom:10px;}
+  .tess-sekcija{--tess-sirina:1040px;}   /* širina Tess okvira (px) */
+  .tess-sekcija .tess-okvir{max-width:var(--tess-sirina);width:100%;margin:14px auto 0;border-radius:16px;overflow:hidden;}
+  /* Tess plutajući balončić (Jotform): zatvoreni balončić je 80 px — povećan na 144 px kao In Time krug (1.8x), isti razmak od ruba (30 px).
+     Povećava se samo sam balončić, ne i otvoreni chat prozor. Promijeni --tess-balon-skala za veći/manji. */
+  :root{--tess-balon-skala:1.8;}
+  .embedded-agent-container .ai-agent-chat-avatar-container{transform-origin:bottom right !important;transform:translate(-14px,-14px) scale(var(--tess-balon-skala)) !important;}
+  @media (max-width:640px){ .embedded-agent-container .ai-agent-chat-avatar-container{transform:translate(-30px,-2px) scale(var(--tess-balon-skala)) !important;} }
+  .tess-sekcija{--tess-visina:760px;}   /* Jotform početni ekran treba ~780 px da gumbi Razgovor/Call stanu (600 px ih reže) */
+  .tess-sekcija iframe{display:block;height:var(--tess-visina) !important;}
+  /* tanak zagasito zeleni (In Time teal) okvir oko Tess okvira — samo boja treperi, bez sjaja */
+  .tess-sekcija .tess-okvir{border:2px solid #229891;box-shadow:none;animation:tessTrepti 2s ease-in-out infinite;}
+  @keyframes tessTrepti{
+    0%,100%{border-color:#1b7a74;}
+    50%{border-color:#2fb3aa;}
+  }
+  @media (prefers-reduced-motion:reduce){ .tess-sekcija .tess-okvir{animation:none;} }
+  @media (max-width:600px){ .tess-sekcija{--tess-visina:860px;} }
+  html.rucni-mod #tess-sekcija{display:none !important;}
   html.rucni-mod #rucni-traka{display:flex;}
   html.rucni-mod .hero-banner, html.rucni-mod section:not(#rucni-sekcija), html.rucni-mod footer,
   html.rucni-mod #mainBtn, html.rucni-mod #mainMenu, html.rucni-mod #kontaktMenu, html.rucni-mod #shareMenu,
@@ -1799,6 +1818,31 @@
   <section style="padding-top:0;">
     <div class="wrap-wide">
       <img class="cta-pre-img" src="https://i.imgur.com/QWOPK7p.png" alt="In Time">
+    </div>
+  </section>
+
+  <!-- AI SAVJETNIK TESS (Jotform) — ugrađen okvir na naslovnici (5.10.2026.) -->
+  <section class="tess-sekcija" id="tess-sekcija">
+    <div class="wrap-wide">
+      <h2 class="h2-glow">Pitajte Tess, našeg AI savjetnika</h2>
+      <div class="tess-okvir">
+<iframe id="JotFormIFrame-01a10344b1a070008b5b9101c3ddbf7f423b" title="Tess: Ai In-Time savjetnik"
+  allowtransparency="true" allow="geolocation; microphone; camera; fullscreen"
+  src="https://agent.jotform.com/01a10344b1a070008b5b9101c3ddbf7f423b?embedMode=iframe&autofocus=1&background=1&shadow=1"
+  frameborder="0" style="
+    max-width:100%;
+    height:600px;
+    border:none;
+    
+    width:100%;
+  " scrolling="no">
+</iframe>
+<script src='https://cdn.jotfor.ms/s/umd/48011b1ec24/for-form-embed-handler.js'></script>
+<script>
+  window.jotformEmbedHandler("iframe[id='JotFormIFrame-01a10344b1a070008b5b9101c3ddbf7f423b']",
+    "https://www.jotform.com")
+</script>
+      </div>
     </div>
   </section>
 
@@ -7190,44 +7234,7 @@
   })();
   </script>
   <!-- AI SAVJETNIK TESS (Jotform) — plutajući chat balončić -->
-  <script>if(!document.documentElement.classList.contains('rucni-mod')){var tessS_=document.createElement('script');tessS_.src='https://cdn.jotfor.ms/agent/embedjs/01a10344b1a070008b5b9101c3ddbf7f423b/embed.js';document.body.appendChild(tessS_);}</script>
-  <script>
-  // Povećanje Tess balončića (Jotform ne nudi postavku veličine). Dok je widget "zatvoren"
-  // (mali element u kutu) povećava ga CSS-om; kad se chat otvori (velik prozor), vraća na 100 %.
-  (function(){
-    // 4.10.2026. (Sašin zahtjev — "još malo povećati da bude usklađen s veličinom kruga In Time
-    // preko puta"): umjesto fiksne skale (bila 1.4) skala se izračuna iz STVARNE veličine
-    // Jotformova balončića tako da on bude otprilike jednak promjeru In Time kruga
-    // (#mainBtn, 144 px), uz granice 1.4–2.4. Ako je i dalje premalen/prevelik, promijeni
-    // TESS_CILJ_PROMJER_ (px) ili granice.
-    var TESS_CILJ_PROMJER_ = 140;
-    var TESS_SKALA_MIN_ = 1.4, TESS_SKALA_MAX_ = 2.4;
-    function tessSkala_(el){
-      var baza = Math.min(el.offsetWidth, el.offsetHeight);
-      var skala = baza > 0 ? (TESS_CILJ_PROMJER_ / baza) : TESS_SKALA_MIN_;
-      return Math.max(TESS_SKALA_MIN_, Math.min(TESS_SKALA_MAX_, skala));
-    }
-    function jeJotformWidget_(el){
-      if(!el || el.nodeType !== 1 || el.parentNode !== document.body){ return false; }
-      var oznaka = ((el.id || '') + ' ' + (el.className && el.className.baseVal === undefined ? el.className : '')).toLowerCase();
-      var src = (el.tagName === 'IFRAME' ? (el.src || '') : '').toLowerCase();
-      return /jotform|jotfor\.ms|agent/.test(oznaka + ' ' + src) && !/^(gorivoFab|mainBtn|mainMenu|kontaktMenu|shareMenu)/.test(el.id || '');
-    }
-    function primijeni_(el){
-      if(!jeJotformWidget_(el)){ return; }
-      var cs = getComputedStyle(el);
-      if(cs.position !== 'fixed'){ return; }
-      var mali = el.offsetWidth > 0 && el.offsetWidth <= 360 && el.offsetHeight > 0 && el.offsetHeight <= 220;
-      var lijevo = cs.left !== 'auto' && parseFloat(cs.left) < (window.innerWidth / 2);
-      el.style.transformOrigin = (lijevo ? 'bottom left' : 'bottom right');
-      el.style.transform = mali ? ('scale(' + tessSkala_(el).toFixed(2) + ')') : '';
-    }
-    function sve_(){ Array.prototype.forEach.call(document.body.children, primijeni_); }
-    var obs = new MutationObserver(sve_);
-    obs.observe(document.body, { childList: true, subtree: false, attributes: false });
-    window.addEventListener('resize', sve_);
-    setInterval(sve_, 1000);   // widget mijenja veličinu pri otvaranju/zatvaranju chata
-  })();
-  </script>
+  <script>var TESS_BALONCIC_UKLJUCEN_ = true; /* 5.10.2026.: balončić ostaje uz ugrađeni okvir Tess; false ga isključuje */
+if(TESS_BALONCIC_UKLJUCEN_ && !document.documentElement.classList.contains('rucni-mod')){var tessS_=document.createElement('script');tessS_.src='https://cdn.jotfor.ms/agent/embedjs/01a10344b1a070008b5b9101c3ddbf7f423b/embed.js';document.body.appendChild(tessS_);}</script>
 </body>
 </html>

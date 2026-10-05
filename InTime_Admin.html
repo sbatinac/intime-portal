@@ -221,7 +221,13 @@
     padding:16px 18px;
   }
   .stat-card .stat-value{font-size:28px;font-weight:700;color:var(--purple-dark);}
-  .stat-card .stat-label{font-size:12px;color:var(--grey);margin-top:2px;}
+  .stat-card.stat-card-raskid{border:2px solid #e4161b;border-left:6px solid #b80d12;background:linear-gradient(135deg,#e4161b 0%,#ff2d2d 100%);cursor:pointer;box-shadow:0 3px 10px rgba(228,22,27,.45);}
+  .stat-card.stat-card-raskid:hover{background:linear-gradient(135deg,#c80f14 0%,#e4161b 100%);}
+  .stat-card.stat-card-raskid .stat-value{color:#fff;font-weight:900;}
+  .stat-card.stat-card-raskid .stat-label{color:#fff;font-weight:700;}
+  .stat-card.stat-card-klijenti{border:2px solid #1f9d3a;border-left:6px solid #157a2b;background:linear-gradient(135deg,#1f9d3a 0%,#34c759 100%);box-shadow:0 3px 10px rgba(31,157,58,.40);}
+  .stat-card.stat-card-klijenti .stat-value{color:#fff;font-weight:900;}
+  .stat-card.stat-card-klijenti .stat-label{color:#fff;font-weight:700;}
   .stat-reset-btn{
     margin-top:8px;
     background:none;
@@ -398,6 +404,8 @@
   .tab-meta-icon{vertical-align:-2px;margin-right:4px;}
   .tab-btn.tab-btn-ljubicasti{background:linear-gradient(160deg,#7d2fd0 0%,#4d148c 100%);border-color:#a56be0;color:#fff;box-shadow:0 2px 8px rgba(77,20,140,.45);}
   .tab-btn.tab-btn-ljubicasti:hover,.tab-btn.tab-btn-ljubicasti.active{background:linear-gradient(160deg,#8f45e0 0%,#5f1fa6 100%);border-color:#d2b3f2;color:#fff;}
+  .tab-btn.tab-btn-crveni{background:linear-gradient(160deg,#ff2d2d 0%,#d10f14 100%);border-color:#ff8a8a;color:#fff;box-shadow:0 2px 8px rgba(228,22,27,.5);}
+  .tab-btn.tab-btn-crveni:hover,.tab-btn.tab-btn-crveni.active{background:linear-gradient(160deg,#ff4a4a 0%,#e4161b 100%);border-color:#ffc2c2;color:#fff;}
   .tab-btn.active{
     background:linear-gradient(135deg,#229891 0%,#1b7f8a 100%);
     border-color:#46d1c6;
@@ -1817,9 +1825,14 @@
         <div class="stat-value" id="stat-ankete" style="color:#8a6d00;">—</div>
         <div class="stat-label">Popunjenih anketa kvalitete</div>
       </div>
-      <div class="stat-card" style="border-left-color:var(--purple);">
-        <div class="stat-value" id="stat-klijenti-ukupno" style="color:var(--purple-dark);">—</div>
+      <div class="stat-card stat-card-klijenti">
+        <div class="stat-value" id="stat-klijenti-ukupno">—</div>
         <div class="stat-label">Ukupno klijenata u bazi</div>
+      </div>
+      <!-- NOVO (5.10.2026.): žarko crvena kućica — klijenti koji su raskinuli suradnju (popunjeni upitnici o prekidu suradnje); klik otvara tab Raskid suradnje -->
+      <div class="stat-card stat-card-raskid" onclick="switchTab('Raskid'); window.scrollTo({top: document.getElementById('tab-btn-raskid').getBoundingClientRect().top + window.pageYOffset - 20, behavior: 'smooth'});" title="Otvori Raskid suradnje">
+        <div class="stat-value" id="stat-raskid">—</div>
+        <div class="stat-label">Raskinuli suradnju</div>
       </div>
     </div>
 
@@ -1900,6 +1913,8 @@
       <button type="button" class="tab-btn" id="tab-btn-podsjetnici" onclick="switchTab('Podsjetnici')">⏰ Podsjetnici</button>
       <!-- NOVO (4.10.2026.): ljubičasta kartica "Pisma namjere" — ručni unos firme + odmah slanje maila, te mail kampanja iz Excela (drag & drop, slanje svake 3 s). -->
       <button type="button" class="tab-btn tab-btn-ljubicasti" id="tab-btn-pisma" onclick="switchTab('Pisma')">✉ Pisma namjere</button>
+      <!-- NOVO (5.10.2026.): žarko crveni tab "Raskid suradnje" — pojedinačni mail klijentu koji odlazi (gumb na upitnik), predložak, arhiva, odgovori. -->
+      <button type="button" class="tab-btn tab-btn-crveni" id="tab-btn-raskid" onclick="switchTab('Raskid')">✖ Raskid suradnje</button>
       <!-- NOVO (4.10.2026.): "Battleships" — igra: poslani OIB-ovi praćeni kroz sustav (pogodak → klijent → arhiva), mjesečni cilj 500 bodova, evidencija bodova. -->
       <button type="button" class="tab-btn tab-btn-svijetloplavi" id="tab-btn-pogodci" onclick="switchTab('Pogodci')"><svg class="tab-meta-icon" width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="#d62b1f"/><circle cx="12" cy="12" r="7" fill="#fff"/><circle cx="12" cy="12" r="4.2" fill="#d62b1f"/><circle cx="12" cy="12" r="1.7" fill="#fff"/></svg>Battleships</button>
     </div>
@@ -1978,12 +1993,28 @@
   <div class="modal-box">
     <h2>Postavke</h2>
     <div style="border:2px solid #2fb1ee;background:#f2faff;border-radius:10px;padding:10px 12px;margin-bottom:14px;">
-      <label style="display:block;font-weight:700;margin-bottom:4px;color:#0a5f8c;">🎯 Battleships — probaj animaciju pogotka</label>
+      <label style="display:block;font-weight:700;margin-bottom:4px;color:#0a5f8c;">🎯 Battleships — probaj animaciju pogotka i raskida</label>
       <p class="settings-hint" style="margin:0 0 8px;">Pokaže isto što i pravi pogodak, ali s izmišljenim podacima — ništa se ne bilježi i bodovi se ne mijenjaju.</p>
       <div style="display:flex;gap:8px;flex-wrap:wrap;">
         <button type="button" class="btn btn-small" onclick="testirajPogodak_('pogodak')">🎯 Testiraj pogodak</button>
         <button type="button" class="btn btn-outline btn-small" onclick="testirajPogodak_('klijent')">🏆 Testiraj novi klijent</button>
+        <button type="button" class="btn btn-small" style="background:#e4161b;border-color:#e4161b;color:#fff;" onclick="testirajRaskid_()">💔 Testiraj raskid suradnje</button>
       </div>
+    </div>
+    <div style="border:2px solid #4d148c;background:#faf6ff;border-radius:10px;padding:10px 12px;margin-bottom:14px;">
+      <label style="display:block;font-weight:700;margin-bottom:4px;color:#4d148c;">🏛 Sudski registar (API) — automatsko popunjavanje preko OIB-a</label>
+      <p class="settings-hint" style="margin:0 0 8px;">Za d.o.o., j.d.o.o., d.d. i slične: upišeš OIB, a naziv, poštanski broj i grad se sami popune. Client ID i Secret spremaju se samo na poslužitelj (Script Properties) i nikad se ne prikazuju natrag. Obrti i OPG-ovi nisu u sudskom registru — njih se upisuje ručno.</p>
+      <div id="sr-stanje" class="settings-hint" style="margin:0 0 6px;font-weight:700;"></div>
+      <input type="text" id="sr-id" placeholder="Client ID" autocomplete="off" style="margin-bottom:6px;">
+      <input type="password" id="sr-secret" placeholder="Client Secret" autocomplete="new-password" style="margin-bottom:6px;">
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+        <button type="button" class="btn btn-small" id="sr-spremi" onclick="sudregSpremi_()">Spremi ključeve</button>
+        <input type="text" id="sr-test-oib" inputmode="numeric" maxlength="11" placeholder="OIB za test" style="width:150px;margin:0;">
+        <button type="button" class="btn btn-outline btn-small" id="sr-test" onclick="sudregTest_()">🔎 Testiraj OIB</button>
+      </div>
+      <p class="form-ok" id="sr-ok" hidden></p>
+      <p class="form-error" id="sr-err" hidden></p>
+      <pre id="sr-sirovo" hidden style="max-height:180px;overflow:auto;background:#fff;border:1px solid #d8c6ee;border-radius:8px;padding:8px;font-size:11.5px;white-space:pre-wrap;word-break:break-all;margin:8px 0 0;"></pre>
     </div>
     <label style="display:block;font-weight:600;margin-bottom:4px;">Skrivena kopija (BCC) svih izlaznih mailova</label>
     <p class="settings-hint">Ako upišete adresu, na nju će automatski ići skrivena kopija (BCC) baš svakog maila koji sustav pošalje — postojećih vrsta (ponude, pisma namjere, potvrde, obavijesti…) i svih koje ubuduće dodamo. Ostavite prazno da isključite.</p>
@@ -2417,7 +2448,7 @@
     loadAll();
     setTimeout(pogodciProvjeriNove_, 2500);
     pogodciPokreniPracenje_();
-    setTimeout(function() { try { var pv = document.createElement('video'); pv.preload = 'auto'; pv.muted = true; pv.src = 'pogodak.mp4'; } catch (e) { gifPreducitaj_('gif_pogodak.gif'); } }, 4000); // povuci GIF unaprijed da se animacija pokaže odmah
+    setTimeout(function() { try { var pv = document.createElement('video'); pv.preload = 'auto'; pv.muted = true; pv.src = 'pogodak.mp4'; var pr2 = document.createElement('video'); pr2.preload = 'auto'; pr2.muted = true; pr2.src = 'raskid.mp4'; } catch (e) { gifPreducitaj_('gif_pogodak.gif'); } }, 4000); // povuci GIF unaprijed da se animacija pokaže odmah
   }
 
   // Sašin izričit zahtjev (22.9.2026., treći krug: "vezano za ubrzavanje 9
@@ -3439,7 +3470,9 @@
     document.getElementById('stat-pozitivno').textContent = res.pozitivno;
     document.getElementById('stat-negativno').textContent = res.negativno;
     document.getElementById('stat-ankete').textContent = (res.ankete === undefined ? '—' : res.ankete);
+    if (res.raskidovi !== undefined) { postaviRaskidPlocicu_(res.raskidovi); }
   }
+  function postaviRaskidPlocicu_(n) { var el = document.getElementById('stat-raskid'); if (el) { el.textContent = n; } }
   function loadCounters() {
     gasCall({ action: 'adminGetCounters', token: adminToken }).then(function(res) {
       if (handleAuthError(res)) { return; }
@@ -4147,6 +4180,7 @@
     document.getElementById('tab-btn-imenik').classList.toggle('active', tab === 'Imenik');
     document.getElementById('tab-btn-podsjetnici').classList.toggle('active', tab === 'Podsjetnici');
     document.getElementById('tab-btn-pisma').classList.toggle('active', tab === 'Pisma');
+    document.getElementById('tab-btn-raskid').classList.toggle('active', tab === 'Raskid');
     document.getElementById('tab-btn-pogodci').classList.toggle('active', tab === 'Pogodci');
     var statPanel = document.getElementById('anketa-statistika-panel');
     if (statPanel) { statPanel.hidden = (tab !== 'Ankete') || !statPanel.innerHTML; }
@@ -4347,6 +4381,11 @@
 
     if (activeTab === 'Pisma') {
       container.appendChild(buildPismaPanel_());
+      return;
+    }
+
+    if (activeTab === 'Raskid') {
+      container.appendChild(buildRaskidPanel_());
       return;
     }
 
@@ -9030,7 +9069,7 @@
   }
 
   // ---- BATTLESHIPS (4.10.2026.): slavlje novih bodovnih događaja + kartica s mjesečnim ciljem i evidencijom bodova ----
-  var BS_IKONE_ = { POZITIVAN: '👍', NEGATIVAN: '👎', DIREKTNI: '🎯', BRZI: '⚡', KLIJENT: '🏆', ARHIVA: '🗄' };
+  var BS_IKONE_ = { POZITIVAN: '👍', NEGATIVAN: '👎', DIREKTNI: '🎯', BRZI: '⚡', KLIJENT: '🏆', ARHIVA: '🗄', RASKID: '💔' };
   function pogodakSlavlje_(novi, mjesecBodovi, cilj) {
     if (document.getElementById('pogodak-sloj')) { return; }
     var zbroj = 0; novi.forEach(function(x) { zbroj += x.bodovi; });
@@ -9083,6 +9122,58 @@
     sloj.querySelector('#pogodak-x').addEventListener('click', zatvori);
     sloj.addEventListener('click', function(ev) { if (ev.target === sloj) { zatvori(); } });
   }
+  // ---- RASKID SURADNJE: kad klijent pošalje upitnik o raskidu, pri sljedećem otvaranju admina (ili dok je otvoren) pokrene se video + minus bodovi ----
+  function raskidSlavlje_(novi, mjesecBodovi, cilj) {
+    if (document.getElementById('raskid-sloj')) { return; }
+    if (document.getElementById('pogodak-sloj')) { setTimeout(function() { raskidSlavlje_(novi, mjesecBodovi, cilj); }, 700); return; } // prvo završi slavlje pogotka
+    var zbroj = 0; novi.forEach(function(x) { zbroj += x.bodovi; });
+    var st = document.createElement('style'); st.id = 'raskid-stil';
+    st.textContent =
+      '#raskid-sloj{position:fixed;inset:0;z-index:99998;background:rgba(40,0,2,.86);display:flex;align-items:center;justify-content:center;padding:16px;animation:rkFade .3s;}' +
+      '#raskid-kartica{position:relative;background:#fff;border:5px solid #e4161b;border-radius:20px;max-width:620px;width:100%;max-height:94vh;overflow:auto;padding:14px 18px 18px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.6);animation:rkSkoci .55s cubic-bezier(.2,1.4,.4,1);}' +
+      '#raskid-kartica h2{margin:6px 0 2px;font-size:32px;font-weight:900;color:#e4161b;letter-spacing:.04em;}' +
+      '#raskid-kartica .rk-sub{font-size:14px;color:#5b6664;margin-bottom:10px;}' +
+      '#raskid-video{display:block;width:100%;height:auto;border-radius:12px;margin:0 0 6px;background:#000;}' +
+      '#raskid-zvuk{position:absolute;left:28px;top:24px;border:0;border-radius:18px;background:rgba(0,0,0,.6);color:#fff;font-size:13px;font-weight:700;padding:6px 12px;cursor:pointer;z-index:2;}' +
+      '#raskid-x{position:absolute;top:8px;right:10px;width:34px;height:34px;border-radius:50%;border:0;background:rgba(0,0,0,.55);color:#fff;font-size:20px;line-height:1;cursor:pointer;z-index:2;}' +
+      '#raskid-lista{margin:10px 0 6px;text-align:left;}' +
+      '#raskid-lista .stavka{border:1px solid #f5b5b7;background:#fff4f4;border-radius:10px;padding:8px 12px;margin-bottom:6px;display:flex;justify-content:space-between;gap:10px;align-items:center;}' +
+      '#raskid-lista .stavka b{color:#1f2d2b;}#raskid-lista .neg{color:#e4161b;font-weight:900;white-space:nowrap;}' +
+      '#raskid-zbroj{font-size:22px;font-weight:900;color:#b3000a;margin:8px 0 4px;}' +
+      '#raskid-zatvori{background:#e4161b;color:#fff;border:0;border-radius:12px;padding:12px 28px;font-size:17px;font-weight:800;cursor:pointer;}' +
+      '@keyframes rkFade{from{opacity:0}to{opacity:1}}@keyframes rkSkoci{from{transform:scale(.4);opacity:0}to{transform:scale(1);opacity:1}}';
+    document.head.appendChild(st);
+    var sloj = document.createElement('div'); sloj.id = 'raskid-sloj';
+    sloj.innerHTML =
+      '<div id="raskid-kartica"><button type="button" id="raskid-x" aria-label="Zatvori">✕</button><button type="button" id="raskid-zvuk" hidden>🔊 Uključi zvuk</button>' +
+        '<video id="raskid-video" autoplay playsinline preload="auto" aria-label="Raskid suradnje"><source src="raskid.mp4" type="video/mp4"><source src="raskid.webm" type="video/webm"></video>' +
+        '<h2>💔 RASKID SURADNJE</h2>' +
+        '<div class="rk-sub">' + (novi.length > 1 ? 'Klijenti su poslali upitnik o raskidu suradnje.' : 'Klijent je poslao upitnik o raskidu suradnje.') + '</div>' +
+        '<div id="raskid-lista">' + novi.slice(0, 8).map(function(x) {
+          return '<div class="stavka"><div><b>💔 ' + esc(x.naziv || 'Klijent') + '</b><div style="font-size:12px;color:#5b6664;">' + esc(x.opis) + (x.oib ? ' · OIB ' + esc(x.oib) : '') + '</div></div><div class="neg">' + x.bodovi + '</div></div>';
+        }).join('') + (novi.length > 8 ? '<div style="font-size:12px;color:#5b6664;text-align:center;">… i još ' + (novi.length - 8) + '</div>' : '') + '</div>' +
+        '<div id="raskid-zbroj">' + zbroj + ' bodova</div>' +
+        (mjesecBodovi !== undefined ? '<div style="font-size:13px;color:#5b6664;margin-bottom:12px;">Ovaj mjesec: <b>' + mjesecBodovi + '</b> / ' + cilj + '</div>' : '') +
+        '<button type="button" id="raskid-zatvori">Zatvori</button>' +
+      '</div>';
+    document.body.appendChild(sloj);
+    var v = sloj.querySelector('#raskid-video'), zv = sloj.querySelector('#raskid-zvuk');
+    function pokaziZvuk() { zv.hidden = !v.muted; }
+    try {
+      v.muted = false;
+      var pr = v.play();
+      if (pr && pr.catch) { pr.catch(function() { v.muted = true; try { v.play(); } catch (e) {} pokaziZvuk(); }); }
+    } catch (e) { v.muted = true; pokaziZvuk(); }
+    zv.addEventListener('click', function(ev) { ev.stopPropagation(); v.muted = false; try { v.currentTime = 0; v.play(); } catch (e) {} pokaziZvuk(); });
+    function zatvori() { try { v.pause(); } catch (e) {} if (sloj.parentNode) { sloj.parentNode.removeChild(sloj); } var x = document.getElementById('raskid-stil'); if (x) { x.parentNode.removeChild(x); } }
+    sloj.querySelector('#raskid-zatvori').addEventListener('click', zatvori);
+    sloj.querySelector('#raskid-x').addEventListener('click', zatvori);
+    sloj.addEventListener('click', function(ev) { if (ev.target === sloj) { zatvori(); } });
+  }
+  function testirajRaskid_() {
+    try { closeSettingsModal(); } catch (e) {}
+    raskidSlavlje_([{ oib: '12345678903', naziv: 'Testna firma d.o.o. (TEST)', vrsta: 'RASKID', opis: 'Raskid suradnje (klijent ispunio upitnik o raskidu — minus bodovi)', bodovi: -50 }], undefined, 500);
+  }
   // iz rezultata adminPismaPogodci izdvoji događaje koje još nisi "vidio" (pamti se po ključu OIB|VRSTA u pregledniku); slavi se ako ima pozitivnih bodova
   function pogodciSlaviNove_(res) {
     if (!res || res.status !== 'ok' || !res.dogadaji || !res.dogadaji.length) { return; }
@@ -9092,9 +9183,14 @@
     var novi = res.dogadaji.filter(function(d) { return !vidjeniSet[d.kljuc]; });
     if (!novi.length) { return; }
     try { localStorage.setItem('battleships_vidjeni', JSON.stringify(res.dogadaji.map(function(d) { return d.kljuc; }))); } catch (e) {}
+    var noviRaskid = novi.filter(function(d) { return d.vrsta === 'RASKID'; });
     if (novi.some(function(d) { return d.bodovi > 0; })) {
       if (document.hidden) { document.title = '🎯 POGODAK! — ' + pogodciNaslov_; }
-      pogodakSlavlje_(novi, res.mjesecBodovi, res.cilj);
+      pogodakSlavlje_(novi.filter(function(d) { return d.vrsta !== 'RASKID'; }), res.mjesecBodovi, res.cilj);
+    }
+    if (noviRaskid.length) {
+      if (document.hidden) { document.title = '💔 RASKID — ' + pogodciNaslov_; }
+      raskidSlavlje_(noviRaskid, res.mjesecBodovi, res.cilj);
     }
   }
   // probno slavlje iz Postavki — izmišljeni podaci, ništa se ne bilježi
@@ -9107,7 +9203,7 @@
   }
   var pogodciPoll_ = null, pogodciNaslov_ = document.title;
   function pogodciProvjeriNove_() {
-    if (!adminToken || document.getElementById('pogodak-sloj')) { return; }
+    if (!adminToken || document.getElementById('pogodak-sloj') || document.getElementById('raskid-sloj')) { return; }
     gasCall({ action: 'adminPismaPogodci', token: adminToken }).then(function(res) {
       if (res && res.code === 'auth') { return; }
       pogodciSlaviNove_(res);
@@ -9184,6 +9280,7 @@
     function nazivMjeseca(k) { var m = /^(\d{4})-(\d{2})$/.exec(k || ''); if (!m) { return k; } var imena = ['siječanj', 'veljača', 'ožujak', 'travanj', 'svibanj', 'lipanj', 'srpanj', 'kolovoz', 'rujan', 'listopad', 'studeni', 'prosinac']; return imena[parseInt(m[2], 10) - 1] + ' ' + m[1]; }
     function iscrtaj() {
       var res = zadnjiRes, box = wrap.querySelector('#pg-sadrzaj'); if (!res || !box) { return; }
+      var rkBod_ = (res.pravila && res.pravila.raskid != null) ? res.pravila.raskid : -50, RKB_ = (rkBod_ < 0 ? '−' : '+') + Math.abs(rkBod_);
       var cilj = res.cilj || 500, mj = res.mjesecBodovi, postotak = Math.max(0, Math.min(100, Math.round(mj / cilj * 100)));
       var sl = res.sljedecaRazina, tekstSl = sl ? 'Još ' + (sl.bodova - mj) + ' bod. do razine „' + sl.naziv + '"' : '🎉 Mjesečni cilj ostvaren!';
       var tabBar = '<div class="pg-stranice"><button type="button" class="pg-str-btn' + (pgStranica === 'pregled' ? ' active' : '') + '" data-str="pregled">🎯 Pregled igre</button><button type="button" class="pg-str-btn' + (pgStranica === 'mjeseci' ? ' active' : '') + '" data-str="mjeseci">🏆 Mjeseci i pehari</button></div>';
@@ -9198,6 +9295,7 @@
           '<div class="pg-plocica"><b>' + res.direktni + '</b><span>direktnih — ručni unos (+10)</span></div>' +
           '<div class="pg-plocica"><b style="color:#1e8449;">' + res.klijenti + '</b><span>postali klijenti (+50)</span></div>' +
           '<div class="pg-plocica"><b style="color:#a93226;">' + res.arhiva + '</b><span>završili u arhivi (−20)</span></div>' +
+          '<div class="pg-plocica"><b style="color:#e4161b;">' + (res.raskidi || 0) + '</b><span>raskinuli suradnju (' + RKB_ + ')</span></div>' +
           '<div class="pg-plocica"><b>' + res.bodovi + '</b><span>bodova ukupno (svi mjeseci)</span></div></div>';
       // povijest mjeseci (stara tablica — zamijenjena stranicom "Mjeseci i pehari"; ostavljena samo kao rezerva kad stranica nije dostupna)
       if (false && res.mjeseci && res.mjeseci.length) {
@@ -9229,9 +9327,11 @@
           '<tr><td>🏆 Firma postane klijent</td><td class="pg-poz">' + pz(pr.klijent) + '</td></tr>' +
           '<tr><td>👎 Negativan odgovor — firma popuni „nisu zainteresirani"</td><td class="pg-neg">' + pz(pr.negativan) + '</td></tr>' +
           '<tr><td>🗄 Firma završi u arhivi</td><td class="pg-neg">' + pz(pr.arhiva) + '</td></tr>' +
+          '<tr><td>💔 Klijent raskine suradnju — svaki poslani upitnik o raskidu, <b>bez obzira na OIB</b> (raskidaju i klijenti otvoreni prije programa)</td><td class="pg-neg">' + pz(pr.raskid != null ? pr.raskid : -50) + '</td></tr>' +
         '</tbody></table>' +
         '<p><b>Što se broji, a što ne:</b></p><ul>' +
           '<li>Svaka vrsta događaja za isti OIB broji se <b>samo jednom</b> (npr. jedan OIB ne može dvaput donijeti „klijent").</li>' +
+          '<li>Izuzetak je <b>raskid suradnje</b>: svaki ispunjen upitnik o raskidu donosi minus bodove odmah, neovisno o OIB-u i o poslanom pismu; svaki upitnik boduje se jednom.</li>' +
           '<li>Odgovor mora doći <b>nakon</b> poslanog pisma; stariji upiti istog OIB-a ne računaju se.</li>' +
           '<li>Računa se samo pismo koje je <b>stvarno poslano</b> (status „Poslano"); pismo s greškom ne donosi bodove.</li>' +
           '<li>OIB se prati na pismima poslanima s računala i s mobitela, pojedinačno i kampanjom.</li>' +
@@ -9312,6 +9412,468 @@
     return wrap;
   }
 
+  // ============================================================
+  // RASKID SURADNJE (5.10.2026.) — žarko crveni tab: samo POJEDINAČNO slanje maila
+  // klijentu koji odlazi (mail s gumbom na upitnik), predložak maila, arhiva
+  // poslanih i pregled odgovora na upitnik "Raskid suradnje".
+  // ============================================================
+  function buildRaskidPanel_() {
+    var CRV = '#e4161b';
+    var wrap = document.createElement('div');
+    wrap.className = 'rk-wrap';
+    wrap.innerHTML =
+      '<style>' +
+      '.rk-wrap .rk-podtabovi{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 14px;}' +
+      '.rk-wrap .rk-tab{border:2px solid #f4a3a5;background:#fff;color:#b80d12;border-radius:10px;padding:9px 16px;font:inherit;font-size:13.5px;font-weight:800;cursor:pointer;}' +
+      '.rk-wrap .rk-tab:hover{background:#fff1f1;}' +
+      '.rk-wrap .rk-tab.active{background:linear-gradient(160deg,#ff2d2d 0%,#d10f14 100%);border-color:#b80d12;color:#fff;box-shadow:0 2px 8px rgba(228,22,27,.4);}' +
+      '.rk-wrap .rk-kartica{background:#fff;border:1px solid #f4a3a5;border-radius:12px;margin-bottom:16px;overflow:hidden;box-shadow:0 2px 8px rgba(228,22,27,.10);}' +
+      '.rk-wrap .rk-glava{background:linear-gradient(135deg,#c80f14 0%,#e4161b 50%,#ff2d2d 100%);color:#fff;padding:13px 18px;font-size:16px;font-weight:800;display:flex;align-items:center;gap:8px;flex-wrap:wrap;}' +
+      '.rk-wrap .rk-glava small{font-weight:600;opacity:.95;font-size:12px;margin-left:auto;}' +
+      '.rk-wrap .rk-tijelo{padding:14px 18px 16px;}' +
+      '.rk-wrap .rk-hint{font-size:12.5px;color:#4a5a57;margin:0 0 12px;line-height:1.5;}' +
+      '.rk-wrap .rk-mreza{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin-bottom:10px;}' +
+      '.rk-wrap label.rk-polje{display:flex;flex-direction:column;gap:3px;font-size:12px;font-weight:700;color:#3c4d4a;}' +
+      '.rk-wrap .rk-polje input,.rk-wrap .rk-polje textarea{padding:8px 10px;border:1px solid #c9d6d3;border-radius:8px;font:inherit;font-size:13.5px;font-weight:400;color:#1a2b2a;width:100%;box-sizing:border-box;}' +
+      '.rk-wrap .rk-polje input:focus,.rk-wrap .rk-polje textarea:focus{outline:2px solid ' + CRV + ';border-color:' + CRV + ';}' +
+      '.rk-wrap .rk-gumb{background:' + CRV + ';color:#fff;border:1px solid #c80f14;border-radius:8px;padding:9px 16px;font:inherit;font-size:13.5px;font-weight:800;cursor:pointer;}' +
+      '.rk-wrap .rk-gumb:hover{background:#c80f14;}.rk-wrap .rk-gumb:disabled{opacity:.5;cursor:not-allowed;}' +
+      '.rk-wrap .rk-gumb.sek{background:#fff;color:#b80d12;border-color:#f4a3a5;}.rk-wrap .rk-gumb.sek:hover{background:#fff1f1;}' +
+      '.rk-wrap .rk-gumb.opasan{background:#7a0d10;border-color:#7a0d10;}' +
+      '.rk-wrap .rk-status{font-size:12.5px;font-weight:700;margin-left:8px;}.rk-wrap .rk-status.ok{color:#2e7d32;}.rk-wrap .rk-status.greska{color:#c0392b;}' +
+      '.rk-wrap .rk-upozorenje{background:#fff4e5;border:1px solid #f0c27a;color:#7a4b00;border-radius:8px;padding:9px 12px;font-size:13px;font-weight:700;margin:0 0 12px;}' +
+      '.rk-wrap .rk-alat{display:flex;gap:6px;flex-wrap:wrap;align-items:center;background:#fff1f1;border:1px solid #f4a3a5;border-bottom:0;border-radius:10px 10px 0 0;padding:6px 8px;}' +
+      '.rk-wrap .rk-alat button{background:#fff;border:1px solid #f4a3a5;border-radius:6px;padding:4px 10px;font:inherit;font-size:13px;cursor:pointer;}' +
+      '.rk-wrap .rk-alat input{padding:4px 8px;border:1px solid #f4a3a5;border-radius:6px;font:inherit;font-size:12.5px;min-width:200px;}' +
+      '.rk-wrap .rk-tagovi{font-size:12px;color:#4a5a57;margin:6px 0;}.rk-wrap .rk-tagovi code{background:#ffe1e1;border-radius:5px;padding:2px 7px;font-size:11.5px;cursor:pointer;color:#7a0d10;margin-right:4px;}' +
+      '.rk-wrap .rk-iframe{width:100%;height:560px;border:1px solid #f4a3a5;border-radius:0 0 10px 10px;background:#fff;display:block;resize:vertical;}' +
+      '.rk-wrap .rk-prikaz{width:100%;height:520px;border:1px solid #f4a3a5;border-radius:10px;background:#fff;display:block;}' +
+      '.rk-wrap table.rk-tablica{width:100%;border-collapse:collapse;font-size:13px;}.rk-wrap table.rk-tablica th{background:#fff1f1;color:#7a0d10;text-align:left;padding:8px 10px;border-bottom:2px solid #f4a3a5;}.rk-wrap table.rk-tablica td{padding:8px 10px;border-bottom:1px solid #f1e0e0;vertical-align:top;}' +
+      '.rk-wrap .rk-oznaka{display:inline-block;border-radius:20px;padding:2px 10px;font-size:11.5px;font-weight:800;}' +
+      '.rk-wrap .rk-oznaka.ok{background:#e3f4e4;color:#2e7d32;}.rk-wrap .rk-oznaka.greska{background:#ffe1e1;color:#b80d12;}' +
+      '.rk-wrap .rk-stat{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin-bottom:14px;}' +
+      '.rk-wrap .rk-plocica{background:#fff;border:1px solid #f4a3a5;border-radius:12px;padding:12px 14px;}' +
+      '.rk-wrap .rk-plocica .naslov{font-size:11.5px;font-weight:800;color:#7a0d10;text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px;}' +
+      '.rk-wrap .rk-plocica .velik{font-size:30px;font-weight:900;line-height:1;}' +
+      '.rk-wrap .rk-traka{height:8px;border-radius:5px;background:#f1e0e0;overflow:hidden;margin:3px 0 7px;}.rk-wrap .rk-traka i{display:block;height:100%;border-radius:5px;}' +
+      '.rk-wrap .rk-redak-stat{font-size:12px;display:flex;justify-content:space-between;gap:8px;}' +
+      '.rk-wrap .rk-od{border:1px solid #f4a3a5;border-left:6px solid ' + CRV + ';border-radius:10px;background:#fff;margin-bottom:10px;overflow:hidden;}' +
+      '.rk-wrap .rk-od-glava{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:11px 14px;cursor:pointer;}.rk-wrap .rk-od-glava:hover{background:#fff7f7;}' +
+      '.rk-wrap .rk-od-naziv{font-weight:800;font-size:14.5px;}.rk-wrap .rk-od-meta{font-size:12px;color:#6b6b6b;}' +
+      '.rk-wrap .rk-ocj{display:inline-block;min-width:30px;text-align:center;border-radius:8px;padding:3px 8px;font-weight:900;font-size:13px;color:#222;}' +
+      '.rk-wrap .rk-od-tijelo{padding:4px 16px 14px;border-top:1px solid #f1e0e0;}' +
+      '.rk-wrap .rk-sek{margin:12px 0 4px;font-size:12px;font-weight:900;color:#b80d12;text-transform:uppercase;letter-spacing:.05em;}' +
+      '.rk-wrap .rk-red{display:grid;grid-template-columns:minmax(180px,34%) 1fr;gap:10px;padding:5px 0;border-bottom:1px dotted #f1e0e0;font-size:13px;}.rk-wrap .rk-red .l{color:#5a6a67;font-weight:700;}' +
+      '@media (max-width:640px){.rk-wrap .rk-red{grid-template-columns:1fr;gap:2px;}}' +
+      '</style>' +
+      '<div class="rk-podtabovi">' +
+        '<button type="button" class="rk-tab active" data-rk="slanje">✉ Pojedinačno slanje</button>' +
+        '<button type="button" class="rk-tab" data-rk="predlozak">📝 Predložak maila</button>' +
+        '<button type="button" class="rk-tab" data-rk="arhiva">🗄 Arhiva poslanih</button>' +
+        '<button type="button" class="rk-tab" data-rk="odgovori">📋 Odgovori na upitnik <span id="rk-br-odg"></span></button>' +
+      '</div>' +
+      // ---------- POJEDINAČNO SLANJE ----------
+      '<div class="rk-pane" data-pane="slanje">' +
+        '<div class="rk-kartica"><div class="rk-glava">✉ Mail klijentu koji odlazi<small id="rk-kvota"></small></div><div class="rk-tijelo">' +
+          '<div class="rk-upozorenje" id="rk-bez-linka" hidden>Prije slanja upiši poveznicu na upitnik: kartica „Predložak maila" → „Poveznica na upitnik", pa „Spremi".</div>' +
+          '<p class="rk-hint">Upiši podatke firme i klikni „Pošalji". Mail (zahvala na suradnji, „naša vrata ostaju otvorena", tvoj broj i gumb na upitnik) odmah ide na upisanu adresu. Samo pojedinačno slanje — bez kampanja.</p>' +
+          '<div class="rk-mreza">' +
+            '<label class="rk-polje">OIB (neobavezno — za d.o.o./d.d. sam popuni podatke)<input type="text" id="rk-oib" inputmode="numeric" maxlength="11" placeholder="11 znamenki"><span class="rk-status" id="rk-oib-status" style="display:block;margin:3px 0 0;"></span></label>' +
+            '<label class="rk-polje">Naziv firme<input type="text" id="rk-naziv" placeholder="npr. Primjer d.o.o."></label>' +
+            '<label class="rk-polje">E-mail adresa<input type="email" id="rk-email" placeholder="ime@firma.hr"></label>' +
+            '<label class="rk-polje">Poštanski broj<input type="text" id="rk-posta" maxlength="10"></label>' +
+            '<label class="rk-polje">Grad<input type="text" id="rk-grad"></label>' +
+            '<label class="rk-polje">Ime i prezime osobe<input type="text" id="rk-osoba"></label>' +
+          '</div>' +
+          '<div class="rk-hint" id="rk-pregled-predmeta" style="font-weight:700;color:#7a0d10;"></div>' +
+          '<button type="button" class="rk-gumb" id="rk-posalji">✉ Pošalji mail za raskid suradnje</button><span class="rk-status" id="rk-posalji-status"></span>' +
+        '</div></div>' +
+      '</div>' +
+      // ---------- PREDLOŽAK ----------
+      '<div class="rk-pane" data-pane="predlozak" hidden>' +
+        '<div class="rk-kartica"><div class="rk-glava">📝 Predložak maila za raskid suradnje</div><div class="rk-tijelo">' +
+          '<p class="rk-hint">Tekst, predmet i poveznica koji se koriste za sva slanja iz ovog taba. Oznake u pismu (npr. <code>{{IME_OSOBE}}</code>) pri slanju se zamijene podacima primatelja. Gumb ostaje vezan na <code>{{LINK}}</code> — mijenjaš samo njegov natpis.</p>' +
+          '<div class="rk-mreza">' +
+            '<label class="rk-polje">Poveznica na upitnik (adresa gdje je objavljena stranica upitnika)<input type="text" id="rk-link" placeholder="https://…/InTime_RaskidSuradnje.html"></label>' +
+            '<label class="rk-polje">Predmet maila<input type="text" id="rk-predmet" maxlength="200"></label>' +
+          '</div>' +
+          '<div class="rk-tagovi">Tagovi u predmetu i tekstu (klik za umetanje u tekst): <code>[IME I PREZIME]</code><code>[NAZIV TVRTKE]</code><code>[GRAD]</code><code>[POŠTANSKI BROJ]</code><code>[OIB]</code><code>{{LINK}}</code></div>' +
+          '<div style="margin:6px 0 6px;font-size:13px;font-weight:800;color:#7a0d10;">✎ Mail — klikni u njega i tipkaj izravno</div>' +
+          '<div class="rk-alat" id="rk-alat">' +
+            '<button type="button" data-ved="bold"><b>B</b></button><button type="button" data-ved="italic"><i>I</i></button><button type="button" data-ved="underline"><u>U</u></button>' +
+            '<button type="button" data-ved="undo">↶</button><button type="button" data-ved="redo">↷</button><button type="button" data-ved="removeFormat" title="Ukloni formatiranje">Tx</button>' +
+            '<input type="text" id="rk-ved-link" placeholder="poveznica (ili {{LINK}})"><button type="button" data-ved="link">🔗 Poveznica</button><button type="button" data-ved="unlink">✕🔗</button>' +
+          '</div>' +
+          '<iframe class="rk-iframe" id="rk-iframe" sandbox="allow-same-origin" title="Uređivač maila"></iframe>' +
+          '<details style="margin:10px 0;"><summary style="cursor:pointer;font-weight:700;">Napredno: HTML kod maila</summary><label class="rk-polje" style="margin-top:8px;">Tekst maila (HTML)<textarea id="rk-tijelo" rows="12" style="font-family:Consolas,monospace;font-size:12px;"></textarea></label></details>' +
+          '<div style="margin:8px 0;"><button type="button" class="rk-gumb" id="rk-spremi">💾 Spremi predložak i poveznicu</button> <button type="button" class="rk-gumb sek" id="rk-reset">↺ Vrati zadani tekst</button><span class="rk-status" id="rk-spremi-status"></span></div>' +
+          '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:10px 0 14px;">' +
+            '<input type="email" id="rk-test-adresa" value="' + PISMA_TEST_MAIL_ + '" style="padding:8px 10px;border:1px solid #c9d6d3;border-radius:8px;min-width:260px;">' +
+            '<button type="button" class="rk-gumb sek" id="rk-test">✉ Pošalji test</button><span class="rk-status" id="rk-test-status"></span>' +
+          '</div>' +
+          '<div style="margin:6px 0;font-size:13px;font-weight:800;color:#7a0d10;">👁 Pregled kako će mail izgledati (primjer: Ana Anić, Primjer d.o.o.)</div>' +
+          '<iframe class="rk-prikaz" id="rk-prikaz" sandbox="allow-same-origin" title="Pregled maila"></iframe>' +
+        '</div></div>' +
+      '</div>' +
+      // ---------- ARHIVA ----------
+      '<div class="rk-pane" data-pane="arhiva" hidden>' +
+        '<div class="rk-kartica"><div class="rk-glava">🗄 Arhiva poslanih mailova za raskid suradnje<small id="rk-arh-br"></small></div><div class="rk-tijelo"><div id="rk-arh-lista"><div class="empty-hint">Učitavam…</div></div></div></div>' +
+      '</div>' +
+      // ---------- ODGOVORI ----------
+      '<div class="rk-pane" data-pane="odgovori" hidden>' +
+        '<div id="rk-odg-stat"></div>' +
+        '<div class="rk-kartica"><div class="rk-glava">📋 Odgovori na upitnik o prekidu suradnje<small id="rk-odg-br"></small></div><div class="rk-tijelo"><div id="rk-odg-lista"><div class="empty-hint">Učitavam…</div></div></div></div>' +
+      '</div>';
+
+    var $ = function(id) { return wrap.querySelector('#' + id); };
+    function status(el, tekst, vrsta) { el.textContent = tekst || ''; el.className = 'rk-status' + (vrsta ? ' ' + vrsta : ''); }
+    function poziv(payload) {
+      payload.token = adminToken;
+      return gasCall(payload).then(function(res) {
+        if (res && res.code === 'auth') { throw new Error('Sesija je istekla — prijavite se ponovno u admin.'); }
+        return res;
+      });
+    }
+    function greskaTekst(e) { return (e && e.message) ? e.message : 'Greška u komunikaciji s poslužiteljem.'; }
+    var postavke = { predmet: '', tijelo: '', link: '' }, zadano = { predmet: '', tijelo: '' };
+    // slika na vrhu maila ide kao ugrađena (cid:rkbaner); u uređivaču/pregledu se prikazuje preko data adrese koju vraća poslužitelj
+    var SLIKA_CID = 'cid:rkbaner', slikaUri = '';
+    function cidUUri(h) { return slikaUri ? String(h).split(SLIKA_CID).join(slikaUri) : String(h); }
+    function uriUCid(h) { return slikaUri ? String(h).split(slikaUri).join(SLIKA_CID) : String(h); }
+    var arhivaUcitana = false, odgovoriUcitani = false;
+
+    // ---- podkartice ----
+    function otvoriTab(t) {
+      Array.prototype.forEach.call(wrap.querySelectorAll('.rk-tab'), function(b) { b.classList.toggle('active', b.getAttribute('data-rk') === t); });
+      Array.prototype.forEach.call(wrap.querySelectorAll('.rk-pane'), function(p) { p.hidden = (p.getAttribute('data-pane') !== t); });
+      if (t === 'predlozak') { vedUcitaj(); pregledOsvjezi(); }
+      if (t === 'arhiva') { ucitajArhivu(); }
+      if (t === 'odgovori') { ucitajOdgovore(); }
+    }
+    wrap.querySelector('.rk-podtabovi').addEventListener('click', function(ev) {
+      var b = ev.target.closest ? ev.target.closest('.rk-tab') : null; if (b) { otvoriTab(b.getAttribute('data-rk')); }
+    });
+
+    // ---- postavke (predložak) ----
+    function osvjeziUpozorenje() { $('rk-bez-linka').hidden = !!postavke.link; }
+    function ucitajPostavke() {
+      poziv({ action: 'adminRaskidPostavke' }).then(function(res) {
+        if (res.status !== 'ok') { status($('rk-posalji-status'), res.message || 'Učitavanje nije uspjelo.', 'greska'); return; }
+        postavke = res.postavke; zadano = res.zadano; slikaUri = res.slika || '';
+        $('rk-link').value = postavke.link || ''; $('rk-predmet').value = postavke.predmet || ''; $('rk-tijelo').value = postavke.tijelo || '';
+        $('rk-kvota').textContent = (res.kvota === null || res.kvota === undefined) ? '' : 'Preostala dnevna kvota maila: ' + res.kvota;
+        osvjeziUpozorenje(); predmetPregled(); vedUcitaj(); pregledOsvjezi();
+      }).catch(function(e) { status($('rk-posalji-status'), greskaTekst(e), 'greska'); });
+    }
+
+    // ---- oznake u predmetu / pregled ----
+    var PRIMJER = { osoba: 'Ana Anić', naziv: 'Primjer d.o.o.', grad: 'Osijek', posta: '31000', oib: '12345678901' };
+    function zamijeni(tpl, p, html) {
+      var v = function(x) { return html ? esc(x) : String(x); };
+      var link = $('rk-link').value.trim() || '#';
+      return String(tpl || '')
+        .replace(/\[IME I PREZIME\]|\{\{IME_OSOBE\}\}/gi, v(p.osoba || 'kolege'))
+        .replace(/\[NAZIV TVRTKE\]|\{\{IME_FIRME\}\}/gi, v(p.naziv))
+        .replace(/\[GRAD\]|\{\{GRAD\}\}/gi, v(p.grad))
+        .replace(/\[PO[ŠS]TANSKI BROJ\]|\{\{POSTANSKI_BROJ\}\}/gi, v(p.posta))
+        .replace(/\[OIB\]|\{\{OIB\}\}/gi, v(p.oib))
+        .replace(/\{\{(?:LINK|LINK_GLAVNA|LINK_REBRANDLY)\}\}/g, link);
+    }
+    function zamijeniPregled(tpl, p) { return cidUUri(zamijeni(tpl, p, true)); }
+    function podaciForme() { return { osoba: $('rk-osoba').value.trim(), naziv: $('rk-naziv').value.trim(), grad: $('rk-grad').value.trim(), posta: $('rk-posta').value.trim(), oib: $('rk-oib').value.trim(), email: $('rk-email').value.trim() }; }
+    function predmetPregled() {
+      var p = podaciForme(); var pr = postavke.predmet || '';
+      var x = { osoba: p.osoba, naziv: p.naziv || '[NAZIV TVRTKE]', grad: p.grad, posta: p.posta, oib: p.oib };
+      var t = zamijeni(pr, x, false).replace(/\s*[–—-]\s*(?=[–—-]|$)/g, '').replace(/\s{2,}/g, ' ').trim();
+      $('rk-pregled-predmeta').textContent = pr ? 'Predmet maila: ' + t : '';
+    }
+    function pregledOsvjezi() {
+      var d = $('rk-prikaz'); if (!d) { return; }
+      d.srcdoc = '<!doctype html><html><head><meta charset="utf-8"><base target="_blank"></head><body style="margin:0;background:#f3f6f6;">' + zamijeniPregled($('rk-tijelo').value, PRIMJER) + '</body></html>';
+    }
+
+    // ---- vizualni uređivač ----
+    var vedF = $('rk-iframe'), vedRange = null;
+    var TAG_IZRAZ = '\\{\\{(?:IME_FIRME|IME_OSOBE|GRAD|POSTANSKI_BROJ|OIB|LINK_GLAVNA|LINK_REBRANDLY|LINK)\\}\\}|\\[(?:IME I PREZIME|NAZIV TVRTKE|GRAD|OIB|PO[ŠS]TANSKI BROJ)\\]';
+    var TAG_LABELA = { 'IME_OSOBE': '[IME I PREZIME]', 'IME_FIRME': '[NAZIV TVRTKE]', 'GRAD': '[GRAD]', 'POSTANSKI_BROJ': '[POŠTANSKI BROJ]', 'OIB': '[OIB]' };
+    var TAG_KLJUC = { 'IME I PREZIME': 'IME_OSOBE', 'NAZIV TVRTKE': 'IME_FIRME', 'GRAD': 'GRAD', 'OIB': 'OIB', 'POŠTANSKI BROJ': 'POSTANSKI_BROJ', 'POSTANSKI BROJ': 'POSTANSKI_BROJ' };
+    function tagKljuc(t) { var m = /^\{\{(.+)\}\}$/.exec(t); if (m) { return m[1]; } m = /^\[(.+)\]$/.exec(t); return m ? (TAG_KLJUC[m[1].toUpperCase()] || '') : ''; }
+    function vedDoc() { try { return vedF.contentDocument; } catch (e) { return null; } }
+    function chipHtml(tag) {
+      var k = tagKljuc(tag), tekst = (k.indexOf('LINK') === 0) ? ($('rk-link').value.trim() || '{{LINK}}') : (TAG_LABELA[k] || tag);
+      return '<span data-tag="' + esc(tag) + '" contenteditable="false">' + esc(tekst) + '</span>';
+    }
+    function vedPrikaz(html) {
+      var dom = new DOMParser().parseFromString('<!doctype html><html><body>' + cidUUri(html) + '</body></html>', 'text/html');
+      var w = dom.createTreeWalker(dom.body, NodeFilter.SHOW_TEXT, null), cvorovi = [], n;
+      while ((n = w.nextNode())) {
+        var rod = n.parentNode && n.parentNode.nodeName;
+        if (rod === 'STYLE' || rod === 'SCRIPT' || rod === 'TITLE') { continue; }
+        if (new RegExp(TAG_IZRAZ, 'i').test(n.nodeValue)) { cvorovi.push(n); }
+      }
+      cvorovi.forEach(function(c) {
+        var t = c.nodeValue, last = 0, m, re = new RegExp(TAG_IZRAZ, 'gi'), tmp = dom.createElement('div'), out = '';
+        while ((m = re.exec(t))) { out += esc(t.slice(last, m.index)) + chipHtml(m[0]); last = m.index + m[0].length; }
+        out += esc(t.slice(last));
+        tmp.innerHTML = out;
+        var frag = dom.createDocumentFragment();
+        while (tmp.firstChild) { frag.appendChild(tmp.firstChild); }
+        c.parentNode.replaceChild(frag, c);
+      });
+      return dom.body.innerHTML;
+    }
+    function vedSerijaliziraj() {
+      var d = vedDoc(); if (!d || !d.body) { return null; }
+      var kl = d.body.cloneNode(true);
+      Array.prototype.forEach.call(kl.querySelectorAll('[data-tag]'), function(el) { el.parentNode.replaceChild(d.createTextNode(el.getAttribute('data-tag')), el); });
+      return uriUCid(kl.innerHTML);
+    }
+    function vedUcitaj() {
+      vedRange = null;
+      vedF.srcdoc = '<!doctype html><html><head><meta charset="utf-8"><style>body{margin:0;padding:10px;background:#f3f6f6;}[data-tag]{background:#ffe1e1;box-shadow:0 0 0 1px #f4a3a5;border-radius:3px;cursor:default;}a{cursor:text;}</style></head><body>' + vedPrikaz($('rk-tijelo').value) + '</body></html>';
+    }
+    function vedAktiviraj() { var d = vedDoc(); if (d && d.body) { try { d.designMode = 'on'; } catch (e) {} } }
+    function vedZapamti() { var d = vedDoc(), sel = d && d.getSelection ? d.getSelection() : null; if (sel && sel.rangeCount) { vedRange = sel.getRangeAt(0).cloneRange(); } }
+    function vedVrati() {
+      var d = vedDoc(); if (!d || !d.body) { return null; }
+      vedAktiviraj();
+      try { vedF.contentWindow.focus(); } catch (e) {}
+      if (vedRange) { var sel = d.getSelection(); sel.removeAllRanges(); sel.addRange(vedRange); }
+      return d;
+    }
+    function vedPrenesi() {
+      var h = vedSerijaliziraj(); if (h === null) { return; }
+      $('rk-tijelo').value = h;
+      clearTimeout(vedPrenesi._t); vedPrenesi._t = setTimeout(pregledOsvjezi, 400);
+    }
+    vedF.addEventListener('load', function() {
+      var d = vedDoc(); if (!d) { return; }
+      vedAktiviraj();
+      d.addEventListener('input', vedPrenesi);
+      d.addEventListener('keyup', vedZapamti);
+      d.addEventListener('mouseup', vedZapamti);
+      d.addEventListener('click', function(ev) { var a = (ev.target && ev.target.closest) ? ev.target.closest('a') : null; if (a) { ev.preventDefault(); } });
+    });
+    $('rk-alat').addEventListener('mousedown', function(ev) { if (ev.target.closest && ev.target.closest('button')) { ev.preventDefault(); } });
+    $('rk-alat').addEventListener('click', function(ev) {
+      var b = ev.target.closest ? ev.target.closest('button') : null; if (!b) { return; }
+      var k = b.getAttribute('data-ved'), d = vedVrati(); if (!d) { return; }
+      if (k === 'link') {
+        var u = $('rk-ved-link').value.trim(), sel = d.getSelection();
+        if (!u) { status($('rk-spremi-status'), 'Upiši poveznicu u polje pored gumba.', 'greska'); return; }
+        if (!sel || sel.isCollapsed) { status($('rk-spremi-status'), 'Prvo označi tekst u mailu koji treba postati poveznica.', 'greska'); return; }
+        d.execCommand('createLink', false, u);
+      } else { d.execCommand(k, false, null); }
+      status($('rk-spremi-status'), '');
+      vedPrenesi(); vedZapamti();
+    });
+    wrap.querySelector('.rk-tagovi').addEventListener('mousedown', function(ev) { if (ev.target.tagName === 'CODE') { ev.preventDefault(); } });
+    wrap.querySelector('.rk-tagovi').addEventListener('click', function(ev) {
+      if (ev.target.tagName !== 'CODE') { return; }
+      var d = vedVrati(); if (!d) { return; }
+      var tmp = d.createElement('div'); tmp.innerHTML = chipHtml(ev.target.textContent);
+      var chip = tmp.firstChild, sel = d.getSelection();
+      if (sel && sel.rangeCount) { var r = sel.getRangeAt(0); r.deleteContents(); r.insertNode(chip); r.setStartAfter(chip); r.collapse(true); sel.removeAllRanges(); sel.addRange(r); }
+      else { d.body.appendChild(chip); }
+      vedPrenesi(); vedZapamti();
+    });
+    $('rk-tijelo').addEventListener('input', function() { clearTimeout(vedUcitaj._t); vedUcitaj._t = setTimeout(function() { vedUcitaj(); pregledOsvjezi(); }, 600); });
+    $('rk-link').addEventListener('input', function() { clearTimeout(pregledOsvjezi._t); pregledOsvjezi._t = setTimeout(pregledOsvjezi, 400); });
+
+    $('rk-spremi').addEventListener('click', function() {
+      var h = vedSerijaliziraj(); if (h !== null) { $('rk-tijelo').value = h; }
+      var pr = $('rk-predmet').value.trim(), tj = $('rk-tijelo').value, lk = $('rk-link').value.trim();
+      status($('rk-spremi-status'), 'Spremam…');
+      poziv({ action: 'adminRaskidPostavkeSpremi', predmet: pr, tijelo: tj, link: lk }).then(function(res) {
+        if (res.status !== 'ok') { status($('rk-spremi-status'), res.message || 'Spremanje nije uspjelo.', 'greska'); return; }
+        postavke = { predmet: pr, tijelo: tj, link: lk };
+        osvjeziUpozorenje(); predmetPregled();
+        status($('rk-spremi-status'), '✓ Spremljeno.', 'ok');
+      }).catch(function(e) { status($('rk-spremi-status'), greskaTekst(e), 'greska'); });
+    });
+    $('rk-reset').addEventListener('click', function() {
+      if (!confirm('Vratiti zadani tekst i predmet maila? (Poveznica na upitnik ostaje.)')) { return; }
+      poziv({ action: 'adminRaskidPostavkeReset' }).then(function(res) {
+        if (res.status !== 'ok') { status($('rk-spremi-status'), res.message || 'Nije uspjelo.', 'greska'); return; }
+        postavke = res.postavke; $('rk-predmet').value = postavke.predmet; $('rk-tijelo').value = postavke.tijelo;
+        vedUcitaj(); pregledOsvjezi(); predmetPregled();
+        status($('rk-spremi-status'), '✓ Vraćen zadani tekst.', 'ok');
+      }).catch(function(e) { status($('rk-spremi-status'), greskaTekst(e), 'greska'); });
+    });
+    $('rk-test').addEventListener('click', function() {
+      var h = vedSerijaliziraj(); if (h !== null) { $('rk-tijelo').value = h; }
+      status($('rk-test-status'), 'Šaljem test…');
+      // test uvijek šalje ono što je trenutno spremljeno — prvo spremi, pa pošalji
+      poziv({ action: 'adminRaskidPostavkeSpremi', predmet: $('rk-predmet').value.trim(), tijelo: $('rk-tijelo').value, link: $('rk-link').value.trim() }).then(function(sp) {
+        if (sp.status !== 'ok') { throw new Error(sp.message || 'Spremanje nije uspjelo.'); }
+        postavke = { predmet: $('rk-predmet').value.trim(), tijelo: $('rk-tijelo').value, link: $('rk-link').value.trim() }; osvjeziUpozorenje();
+        return poziv({ action: 'adminRaskidPosalji', podaci: PRIMJER, test: true, testAdresa: $('rk-test-adresa').value.trim() });
+      }).then(function(res) {
+        if (res.status === 'ok') { status($('rk-test-status'), '✓ Test poslan na ' + $('rk-test-adresa').value.trim(), 'ok'); }
+        else { status($('rk-test-status'), res.message || 'Slanje testa nije uspjelo.', 'greska'); }
+      }).catch(function(e) { status($('rk-test-status'), greskaTekst(e), 'greska'); });
+    });
+
+    // ---- pojedinačno slanje ----
+    ['rk-oib', 'rk-naziv', 'rk-osoba', 'rk-grad', 'rk-posta'].forEach(function(id) { $(id).addEventListener('input', predmetPregled); });
+    var oibZadnji = '';
+    $('rk-oib').addEventListener('input', function() {
+      var oib = $('rk-oib').value.replace(/\D/g, '');
+      if (oib.length !== 11) { oibZadnji = ''; status($('rk-oib-status'), ''); return; }
+      if (oib === oibZadnji) { return; }
+      oibZadnji = oib;
+      status($('rk-oib-status'), 'Tražim u sudskom registru…');
+      poziv({ action: 'adminOibPodaci', oib: oib }).then(function(res) {
+        if ($('rk-oib').value.replace(/\D/g, '') !== oib) { return; }
+        if (res.status !== 'ok') {
+          status($('rk-oib-status'), (res.code === 'nepodeseno' ? 'Sudski registar nije podešen (⚙ Postavke)' : (res.message || 'Pretraga nije uspjela')) + ' — upiši ručno.', 'greska');
+          if (res.code === 'limit') { oibZadnji = ''; }
+          return;
+        }
+        if (!res.pronadjen) { status($('rk-oib-status'), 'Nije u sudskom registru (obrt/OPG?) — upiši ručno.'); return; }
+        var m = { 'rk-naziv': res.naziv, 'rk-posta': res.pbr, 'rk-grad': res.grad };
+        Object.keys(m).forEach(function(id) { if (m[id] && !$(id).value.trim()) { $(id).value = m[id]; } });
+        predmetPregled();
+        status($('rk-oib-status'), '✓ Sudski registar: ' + res.naziv + (res.aktivan === false ? ' (⚠ nije aktivan)' : ''), 'ok');
+      }).catch(function(e) { status($('rk-oib-status'), greskaTekst(e) + ' — upiši ručno.', 'greska'); oibZadnji = ''; });
+    });
+    var salje = false;
+    function posalji(potvrdi) {
+      if (salje) { return; }
+      var p = podaciForme(), st = $('rk-posalji-status');
+      if (!p.naziv) { status(st, 'Upiši naziv firme.', 'greska'); return; }
+      if (!/^[^\s@,;]+@[^\s@,;]+\.[^\s@,;]{2,}$/.test(p.email)) { status(st, 'Upiši ispravnu e-mail adresu.', 'greska'); return; }
+      if (p.oib && !/^\d{11}$/.test(p.oib)) { status(st, 'OIB mora imati 11 znamenki (ili ga ostavi praznog).', 'greska'); return; }
+      if (!postavke.link) { osvjeziUpozorenje(); status(st, 'Prvo upiši i spremi poveznicu na upitnik (kartica „Predložak maila").', 'greska'); return; }
+      if (potvrdi !== true && !confirm('Poslati mail za raskid suradnje na ' + p.email + '?')) { return; }
+      salje = true; $('rk-posalji').disabled = true; status(st, 'Šaljem…');
+      poziv({ action: 'adminRaskidPosalji', podaci: p, test: false, potvrdiDuplikat: potvrdi === true }).then(function(res) {
+        salje = false; $('rk-posalji').disabled = false;
+        if (res.status === 'ok') {
+          status(st, '✓ Poslano na ' + p.email + '.', 'ok');
+          ['rk-oib', 'rk-naziv', 'rk-email', 'rk-posta', 'rk-grad', 'rk-osoba'].forEach(function(id) { $(id).value = ''; });
+          status($('rk-oib-status'), ''); oibZadnji = ''; predmetPregled(); arhivaUcitana = false;
+          if (res.kvota !== null && res.kvota !== undefined) { $('rk-kvota').textContent = 'Preostala dnevna kvota maila: ' + res.kvota; }
+        } else if (res.status === 'duplikat') {
+          status(st, '');
+          if (confirm(res.message + ' Poslati ponovno?')) { posalji(true); }
+        } else { status(st, res.message || 'Slanje nije uspjelo.', 'greska'); }
+      }).catch(function(e) { salje = false; $('rk-posalji').disabled = false; status(st, greskaTekst(e), 'greska'); });
+    }
+    $('rk-posalji').addEventListener('click', function() { posalji(false); });
+
+    // ---- arhiva poslanih ----
+    function ucitajArhivu() {
+      if (arhivaUcitana) { return; }
+      $('rk-arh-lista').innerHTML = '<div class="empty-hint">Učitavam…</div>';
+      poziv({ action: 'adminRaskidArhiva' }).then(function(res) {
+        if (res.status !== 'ok') { $('rk-arh-lista').innerHTML = '<div class="empty-hint">' + esc(res.message || 'Greška.') + '</div>'; return; }
+        arhivaUcitana = true;
+        $('rk-arh-br').textContent = res.redci.length + ' zapisa';
+        if (!res.redci.length) { $('rk-arh-lista').innerHTML = '<div class="empty-hint">Još nije poslan nijedan mail za raskid suradnje.</div>'; return; }
+        $('rk-arh-lista').innerHTML = '<div style="overflow:auto;"><table class="rk-tablica"><thead><tr><th>Datum</th><th>Firma</th><th>E-mail</th><th>Osoba</th><th>OIB</th><th>Status</th></tr></thead><tbody>' +
+          res.redci.map(function(r) {
+            return '<tr><td>' + esc(r.datum) + '</td><td><b>' + esc(r.naziv) + '</b>' + (r.grad ? '<br><span style="color:#6b6b6b;font-size:12px;">' + esc(r.grad) + '</span>' : '') + '</td><td>' + esc(r.email) + '</td><td>' + esc(r.osoba) + '</td><td>' + esc(r.oib) + '</td><td><span class="rk-oznaka ' + (r.status === 'Poslano' ? 'ok' : 'greska') + '">' + esc(r.status) + '</span>' + (r.poruka ? '<br><span style="font-size:11.5px;color:#b80d12;">' + esc(r.poruka) + '</span>' : '') + '</td></tr>';
+          }).join('') + '</tbody></table></div>';
+      }).catch(function(e) { $('rk-arh-lista').innerHTML = '<div class="empty-hint">' + esc(greskaTekst(e)) + '</div>'; });
+    }
+
+    // ---- odgovori na upitnik ----
+    function boja(i) { var h = Math.round(Math.max(0, Math.min(10, i)) * 12); return { bg: 'hsl(' + h + ',80%,88%)', rub: 'hsl(' + h + ',65%,55%)' }; }
+    function ocjenaChip(v) { var n = parseFloat(v); if (isNaN(n)) { return esc(v); } var c = boja(n); return '<span class="rk-ocj" style="background:' + c.bg + ';border:1px solid ' + c.rub + ';">' + esc(v) + '</span>'; }
+    var OCJENE_KLJUCEVI = ['rk_q02', 'rk_q03', 'rk_q04', 'rk_q05', 'rk_q06', 'rk_q12'];
+    var OCJENE_NAZIVI = { rk_q02: 'Ukupno zadovoljstvo', rk_q03: 'Brzina i pouzdanost dostave', rk_q04: 'Preuzimanje pošiljaka', rk_q05: 'Komunikacija i dostupnost', rk_q06: 'Reklamacije i štete', rk_q12: 'Rješavanje problema' };
+    function brojajPo(odg, k) {
+      var m = {};
+      odg.forEach(function(o) { var v = o.p[k]; if (!v) { return; } String(v).split(/\s*,\s*(?=[A-ZČĆŠŽĐ0-9])/).forEach(function(x) { x = x.trim(); if (x) { m[x] = (m[x] || 0) + 1; } }); });
+      return Object.keys(m).map(function(x) { return [x, m[x]]; }).sort(function(a, b) { return b[1] - a[1]; });
+    }
+    function statistika(odg) {
+      if (!odg.length) { return ''; }
+      var h = '<div class="rk-stat">';
+      h += '<div class="rk-plocica"><div class="naslov">Broj odgovora</div><div class="velik" style="color:' + CRV + ';">' + odg.length + '</div></div>';
+      var zbroj = 0, n = 0; odg.forEach(function(o) { var v = parseFloat(o.p.rk_q02); if (!isNaN(v)) { zbroj += v; n++; } });
+      if (n) { var pr = zbroj / n, c = boja(pr); h += '<div class="rk-plocica"><div class="naslov">Prosj. ukupno zadovoljstvo</div><div class="velik" style="color:' + c.rub + ';">' + pr.toFixed(1) + '<span style="font-size:14px;color:#6b6b6b;"> / 10</span></div></div>'; }
+      var povratak = brojajPo(odg, 'rk_q19');
+      if (povratak.length) {
+        h += '<div class="rk-plocica"><div class="naslov">Bi li se vratili (pitanje 19)</div>' + povratak.map(function(x) { var kol = x[0] === 'DA' ? '#2e9e3a' : (x[0] === 'NE' ? '#d62d20' : '#f2c200'); return '<div class="rk-redak-stat"><span>' + esc(x[0]) + '</span><b>' + x[1] + '</b></div><div class="rk-traka"><i style="width:' + Math.round(x[1] / odg.length * 100) + '%;background:' + kol + ';"></i></div>'; }).join('') + '</div>';
+      }
+      var razlozi = brojajPo(odg, 'rk_q01').slice(0, 5);
+      if (razlozi.length) { h += '<div class="rk-plocica"><div class="naslov">Glavni razlozi odlaska</div>' + razlozi.map(function(x) { return '<div class="rk-redak-stat"><span>' + esc(x[0]) + '</span><b>' + x[1] + '</b></div><div class="rk-traka"><i style="width:' + Math.round(x[1] / odg.length * 100) + '%;background:' + CRV + ';"></i></div>'; }).join('') + '</div>'; }
+      var komp = brojajPo(odg, 'rk_q13a').slice(0, 5);
+      if (komp.length) { h += '<div class="rk-plocica"><div class="naslov">Kome odlaze</div>' + komp.map(function(x) { return '<div class="rk-redak-stat"><span>' + esc(x[0]) + '</span><b>' + x[1] + '</b></div><div class="rk-traka"><i style="width:' + Math.round(x[1] / odg.length * 100) + '%;background:#4d148c;"></i></div>'; }).join('') + '</div>'; }
+      var ocj = '';
+      OCJENE_KLJUCEVI.forEach(function(k) {
+        var z = 0, c = 0; odg.forEach(function(o) { var v = parseFloat(o.p[k]); if (!isNaN(v)) { z += v; c++; } });
+        if (c) { var pr2 = z / c, b = boja(pr2); ocj += '<div class="rk-redak-stat"><span>' + esc(OCJENE_NAZIVI[k]) + '</span><b>' + pr2.toFixed(1) + '</b></div><div class="rk-traka"><i style="width:' + Math.round(pr2 * 10) + '%;background:' + b.rub + ';"></i></div>'; }
+      });
+      if (ocj) { h += '<div class="rk-plocica"><div class="naslov">Prosjek ocjena (0–10)</div>' + ocj + '</div>'; }
+      return h + '</div>';
+    }
+    function odgovorKartica(o, polja, idx) {
+      var p = o.p;
+      var ponovno = p.rk_q19 ? '<span class="rk-oznaka" style="background:' + (p.rk_q19 === 'DA' ? '#e3f4e4;color:#2e7d32' : (p.rk_q19 === 'NE' ? '#ffe1e1;color:#b80d12' : '#fff4cc;color:#8a6a00')) + ';">Povratak: ' + esc(p.rk_q19) + '</span>' : '';
+      var glava = '<div class="rk-od-glava" data-i="' + idx + '">' +
+        '<div style="flex:1 1 220px;"><div class="rk-od-naziv">' + esc(p.rk_naziv || '—') + '</div><div class="rk-od-meta">' + esc(p.rk_ime || '') + (o.datum ? ' · ' + esc(o.datum) : '') + (o.broj ? ' · ' + esc(o.broj) : '') + '</div></div>' +
+        (p.rk_q02 !== undefined ? '<div title="Ukupno zadovoljstvo">' + ocjenaChip(p.rk_q02) + '</div>' : '') +
+        (p.rk_q01 ? '<div style="font-size:12.5px;max-width:300px;">' + esc(p.rk_q01) + '</div>' : '') +
+        (p.rk_q13a ? '<div style="font-size:12.5px;color:#4d148c;font-weight:700;">→ ' + esc(p.rk_q13a) + '</div>' : '') + ponovno + '</div>';
+      var t = '', sekcija = '', redakaUSek = 0, buf = '';
+      function zatvori() { if (buf) { t += '<div class="rk-sek">' + esc(sekcija) + '</div>' + buf; } buf = ''; }
+      polja.forEach(function(f) {
+        if (f.sec) { zatvori(); sekcija = f.sec; return; }
+        var v = p[f.k]; if (v === undefined || v === '') { return; }
+        var prikaz = (OCJENE_KLJUCEVI.indexOf(f.k) !== -1) ? ocjenaChip(v) : esc(v).replace(/\n/g, '<br>');
+        buf += '<div class="rk-red"><div class="l">' + esc(f.l) + '</div><div>' + prikaz + '</div></div>';
+      });
+      zatvori();
+      t += '<div style="margin-top:12px;"><button type="button" class="rk-gumb sek" data-brisi="' + idx + '">🗑 Obriši odgovor</button></div>' +
+        '<div class="rk-brisanje" id="rk-brisi-' + idx + '" hidden style="margin-top:10px;background:#fff1f1;border:1px solid #f4a3a5;border-radius:10px;padding:10px 12px;"><div style="font-weight:800;color:#7a0d10;margin-bottom:6px;">Trajno brisanje odgovora. Potvrdi lozinkom i riječju BRISATI.</div><div class="rk-mreza" style="margin-bottom:6px;"><label class="rk-polje">Admin lozinka<input type="password" data-loz="' + idx + '" autocomplete="current-password"></label><label class="rk-polje">Upiši riječ BRISATI<input type="text" data-rijec="' + idx + '" placeholder="BRISATI" autocomplete="off"></label></div><button type="button" class="rk-gumb opasan" data-brisi-ok="' + idx + '">Trajno obriši</button> <button type="button" class="rk-gumb sek" data-brisi-odustani="' + idx + '">Odustani</button><span class="rk-status" id="rk-brisi-st-' + idx + '"></span></div>';
+      return '<div class="rk-od" id="rk-od-' + idx + '">' + glava + '<div class="rk-od-tijelo" id="rk-odt-' + idx + '" hidden>' + t + '</div></div>';
+    }
+    var odgPodaci = null;
+    function iscrtajOdgovore() {
+      var odg = odgPodaci.odgovori, polja = odgPodaci.polja;
+      $('rk-br-odg').textContent = odg.length ? '(' + odg.length + ')' : '';
+      $('rk-odg-br').textContent = odg.length + ' odgovora';
+      $('rk-odg-stat').innerHTML = statistika(odg);
+      if (!odg.length) { $('rk-odg-lista').innerHTML = '<div class="empty-hint">Još nema odgovora na upitnik o prekidu suradnje.</div>'; return; }
+      $('rk-odg-lista').innerHTML = odg.map(function(o, i) { return odgovorKartica(o, polja, i); }).join('');
+    }
+    function ucitajOdgovore(force) {
+      if (!odgPodaci || force) { $('rk-odg-lista').innerHTML = '<div class="empty-hint">Učitavam…</div>'; }
+      else { iscrtajOdgovore(); }
+      poziv({ action: 'adminRaskidOdgovori' }).then(function(res) {
+        if (res.status !== 'ok') { $('rk-odg-lista').innerHTML = '<div class="empty-hint">' + esc(res.message || 'Greška.') + '</div>'; return; }
+        odgovoriUcitani = true; odgPodaci = res; iscrtajOdgovore(); postaviRaskidPlocicu_(res.odgovori.length);
+      }).catch(function(e) { $('rk-odg-lista').innerHTML = '<div class="empty-hint">' + esc(greskaTekst(e)) + '</div>'; });
+    }
+    $('rk-odg-lista').addEventListener('click', function(ev) {
+      var t = ev.target;
+      var br = t.closest ? t.closest('[data-brisi]') : null;
+      if (br) { $('rk-brisi-' + br.getAttribute('data-brisi')).hidden = false; return; }
+      var od = t.closest ? t.closest('[data-brisi-odustani]') : null;
+      if (od) { $('rk-brisi-' + od.getAttribute('data-brisi-odustani')).hidden = true; return; }
+      var ok = t.closest ? t.closest('[data-brisi-ok]') : null;
+      if (ok) {
+        var i = ok.getAttribute('data-brisi-ok'), st = $('rk-brisi-st-' + i);
+        var loz = wrap.querySelector('[data-loz="' + i + '"]').value, rijec = wrap.querySelector('[data-rijec="' + i + '"]').value.trim();
+        status(st, 'Brišem…');
+        poziv({ action: 'adminRaskidOdgovorBrisi', rowIndex: odgPodaci.odgovori[i].rowIndex, lozinka: loz, rijec: rijec }).then(function(res) {
+          if (res.status === 'ok') { ucitajOdgovore(true); } else { status(st, res.message || 'Brisanje nije uspjelo.', 'greska'); }
+        }).catch(function(e) { status(st, greskaTekst(e), 'greska'); });
+        return;
+      }
+      var gl = t.closest ? t.closest('.rk-od-glava') : null;
+      if (gl) { var tj = $('rk-odt-' + gl.getAttribute('data-i')); tj.hidden = !tj.hidden; }
+    });
+
+    ucitajPostavke();
+    // zbroj odgovora na tabu (diskretno, bez otvaranja)
+    poziv({ action: 'adminRaskidOdgovori' }).then(function(res) { if (res.status === 'ok' && !odgovoriUcitani) { odgovoriUcitani = true; odgPodaci = res; postaviRaskidPlocicu_(res.odgovori.length); $('rk-br-odg').textContent = res.odgovori.length ? '(' + res.odgovori.length + ')' : ''; } }).catch(function() {});
+    return wrap;
+  }
+
   function buildPismaPanel_() {
     var wrap = document.createElement('div');
     wrap.className = 'pisma-wrap';
@@ -9389,7 +9951,7 @@
       '<div class="pm-kartica"><div class="pm-glava">✉ Novo pismo namjere<small id="pm-kvota"></small></div><div class="pm-tijelo">' +
         '<p class="pm-hint">Upiši podatke firme i klikni "Pošalji". Mail s predloškom (tekst i gumb prema glavnoj stranici) odmah ide na upisanu adresu.</p>' +
         '<div class="pm-mreza">' +
-          '<label class="pm-polje">OIB (obavezno)<input type="text" id="pm-oib" inputmode="numeric" maxlength="11" placeholder="11 znamenki"></label>' +
+          '<label class="pm-polje">OIB (obavezno)<input type="text" id="pm-oib" inputmode="numeric" maxlength="11" placeholder="11 znamenki"><span class="pm-status" id="pm-oib-status" style="display:block;margin:3px 0 0;"></span></label>' +
           '<label class="pm-polje">Naziv firme<input type="text" id="pm-naziv" placeholder="npr. Primjer d.o.o."></label>' +
           '<label class="pm-polje">E-mail adresa<input type="email" id="pm-email" placeholder="ime@firma.hr"></label>' +
           '<label class="pm-polje">Poštanski broj<input type="text" id="pm-posta" maxlength="10" placeholder="npr. 31000"></label>' +
@@ -9962,6 +10524,31 @@
     $('pm-kamp-tpl').addEventListener('change', kampAzuriraj);
     ['pm-oib', 'pm-naziv', 'pm-email'].forEach(function(id) { $(id).addEventListener('input', rucnoAzuriraj); });
     $('pm-kamp-naziv').addEventListener('input', kampAzuriraj);
+    // ---- OIB → sudski registar (95. dorada): popunjava samo PRAZNA polja ----
+    var oibZadnji = '';
+    $('pm-oib').addEventListener('input', function() {
+      var oib = $('pm-oib').value.replace(/\D/g, '');
+      if (oib.length !== 11) { oibZadnji = ''; status($('pm-oib-status'), ''); return; }
+      if (oib === oibZadnji) { return; }
+      oibZadnji = oib;
+      status($('pm-oib-status'), 'Tražim u sudskom registru…');
+      gasCall({ action: 'adminOibPodaci', token: adminToken, oib: oib }).then(function(res) {
+        if (handleAuthError(res)) { return; }
+        if ($('pm-oib').value.replace(/\D/g, '') !== oib) { return; }
+        if (res.status !== 'ok') {
+          if (res.code === 'nepodeseno') { status($('pm-oib-status'), 'Sudski registar nije podešen (⚙ Postavke) — upiši ručno.', 'greska'); }
+          else { status($('pm-oib-status'), (res.message || 'Pretraga nije uspjela') + ' — upiši ručno.', 'greska'); }
+          if (res.code === 'limit') { oibZadnji = ''; }
+          return;
+        }
+        if (!res.pronadjen) { status($('pm-oib-status'), 'Nije u sudskom registru (obrt/OPG?) — upiši ručno.'); return; }
+        var m = { 'pm-naziv': res.naziv, 'pm-posta': res.pbr, 'pm-grad': res.grad };
+        Object.keys(m).forEach(function(id) {
+          if (m[id] && !$(id).value.trim()) { $(id).value = m[id]; $(id).dispatchEvent(new Event('input', { bubbles: true })); }
+        });
+        status($('pm-oib-status'), '✓ Sudski registar: ' + res.naziv + (res.aktivan === false ? ' (⚠ nije aktivan)' : ''), 'ok');
+      }).catch(function() { status($('pm-oib-status'), 'Nema veze s poslužiteljem — upiši ručno.', 'greska'); oibZadnji = ''; });
+    });
     $('pm-kreni').addEventListener('click', pokreniKampanju);
     guardPripravan = true;
     guardiOsvjezi();
@@ -19127,6 +19714,7 @@
     okEl.hidden = true;
     emailEl.value = '';
     document.getElementById('settings-modal').hidden = false;
+    sudregOsvjeziStanje_();
     gasCall({ action: 'adminPostavkeGet', token: adminToken }).then(function(res) {
       if (handleAuthError(res)) { return; }
       if (res.status === 'ok') {
@@ -19139,6 +19727,57 @@
       errEl.textContent = 'Greška u komunikaciji s poslužiteljem.';
       errEl.hidden = false;
     });
+  }
+  // ---- Sudski registar (95. dorada) ----
+  function sudregPoruka_(ok, greska) {
+    var o = document.getElementById('sr-ok'), e = document.getElementById('sr-err');
+    o.textContent = ok || ''; o.hidden = !ok;
+    e.textContent = greska || ''; e.hidden = !greska;
+  }
+  function sudregOsvjeziStanje_() {
+    var el = document.getElementById('sr-stanje');
+    sudregPoruka_('', '');
+    document.getElementById('sr-sirovo').hidden = true;
+    document.getElementById('sr-id').value = '';
+    document.getElementById('sr-secret').value = '';
+    el.textContent = 'Provjeravam…';
+    gasCall({ action: 'adminSudregStanje', token: adminToken }).then(function(res) {
+      if (handleAuthError(res)) { return; }
+      if (res.status === 'ok') {
+        el.textContent = res.postavljeno ? '✓ Ključevi su spremljeni (upiši nove samo ako ih želiš zamijeniti).' : 'Ključevi još nisu upisani.';
+        el.style.color = res.postavljeno ? '#2e7d32' : '#b36b00';
+        if (res.zadnjaGreska) { sudregPoruka_('', 'Zadnja greška: ' + res.zadnjaGreska); }
+      } else { el.textContent = res.message || ''; }
+    }).catch(function() { el.textContent = 'Greška u komunikaciji s poslužiteljem.'; });
+  }
+  function sudregSpremi_() {
+    var id = document.getElementById('sr-id').value.trim(), sec = document.getElementById('sr-secret').value.trim();
+    sudregPoruka_('', '');
+    if (!id || !sec) { sudregPoruka_('', 'Upiši i Client ID i Client Secret.'); return; }
+    gasCall({ action: 'adminSudregPostavi', token: adminToken, clientId: id, clientSecret: sec }).then(function(res) {
+      if (handleAuthError(res)) { return; }
+      if (res.status === 'ok') {
+        document.getElementById('sr-id').value = ''; document.getElementById('sr-secret').value = '';
+        sudregOsvjeziStanje_();
+        sudregPoruka_('Spremljeno. Sad klikni "Testiraj OIB".', '');
+      } else { sudregPoruka_('', res.message || 'Spremanje nije uspjelo.'); }
+    }).catch(function() { sudregPoruka_('', 'Greška u komunikaciji s poslužiteljem.'); });
+  }
+  function sudregTest_() {
+    var oib = document.getElementById('sr-test-oib').value.replace(/\D/g, ''), pre = document.getElementById('sr-sirovo');
+    sudregPoruka_('', ''); pre.hidden = true;
+    if (oib.length !== 11) { sudregPoruka_('', 'Upiši OIB od 11 znamenki (npr. OIB neke d.o.o.).'); return; }
+    sudregPoruka_('Pitam sudski registar…', '');
+    gasCall({ action: 'adminSudregTest', token: adminToken, oib: oib }).then(function(res) {
+      if (handleAuthError(res)) { return; }
+      var t;
+      if (res.status === 'ok') {
+        if (res.pronadjen) { sudregPoruka_('✓ Pronađeno: ' + (res.naziv || '?') + (res.adresa ? ', ' + res.adresa : '') + (res.pbr || res.grad ? ', ' + (res.pbr || '') + ' ' + (res.grad || '') : ''), ''); }
+        else { sudregPoruka_('', 'Veza radi, ali taj OIB nije pronađen u sudskom registru (ili ga ne mogu pročitati — vidi odgovor ispod).'); }
+      } else { sudregPoruka_('', res.message || 'Greška.'); }
+      t = res.sirovo ? 'HTTP ' + (res.httpKod || '?') + '\n' + res.sirovo : JSON.stringify(res, null, 1);
+      pre.textContent = t; pre.hidden = false;
+    }).catch(function() { sudregPoruka_('', 'Greška u komunikaciji s poslužiteljem.'); });
   }
   function closeSettingsModal() {
     document.getElementById('settings-modal').hidden = true;
