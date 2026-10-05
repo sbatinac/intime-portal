@@ -669,13 +669,8 @@
   @media (max-width:640px){ .embedded-agent-container .ai-agent-chat-avatar-container{transform:translate(-30px,-2px) scale(var(--tess-balon-skala)) !important;} }
   .tess-sekcija{--tess-visina:760px;}   /* Jotform početni ekran treba ~780 px da gumbi Razgovor/Call stanu (600 px ih reže) */
   .tess-sekcija iframe{display:block;height:var(--tess-visina) !important;}
-  /* tanak zagasito zeleni (In Time teal) okvir oko Tess okvira — samo boja treperi, bez sjaja */
-  .tess-sekcija .tess-okvir{border:2px solid #229891;box-shadow:none;animation:tessTrepti 2s ease-in-out infinite;}
-  @keyframes tessTrepti{
-    0%,100%{border-color:#1b7a74;}
-    50%{border-color:#2fb3aa;}
-  }
-  @media (prefers-reduced-motion:reduce){ .tess-sekcija .tess-okvir{animation:none;} }
+  /* Tess okvir bez ikakvog ruba, sjaja i treperenja (5.10.2026.) */
+  .tess-sekcija .tess-okvir{border:0;box-shadow:none;animation:none;}
   @media (max-width:600px){ .tess-sekcija{--tess-visina:860px;} }
   html.rucni-mod #tess-sekcija{display:none !important;}
   html.rucni-mod #rucni-traka{display:flex;}
