@@ -164,6 +164,15 @@
   button.broj{display:block;width:100%;text-align:left;font-weight:400;color:var(--ink);background:var(--card);padding:12px;border-radius:12px;border:1px solid var(--line);border-left:5px solid var(--teal);}
   button.broj.crv{border-left-color:var(--red);} button.broj.zut{border-left-color:#e0a21a;} button.broj.zel{border-left-color:var(--ok);} button.broj.sivo{border-left-color:#6b7775;}
   .broj.siroko{grid-column:1 / -1;}
+  button.broj.puna-zel{background:linear-gradient(135deg,#1fa864 0%,#167a48 100%);border-color:#167a48;color:#fff;box-shadow:0 3px 10px rgba(22,122,72,.3);}
+  button.broj.puna-crv{background:linear-gradient(135deg,#e4161b 0%,#a92727 100%);border-color:#a92727;color:#fff;box-shadow:0 3px 10px rgba(169,39,39,.3);}
+  button.broj.puna-zut{background:linear-gradient(135deg,#ffd84a 0%,#f2a900 100%);border-color:#d99700;color:#3b2a00;box-shadow:0 3px 10px rgba(242,169,0,.3);}
+  button.broj.puna-roza{background:linear-gradient(135deg,#f777a6 0%,#e0457b 100%);border-color:#c93768;color:#fff;box-shadow:0 3px 10px rgba(224,69,123,.3);}
+  button.broj.puna-svcrv{background:linear-gradient(135deg,#ff8a80 0%,#ef5350 100%);border-color:#e04440;color:#fff;box-shadow:0 3px 10px rgba(239,83,80,.3);}
+  button.broj.puna-zut b, button.broj.puna-zut span{color:#3b2a00;}
+  button.broj.puna-roza b, button.broj.puna-roza span{color:#fff;}
+  button.broj.puna-svcrv b, button.broj.puna-svcrv span{color:#fff;}
+  button.broj.puna-zel b, button.broj.puna-zel span, button.broj.puna-crv b, button.broj.puna-crv span{color:#fff;}
   .broj i{display:block;font-style:normal;font-size:11px;color:var(--teal-dark);font-weight:700;margin-top:3px;}
   .arh{display:inline-block;font-size:11px;font-weight:800;letter-spacing:.03em;margin-left:6px;vertical-align:middle;}
   .ulaz{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:0 0 6px;}
@@ -701,14 +710,15 @@
       var b = res.brojke;
       var plocice = [
         ['interes', '', b.zainteresirani, 'Zainteresirani'],
-        ['cekaju', 'zut', b.naCekanju, 'Ponude čekaju odgovor'],
-        ['istekle', 'crv', b.istekle, 'Istekle ponude'],
-        ['klijenti', 'zel', b.klijenti, 'Klijenti u sustavu'],
+        ['cekaju', 'puna-zut', b.naCekanju, 'Ponude čekaju odgovor'],
+        ['istekle', 'puna-svcrv', b.istekle, 'Istekle ponude'],
+        ['klijenti', 'puna-zel', b.klijenti, '❤️ Klijenti u sustavu'],
         ['ponude', '', b.ponude, 'Ponude ukupno'],
-        ['imenik', '', res.kontakata, 'Kontakata u imeniku'],
+        ['imenik', '', res.kontakata, '📒 Kontakata u imeniku'],
         ['arhiva', 'sivo', b.arhiva, '🗄️ Arhiva'],
         ['ankete', '', b.ankete != null ? b.ankete : '–', '📊 Ankete kvalitete'],
-        ['odbijenice', 'crv', b.odbijenice != null ? b.odbijenice : '–', '🚫 Nisu zainteresirani']
+        ['odbijenice', 'puna-roza', b.odbijenice != null ? b.odbijenice : '–', '🚫 Nisu zainteresirani'],
+        ['raskid', 'puna-crv', b.raskidi != null ? b.raskidi : '–', '✖ Raskinuli suradnju ove godine']
       ];
       $('brojke').innerHTML = plocice.map(function(p, i){
         return '<button type="button" class="broj ' + p[1] + (i === plocice.length - 1 && plocice.length % 2 ? ' siroko' : '') + '" data-otvori="' + p[0] + '"><b>' + p[2] + '</b><span>' + p[3] + '</span></button>';
@@ -875,7 +885,7 @@
   $('brojke').addEventListener('click', function(ev){
     var b = ev.target.closest('[data-otvori]'); if (!b) { return; }
     var k = b.getAttribute('data-otvori');
-    if (k === 'ankete') { idiNa('ankete'); } else if (k === 'odbijenice') { idiNa('odbijenice'); } else { otvoriListu(k); }
+    if (k === 'ankete') { idiNa('ankete'); } else if (k === 'odbijenice') { idiNa('odbijenice'); } else if (k === 'raskid') { idiNa('raskid'); } else { otvoriListu(k); }
   });
 
   // ---------- ANKETE KVALITETE i NISU ZAINTERESIRANI ----------
