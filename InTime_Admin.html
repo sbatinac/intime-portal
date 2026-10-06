@@ -9097,7 +9097,8 @@
     sloj.innerHTML =
       '<canvas id="pogodak-konfeti"></canvas>' +
       '<div id="pogodak-kartica"><button type="button" id="pogodak-x" aria-label="Zatvori">✕</button>' +
-        '<video id="pogodak-gif" autoplay muted loop playsinline preload="auto" aria-label="Pogodak!"><source src="pogodak.mp4" type="video/mp4"><source src="pogodak.webm" type="video/webm"><img src="gif_pogodak.gif" alt="Pogodak!" style="width:100%;"></video>' +
+        '<video id="pogodak-gif" autoplay loop playsinline preload="auto" aria-label="Pogodak!"><source src="pogodak.mp4" type="video/mp4"><source src="pogodak.webm" type="video/webm"><img src="gif_pogodak.gif" alt="Pogodak!" style="width:100%;"></video>' +
+        '<button type="button" id="pogodak-zvuk" hidden style="display:none;position:absolute;top:8px;left:10px;border:0;border-radius:18px;background:rgba(0,0,0,.6);color:#fff;font:inherit;font-size:13px;font-weight:700;padding:7px 12px;cursor:pointer;z-index:2;">🔊 Uključi zvuk</button>' +
         '<h2>' + (imaKlijent ? '🏆 NOVI KLIJENT!' : '🎯 POGODAK!') + '</h2>' +
         '<div class="pg-sub">' + (imaKlijent ? 'Pismo namjere je dovelo do klijenta!' : 'Firma kojoj si poslao pismo namjere javila se kroz upitnik!') + '</div>' +
         '<div id="pogodak-lista">' + novi.slice(0, 8).map(function(x) {
@@ -9120,6 +9121,21 @@
     function zatvori() { cancelAnimationFrame(raf); if (sloj.parentNode) { sloj.parentNode.removeChild(sloj); } var x = document.getElementById('pogodak-stil'); if (x) { x.parentNode.removeChild(x); } }
     sloj.querySelector('#pogodak-zatvori').addEventListener('click', zatvori);
     sloj.querySelector('#pogodak-x').addEventListener('click', zatvori);
+    // zvuk: pokušaj puštanja SA zvukom; ako preglednik to blokira (nema klika na stranici), pusti bez zvuka i ponudi gumb "Uključi zvuk"
+    (function() {
+      var v = sloj.querySelector('#pogodak-gif'), zv = sloj.querySelector('#pogodak-zvuk');
+      if (!v || !zv) { return; }
+      function gumb(prikazi, tekst) { zv.hidden = !prikazi; zv.style.display = prikazi ? '' : 'none'; if (tekst) { zv.textContent = tekst; } }
+      zv.addEventListener('click', function(ev) {
+        ev.stopPropagation();
+        if (v.muted) { v.muted = false; v.volume = 1; try { v.play(); } catch (e) {} gumb(true, '🔇 Isključi zvuk'); }
+        else { v.muted = true; gumb(true, '🔊 Uključi zvuk'); }
+      });
+      v.muted = false; v.volume = 1;
+      var pr; try { pr = v.play(); } catch (e) { pr = null; }
+      if (pr && pr.catch) { pr.then(function() { gumb(true, '🔇 Isključi zvuk'); }).catch(function() { v.muted = true; try { v.play(); } catch (e2) {} gumb(true, '🔊 Uključi zvuk'); }); }
+      else { gumb(true, '🔇 Isključi zvuk'); }
+    })();
     sloj.addEventListener('click', function(ev) { if (ev.target === sloj) { zatvori(); } });
   }
   // ---- RASKID SURADNJE: kad klijent pošalje upitnik o raskidu, pri sljedećem otvaranju admina (ili dok je otvoren) pokrene se video + minus bodovi ----
