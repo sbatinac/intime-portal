@@ -9468,19 +9468,21 @@
       '</style>' +
       '<div class="rk-podtabovi">' +
         '<button type="button" class="rk-tab active" data-rk="slanje">✉ Pojedinačno slanje</button>' +
-        '<button type="button" class="rk-tab" data-rk="predlozak">📝 Predložak maila</button>' +
         '<button type="button" class="rk-tab" data-rk="arhiva">🗄 Arhiva poslanih</button>' +
         '<button type="button" class="rk-tab" data-rk="odgovori">📋 Odgovori na upitnik <span id="rk-br-odg"></span></button>' +
+        '<button type="button" class="rk-tab" data-rk="mobilno">📱 Mobilni raskid suradnje</button>' +
       '</div>' +
       // ---------- POJEDINAČNO SLANJE ----------
       '<div class="rk-pane" data-pane="slanje">' +
         '<div class="rk-kartica"><div class="rk-glava">✉ Mail klijentu koji odlazi<small id="rk-kvota"></small></div><div class="rk-tijelo">' +
-          '<div class="rk-upozorenje" id="rk-bez-linka" hidden>Prije slanja upiši poveznicu na upitnik: kartica „Predložak maila" → „Poveznica na upitnik", pa „Spremi".</div>' +
+          '<div class="rk-upozorenje" id="rk-bez-linka" hidden>Poveznica na upitnik još nije postavljena (ne mogu je izračunati iz adrese ove stranice) — upiši je u kartici „Predložak maila" ispod i klikni „Spremi".</div>' +
+          '<label class="rk-polje" style="max-width:460px;margin-bottom:10px;">Predložak kojim se šalje<select id="rk-slanje-tpl"></select></label>' +
           '<p class="rk-hint">Upiši podatke firme i klikni „Pošalji". Mail (zahvala na suradnji, „naša vrata ostaju otvorena", tvoj broj i gumb na upitnik) odmah ide na upisanu adresu. Samo pojedinačno slanje — bez kampanja.</p>' +
           '<div class="rk-mreza">' +
             '<label class="rk-polje">OIB (neobavezno — za d.o.o./d.d. sam popuni podatke)<input type="text" id="rk-oib" inputmode="numeric" maxlength="11" placeholder="11 znamenki"><span class="rk-status" id="rk-oib-status" style="display:block;margin:3px 0 0;"></span></label>' +
             '<label class="rk-polje">Naziv firme<input type="text" id="rk-naziv" placeholder="npr. Primjer d.o.o."></label>' +
             '<label class="rk-polje">E-mail adresa<input type="email" id="rk-email" placeholder="ime@firma.hr"></label>' +
+            '<label class="rk-polje">Adresa (ulica i kućni broj)<input type="text" id="rk-adresa" maxlength="200"></label>' +
             '<label class="rk-polje">Poštanski broj<input type="text" id="rk-posta" maxlength="10"></label>' +
             '<label class="rk-polje">Grad<input type="text" id="rk-grad"></label>' +
             '<label class="rk-polje">Ime i prezime osobe<input type="text" id="rk-osoba"></label>' +
@@ -9488,16 +9490,19 @@
           '<div class="rk-hint" id="rk-pregled-predmeta" style="font-weight:700;color:#7a0d10;"></div>' +
           '<button type="button" class="rk-gumb" id="rk-posalji">✉ Pošalji mail za raskid suradnje</button><span class="rk-status" id="rk-posalji-status"></span>' +
         '</div></div>' +
-      '</div>' +
-      // ---------- PREDLOŽAK ----------
-      '<div class="rk-pane" data-pane="predlozak" hidden>' +
+      // ---------- PREDLOŽAK (isti tab, ispod slanja) ----------
         '<div class="rk-kartica"><div class="rk-glava">📝 Predložak maila za raskid suradnje</div><div class="rk-tijelo">' +
-          '<p class="rk-hint">Tekst, predmet i poveznica koji se koriste za sva slanja iz ovog taba. Oznake u pismu (npr. <code>{{IME_OSOBE}}</code>) pri slanju se zamijene podacima primatelja. Gumb ostaje vezan na <code>{{LINK}}</code> — mijenjaš samo njegov natpis.</p>' +
+          '<p class="rk-hint">Možeš imati više predložaka (npr. blagi, formalni, za velike klijente). Odaberi predložak s popisa ili klikni „Novi predložak" (kreće kao kopija onoga koji vidiš). Predložak odabran ovdje koristi se za slanje iz ovog taba; za mobitel ga odabireš u kartici „Mobilni raskid suradnje". Poveznica na upitnik je zajednička svim predlošcima. Oznake u pismu (npr. <code>{{IME_OSOBE}}</code>) pri slanju se zamijene podacima primatelja. Gumb ostaje vezan na <code>{{LINK}}</code> — mijenjaš samo njegov natpis.</p>' +
           '<div class="rk-mreza">' +
-            '<label class="rk-polje">Poveznica na upitnik (adresa gdje je objavljena stranica upitnika)<input type="text" id="rk-link" placeholder="https://…/InTime_RaskidSuradnje.html"></label>' +
+            '<label class="rk-polje">Odaberi predložak<select id="rk-tpl-izbor"></select></label>' +
+            '<label class="rk-polje" id="rk-tpl-naziv-wrap" style="display:none;">Naziv predloška<input type="text" id="rk-tpl-naziv" maxlength="60" placeholder="npr. Formalni — veliki klijenti"></label>' +
+          '</div>' +
+          '<div style="margin:0 0 10px;"><button type="button" class="rk-gumb sek" id="rk-tpl-novi">➕ Novi predložak (kopija ovog)</button> <button type="button" class="rk-gumb opasan" id="rk-tpl-brisi">🗑 Obriši predložak</button></div>' +
+          '<div class="rk-mreza">' +
+            '<label class="rk-polje">Poveznica na upitnik (postavlja se sama; prepiši samo ako treba)<input type="text" id="rk-link" placeholder="https://…/InTime_RaskidSuradnje.html"></label>' +
             '<label class="rk-polje">Predmet maila<input type="text" id="rk-predmet" maxlength="200"></label>' +
           '</div>' +
-          '<div class="rk-tagovi">Tagovi u predmetu i tekstu (klik za umetanje u tekst): <code>[IME I PREZIME]</code><code>[NAZIV TVRTKE]</code><code>[GRAD]</code><code>[POŠTANSKI BROJ]</code><code>[OIB]</code><code>{{LINK}}</code></div>' +
+          '<div class="rk-tagovi">Tagovi u predmetu i tekstu (klik za umetanje u tekst): <code>[IME I PREZIME]</code><code>[NAZIV TVRTKE]</code><code>[ADRESA]</code><code>[GRAD]</code><code>[POŠTANSKI BROJ]</code><code>[OIB]</code><code>{{BLOK_PRIMATELJA}}</code><code>{{LINK}}</code></div>' +
           '<div style="margin:6px 0 6px;font-size:13px;font-weight:800;color:#7a0d10;">✎ Mail — klikni u njega i tipkaj izravno</div>' +
           '<div class="rk-alat" id="rk-alat">' +
             '<button type="button" data-ved="bold"><b>B</b></button><button type="button" data-ved="italic"><i>I</i></button><button type="button" data-ved="underline"><u>U</u></button>' +
@@ -9511,8 +9516,15 @@
             '<input type="email" id="rk-test-adresa" value="' + PISMA_TEST_MAIL_ + '" style="padding:8px 10px;border:1px solid #c9d6d3;border-radius:8px;min-width:260px;">' +
             '<button type="button" class="rk-gumb sek" id="rk-test">✉ Pošalji test</button><span class="rk-status" id="rk-test-status"></span>' +
           '</div>' +
-          '<div style="margin:6px 0;font-size:13px;font-weight:800;color:#7a0d10;">👁 Pregled kako će mail izgledati (primjer: Ana Anić, Primjer d.o.o.)</div>' +
-          '<iframe class="rk-prikaz" id="rk-prikaz" sandbox="allow-same-origin" title="Pregled maila"></iframe>' +
+        '</div></div>' +
+      '</div>' +
+      // ---------- MOBILNI RASKID ----------
+      '<div class="rk-pane" data-pane="mobilno" hidden>' +
+        '<div class="rk-kartica"><div class="rk-glava">📱 Mobilni raskid suradnje<small id="rk-mob-kvota"></small></div><div class="rk-tijelo">' +
+          '<p class="rk-hint">Mobitel (brzi modul → „✖ Raskid suradnje — pošalji mail") šalje mail za raskid suradnje predloškom koji ovdje odabereš i potvrdiš (predloške stvaraš i uređuješ u tabu Pojedinačno slanje → „Predložak maila"). Slanje s mobitela je zaključano dok ne potvrdiš predložak; ako promijeniš odabir, potvrdu moraš dati ponovno. Samo pojedinačno slanje.</p>' +
+          '<label class="rk-polje" style="max-width:460px;margin-bottom:10px;">Predložak za slanje s mobitela<select id="rk-mob-tpl"></select></label>' +
+          '<div class="rk-mob-stanje" id="rk-mob-stanje" style="font-weight:800;margin:6px 0 10px;"></div>' +
+          '<div><button type="button" class="rk-gumb" id="rk-mob-potvrdi">✔ Potvrdi predložak</button><span class="rk-status" id="rk-mob-status"></span></div>' +
         '</div></div>' +
       '</div>' +
       // ---------- ARHIVA ----------
@@ -9536,6 +9548,18 @@
     }
     function greskaTekst(e) { return (e && e.message) ? e.message : 'Greška u komunikaciji s poslužiteljem.'; }
     var postavke = { predmet: '', tijelo: '', link: '' }, zadano = { predmet: '', tijelo: '' };
+    var tplId = 'zadano', tplPopis = [{ id: 'zadano', naziv: 'Zadani predložak' }], tplIzmijenjen = false;
+    function tplNaziv(id) { var x = tplPopis.filter(function(q) { return q.id === id; })[0]; return x ? x.naziv : 'Zadani predložak'; }
+    function tplOpcijeHtml(saNovo) {
+      var h = tplPopis.map(function(q) { return '<option value="' + esc(q.id) + '">' + esc(q.naziv) + '</option>'; }).join('');
+      if (saNovo) { h += '<option value="novo">➕ Novi predložak (nespremljen)</option>'; }
+      return h;
+    }
+    function tplOsvjeziIzbornike() {
+      ['rk-tpl-izbor', 'rk-slanje-tpl'].forEach(function(id) { var el = $(id); el.innerHTML = tplOpcijeHtml(tplId === 'novo'); el.value = tplId; });
+      $('rk-tpl-naziv-wrap').style.display = (tplId === 'zadano') ? 'none' : '';
+      $('rk-tpl-brisi').disabled = (tplId === 'zadano' || tplId === 'novo');
+    }
     // slika na vrhu maila ide kao ugrađena (cid:rkbaner); u uređivaču/pregledu se prikazuje preko data adrese koju vraća poslužitelj
     var SLIKA_CID = 'cid:rkbaner', slikaUri = '';
     function cidUUri(h) { return slikaUri ? String(h).split(SLIKA_CID).join(slikaUri) : String(h); }
@@ -9546,7 +9570,8 @@
     function otvoriTab(t) {
       Array.prototype.forEach.call(wrap.querySelectorAll('.rk-tab'), function(b) { b.classList.toggle('active', b.getAttribute('data-rk') === t); });
       Array.prototype.forEach.call(wrap.querySelectorAll('.rk-pane'), function(p) { p.hidden = (p.getAttribute('data-pane') !== t); });
-      if (t === 'predlozak') { vedUcitaj(); pregledOsvjezi(); }
+      if (t === 'slanje') { vedUcitaj(); }
+      if (t === 'mobilno') { mobUcitaj(); }
       if (t === 'arhiva') { ucitajArhivu(); }
       if (t === 'odgovori') { ucitajOdgovore(); }
     }
@@ -9555,11 +9580,26 @@
     });
 
     // ---- postavke (predložak) ----
-    function osvjeziUpozorenje() { $('rk-bez-linka').hidden = !!postavke.link; }
-    function ucitajPostavke() {
-      poziv({ action: 'adminRaskidPostavke' }).then(function(res) {
+    // poveznica na upitnik o raskidu: ista mapa kao ova admin stranica + InTime_RaskidSuradnje.html (samo kad je stranica na https)
+    function autoLinkUpitnika() {
+      try { if (location.protocol !== 'https:') { return ''; } return new URL('InTime_RaskidSuradnje.html', location.href).href; } catch (e) { return ''; }
+    }
+    function osvjeziUpozorenje() {
+      $('rk-bez-linka').hidden = !!postavke.link;
+      // nakon što je poveznica spremljena, obriši staru poruku "Prvo upiši i spremi poveznicu…" uz gumb za slanje
+      var ps = $('rk-posalji-status');
+      if (postavke.link && ps && /^Prvo upiši|^Poveznica je upisana|^Provjeravam spremljenu/.test(ps.textContent)) { status(ps, ''); }
+    }
+    var ucitajSeq = 0;
+    function ucitajPostavke(id) {
+      var moj = ++ucitajSeq;
+      poziv({ action: 'adminRaskidPostavke', autoLink: autoLinkUpitnika(), predlozakId: id || 'zadano' }).then(function(res) {
+        if (moj !== ucitajSeq) { return; }
         if (res.status !== 'ok') { status($('rk-posalji-status'), res.message || 'Učitavanje nije uspjelo.', 'greska'); return; }
         postavke = res.postavke; zadano = res.zadano; slikaUri = res.slika || '';
+        if (res.popis) { tplPopis = res.popis; }
+        tplId = postavke.id || 'zadano'; tplIzmijenjen = false;
+        $('rk-tpl-naziv').value = (tplId === 'zadano') ? '' : (postavke.naziv || ''); tplOsvjeziIzbornike();
         $('rk-link').value = postavke.link || ''; $('rk-predmet').value = postavke.predmet || ''; $('rk-tijelo').value = postavke.tijelo || '';
         $('rk-kvota').textContent = (res.kvota === null || res.kvota === undefined) ? '' : 'Preostala dnevna kvota maila: ' + res.kvota;
         osvjeziUpozorenje(); predmetPregled(); vedUcitaj(); pregledOsvjezi();
@@ -9567,23 +9607,33 @@
     }
 
     // ---- oznake u predmetu / pregled ----
-    var PRIMJER = { osoba: 'Ana Anić', naziv: 'Primjer d.o.o.', grad: 'Osijek', posta: '31000', oib: '12345678901' };
+    var PRIMJER = { osoba: 'Ana Anić', naziv: 'Primjer d.o.o.', adresa: 'Ulica kralja Zvonimira 12', grad: 'Osijek', posta: '31000', oib: '12345678901' };
     function zamijeni(tpl, p, html) {
       var v = function(x) { return html ? esc(x) : String(x); };
       var link = $('rk-link').value.trim() || '#';
       return String(tpl || '')
+        .replace(/\{\{BLOK_PRIMATELJA\}\}/g, function() {
+          if (!html) { return [p.osoba, p.naziv, p.adresa, ((p.posta || '') + ' ' + (p.grad || '')).trim()].filter(Boolean).join(', '); }
+          var h = '', mj = ((p.posta || '') + ' ' + (p.grad || '')).trim();
+          if (p.osoba) { h += '<div>' + esc(p.osoba) + '</div>'; }
+          if (p.naziv) { h += '<div>' + esc(String(p.naziv).toUpperCase()) + '</div>'; }
+          if (p.adresa) { h += '<div>' + esc(p.adresa) + '</div>'; }
+          if (mj) { h += '<div>' + esc(mj) + '</div>'; }
+          return h ? '<div style="margin:0 0 18px;font-size:17px;line-height:1.5;">' + h + '</div>' : '';
+        })
         .replace(/\[IME I PREZIME\]|\{\{IME_OSOBE\}\}/gi, v(p.osoba || 'kolege'))
         .replace(/\[NAZIV TVRTKE\]|\{\{IME_FIRME\}\}/gi, v(p.naziv))
         .replace(/\[GRAD\]|\{\{GRAD\}\}/gi, v(p.grad))
+        .replace(/\[ADRESA\]|\{\{ADRESA\}\}/gi, v(p.adresa || ''))
         .replace(/\[PO[ŠS]TANSKI BROJ\]|\{\{POSTANSKI_BROJ\}\}/gi, v(p.posta))
         .replace(/\[OIB\]|\{\{OIB\}\}/gi, v(p.oib))
         .replace(/\{\{(?:LINK|LINK_GLAVNA|LINK_REBRANDLY)\}\}/g, link);
     }
     function zamijeniPregled(tpl, p) { return cidUUri(zamijeni(tpl, p, true)); }
-    function podaciForme() { return { osoba: $('rk-osoba').value.trim(), naziv: $('rk-naziv').value.trim(), grad: $('rk-grad').value.trim(), posta: $('rk-posta').value.trim(), oib: $('rk-oib').value.trim(), email: $('rk-email').value.trim() }; }
+    function podaciForme() { return { osoba: $('rk-osoba').value.trim(), naziv: $('rk-naziv').value.trim(), adresa: $('rk-adresa').value.trim(), grad: $('rk-grad').value.trim(), posta: $('rk-posta').value.trim(), oib: $('rk-oib').value.trim(), email: $('rk-email').value.trim() }; }
     function predmetPregled() {
       var p = podaciForme(); var pr = postavke.predmet || '';
-      var x = { osoba: p.osoba, naziv: p.naziv || '[NAZIV TVRTKE]', grad: p.grad, posta: p.posta, oib: p.oib };
+      var x = { osoba: p.osoba, naziv: p.naziv || '[NAZIV TVRTKE]', adresa: p.adresa, grad: p.grad, posta: p.posta, oib: p.oib };
       var t = zamijeni(pr, x, false).replace(/\s*[–—-]\s*(?=[–—-]|$)/g, '').replace(/\s{2,}/g, ' ').trim();
       $('rk-pregled-predmeta').textContent = pr ? 'Predmet maila: ' + t : '';
     }
@@ -9594,9 +9644,9 @@
 
     // ---- vizualni uređivač ----
     var vedF = $('rk-iframe'), vedRange = null;
-    var TAG_IZRAZ = '\\{\\{(?:IME_FIRME|IME_OSOBE|GRAD|POSTANSKI_BROJ|OIB|LINK_GLAVNA|LINK_REBRANDLY|LINK)\\}\\}|\\[(?:IME I PREZIME|NAZIV TVRTKE|GRAD|OIB|PO[ŠS]TANSKI BROJ)\\]';
-    var TAG_LABELA = { 'IME_OSOBE': '[IME I PREZIME]', 'IME_FIRME': '[NAZIV TVRTKE]', 'GRAD': '[GRAD]', 'POSTANSKI_BROJ': '[POŠTANSKI BROJ]', 'OIB': '[OIB]' };
-    var TAG_KLJUC = { 'IME I PREZIME': 'IME_OSOBE', 'NAZIV TVRTKE': 'IME_FIRME', 'GRAD': 'GRAD', 'OIB': 'OIB', 'POŠTANSKI BROJ': 'POSTANSKI_BROJ', 'POSTANSKI BROJ': 'POSTANSKI_BROJ' };
+    var TAG_IZRAZ = '\\{\\{(?:IME_FIRME|IME_OSOBE|GRAD|ADRESA|POSTANSKI_BROJ|OIB|LINK_GLAVNA|LINK_REBRANDLY|LINK|BLOK_PRIMATELJA)\\}\\}|\\[(?:IME I PREZIME|NAZIV TVRTKE|GRAD|ADRESA|OIB|PO[ŠS]TANSKI BROJ)\\]';
+    var TAG_LABELA = { 'IME_OSOBE': '[IME I PREZIME]', 'IME_FIRME': '[NAZIV TVRTKE]', 'GRAD': '[GRAD]', 'ADRESA': '[ADRESA]', 'POSTANSKI_BROJ': '[POŠTANSKI BROJ]', 'OIB': '[OIB]', 'BLOK_PRIMATELJA': '[BLOK PRIMATELJA: ime, firma, adresa, PBR grad]' };
+    var TAG_KLJUC = { 'IME I PREZIME': 'IME_OSOBE', 'NAZIV TVRTKE': 'IME_FIRME', 'GRAD': 'GRAD', 'ADRESA': 'ADRESA', 'OIB': 'OIB', 'POŠTANSKI BROJ': 'POSTANSKI_BROJ', 'POSTANSKI BROJ': 'POSTANSKI_BROJ' };
     function tagKljuc(t) { var m = /^\{\{(.+)\}\}$/.exec(t); if (m) { return m[1]; } m = /^\[(.+)\]$/.exec(t); return m ? (TAG_KLJUC[m[1].toUpperCase()] || '') : ''; }
     function vedDoc() { try { return vedF.contentDocument; } catch (e) { return null; } }
     function chipHtml(tag) {
@@ -9643,7 +9693,7 @@
     }
     function vedPrenesi() {
       var h = vedSerijaliziraj(); if (h === null) { return; }
-      $('rk-tijelo').value = h;
+      $('rk-tijelo').value = h; tplIzmijenjen = true;
       clearTimeout(vedPrenesi._t); vedPrenesi._t = setTimeout(pregledOsvjezi, 400);
     }
     vedF.addEventListener('load', function() {
@@ -9684,16 +9734,40 @@
       var h = vedSerijaliziraj(); if (h !== null) { $('rk-tijelo').value = h; }
       var pr = $('rk-predmet').value.trim(), tj = $('rk-tijelo').value, lk = $('rk-link').value.trim();
       status($('rk-spremi-status'), 'Spremam…');
-      poziv({ action: 'adminRaskidPostavkeSpremi', predmet: pr, tijelo: tj, link: lk }).then(function(res) {
+      poziv({ action: 'adminRaskidPostavkeSpremi', predmet: pr, tijelo: tj, link: lk, predlozakId: tplId, nazivPredloska: $('rk-tpl-naziv').value }).then(function(res) {
         if (res.status !== 'ok') { status($('rk-spremi-status'), res.message || 'Spremanje nije uspjelo.', 'greska'); return; }
-        postavke = { predmet: pr, tijelo: tj, link: lk };
+        tplId = res.id; tplPopis = res.popis; tplIzmijenjen = false; tplOsvjeziIzbornike();
+        postavke = { id: tplId, naziv: tplNaziv(tplId), predmet: pr, tijelo: tj, link: lk };
         osvjeziUpozorenje(); predmetPregled();
-        status($('rk-spremi-status'), '✓ Spremljeno.', 'ok');
+        status($('rk-spremi-status'), '✓ Spremljeno: ' + tplNaziv(tplId) + '.', 'ok');
+      }).catch(function(e) { status($('rk-spremi-status'), greskaTekst(e), 'greska'); });
+    });
+    function oznaciIzmjenu() { tplIzmijenjen = true; }
+    ['rk-predmet', 'rk-tijelo', 'rk-link', 'rk-tpl-naziv'].forEach(function(id) { $(id).addEventListener('input', oznaciIzmjenu); });
+    function promijeniPredlozak(v, izbor) {
+      if (v === 'novo') { return; }
+      if (tplIzmijenjen && !confirm('Predložak ima nespremljene izmjene koje će biti odbačene. Odabrati drugi predložak?')) { tplOsvjeziIzbornike(); return; }
+      status($('rk-spremi-status'), '');
+      ucitajPostavke(v);
+    }
+    $('rk-tpl-izbor').addEventListener('change', function() { promijeniPredlozak($('rk-tpl-izbor').value); });
+    $('rk-slanje-tpl').addEventListener('change', function() { promijeniPredlozak($('rk-slanje-tpl').value); });
+    $('rk-tpl-novi').addEventListener('click', function() {
+      var h = vedSerijaliziraj(); if (h !== null) { $('rk-tijelo').value = h; }
+      tplId = 'novo'; $('rk-tpl-naziv').value = ''; tplIzmijenjen = true; tplOsvjeziIzbornike(); $('rk-tpl-naziv').focus();
+      status($('rk-spremi-status'), 'Uredi tekst, upiši naziv i klikni „Spremi" — spremit će se kao novi predložak.', 'ok');
+    });
+    $('rk-tpl-brisi').addEventListener('click', function() {
+      if (tplId === 'zadano' || tplId === 'novo') { return; }
+      if (!confirm('Obrisati predložak „' + tplNaziv(tplId) + '"? Ako je bio potvrđen za mobitel, mobitel se vraća na zadani predložak (i zaključava dok ga ne potvrdiš).')) { return; }
+      poziv({ action: 'adminRaskidPredlozakBrisi', predlozakId: tplId }).then(function(res) {
+        if (res.status !== 'ok') { status($('rk-spremi-status'), res.message || 'Brisanje nije uspjelo.', 'greska'); return; }
+        tplPopis = res.popis; tplIzmijenjen = false; ucitajPostavke('zadano'); status($('rk-spremi-status'), '✓ Predložak obrisan.', 'ok');
       }).catch(function(e) { status($('rk-spremi-status'), greskaTekst(e), 'greska'); });
     });
     $('rk-reset').addEventListener('click', function() {
       if (!confirm('Vratiti zadani tekst i predmet maila? (Poveznica na upitnik ostaje.)')) { return; }
-      poziv({ action: 'adminRaskidPostavkeReset' }).then(function(res) {
+      poziv({ action: 'adminRaskidPostavkeReset', predlozakId: tplId }).then(function(res) {
         if (res.status !== 'ok') { status($('rk-spremi-status'), res.message || 'Nije uspjelo.', 'greska'); return; }
         postavke = res.postavke; $('rk-predmet').value = postavke.predmet; $('rk-tijelo').value = postavke.tijelo;
         vedUcitaj(); pregledOsvjezi(); predmetPregled();
@@ -9704,10 +9778,11 @@
       var h = vedSerijaliziraj(); if (h !== null) { $('rk-tijelo').value = h; }
       status($('rk-test-status'), 'Šaljem test…');
       // test uvijek šalje ono što je trenutno spremljeno — prvo spremi, pa pošalji
-      poziv({ action: 'adminRaskidPostavkeSpremi', predmet: $('rk-predmet').value.trim(), tijelo: $('rk-tijelo').value, link: $('rk-link').value.trim() }).then(function(sp) {
+      poziv({ action: 'adminRaskidPostavkeSpremi', predmet: $('rk-predmet').value.trim(), tijelo: $('rk-tijelo').value, link: $('rk-link').value.trim(), predlozakId: tplId, nazivPredloska: $('rk-tpl-naziv').value }).then(function(sp) {
         if (sp.status !== 'ok') { throw new Error(sp.message || 'Spremanje nije uspjelo.'); }
-        postavke = { predmet: $('rk-predmet').value.trim(), tijelo: $('rk-tijelo').value, link: $('rk-link').value.trim() }; osvjeziUpozorenje();
-        return poziv({ action: 'adminRaskidPosalji', podaci: PRIMJER, test: true, testAdresa: $('rk-test-adresa').value.trim() });
+        tplId = sp.id; tplPopis = sp.popis; tplIzmijenjen = false; tplOsvjeziIzbornike();
+        postavke = { id: tplId, naziv: tplNaziv(tplId), predmet: $('rk-predmet').value.trim(), tijelo: $('rk-tijelo').value, link: $('rk-link').value.trim() }; osvjeziUpozorenje();
+        return poziv({ action: 'adminRaskidPosalji', podaci: PRIMJER, test: true, testAdresa: $('rk-test-adresa').value.trim(), predlozakId: tplId });
       }).then(function(res) {
         if (res.status === 'ok') { status($('rk-test-status'), '✓ Test poslan na ' + $('rk-test-adresa').value.trim(), 'ok'); }
         else { status($('rk-test-status'), res.message || 'Slanje testa nije uspjelo.', 'greska'); }
@@ -9715,7 +9790,7 @@
     });
 
     // ---- pojedinačno slanje ----
-    ['rk-oib', 'rk-naziv', 'rk-osoba', 'rk-grad', 'rk-posta'].forEach(function(id) { $(id).addEventListener('input', predmetPregled); });
+    ['rk-oib', 'rk-naziv', 'rk-osoba', 'rk-adresa', 'rk-grad', 'rk-posta'].forEach(function(id) { $(id).addEventListener('input', predmetPregled); });
     var oibZadnji = '';
     $('rk-oib').addEventListener('input', function() {
       var oib = $('rk-oib').value.replace(/\D/g, '');
@@ -9731,27 +9806,39 @@
           return;
         }
         if (!res.pronadjen) { status($('rk-oib-status'), 'Nije u sudskom registru (obrt/OPG?) — upiši ručno.'); return; }
-        var m = { 'rk-naziv': res.naziv, 'rk-posta': res.pbr, 'rk-grad': res.grad };
+        var m = { 'rk-naziv': res.naziv, 'rk-adresa': res.adresa, 'rk-posta': res.pbr, 'rk-grad': res.grad };
         Object.keys(m).forEach(function(id) { if (m[id] && !$(id).value.trim()) { $(id).value = m[id]; } });
         predmetPregled();
-        status($('rk-oib-status'), '✓ Sudski registar: ' + res.naziv + (res.aktivan === false ? ' (⚠ nije aktivan)' : ''), 'ok');
+        status($('rk-oib-status'), '✓ Sudski registar: ' + res.naziv + (res.aktivan === false ? ' (⚠ nije aktivan)' : '') + (res.pbr ? (res.pbrIzvor === 'osm' ? ' · poštanski broj iz karte — provjeri' : '') : ' · poštanski broj nije u registru — upiši ručno'), 'ok');
       }).catch(function(e) { status($('rk-oib-status'), greskaTekst(e) + ' — upiši ručno.', 'greska'); oibZadnji = ''; });
     });
     var salje = false;
     function posalji(potvrdi) {
       if (salje) { return; }
-      var p = podaciForme(), st = $('rk-posalji-status');
+      var p = podaciForme(), st = $('rk-posalji-status'); p.link = postavke.link || '';
       if (!p.naziv) { status(st, 'Upiši naziv firme.', 'greska'); return; }
       if (!/^[^\s@,;]+@[^\s@,;]+\.[^\s@,;]{2,}$/.test(p.email)) { status(st, 'Upiši ispravnu e-mail adresu.', 'greska'); return; }
       if (p.oib && !/^\d{11}$/.test(p.oib)) { status(st, 'OIB mora imati 11 znamenki (ili ga ostavi praznog).', 'greska'); return; }
-      if (!postavke.link) { osvjeziUpozorenje(); status(st, 'Prvo upiši i spremi poveznicu na upitnik (kartica „Predložak maila").', 'greska'); return; }
-      if (potvrdi !== true && !confirm('Poslati mail za raskid suradnje na ' + p.email + '?')) { return; }
+      if (!postavke.link && autoLinkUpitnika()) { postavke.link = autoLinkUpitnika(); $('rk-link').value = postavke.link; }
+      if (!postavke.link) {
+        // lokalno stanje je prazno — provjeri što je zaista spremljeno na poslužitelju prije nego što odbiješ slanje
+        status(st, 'Provjeravam spremljenu poveznicu…');
+        poziv({ action: 'adminRaskidPostavke', predlozakId: tplId === 'novo' ? 'zadano' : tplId }).then(function(res) {
+          if (res.status === 'ok' && res.postavke && res.postavke.link) { postavke.link = res.postavke.link; $('rk-link').value = postavke.link; osvjeziUpozorenje(); posalji(potvrdi); return; }
+          osvjeziUpozorenje();
+          var upisan = $('rk-link').value.trim();
+          status(st, upisan ? 'Poveznica je upisana, ali NIJE spremljena na poslužitelju — otvori „Predložak maila", klikni „Spremi predložak i poveznicu" i provjeri javlja li se tamo greška.' : 'Prvo upiši i spremi poveznicu na upitnik (kartica „Predložak maila").', 'greska');
+        }).catch(function(e) { status(st, greskaTekst(e), 'greska'); });
+        return;
+      }
+      if (tplId === 'novo') { status(st, 'Novi predložak još nije spremljen — klikni „Spremi" u kartici „Predložak maila" ili odaberi postojeći.', 'greska'); return; }
+      if (potvrdi !== true && !confirm('Poslati mail za raskid suradnje na ' + p.email + (tplId !== 'zadano' ? ' (predložak: ' + tplNaziv(tplId) + ')' : '') + '?' + (tplIzmijenjen ? '\n\nPAZI: predložak ima nespremljene izmjene — šalje se SPREMLJENA verzija.' : ''))) { return; }
       salje = true; $('rk-posalji').disabled = true; status(st, 'Šaljem…');
-      poziv({ action: 'adminRaskidPosalji', podaci: p, test: false, potvrdiDuplikat: potvrdi === true }).then(function(res) {
+      poziv({ action: 'adminRaskidPosalji', podaci: p, test: false, potvrdiDuplikat: potvrdi === true, predlozakId: tplId }).then(function(res) {
         salje = false; $('rk-posalji').disabled = false;
         if (res.status === 'ok') {
           status(st, '✓ Poslano na ' + p.email + '.', 'ok');
-          ['rk-oib', 'rk-naziv', 'rk-email', 'rk-posta', 'rk-grad', 'rk-osoba'].forEach(function(id) { $(id).value = ''; });
+          ['rk-oib', 'rk-naziv', 'rk-email', 'rk-adresa', 'rk-posta', 'rk-grad', 'rk-osoba'].forEach(function(id) { $(id).value = ''; });
           status($('rk-oib-status'), ''); oibZadnji = ''; predmetPregled(); arhivaUcitana = false;
           if (res.kvota !== null && res.kvota !== undefined) { $('rk-kvota').textContent = 'Preostala dnevna kvota maila: ' + res.kvota; }
         } else if (res.status === 'duplikat') {
@@ -9761,6 +9848,37 @@
       }).catch(function(e) { salje = false; $('rk-posalji').disabled = false; status(st, greskaTekst(e), 'greska'); });
     }
     $('rk-posalji').addEventListener('click', function() { posalji(false); });
+
+    // ---- mobilni raskid suradnje: potvrda predloška otključava slanje s mobitela ----
+    var mobPotvrdjeno = false;
+    function mobPrikazi(res) {
+      mobPotvrdjeno = !!res.potvrdjeno;
+      if (res.popis) { tplPopis = res.popis; tplOsvjeziIzbornike(); }
+      var ms = $('rk-mob-tpl'); ms.innerHTML = tplOpcijeHtml(false); ms.value = res.predlozakId || 'zadano';
+      var el = $('rk-mob-stanje');
+      el.textContent = mobPotvrdjeno ? '✅ Predložak „' + tplNaziv(res.predlozakId || 'zadano') + '" je potvrđen — mobitel može slati mailove za raskid suradnje.' : '🔒 Predložak nije potvrđen — slanje s mobitela je zaključano.';
+      el.style.color = mobPotvrdjeno ? '#1b6e3c' : '#a15c00';
+      $('rk-mob-potvrdi').textContent = mobPotvrdjeno ? '✖ Ukloni potvrdu (zaključaj mobitel)' : '✔ Potvrdi predložak';
+      $('rk-mob-kvota').textContent = (res.kvota === null || res.kvota === undefined) ? '' : 'Preostala dnevna kvota maila: ' + res.kvota;
+      if (res.linkPostavljen === false) { status($('rk-mob-status'), 'Poveznica na upitnik još nije postavljena (kartica „Predložak maila").', 'greska'); }
+    }
+    function mobUcitaj() {
+      poziv({ action: 'adminRaskidMobilno' }).then(function(res) {
+        if (res.status !== 'ok') { status($('rk-mob-status'), res.message || 'Učitavanje nije uspjelo.', 'greska'); return; }
+        status($('rk-mob-status'), ''); mobPrikazi(res);
+      }).catch(function(e) { status($('rk-mob-status'), greskaTekst(e), 'greska'); });
+    }
+    function mobSpremi(potvrdjeno, poruka) {
+      status($('rk-mob-status'), 'Spremam…');
+      return poziv({ action: 'adminRaskidMobilno', predlozakId: $('rk-mob-tpl').value, potvrdjeno: potvrdjeno }).then(function(res) {
+        if (res.status !== 'ok') { status($('rk-mob-status'), res.message || 'Spremanje nije uspjelo.', 'greska'); return; }
+        mobPrikazi(res); status($('rk-mob-status'), poruka(res), 'ok');
+      }).catch(function(e) { status($('rk-mob-status'), greskaTekst(e), 'greska'); });
+    }
+    $('rk-mob-tpl').addEventListener('change', function() { mobSpremi(false, function() { return 'Predložak promijenjen — potvrdi ga da ga mobitel može koristiti.'; }); });
+    $('rk-mob-potvrdi').addEventListener('click', function() {
+      mobSpremi(!mobPotvrdjeno, function(res) { return res.potvrdjeno ? 'Mobitel šalje predložak „' + tplNaziv(res.predlozakId) + '".' : 'Slanje s mobitela zaključano.'; });
+    });
 
     // ---- arhiva poslanih ----
     function ucitajArhivu() {
@@ -9954,6 +10072,7 @@
           '<label class="pm-polje">OIB (obavezno)<input type="text" id="pm-oib" inputmode="numeric" maxlength="11" placeholder="11 znamenki"><span class="pm-status" id="pm-oib-status" style="display:block;margin:3px 0 0;"></span></label>' +
           '<label class="pm-polje">Naziv firme<input type="text" id="pm-naziv" placeholder="npr. Primjer d.o.o."></label>' +
           '<label class="pm-polje">E-mail adresa<input type="email" id="pm-email" placeholder="ime@firma.hr"></label>' +
+          '<label class="pm-polje">Adresa (ulica i kućni broj)<input type="text" id="pm-adresa" maxlength="200" placeholder="npr. Ulica kralja Zvonimira 12"></label>' +
           '<label class="pm-polje">Poštanski broj<input type="text" id="pm-posta" maxlength="10" placeholder="npr. 31000"></label>' +
           '<label class="pm-polje">Grad<input type="text" id="pm-grad"></label>' +
           '<label class="pm-polje">Ime i prezime vlasnika (ili kontakt osobe)<input type="text" id="pm-osoba"></label>' +
@@ -9992,14 +10111,14 @@
           '<input type="text" id="pm-ved-slika" placeholder="adresa slike (npr. imgur)"><button type="button" data-ved="slika">🖼 Umetni sliku</button>' +
         '</div>' +
         '<div class="pm-ved-tagovi" id="pm-ved-tagovi">Umetni na mjesto kursora: ' +
-          '<code>[IME I PREZIME]</code><code>[NAZIV TVRTKE]</code><code>[GRAD]</code><code>[POŠTANSKI BROJ]</code><code>[OIB]</code><code>{{PREDMET}}</code><code>{{BLOK_PRIMATELJA}}</code><code>{{LINK}}</code>' +
+          '<code>[IME I PREZIME]</code><code>[NAZIV TVRTKE]</code><code>[ADRESA]</code><code>[GRAD]</code><code>[POŠTANSKI BROJ]</code><code>[OIB]</code><code>{{PREDMET}}</code><code>{{BLOK_PRIMATELJA}}</code><code>{{LINK}}</code>' +
         '</div>' +
         '<iframe class="pm-vizualni" id="pm-vizualni" sandbox="allow-same-origin" title="Uređivač pisma"></iframe>' +
         '<p class="pm-hint" style="margin-top:6px;">Oznake u uglatim/vitičastim zagradama pri slanju se zamijene podacima primatelja. Gumb ostaje vezan na <code>{{LINK}}</code> — mijenjaš samo njegov natpis. U "Pojedinačno slanje" i "Kampanje" oznake se u pismu odmah zamjenjuju podacima koje upišeš (u okviru su, ne mogu se uništiti slučajno); u "Predlošcima" vidiš oznake lijevo i primjer podataka desno.</p>' +
         '</div></div>' +
         '<details id="pm-uredi-detalji"><summary>Napredno: HTML kod pisma</summary>' +
           '<label class="pm-polje">Tekst maila (HTML)<textarea id="pm-tijelo" rows="12" style="font-family:Consolas,monospace;font-size:12px;"></textarea></label>' +
-          '<p class="pm-hint pm-tagovi" style="margin-top:8px;">Tagovi (klik za umetanje): <code>{{PREDMET}}</code><code>{{BLOK_PRIMATELJA}}</code><code>{{IME_OSOBE}}</code><code>{{IME_FIRME}}</code><code>{{POSTANSKI_BROJ}}</code><code>{{GRAD}}</code><code>{{OIB}}</code><code>{{LINK}}</code><code>{{LINK_GLAVNA}}</code><code>{{LINK_REBRANDLY}}</code> — <code>{{PREDMET}}</code> ispisuje isti naslov kao predmet maila (prazna polja se izostave); <code>{{BLOK_PRIMATELJA}}</code> ispisuje ime i prezime, NAZIV FIRME velikim slovima te poštanski broj i grad jedno ispod drugog (prazna polja se preskaču); <code>{{LINK}}</code> je Rebrandly ako je upisan, inače glavna stranica.</p>' +
+          '<p class="pm-hint pm-tagovi" style="margin-top:8px;">Tagovi (klik za umetanje): <code>{{PREDMET}}</code><code>{{BLOK_PRIMATELJA}}</code><code>{{IME_OSOBE}}</code><code>{{IME_FIRME}}</code><code>{{ADRESA}}</code><code>{{POSTANSKI_BROJ}}</code><code>{{GRAD}}</code><code>{{OIB}}</code><code>{{LINK}}</code><code>{{LINK_GLAVNA}}</code><code>{{LINK_REBRANDLY}}</code> — <code>{{PREDMET}}</code> ispisuje isti naslov kao predmet maila (prazna polja se izostave); <code>{{BLOK_PRIMATELJA}}</code> ispisuje ime i prezime, NAZIV FIRME velikim slovima, adresu te poštanski broj i grad jedno ispod drugog (prazna polja se preskaču); <code>{{LINK}}</code> je Rebrandly ako je upisan, inače glavna stranica.</p>' +
         '</details>' +
         '<div style="margin:6px 0 10px;"><button type="button" class="pm-gumb" id="pm-spremi">💾 Spremi predložak i poveznice</button> ' +
           '<button type="button" class="pm-gumb sek" id="pm-reset">↺ Vrati zadani tekst</button><span class="pm-status" id="pm-spremi-status"></span></div>' +
@@ -10134,14 +10253,14 @@
     tplOsvjeziIzbornike();
     // ---- predmet: popis prijedloga, ručni unos, pregled ----
     var predmeti = { ugradeni: [], vlastiti: [] };
-    var PREGLED_UZORAK = { naziv: 'Primjer d.o.o.', osoba: 'Ivan Horvat', grad: 'Osijek', posta: '31000', oib: '12345678903' };
+    var PREGLED_UZORAK = { naziv: 'Primjer d.o.o.', osoba: 'Ivan Horvat', adresa: 'Ulica kralja Zvonimira 12', grad: 'Osijek', posta: '31000', oib: '12345678903' };
     function predmetPrimjer(tpl, p) {
       p = p || PREGLED_UZORAK;
-      var r = String(tpl || '').replace(/\[IME I PREZIME\]/gi, '{{IME_OSOBE}}').replace(/\[NAZIV TVRTKE\]/gi, '{{IME_FIRME}}').replace(/\[GRAD\]/gi, '{{GRAD}}').replace(/\[PO[ŠS]TANSKI BROJ\]/gi, '{{POSTANSKI_BROJ}}');
+      var r = String(tpl || '').replace(/\[IME I PREZIME\]/gi, '{{IME_OSOBE}}').replace(/\[NAZIV TVRTKE\]/gi, '{{IME_FIRME}}').replace(/\[GRAD\]/gi, '{{GRAD}}').replace(/\[ADRESA\]/gi, '{{ADRESA}}').replace(/\[PO[ŠS]TANSKI BROJ\]/gi, '{{POSTANSKI_BROJ}}');
       [['IME_OSOBE', p.osoba], ['GRAD', p.grad], ['POSTANSKI_BROJ', p.posta]].forEach(function(par) {
         if (!String(par[1] || '').trim()) { r = r.replace(new RegExp('\\{\\{' + par[0] + '\\}\\}', 'g'), '\u0001'); }
       });
-      r = r.replace(/\{\{IME_OSOBE\}\}/g, p.osoba).replace(/\{\{IME_FIRME\}\}/g, p.naziv).replace(/\{\{GRAD\}\}/g, p.grad).replace(/\{\{POSTANSKI_BROJ\}\}/g, p.posta).replace(/\{\{[A-Z_]+\}\}/g, '');
+      r = r.replace(/\{\{IME_OSOBE\}\}/g, p.osoba).replace(/\{\{IME_FIRME\}\}/g, p.naziv).replace(/\{\{GRAD\}\}/g, p.grad).replace(/\{\{ADRESA\}\}/g, p.adresa || '').replace(/\{\{POSTANSKI_BROJ\}\}/g, p.posta).replace(/\{\{[A-Z_]+\}\}/g, '');
       r = r.replace(/\s*[–—-]\s*\u0001/g, '').replace(/\u0001\s*[–—-]\s*/g, '').replace(/\u0001/g, '');
       return r.replace(/[\r\n]+/g, ' ').replace(/\s{2,}/g, ' ').trim();
     }
@@ -10182,10 +10301,10 @@
     function podaciPregleda() {
       var src = null;
       if (aktivnaKartica === 'pojedinacno') {
-        src = { naziv: $('pm-naziv').value.trim(), osoba: $('pm-osoba').value.trim(), grad: $('pm-grad').value.trim(), posta: $('pm-posta').value.trim(), oib: $('pm-oib').value.trim() };
+        src = { naziv: $('pm-naziv').value.trim(), osoba: $('pm-osoba').value.trim(), adresa: $('pm-adresa').value.trim(), grad: $('pm-grad').value.trim(), posta: $('pm-posta').value.trim(), oib: $('pm-oib').value.trim() };
       } else if (aktivnaKartica === 'kampanje') {
         var r = pregledKampRed();
-        if (r) { src = { naziv: String(r.naziv || ''), osoba: String(r.osoba || ''), grad: String(r.grad || ''), posta: String(r.posta || ''), oib: String(r.oib || '') }; }
+        if (r) { src = { naziv: String(r.naziv || ''), osoba: String(r.osoba || ''), adresa: String(r.adresa || ''), grad: String(r.grad || ''), posta: String(r.posta || ''), oib: String(r.oib || '') }; }
       }
       var ima = !!src && Object.keys(src).some(function(k) { return !!src[k]; }), p = {}, prazna = 0;
       Object.keys(PREGLED_UZORAK).forEach(function(k) { if (ima) { p[k] = src[k]; if (!src[k]) { prazna++; } } else { p[k] = PREGLED_UZORAK[k]; } });
@@ -10199,6 +10318,7 @@
       var h = '', mjesto = (p.posta + ' ' + p.grad).trim();
       if (p.osoba) { h += '<div>' + esc(p.osoba) + '</div>'; }
       if (p.naziv) { h += '<div>' + esc(p.naziv.toUpperCase()) + '</div>'; }
+      if (p.adresa) { h += '<div>' + esc(p.adresa) + '</div>'; }
       if (mjesto) { h += '<div>' + esc(mjesto) + '</div>'; }
       return h ? '<div style="margin:0 0 18px;font-size:17px;line-height:1.5;">' + h + '</div>' : '';
     }
@@ -10218,15 +10338,17 @@
     var vedF = $('pm-vizualni'), vedRange = null;
     function vedDoc() { try { return vedF.contentDocument; } catch (e) { return null; } }
     // oznake ({{IME_FIRME}}, [GRAD]…) u uređivaču su "čipovi": prikazuju podatke iz obrasca/popisa, a pri spremanju se vraćaju u oznake
-    var TAG_IZRAZ = '\\{\\{(?:IME_FIRME|IME_OSOBE|GRAD|POSTANSKI_BROJ|OIB|LINK_GLAVNA|LINK_REBRANDLY|LINK|PREDMET|BLOK_PRIMATELJA)\\}\\}|\\[(?:IME I PREZIME|NAZIV TVRTKE|GRAD|OIB|PO[ŠS]TANSKI BROJ)\\]';
-    var TAG_KLJUC = { 'IME I PREZIME': 'IME_OSOBE', 'NAZIV TVRTKE': 'IME_FIRME', 'GRAD': 'GRAD', 'OIB': 'OIB', 'POŠTANSKI BROJ': 'POSTANSKI_BROJ', 'POSTANSKI BROJ': 'POSTANSKI_BROJ' };
+    var TAG_IZRAZ = '\\{\\{(?:IME_FIRME|IME_OSOBE|GRAD|ADRESA|POSTANSKI_BROJ|OIB|LINK_GLAVNA|LINK_REBRANDLY|LINK|PREDMET|BLOK_PRIMATELJA)\\}\\}|\\[(?:IME I PREZIME|NAZIV TVRTKE|GRAD|ADRESA|OIB|PO[ŠS]TANSKI BROJ)\\]';
+    var TAG_KLJUC = { 'IME I PREZIME': 'IME_OSOBE', 'NAZIV TVRTKE': 'IME_FIRME', 'GRAD': 'GRAD', 'ADRESA': 'ADRESA', 'OIB': 'OIB', 'POŠTANSKI BROJ': 'POSTANSKI_BROJ', 'POSTANSKI BROJ': 'POSTANSKI_BROJ' };
     function tagKljuc(t) { var m = /^\{\{(.+)\}\}$/.exec(t); if (m) { return m[1]; } m = /^\[(.+)\]$/.exec(t); return m ? (TAG_KLJUC[m[1].toUpperCase()] || '') : ''; }
     function vedPodaci() { if (aktivnaKartica === 'predlosci') { return null; } var pd = podaciPregleda(); return pd.ima ? pd.p : null; }
-    var TAG_LABELA = { IME_OSOBE: '[IME I PREZIME]', IME_FIRME: '[NAZIV TVRTKE]', GRAD: '[GRAD]', POSTANSKI_BROJ: '[POŠTANSKI BROJ]', OIB: '[OIB]' };
+    var TAG_LABELA = { IME_OSOBE: '[IME I PREZIME]', IME_FIRME: '[NAZIV TVRTKE]', GRAD: '[GRAD]', ADRESA: '[ADRESA]', POSTANSKI_BROJ: '[POŠTANSKI BROJ]', OIB: '[OIB]' };
     // dok podatak nije upisan, u pismu se vidi oznaka u uglatim zagradama (npr. [IME I PREZIME]); upisani podaci je zamijene
     function blokUzivo(p) {
       var o = (p && p.osoba) || '[IME I PREZIME]', f = (p && p.naziv) ? p.naziv.toUpperCase() : '[NAZIV TVRTKE]', m = [(p && p.posta) || '[POŠTANSKI BROJ]', (p && p.grad) || '[GRAD]'].join(' ');
-      return '<div style="margin:0 0 18px;font-size:17px;line-height:1.5;"><div>' + esc(o) + '</div><div>' + esc(f) + '</div><div>' + esc(m) + '</div></div>';
+      // redak adrese: oznaka dok je obrazac prazan ili se uređuje predložak; u kampanjama (nema adrese u popisu) se izostavlja
+      var a = (p && p.adresa) ? p.adresa : ((p && aktivnaKartica === 'kampanje') ? '' : '[ADRESA]');
+      return '<div style="margin:0 0 18px;font-size:17px;line-height:1.5;"><div>' + esc(o) + '</div><div>' + esc(f) + '</div>' + (a ? '<div>' + esc(a) + '</div>' : '') + '<div>' + esc(m) + '</div></div>';
     }
     function predmetUzivo(tpl, p) {
       return String(tpl || '').replace(/\[IME I PREZIME\]|\{\{IME_OSOBE\}\}/gi, (p && p.osoba) || '[IME I PREZIME]').replace(/\[NAZIV TVRTKE\]|\{\{IME_FIRME\}\}/gi, (p && p.naziv) || '[NAZIV TVRTKE]').replace(/\[GRAD\]|\{\{GRAD\}\}/gi, (p && p.grad) || '[GRAD]').replace(/\[PO[ŠS]TANSKI BROJ\]|\{\{POSTANSKI_BROJ\}\}/gi, (p && p.posta) || '[POŠTANSKI BROJ]').replace(/\{\{[A-Z_]+\}\}/g, '');
@@ -10237,7 +10359,7 @@
       if (k === 'PREDMET') { return { html: esc(predmetUzivo($('pm-predmet').value, p)), puno: !!p }; }
       if (p) {
         var linkG = $('pm-link-glavna').value.trim(), linkR = $('pm-link-rebrandly').value.trim(), link = linkR || linkG;
-        if (k === 'IME_OSOBE') { v = p.osoba; } else if (k === 'IME_FIRME') { v = p.naziv; } else if (k === 'GRAD') { v = p.grad; } else if (k === 'POSTANSKI_BROJ') { v = p.posta; } else if (k === 'OIB') { v = p.oib; }
+        if (k === 'IME_OSOBE') { v = p.osoba; } else if (k === 'IME_FIRME') { v = p.naziv; } else if (k === 'GRAD') { v = p.grad; } else if (k === 'ADRESA') { v = p.adresa; } else if (k === 'POSTANSKI_BROJ') { v = p.posta; } else if (k === 'OIB') { v = p.oib; }
         else if (k === 'LINK') { v = link; } else if (k === 'LINK_GLAVNA') { v = linkG || link; } else if (k === 'LINK_REBRANDLY') { v = linkR || link; }
       }
       return v ? { html: esc(v), puno: true } : { html: esc(TAG_LABELA[k] || tag), puno: false };
@@ -10348,7 +10470,7 @@
       window.addEventListener('resize', h);
     })();
     // pregled uživo: svaka promjena u obrascu / odabranom retku popisa odmah osvježava pismo desno
-    ['pm-oib', 'pm-naziv', 'pm-posta', 'pm-grad', 'pm-osoba'].forEach(function(id) { $(id).addEventListener('input', nacrtajPregledOdgodeno); });
+    ['pm-oib', 'pm-naziv', 'pm-adresa', 'pm-posta', 'pm-grad', 'pm-osoba'].forEach(function(id) { $(id).addEventListener('input', nacrtajPregledOdgodeno); });
     $('pm-pregled-red').addEventListener('change', nacrtajPregled);
     function pregledRedovaOsvjezi() {
       var sel = $('pm-pregled-red'), staro = sel.value, h = '', n = 0;
@@ -10542,11 +10664,11 @@
           return;
         }
         if (!res.pronadjen) { status($('pm-oib-status'), 'Nije u sudskom registru (obrt/OPG?) — upiši ručno.'); return; }
-        var m = { 'pm-naziv': res.naziv, 'pm-posta': res.pbr, 'pm-grad': res.grad };
+        var m = { 'pm-naziv': res.naziv, 'pm-adresa': res.adresa, 'pm-posta': res.pbr, 'pm-grad': res.grad };
         Object.keys(m).forEach(function(id) {
           if (m[id] && !$(id).value.trim()) { $(id).value = m[id]; $(id).dispatchEvent(new Event('input', { bubbles: true })); }
         });
-        status($('pm-oib-status'), '✓ Sudski registar: ' + res.naziv + (res.aktivan === false ? ' (⚠ nije aktivan)' : ''), 'ok');
+        status($('pm-oib-status'), '✓ Sudski registar: ' + res.naziv + (res.aktivan === false ? ' (⚠ nije aktivan)' : '') + (res.pbr ? (res.pbrIzvor === 'osm' ? ' · poštanski broj iz karte — provjeri' : '') : ' · poštanski broj nije u registru — upiši ručno'), 'ok');
       }).catch(function() { status($('pm-oib-status'), 'Nema veze s poslužiteljem — upiši ručno.', 'greska'); oibZadnji = ''; });
     });
     $('pm-kreni').addEventListener('click', pokreniKampanju);
@@ -10556,13 +10678,13 @@
     // ---- ručno pismo ----
     $('pm-posalji').addEventListener('click', function(potvrdiDup) {
       var dup = (potvrdiDup === true);
-      var p = { oib: $('pm-oib').value.trim(), naziv: $('pm-naziv').value.trim(), email: $('pm-email').value.trim(), grad: $('pm-grad').value.trim(), posta: $('pm-posta').value.trim(), osoba: $('pm-osoba').value.trim() };
+      var p = { oib: $('pm-oib').value.trim(), naziv: $('pm-naziv').value.trim(), email: $('pm-email').value.trim(), adresa: $('pm-adresa').value.trim(), grad: $('pm-grad').value.trim(), posta: $('pm-posta').value.trim(), osoba: $('pm-osoba').value.trim() };
       if (!p.naziv || !/^[^\s@,;]+@[^\s@,;]+\.[^\s@,;]{2,}$/.test(p.email)) { status($('pm-posalji-status'), 'Upiši naziv firme i ispravnu e-mail adresu.', 'greska'); return; }
       if (!/^\d{11}$/.test(p.oib)) { status($('pm-posalji-status'), 'OIB je obavezan i mora imati 11 znamenki.', 'greska'); return; }
       if (!dup && !confirm('Poslati pismo namjere na ' + p.email + ' (predložak: ' + tplNaziv($('pm-rucno-tpl').value) + ')?')) { return; }
       var b = $('pm-posalji'); b.disabled = true; status($('pm-posalji-status'), 'Šaljem…');
       rucnoSlanjeUToku = true; gifPaljbaOtvori_('✉ Šaljem pismo namjere…');
-      poziv({ action: 'adminPismoPosalji', oib: p.oib, naziv: p.naziv, email: p.email, grad: p.grad, posta: p.posta, osoba: p.osoba, potvrdiDuplikat: dup, predlozakId: $('pm-rucno-tpl').value }).then(function(res) {
+      poziv({ action: 'adminPismoPosalji', oib: p.oib, naziv: p.naziv, email: p.email, grad: p.grad, posta: p.posta, adresa: p.adresa, osoba: p.osoba, potvrdiDuplikat: dup, predlozakId: $('pm-rucno-tpl').value }).then(function(res) {
         rucnoSlanjeUToku = false; gifPaljbaZatvori_();
         b.disabled = false;
         if (res.status === 'ok') {
@@ -10579,14 +10701,14 @@
     });
     function rucnoOcisti_(p) {
       // čisti samo polja koja su još ista kao u poslanom pismu — ako si u međuvremenu već krenuo upisivati novu firmu, to ostaje
-      var m = { 'pm-oib': p.oib, 'pm-naziv': p.naziv, 'pm-email': p.email, 'pm-posta': p.posta, 'pm-grad': p.grad, 'pm-osoba': p.osoba };
+      var m = { 'pm-oib': p.oib, 'pm-naziv': p.naziv, 'pm-email': p.email, 'pm-adresa': p.adresa, 'pm-posta': p.posta, 'pm-grad': p.grad, 'pm-osoba': p.osoba };
       Object.keys(m).forEach(function(id) { if ($(id).value.trim() === String(m[id] || '')) { $(id).value = ''; } });
     }
     function rucnoPotvrdaReset_() { potvrdjeno['pm-rucno'] = ''; guardiOsvjezi(); }
     function slanjeRucno(dup, p) {
       status($('pm-posalji-status'), 'Šaljem…');
       rucnoSlanjeUToku = true; rucnoAzuriraj(); gifPaljbaOtvori_('✉ Šaljem pismo namjere…');
-      poziv({ action: 'adminPismoPosalji', oib: p.oib, naziv: p.naziv, email: p.email, grad: p.grad, posta: p.posta, osoba: p.osoba, potvrdiDuplikat: true, predlozakId: $('pm-rucno-tpl').value }).then(function(res) {
+      poziv({ action: 'adminPismoPosalji', oib: p.oib, naziv: p.naziv, email: p.email, grad: p.grad, posta: p.posta, adresa: p.adresa, osoba: p.osoba, potvrdiDuplikat: true, predlozakId: $('pm-rucno-tpl').value }).then(function(res) {
         rucnoSlanjeUToku = false; gifPaljbaZatvori_();
         status($('pm-posalji-status'), res.status === 'ok' ? 'Poslano na ' + p.email + '.' : (res.message || 'Slanje nije uspjelo.'), res.status === 'ok' ? 'ok' : 'greska');
         if (res.status === 'ok') { rucnoOcisti_(p); nacrtajPregledOdgodeno(); kvotaPrikaz(res.kvota); osvjeziEvidenciju(); rucnoPotvrdaReset_(); } else { rucnoAzuriraj(); }
@@ -19776,6 +19898,8 @@
         else { sudregPoruka_('', 'Veza radi, ali taj OIB nije pronađen u sudskom registru (ili ga ne mogu pročitati — vidi odgovor ispod).'); }
       } else { sudregPoruka_('', res.message || 'Greška.'); }
       t = res.sirovo ? 'HTTP ' + (res.httpKod || '?') + '\n' + res.sirovo : JSON.stringify(res, null, 1);
+      if (res.sjediste) { t = 'SJEDIŠTE iz registra: ' + JSON.stringify(res.sjediste) + '\n\n' + t; }
+      if (res.tokenInfo) { t = 'TOKEN (korak 1): HTTP ' + (res.tokenInfo.httpKod || '?') + ', tip ' + (res.tokenInfo.tip || '?') + ', istječe za ' + (res.tokenInfo.istice || '?') + ' s, duljina ' + (res.tokenInfo.duljina || '?') + (res.tokenInfo.scope ? ', scope ' + res.tokenInfo.scope : '') + '\n' + (res.wwwAuthenticate ? 'WWW-Authenticate: ' + res.wwwAuthenticate + '\n' : '') + '\n' + t; }
       pre.textContent = t; pre.hidden = false;
     }).catch(function() { sudregPoruka_('', 'Greška u komunikaciji s poslužiteljem.'); });
   }

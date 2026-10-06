@@ -1932,6 +1932,9 @@
         <div class="form-section">
           <h3>2. Osnovni podaci o tvrtki</h3>
 
+          <label>OIB * <span style="font-weight:400;">(upišite OIB — ostale podatke o tvrtki popunit ćemo za Vas)</span></label>
+          <input type="text" name="oib" id="oib-input" required inputmode="numeric" maxlength="11" oninput="ogranicniOibNaZnamenke(this)">
+
           <label>Oblik poslovnog subjekta *</label>
           <select name="oblik_subjekta" required onchange="toggleOstalo(this)">
             <option value="">— odaberite —</option>
@@ -1985,9 +1988,6 @@
 
         <div class="form-section">
           <h3>3. Poslovni i bankovni podaci</h3>
-
-          <label>OIB *</label>
-          <input type="text" name="oib" id="oib-input" required inputmode="numeric" maxlength="11" oninput="ogranicniOibNaZnamenke(this)">
 
           <label>MBS (matični broj subjekta)</label>
           <input type="text" name="mbs">
@@ -2905,11 +2905,11 @@
         <input type="hidden" name="vrijeme_slanja" id="vrijeme-slanja-hidden-odbijenica">
         <input type="hidden" name="vrijeme_popunjavanja" id="vrijeme-popunjavanja-hidden-odbijenica">
 
+        <label>OIB poslovnog subjekta * <span style="font-weight:400;">(upišite OIB — naziv tvrtke popunit ćemo za Vas)</span></label>
+        <input type="text" name="oib" id="oib-input-odbijenica" required inputmode="numeric" maxlength="11" oninput="ogranicniOibNaZnamenke(this)">
+
         <label>Naziv poslovnog subjekta *</label>
         <input type="text" name="naziv" required>
-
-        <label>OIB poslovnog subjekta *</label>
-        <input type="text" name="oib" id="oib-input-odbijenica" required inputmode="numeric" maxlength="11" oninput="ogranicniOibNaZnamenke(this)">
 
         <label>Kontakt ime *</label>
         <input type="text" name="odbijenica_kontakt_ime" required>
@@ -4296,6 +4296,88 @@
     var samoBrojevi = input.value.replace(/[^0-9]/g, '').slice(0, 11);
     if (samoBrojevi !== input.value) { input.value = samoBrojevi; }
   }
+
+  // ---- OIB → predpopunjavanje podataka iz Sudskog registra (Saša, 6.10.2026.) ----
+  // Kad se upiše ispravan OIB (11 znamenki), poslužitelj (javniOibPodaci) vraća javne podatke iz sudskog registra
+  // pa se prazna polja popune (naziv, adresa, grad, poštanski broj, MBS, oblik subjekta). Ono što je korisnik već
+  // sam upisao NE prepisuje se; polja koja je popunilo ovo automatski ažuriraju se ako promijeni OIB.
+  // Obrt/OPG nisu u sudskom registru — tada se samo prikaže poruka i sve se upisuje ručno.
+  function oibPredpopuni_(oibInput, polja, statusEl) {
+    if (!oibInput) { return; }
+    if (!statusEl) {
+      statusEl = document.createElement('div');
+      statusEl.style.cssText = 'font-size:12.5px;line-height:1.4;margin:4px 0 0;min-height:0;';
+      oibInput.insertAdjacentElement('afterend', statusEl);
+    }
+    var zadnji = '', brojac = 0;
+    function poruka(t, boja) { statusEl.textContent = t || ''; statusEl.style.color = boja || ''; }
+    function oblikIzNaziva(naziv) {
+      var n = String(naziv || '').toLowerCase();
+      if (/\bj\.\s?d\.\s?o\.\s?o\./.test(n)) { return 'j.d.o.o. – jednostavno društvo s ograničenom odgovornošću'; }
+      if (/\bd\.\s?o\.\s?o\./.test(n)) { return 'd.o.o. – društvo s ograničenom odgovornošću'; }
+      if (/\bd\.\s?d\./.test(n)) { return 'd.d. – dioničko društvo'; }
+      if (/zadruga/.test(n)) { return 'ZADRUGA'; }
+      return '';
+    }
+    function postavi(el, v) {
+      if (!el || !v) { return; }
+      if (el.value && String(el.value).trim() && el.getAttribute('data-oib-auto') !== '1') { return; }   // korisnikov unos ostaje
+      if (el.tagName === 'SELECT') {
+        var ima = Array.prototype.some.call(el.options, function(o) { return o.value === v; });
+        if (!ima) { return; }
+      }
+      el.value = v;
+      el.dispatchEvent(new Event('input', { bubbles: true }));
+      el.dispatchEvent(new Event('change', { bubbles: true }));
+      el.setAttribute('data-oib-auto', '1');
+    }
+    Object.keys(polja).forEach(function(k) {
+      var el = polja[k];
+      if (el) { el.addEventListener('input', function() { el.removeAttribute('data-oib-auto'); }); el.addEventListener('change', function(ev) { if (ev.isTrusted) { el.removeAttribute('data-oib-auto'); } }); }
+    });
+    oibInput.addEventListener('input', function() {
+      var oib = oibInput.value.replace(/\D/g, '');
+      if (oib.length !== 11) { zadnji = ''; poruka(''); return; }
+      if (oib === zadnji) { return; }
+      zadnji = oib; var moj = ++brojac;
+      poruka('Tražimo podatke o tvrtki…', '#555');
+      var ctl = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+      var t = setTimeout(function() { if (ctl) { ctl.abort(); } }, 20000);
+      fetch(GAS_WEB_APP_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: 'javniOibPodaci', oib: oib }), signal: ctl ? ctl.signal : undefined })
+        .then(function(r) { return r.json(); })
+        .then(function(res) {
+          clearTimeout(t);
+          if (moj !== brojac) { return; }
+          if (!res || res.status !== 'ok') {
+            if (res && res.code === 'limit') { zadnji = ''; poruka('Trenutno je puno upita — pričekajte minutu pa ponovno upišite OIB ili unesite podatke ručno.', '#a15c00'); }
+            else { poruka('Automatsko popunjavanje trenutno nije dostupno — molimo unesite podatke ručno.', '#a15c00'); }
+            return;
+          }
+          if (res.neispravan) { poruka('Provjerite OIB — kontrolna znamenka ne odgovara.', '#b3261e'); return; }
+          if (!res.pronadjen) { poruka('Tvrtka nije pronađena u sudskom registru (npr. obrt ili OPG) — molimo unesite podatke ručno.', '#555'); return; }
+          postavi(polja.naziv, res.naziv);
+          postavi(polja.oblik, oblikIzNaziva(res.naziv));
+          postavi(polja.adresa, res.adresa);
+          postavi(polja.grad, res.grad);
+          postavi(polja.pbr, res.pbr);
+          postavi(polja.mbs, res.mbs);
+          poruka('✓ Podaci o tvrtki preuzeti iz Sudskog registra' + (res.aktivan === false ? ' (napomena: subjekt nije označen kao aktivan)' : '') + ' — molimo provjerite ih i po potrebi ispravite.', '#1b6e3c');
+        })
+        .catch(function() { clearTimeout(t); if (moj !== brojac) { return; } zadnji = ''; poruka('Automatsko popunjavanje trenutno nije dostupno — molimo unesite podatke ručno.', '#a15c00'); });
+    });
+  }
+
+  (function povezi_(){
+    function pov() {
+      var fi = document.getElementById('panel-interes'), fo = document.getElementById('panel-odbijenica');
+      if (fi) { oibPredpopuni_(document.getElementById('oib-input'), {
+        naziv: fi.querySelector('[name="naziv"]'), oblik: fi.querySelector('[name="oblik_subjekta"]'),
+        adresa: fi.querySelector('[name="adresa"]'), grad: fi.querySelector('[name="grad"]'),
+        pbr: fi.querySelector('[name="postanski_broj"]'), mbs: fi.querySelector('[name="mbs"]') }); }
+      if (fo) { oibPredpopuni_(document.getElementById('oib-input-odbijenica'), { naziv: fo.querySelector('[name="naziv"]') }); }
+    }
+    if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', pov); } else { pov(); }
+  })();
 
   // Hrvatski IBAN je uvijek točno 21 znak: "HR" + 19 znamenki (2 kontrolne
   // znamenke + 7 znamenki broja banke + 10 znamenki broja računa). Ovo polje
