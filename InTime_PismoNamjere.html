@@ -1506,6 +1506,15 @@
   .cta-donji .btn-mali{width:100%;display:flex;align-items:center;justify-content:center;text-align:center;}.cta-donji .btn-secondary{font-weight:700;}
   @media (max-width:640px){.btn-velik{font-size:22px;padding:36px 14px;}.cta-donji{grid-template-columns:1fr;}}
 
+  .btn-narancasti{display:flex;align-items:center;justify-content:center;gap:10px;text-align:center;width:100%;box-sizing:border-box;padding:12px 18px;font-size:14px;font-weight:800;line-height:1.35;text-decoration:none;color:#fff;background:linear-gradient(135deg,#ff3b30 0%,#c2120c 100%);border:2px solid rgba(255,255,255,.55);border-radius:8px;text-shadow:0 1px 2px rgba(90,0,0,.5);box-shadow:0 0 14px rgba(255,60,50,.5),0 3px 10px rgba(160,20,15,.35);cursor:pointer;}
+  .btn-narancasti:hover{background:linear-gradient(135deg,#ff544a 0%,#d8160f 100%);color:#fff;}
+  .btn-narancasti .sim-problem{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;background:#fff;color:#d8160f;font-size:15px;font-weight:900;text-shadow:none;flex:0 0 auto;}
+  /* Velika kartica PROBLEM na kraju galerija (isti oblik kao Dokumenti/Slike/Video, ali crvena + simbol upozorenja; vodi na stranicu za prijavu problema) */
+  a.galerija-toggle-btn.tema-problem{text-decoration:none;background:linear-gradient(135deg,#ff3b30 0%,#a60d08 100%);border:2px solid rgba(255,255,255,.35);box-shadow:0 4px 18px rgba(200,20,15,.35);}
+  a.galerija-toggle-btn.tema-problem:hover{background:linear-gradient(135deg,#ff5a50 0%,#c2120c 100%);color:#fff;}
+  a.galerija-toggle-btn.tema-problem .problem-sim{display:inline-flex;align-items:center;justify-content:center;width:46px;height:46px;border-radius:50%;background:#fff;color:#d8160f;font-size:28px;font-weight:900;margin-right:16px;text-shadow:none;flex:0 0 auto;}
+  a.galerija-toggle-btn.tema-problem .problem-tekst small{display:block;font-weight:500;font-size:14px;opacity:.95;margin-top:3px;}
+  @media (max-width:640px){a.galerija-toggle-btn.tema-problem{padding:26px 18px;font-size:16px;}a.galerija-toggle-btn.tema-problem .problem-sim{width:38px;height:38px;font-size:22px;margin-right:12px;}}
   .cta-raskid{text-align:center;margin-top:2px;}
   .cta-raskid a{color:#d8dedd;font-size:13px;text-decoration:underline;text-underline-offset:3px;opacity:.85;}
   .cta-raskid a:hover{opacity:1;color:#fff;}
@@ -1829,6 +1838,16 @@
     </div>
   </section>
 
+  <!-- NOVO (6.10.2026.): kartica "Prijava problema" — zadnja u nizu velikih kartica; vodi na InTime_PrijavaProblema.html -->
+  <section id="problem-kartica-section">
+    <div class="wrap-galerija">
+      <a class="galerija-toggle-btn tema-problem" href="InTime_PrijavaProblema.html" target="_blank" rel="noopener">
+        <span style="display:flex;align-items:center;"><span class="problem-sim">!</span><span class="problem-tekst">Imate problem s pošiljkom ili računom?<small>Izgubljena ili nedostavljena pošiljka, krivi obračun, oštećenje… Prijavite nam — javit ćemo Vam se.</small></span></span>
+        <span class="galerija-toggle-arrow" style="transform:none;">→</span>
+      </a>
+    </div>
+  </section>
+
   <!-- SLIKA PRIJE CTA SEKCIJE -->
   <section style="padding-top:0;">
     <div class="wrap-wide">
@@ -1875,6 +1894,8 @@
             <button type="button" class="btn btn-zuti btn-mali" onclick="toggleAnketaEmbed(event)">Hvala Vam što ste naš klijent.<br>Vaše mišljenje nam je važno – ocijenite našu uslugu →</button>
             <button class="btn btn-secondary btn-mali" onclick="showPanel('odbijenica')">NE, trenutno nas ne zanima</button>
           </div>
+          <!-- NOVO (6.10.2026.): narančasti gumb — postojeći klijent sam prijavljuje problem (pošiljka/račun/reklamacija) → InTime_PrijavaProblema.html -->
+          <a class="btn btn-narancasti" href="InTime_PrijavaProblema.html" target="_blank" rel="noopener"><span class="sim-problem">!</span>Imate problem s pošiljkom ili računom? Prijavite nam →</a>
           <div class="cta-raskid"><a href="InTime_RaskidSuradnje.html" target="_blank" rel="noopener">Prekidate suradnju s nama? Recite nam zašto →</a></div>
         </div>
       </div>

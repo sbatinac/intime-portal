@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="hr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex,nofollow">
+<title>In Time d.o.o. — Problem klijenta</title>
+<style>
+  /* ============================================================
+     NAPOMENA ZA SAŠU: stranica za SLUŽBE (operativa, financije…). Otvara se iz maila s gumbima "Preuzimam" / "Riješeno".
+     Bez prijave — zaštita je nasumični token u poveznici (?p=broj&t=token). Samo otvaranje stranice NIŠTA ne mijenja;
+     stanje se mijenja tek klikom na gumb (da mailski antivirus koji otvara poveznice ne "preuzme" problem).
+     GAS_WEB_APP_URL mora biti isti .../exec kao u ostalim stranicama. Stranica mora biti objavljena na GitHubu
+     (https://sbatinac.github.io/intime-portal/InTime_ProblemSluzba.html) — vidi PROBLEM_SLUZBA_STRANICA_URL_ u InTime_Code.gs.
+     ============================================================ */
+  :root{--teal:#229891;--teal-dark:#135450;--ink:#131313;--grey:#6b6b6b;--line:#e2e6ea;--or:#f57c00;--or-dark:#c75f00;--green:#2e7d32;--red:#e4161b;}
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:'Segoe UI',Arial,sans-serif;color:var(--ink);background:#f4f7f8;line-height:1.5;}
+  .wrap{max-width:720px;margin:0 auto;padding:0 16px 40px;}
+  header{background:linear-gradient(120deg,#04141a 0%,#08333a 60%,#0e5f5a 100%);color:#fff;padding:14px 16px;}
+  header .in{max-width:720px;margin:0 auto;font-weight:700;font-size:17px;}
+  header small{display:block;font-weight:400;opacity:.8;font-size:12.5px;}
+  .kartica{background:#fff;border:1px solid var(--line);border-radius:14px;padding:16px;margin-top:14px;box-shadow:0 1px 4px rgba(0,0,0,.05);}
+  .ozn{display:inline-block;border-radius:20px;padding:3px 12px;font-size:12.5px;font-weight:800;margin-right:6px;}
+  .ozn.novo{background:#ffe1e1;color:#b80d12;}.ozn.obrada{background:#fff3cd;color:#8a5a00;}.ozn.rijeseno{background:#e3f4e4;color:var(--green);}.ozn.vrsta{background:#fff0dc;color:var(--or-dark);}
+  h1{font-size:20px;margin:6px 0 2px;}
+  .pod{color:var(--grey);font-size:13.5px;}
+  .opis{white-space:pre-wrap;background:#f7f7f7;border-radius:10px;padding:12px 14px;margin:12px 0;font-size:15px;}
+  .podaci{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:6px 14px;font-size:14px;margin-top:10px;}
+  .podaci a{color:var(--teal-dark);font-weight:700;}
+  label{display:block;font-size:13px;font-weight:700;margin:12px 0 5px;color:#444;}
+  input,textarea{width:100%;padding:11px 12px;border:1.5px solid var(--line);border-radius:10px;font:inherit;font-size:16px;}
+  input:focus,textarea:focus{outline:2px solid var(--or);border-color:var(--or);}
+  textarea{min-height:90px;resize:vertical;}
+  button{font:inherit;font-weight:800;font-size:16px;border:0;border-radius:12px;padding:14px 18px;cursor:pointer;color:#fff;width:100%;margin-top:10px;}
+  button.nar{background:var(--or);}button.nar:hover{background:var(--or-dark);}
+  button.zel{background:var(--green);}button.sek{background:#fff;color:var(--teal-dark);border:1.5px solid var(--teal);}
+  button:disabled{opacity:.55;cursor:default;}
+  .blok{border-top:1px solid var(--line);margin-top:16px;padding-top:6px;}
+  .blok.istaknut{background:#fffaf2;border:2px solid #f7c58a;border-radius:12px;padding:10px 14px 14px;margin-top:16px;}
+  .blok h2{font-size:15px;margin:10px 0 0;color:var(--or-dark);}
+  .poruka{margin-top:10px;font-size:14.5px;font-weight:700;}.poruka.ok{color:var(--green);}.poruka.err{color:#c0392b;}
+  .dn{border-left:3px solid #f7c58a;padding-left:12px;font-size:13.5px;margin-top:8px;}.dn div{margin-bottom:6px;}.dn small{color:var(--grey);font-weight:700;}
+  .kako{background:#e8f5e9;border:1px solid #a5d6a7;border-radius:10px;padding:10px 12px;margin-top:12px;white-space:pre-wrap;}
+  .preuzeo{background:#e8f4fd;border:1px solid #9ccaf0;border-radius:10px;padding:10px 12px;margin-top:12px;font-weight:700;color:#0b4a7a;}
+</style>
+</head>
+<body>
+<header><div class="in">In Time d.o.o. — Problem klijenta<small>stranica za službe</small></div></header>
+<div class="wrap" id="app"><div class="kartica">Učitavam…</div></div>
+
+<script>
+  var GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbz73zkx72GhrDZ-t3CamF5wuz-9V7Uxe5z9IkFxHA8F5FBlrIlc7zMUd4_EHTILD9FTAw/exec";
+  var qs = new URLSearchParams(location.search), BROJ = qs.get('p') || '', TOKEN = qs.get('t') || '', AKCIJA = qs.get('a') || '';
+  var IME_KLJUC = 'intime_problem_ime';
+  function esc(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+  function $(id){ return document.getElementById(id); }
+  function pamtiIme(){ try { return localStorage.getItem(IME_KLJUC) || ''; } catch (e) { return ''; } }
+  function spremiIme(v){ try { localStorage.setItem(IME_KLJUC, v); } catch (e) {} }
+  function poziv(akcija, extra){
+    var p = { action: akcija, broj: BROJ, token: TOKEN }; Object.keys(extra || {}).forEach(function(k){ p[k] = extra[k]; });
+    var ctl = (typeof AbortController !== 'undefined') ? new AbortController() : null, t = setTimeout(function(){ if (ctl) { ctl.abort(); } }, 30000);
+    return fetch(GAS_WEB_APP_URL, { method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body: JSON.stringify(p), signal: ctl ? ctl.signal : undefined })
+      .then(function(r){ clearTimeout(t); return r.json(); });
+  }
+  function klasa(s){ return s === 'Riješeno' ? 'rijeseno' : (s === 'U obradi' ? 'obrada' : 'novo'); }
+  var AWB_PRACENJE_URL = 'https://intimeolb.azurewebsites.net/shipment-tracking/';
+  function awbLink(a, st) { a = String(a || ''); return /^HR2000\d{8}$/.test(a) ? '<a href="' + AWB_PRACENJE_URL + a + '" target="_blank" rel="noopener" title="Otvori praćenje pošiljke" style="' + (st || '') + '">' + a + '</a>' : esc(a); }
+  var P = null;
+  function crtaj(){
+    var p = P, k = klasa(p.status), tel = String(p.telefon || '').split(',')[0].replace(/[^\d+]/g, '');
+    var h = '<div class="kartica"><span class="ozn ' + k + '">' + esc(p.status) + '</span><span class="ozn vrsta">' + esc(p.vrsta) + '</span>' + (p.awb ? '<span class="ozn vrsta">📦 Broj pošiljke: ' + awbLink(p.awb, 'color:inherit;') + '</span>' : '') +
+      '<h1>' + esc(p.naziv) + '</h1><div class="pod">' + esc(p.broj + ' · prijavljeno ' + p.datum + (p.sluzbaNaziv ? ' · služba: ' + p.sluzbaNaziv : '')) + '</div>' +
+      ((p.poslovnica || p.zaduzeniTekst) ? '<div class="pod" style="margin-top:4px;">' + (p.poslovnica ? '📍 Poslovnica: <b>' + esc(p.poslovnica) + '</b>' : '') + (p.poslovnica && p.zaduzeniTekst ? ' · ' : '') + (p.zaduzeniTekst ? '👤 Zaduženi: <b>' + esc(p.zaduzeniTekst) + '</b>' : '') + '</div>' : '') +
+      '<div class="podaci"><div><b>Kontakt:</b> ' + esc(p.kontakt || '—') + '</div><div><b>Telefon:</b> ' + (tel ? '<a href="tel:' + esc(tel) + '">' + esc(p.telefon) + '</a>' : '—') + '</div>' +
+      '<div><b>E-mail:</b> ' + (p.email ? '<a href="mailto:' + esc(p.email) + '">' + esc(p.email) + '</a>' : '—') + '</div><div><b>OIB:</b> ' + esc(p.oib || '—') + '</div><div><b>Broj pošiljke:</b> ' + (p.awb ? awbLink(p.awb) : '—') + '</div></div>' +
+      '<div class="opis">' + esc(p.opis) + '</div>';
+    if (p.preuzeo) { h += '<div class="preuzeo">✋ Preuzeo/la: ' + esc(p.preuzeo) + (p.preuzetoU ? ' · ' + esc(p.preuzetoU) : '') + '</div>'; }
+    if (p.status === 'Riješeno') { h += '<div class="kako"><b>✓ Riješeno' + (p.datumRjesenja ? ' (' + esc(p.datumRjesenja) + ')' : '') + (p.kakoRijeseno ? ':</b><br>' + esc(p.kakoRijeseno) : '</b>') + '</div>'; }
+    h += '</div>';
+    if (p.status !== 'Riješeno') {
+      h += '<div class="kartica"><label for="ime" style="margin-top:0;">Vaše ime i prezime (upisuje se u evidenciju)</label><input id="ime" maxlength="60" autocomplete="name" value="' + esc(pamtiIme()) + '">';
+      if (!p.preuzeo) { h += '<div class="blok' + (AKCIJA !== 'rijesi' ? ' istaknut' : '') + '"><h2>✋ Preuzimanje</h2><div class="pod">Označite da se ovim problemom bavite — ostali u službi to odmah vide.</div><button type="button" class="nar" id="gPreuzmi">✋ Preuzimam problem</button></div>'; }
+      else if (p.zaduzeniTekst && p.zaduzeniTekst.indexOf(' i ') !== -1 && String(p.preuzeo).indexOf(' + ') === -1) { h += '<div class="blok"><h2>🤝 Pridruži se</h2><div class="pod">Problem je dodijeljen dvjema osobama (' + esc(p.zaduzeniTekst) + '). Ako ga rješavate zajedno s kolegom/icom, pridružite se — upisat ćemo i Vaše ime.</div><button type="button" class="nar" id="gPreuzmi">🤝 Pridružujem se</button></div>'; }
+      h += '<div class="blok"><h2>📝 Bilješka</h2><textarea id="bilj" maxlength="1500" placeholder="npr. nazvao kurira, čekam odgovor…"></textarea><button type="button" class="sek" id="gBilj">Dodaj bilješku</button></div>' +
+        '<div class="blok' + (AKCIJA === 'rijesi' ? ' istaknut' : '') + '"><h2>✓ Riješeno</h2><div class="pod">Kratka napomena kako je riješeno nije obavezna — ako nemate vremena, samo kliknite gumb.</div><textarea id="kako" maxlength="2000" placeholder="(nije obavezno) npr. paket pronađen i dostavljen 7.10.; klijentu odobren storno računa…"></textarea><button type="button" class="zel" id="gRijesi">✓ Označi kao riješeno</button></div>' +
+        '<div class="poruka" id="por"></div></div>';
+    }
+    h += '<div class="kartica"><h2 style="font-size:15px;margin:0;color:var(--or-dark);">Dnevnik</h2><div class="dn">' + (p.dnevnik || []).map(function(d){ return '<div><small>' + esc(d.t + ' · ' + d.tko) + '</small><br>' + esc(d.tekst) + '</div>'; }).join('') + '</div></div>';
+    $('app').innerHTML = h;
+    if (p.status !== 'Riješeno') { povezi(); }
+  }
+  function ime(){ var v = $('ime').value.trim(); if (v.length < 2) { por('Upišite svoje ime i prezime.', false); $('ime').focus(); return ''; } spremiIme(v); return v; }
+  function por(t, ok){ var e = $('por'); if (e) { e.textContent = t || ''; e.className = 'poruka ' + (ok ? 'ok' : 'err'); } }
+  function radi(gumb, akcija, extra, uspjeh){
+    var i = ime(); if (!i) { return; }
+    extra.ime = i; gumb.disabled = true; por('Spremam…', true);
+    poziv(akcija, extra).then(function(res){
+      gumb.disabled = false;
+      if (res.status !== 'ok') { por(res.message || 'Nije uspjelo.', false); if (/već preuzeo/.test(res.message || '')) { ucitaj(); } return; }
+      P = res.problem; crtaj(); por(uspjeh, true);
+    }).catch(function(){ gumb.disabled = false; por('Nema veze s poslužiteljem — pokušajte ponovno.', false); });
+  }
+  function povezi(){
+    if ($('gPreuzmi')) { $('gPreuzmi').addEventListener('click', function(){ radi(this, 'problemSluzbaPreuzmi', {}, P.preuzeo ? '✓ Pridružili ste se — Vaše ime je upisano uz problem.' : '✓ Preuzeto — status je „U obradi".'); }); }
+    $('gBilj').addEventListener('click', function(){ var t = $('bilj').value.trim(); if (!t) { por('Upišite bilješku.', false); return; } radi(this, 'problemSluzbaBiljeska', { tekst: t }, '✓ Bilješka dodana.'); });
+    $('gRijesi').addEventListener('click', function(){ var t = $('kako').value.trim(); radi(this, 'problemSluzbaRijesi', { kako: t }, '✓ Označeno kao riješeno. Hvala!'); });
+  }
+  function ucitaj(){
+    if (!BROJ || !TOKEN) { $('app').innerHTML = '<div class="kartica"><b>Poveznica nije potpuna.</b> Otvorite je ponovno iz maila.</div>'; return; }
+    poziv('problemSluzbaPodaci', {}).then(function(res){
+      if (res.status !== 'ok') { $('app').innerHTML = '<div class="kartica"><b>' + esc(res.message || 'Učitavanje nije uspjelo.') + '</b></div>'; return; }
+      P = res.problem; crtaj();
+    }).catch(function(){ $('app').innerHTML = '<div class="kartica"><b>Nema veze s poslužiteljem.</b> Osvježite stranicu.</div>'; });
+  }
+  ucitaj();
+</script>
+</body>
+</html>

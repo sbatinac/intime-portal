@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="hr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex,nofollow">
+<title>In Time d.o.o. — Status prijave</title>
+<style>
+  /* ============================================================
+     NAPOMENA ZA SAŠU: javna stranica na kojoj KLIJENT prati svoju prijavu problema (zaprimljeno → preuzeto → riješeno).
+     Otvara se iz maila (poveznica ?p=broj&k=osobniToken). Prikazuje samo korake i datume — nikakve interne bilješke,
+     imena djelatnika ni kontakte. Stranica mora biti objavljena na GitHubu
+     (https://sbatinac.github.io/intime-portal/InTime_StatusProblema.html) — vidi PROBLEM_STATUS_STRANICA_URL_ u InTime_Code.gs.
+     GAS_WEB_APP_URL mora biti isti .../exec kao u ostalim stranicama.
+     ============================================================ */
+  :root{--teal:#229891;--teal-dark:#135450;--ink:#131313;--grey:#6b6b6b;--line:#e2e6ea;--green:#2e7d32;--red:#e4161b;--or:#f57c00;}
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:'Segoe UI',Arial,sans-serif;color:var(--ink);background:#f4f7f8;line-height:1.5;}
+  .wrap{max-width:640px;margin:0 auto;padding:0 16px 40px;}
+  header{background:linear-gradient(120deg,#04141a 0%,#08333a 60%,#0e5f5a 100%);color:#fff;padding:14px 16px;}
+  header .in{max-width:640px;margin:0 auto;font-weight:700;font-size:17px;}
+  header small{display:block;font-weight:400;opacity:.8;font-size:12.5px;}
+  .kartica{background:#fff;border:1px solid var(--line);border-radius:14px;padding:18px;margin-top:14px;box-shadow:0 1px 4px rgba(0,0,0,.05);}
+  h1{font-size:20px;margin:0 0 2px;}
+  .pod{color:var(--grey);font-size:14px;}
+  .ozn{display:inline-block;border-radius:20px;padding:3px 12px;font-size:13px;font-weight:800;margin-top:10px;}
+  .ozn.novo{background:#fff3cd;color:#8a5a00;}.ozn.obrada{background:#e8f4fd;color:#0b4a7a;}.ozn.rijeseno{background:#e3f4e4;color:var(--green);}
+  .koraci{margin:20px 0 4px;padding:0;list-style:none;}
+  .korak{position:relative;padding:0 0 22px 46px;}
+  .korak:last-child{padding-bottom:0;}
+  .korak::before{content:"";position:absolute;left:15px;top:30px;bottom:0;width:3px;background:#dfe5e8;}
+  .korak:last-child::before{display:none;}
+  .korak.gotovo::before{background:var(--green);}
+  .kruz{position:absolute;left:0;top:0;width:33px;height:33px;border-radius:50%;background:#e9eef0;color:#9aa7ab;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:16px;}
+  .korak.gotovo .kruz{background:var(--green);color:#fff;}
+  .korak.tren .kruz{background:#fff;border:3px solid var(--or);color:var(--or);}
+  .korak b{display:block;font-size:16px;}
+  .korak.nije b{color:#9aa7ab;}
+  .korak .d{font-size:13.5px;color:var(--grey);}
+  .napomena{margin-top:18px;font-size:13.5px;color:#555;border-top:1px solid var(--line);padding-top:12px;}
+  .greska{color:#c0392b;font-weight:700;}
+  .brojevi{display:flex;gap:10px;flex-wrap:wrap;margin:8px 0 4px;}
+  .brojevi div{background:#f4f7f8;border:1px solid var(--line);border-radius:10px;padding:8px 12px;}
+  .brojevi small{display:block;color:var(--grey);font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;}
+  .brojevi b{font-size:17px;}
+  label{display:block;font-size:13px;font-weight:700;margin:12px 0 5px;color:#444;}
+  input{width:100%;padding:11px 12px;border:1.5px solid var(--line);border-radius:10px;font:inherit;font-size:16px;}
+  input:focus{outline:2px solid var(--or);border-color:var(--or);}
+  button{font:inherit;font-weight:800;font-size:16px;border:0;border-radius:12px;padding:14px 18px;cursor:pointer;color:#fff;background:var(--teal-dark);width:100%;margin-top:14px;}
+  button:disabled{opacity:.55;cursor:default;}
+  .poruka{margin-top:10px;font-size:14.5px;font-weight:700;}
+</style>
+</head>
+<body>
+<header><div class="in">In Time d.o.o. — Status Vaše prijave<small>praćenje problema</small></div></header>
+<div class="wrap" id="app"><div class="kartica">Učitavam…</div></div>
+<script>
+  var GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbz73zkx72GhrDZ-t3CamF5wuz-9V7Uxe5z9IkFxHA8F5FBlrIlc7zMUd4_EHTILD9FTAw/exec";
+  var qs = new URLSearchParams(location.search), BROJ = qs.get('p') || '', TOKEN = qs.get('k') || '';
+  function esc(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+  function app(h){ document.getElementById('app').innerHTML = h; }
+  function karticaPrijave(p){
+    var k = p.stanje === 'Riješeno' ? 'rijeseno' : (p.stanje === 'U obradi' ? 'obrada' : 'novo');
+    var tekstStanja = p.stanje === 'Riješeno' ? 'Riješeno' : (p.stanje === 'U obradi' ? 'U obradi' : 'Zaprimljeno');
+    var tren = -1;
+    for (var i = 0; i < p.koraci.length; i++) { if (p.koraci[i].gotovo) { tren = i; } }
+    return '<div class="kartica"><h1>' + esc(p.vrsta) + '</h1>' +
+      '<div class="brojevi"><div><small>Broj slučaja</small><b>' + esc(p.broj) + '</b></div>' + (p.awb ? '<div><small>Broj pošiljke</small><b>' + esc(p.awb) + '</b></div>' : '') + '</div>' +
+      (p.poslovnica ? '<div class="pod">Poslovnica: ' + esc(p.poslovnica) + '</div>' : '') +
+      '<span class="ozn ' + k + '">' + esc(tekstStanja) + '</span>' +
+      '<ul class="koraci">' + p.koraci.map(function(s, i){
+        var cls = s.gotovo ? 'gotovo' : (i === tren + 1 ? 'tren' : 'nije');
+        return '<li class="korak ' + cls + '"><div class="kruz">' + (s.gotovo ? '✓' : (i + 1)) + '</div><b>' + esc(s.naslov) + '</b>' +
+          '<div class="d">' + (s.gotovo ? esc(s.datum) + ' — ' + esc(s.opis) : (i === tren + 1 ? 'Na redu — ' + esc(s.opis).toLowerCase() : '')) + '</div></li>';
+      }).join('') + '</ul>' +
+      '<div class="napomena">' + (p.stanje === 'Riješeno' ? 'Problem je riješen. Ako smatrate da nije, odgovorite na naš e-mail pa ćemo ga ponovno otvoriti.' : 'Obavijest Vam šaljemo i e-mailom čim se status promijeni.') + '</div></div>';
+  }
+  var FORMA = '<div class="kartica"><h1 style="font-size:17px;">🔎 Pronađi prijavu</h1><div class="pod">Upišite broj slučaja (npr. P-2026-012) <b>ili</b> broj pošiljke (HR2000… ili HAWB broj za međunarodnu pošiljku) i e-mail s kojim ste prijavili problem.</div>' +
+    '<label for="upit">Broj slučaja ili broj pošiljke</label><input id="upit" maxlength="60" autocomplete="off" placeholder="P-2026-012, HR200026507624 ili HAWB">' +
+    '<label for="mail">E-mail s prijave</label><input id="mail" type="email" maxlength="120" autocomplete="email">' +
+    '<button type="button" id="trazi">Prikaži status</button><div class="poruka" id="por"></div></div>';
+  function poziv(p){
+    var ctl = (typeof AbortController !== 'undefined') ? new AbortController() : null, t = setTimeout(function(){ if (ctl) { ctl.abort(); } }, 30000);
+    return fetch(GAS_WEB_APP_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(p), signal: ctl ? ctl.signal : undefined }).then(function(r){ clearTimeout(t); return r.json(); });
+  }
+  function pokaziFormu(prije){
+    app((prije || '') + FORMA);
+    document.getElementById('trazi').addEventListener('click', function(){
+      var u = document.getElementById('upit').value.trim(), m = document.getElementById('mail').value.trim(), por = document.getElementById('por');
+      if (u.length < 4 || !/^[^\s@,;]+@[^\s@,;]+\.[^\s@,;]{2,}$/.test(m)) { por.className = 'poruka greska'; por.textContent = 'Upišite broj slučaja ili broj pošiljke i ispravan e-mail.'; return; }
+      var gumb = this; gumb.disabled = true; por.className = 'poruka'; por.textContent = 'Tražim…';
+      poziv({ action: 'problemStatusKlijent', upit: u, email: m }).then(function(res){
+        gumb.disabled = false;
+        if (res && res.status === 'ok') { app((res.prijave || []).map(karticaPrijave).join('') + '<p style="text-align:center;margin-top:18px;"><a href="InTime_StatusProblema.html" style="color:#135450;font-weight:700;">← Nova pretraga</a></p>'); }
+        else { por.className = 'poruka greska'; por.textContent = (res && res.message) || 'Prijava nije pronađena.'; }
+      }).catch(function(){ gumb.disabled = false; por.className = 'poruka greska'; por.textContent = 'Nema veze s poslužiteljem — pokušajte ponovno.'; });
+    });
+  }
+  function ucitaj(){
+    if (!BROJ || !TOKEN) { pokaziFormu(''); return; }
+    poziv({ action: 'problemStatusKlijent', broj: BROJ, token: TOKEN })
+      .then(function(res){ if (res && res.status === 'ok') { app(karticaPrijave(res.prijava) + '<p style="text-align:center;margin-top:18px;"><a href="InTime_StatusProblema.html" style="color:#135450;font-weight:700;">🔎 Pronađi drugu prijavu</a></p>'); } else { pokaziFormu('<div class="kartica greska">' + esc((res && res.message) || 'Prijava nije pronađena.') + '</div>'); } })
+      .catch(function(){ app('<div class="kartica greska">Nema veze s poslužiteljem — pokušajte ponovno za nekoliko trenutaka.</div>'); });
+  }
+  ucitaj();
+</script>
+</body>
+</html>

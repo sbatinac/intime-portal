@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="hr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>In Time d.o.o. — Prijava problema</title>
+<style>
+  /* ============================================================
+     NAPOMENA ZA SAŠU: javna stranica na kojoj POSTOJEĆI klijenti sami prijavljuju probleme (izgubljena/nedostavljena
+     pošiljka, krivi obračun računa, reklamacija oštećenja…). Šalje na ISTI Apps Script Web App kao ostale stranice
+     (akcija javniProblemPrijava) — GAS_WEB_APP_URL dolje mora biti isti .../exec URL. Prijava se sprema u sheet
+     "InTime_Problemi" i vidljiva je u adminu (tab Problemi) i na mobitelu; klijent dobiva potvrdu e-mailom s brojem prijave.
+     ============================================================ */
+  :root{--purple:#229891;--purple-dark:#135450;--graphite:#131313;--navy:#0a1e30;--grey:#6b6b6b;--line:#e2e6ea;--bg:#f7fafb;--red:#c0392b;--orange:#f57c00;--orange-dark:#c75f00;}
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:'Segoe UI', Arial, sans-serif;color:var(--graphite);background:#fff;line-height:1.6;}
+  .wrap{max-width:860px;margin:0 auto;padding:0 24px;}
+  .wrap-wide{max-width:1040px;margin:0 auto;padding:0 24px;}
+  .anketa-header{border-bottom:1px solid var(--line);background:#fff;}
+  .anketa-header-inner{display:flex;align-items:center;justify-content:space-between;padding:18px 24px;flex-wrap:wrap;gap:8px;}
+  .anketa-header-brand{font-weight:700;color:var(--purple-dark);font-size:18px;}
+  .anketa-header-back{color:var(--purple);font-size:13.5px;text-decoration:none;}
+  .anketa-header-back:hover{text-decoration:underline;}
+  section{padding:36px 0;}
+  h2{font-size:23px;color:var(--graphite);border-left:4px solid var(--orange);padding-left:12px;margin:0 0 14px;}
+  p{margin:0 0 14px;color:#333;}
+  .anketa-card{background:#fff;border:1px solid var(--line);border-radius:10px;padding:26px 24px;margin-top:8px;}
+  label{display:block;font-size:13.5px;font-weight:700;color:var(--graphite);margin:14px 0 5px;}
+  label .opc{font-weight:400;color:var(--grey);font-size:12px;}
+  input[type=text],input[type=email],input[type=tel],textarea,select{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:6px;font-size:14px;font-family:inherit;color:var(--graphite);background:#fff;}
+  input:focus,textarea:focus,select:focus{outline:2px solid var(--orange);border-color:var(--orange);}
+  textarea{resize:vertical;min-height:120px;}
+  .pair{display:grid;grid-template-columns:1fr 1fr;gap:0 16px;}
+  .hp{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden;opacity:0;}
+  .form-submit{margin-top:22px;background:var(--orange);color:#fff;border:none;border-radius:6px;padding:12px 28px;font-size:14.5px;font-weight:700;cursor:pointer;}
+  .form-submit:hover{background:var(--orange-dark);}
+  .form-submit:disabled{opacity:.6;cursor:default;}
+  .form-note{font-size:12px;color:var(--grey);margin-top:10px;}
+  .greska{display:none;margin-top:14px;padding:10px 14px;border-radius:6px;background:#fdecea;border:1px solid #f5c2bd;color:#8a1c12;font-size:13.5px;}
+  .greska.active{display:block;}
+  .confirm-msg{display:none;text-align:center;padding:34px 20px;background:#fff;border:1px solid var(--line);border-radius:10px;margin-top:8px;}
+  .confirm-msg.active{display:block;}
+  .confirm-msg .check{width:52px;height:52px;border-radius:50%;background:var(--orange);color:#fff;display:flex;align-items:center;justify-content:center;font-size:26px;margin:0 auto 14px;}
+  .confirm-msg .broj{display:inline-block;background:#fff4e5;border:1px solid #f7c58a;color:var(--orange-dark);border-radius:8px;padding:6px 16px;font-size:20px;font-weight:800;margin:4px 0 12px;}
+  @media(max-width:640px){.pair{grid-template-columns:1fr;}}
+  footer{background:#fff;color:var(--grey);padding:0 0 30px;font-size:14.5px;}
+  footer > .wrap-wide{border-top:1px solid var(--line);padding-top:30px;margin-top:20px;}
+  footer b{color:var(--graphite);}
+  footer a{color:var(--purple);text-decoration:none;}
+  .footer-badge{display:inline-block;margin-top:10px;font-size:12px;color:var(--grey);}
+</style>
+</head>
+<body>
+
+  <div class="anketa-header">
+    <div class="wrap-wide anketa-header-inner">
+      <span class="anketa-header-brand">In Time d.o.o.</span>
+      <a class="anketa-header-back" href="InTime_PismoNamjere.html">← Povratak na glavnu stranicu</a>
+    </div>
+  </div>
+
+  <section>
+    <div class="wrap">
+
+      <h2>Imate problem s pošiljkom ili računom?</h2>
+      <p>Prijavite nam ga ovdje — izgubljena ili nedostavljena pošiljka, krivi obračun računa, oštećena pošiljka ili nešto drugo. Svaka prijava dobiva svoj broj, a odgovor Vam šaljemo e-mailom čim provjerimo slučaj.</p>
+
+      <div id="prijava-zahvala" class="confirm-msg">
+        <div class="check">✓</div>
+        <p style="font-size:18px;font-weight:700;margin-bottom:6px;">Hvala, Vaša prijava je zaprimljena.</p>
+        <div class="broj" id="prijava-broj"></div>
+        <p id="prijava-awb" style="margin:2px 0 8px;font-weight:700;" hidden></p>
+        <p>Potvrdu s brojem slučaja i brojem pošiljke poslali smo Vam na e-mail. Status možete pratiti pomoću bilo kojeg od ta dva broja.</p>
+        <p><a id="prijava-status-link" href="InTime_StatusProblema.html" style="color:var(--purple);font-weight:700;">📍 Prati status prijave</a></p>
+        <p><a href="InTime_PismoNamjere.html" style="color:var(--purple);">← Povratak na glavnu stranicu</a></p>
+      </div>
+
+      <p style="font-size:14px;margin:0 0 6px;">Već ste prijavili problem? <a href="InTime_StatusProblema.html" style="color:var(--purple);font-weight:700;">Pratite status prijave</a> pomoću broja slučaja ili broja pošiljke.</p>
+
+      <form id="prijava-form" onsubmit="return posaljiPrijavu(event)" novalidate>
+        <div id="prijava-form-wrap" class="anketa-card">
+
+          <label for="pp-oib">OIB tvrtke <span class="opc">(nije obavezan — ubrzava prepoznavanje i popunjava naziv firme)</span></label>
+          <input type="text" id="pp-oib" name="oib" inputmode="numeric" maxlength="11" autocomplete="off" oninput="ogranicniOibNaZnamenke(this)">
+
+          <label for="pp-naziv">Naziv tvrtke *</label>
+          <input type="text" id="pp-naziv" name="naziv" maxlength="120" autocomplete="organization">
+
+          <div class="pair">
+            <div><label for="pp-kontakt">Ime i prezime osobe za kontakt *</label><input type="text" id="pp-kontakt" name="kontakt" maxlength="80" autocomplete="name"></div>
+            <div><label for="pp-telefon">Telefon <span class="opc">(nije obavezan)</span></label><input type="tel" id="pp-telefon" name="telefon" maxlength="30" autocomplete="tel"></div>
+          </div>
+
+          <label for="pp-email">E-mail na koji Vam odgovaramo *</label>
+          <input type="email" id="pp-email" name="email" maxlength="120" autocomplete="email">
+
+          <div class="pair">
+            <div><label for="pp-vrsta">O kakvom se problemu radi? *</label>
+              <select id="pp-vrsta" name="vrsta">
+                <option value="">— odaberite —</option>
+                <optgroup label="Dostava"><option>Izgubljena pošiljka</option><option>Nedostavljena pošiljka</option><option>Kašnjenje dostave</option><option>Dostava na pogrešnu adresu ili osobi</option><option>Prikup nije obavljen ili kasni</option><option>Nova dostava / novi termin</option><option>Ponašanje kurira</option></optgroup>
+                <optgroup label="Šteta"><option>Reklamacija oštećenja</option><option>Nedostaje sadržaj ili krađa</option><option>Zahtjev za naknadu štete</option></optgroup>
+                <optgroup label="Račun i naplata"><option>Krivi obračun računa</option><option>Dvostruka naplata</option><option>Neočekivani dodaci (gorivo, doplatak, težina)</option><option>Cjenik ili popust nije primijenjen</option><option>Storno / odobrenje računa</option><option>Otkupnina (pouzeće) nije isplaćena</option></optgroup>
+                <optgroup label="Carina"><option>Pošiljka zadržana na carini</option><option>Krive carinske naknade ili PDV</option><option>Nedostaje dokumentacija</option></optgroup>
+                <optgroup label="Povrat"><option>Povrat pošiljke pošiljatelju</option><option>Povrat nije stigao ili je krivi</option></optgroup>
+                <optgroup label="Tehničko"><option>Praćenje pošiljke pokazuje krivi status</option><option>Online booking ili naljepnica ne radi</option></optgroup>
+                <optgroup label="Komercijala"><option>Ponuda, ugovor ili promjena uvjeta</option><option>Komunikacija (nitko se ne javlja)</option></optgroup>
+                <optgroup label="Posebne situacije"><option>Crni petak</option></optgroup>
+                <optgroup label="Ostalo"><option>Ostalo</option></optgroup>
+              </select></div>
+            <div><label for="pp-awb" id="pp-awb-label">Broj pošiljke <span class="opc">(ako postoji)</span></label><select id="pp-awb-tip" aria-label="Vrsta pošiljke" style="margin-bottom:6px;"><option value="HR">Hrvatska / Slovenija (broj HR2000…)</option><option value="INT">Međunarodna pošiljka (HAWB broj)</option></select><input type="text" id="pp-awb" name="awb" maxlength="60" autocomplete="off" placeholder="HR2000 + 8 znamenki"><div id="pp-awb-hint" style="font-size:12.5px;color:#6b6b6b;margin-top:4px;" hidden>Broj pošiljke je obavezan — po njemu pronalazimo pošiljku i možete pratiti prijavu.</div></div>
+            <div id="pp-poslovnica-blok" hidden><label for="pp-poslovnica">Iz koje poslovnice je pošiljka poslana? <span class="opc">(ako znate)</span></label>
+              <select id="pp-poslovnica" name="poslovnica"><option value="">— ne znam / nije bitno —</option></select></div>
+          </div>
+
+          <label for="pp-opis">Opišite problem *</label>
+          <textarea id="pp-opis" name="opis" maxlength="3000" placeholder="Što se dogodilo? Kada je pošiljka predana/očekivana, na koji se račun odnosi, što je krivo…"></textarea>
+
+          <!-- zamka za botove: ljudi ovo polje ne vide ni ne popunjavaju -->
+          <div class="hp" aria-hidden="true"><label>Web stranica<input type="text" id="pp-web" name="web" tabindex="-1" autocomplete="off"></label></div>
+
+          <div id="prijava-greska" class="greska" role="alert"></div>
+          <button type="submit" class="form-submit" id="prijava-gumb">Pošalji prijavu</button>
+          <div class="form-note">Polja označena zvjezdicom su obavezna. Podatke koristimo isključivo za rješavanje Vaše prijave.</div>
+        </div>
+      </form>
+
+    </div>
+  </section>
+
+  <footer>
+    <div class="wrap-wide">
+      <div><b>Saša Batinac</b> — Sales and Marketing Manager, Voditelj ključnih kupaca</div>
+      <div>In Time d.o.o. — Licensee of FedEx</div>
+      <div>Zelena aleja 28, 10410 Vukovina</div>
+      <div>Tel: 01 6254 444</div>
+      <div>M: +385 91 6262 171 · <a href="mailto:sasa.batinac@in-time.hr">sasa.batinac@in-time.hr</a></div>
+      <div><a href="https://in-time.hr" target="_blank">in-time.hr</a> · <a href="https://fedex.com" target="_blank">fedex.com</a></div>
+      <div class="footer-badge">In Time d.o.o. · FedEx zastupništvo · Hrvatska, BiH, Srbija, Slovenija, Crna Gora, Sjeverna Makedonija</div>
+      <div style="margin-top:14px;font-size:12px;opacity:.85;">
+        Izradio Saša Batinac. Sva prava pridržana.<br>
+        Saša Batinac univ. spec. oec. — voditelj ključnih klijenata — In Time d.o.o. — regija istok
+      </div>
+    </div>
+  </footer>
+
+<script>
+  // ISTI Apps Script Web App kao u ostalim stranicama (InTime_Code.gs)
+  var GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbz73zkx72GhrDZ-t3CamF5wuz-9V7Uxe5z9IkFxHA8F5FBlrIlc7zMUd4_EHTILD9FTAw/exec";
+
+  function ogranicniOibNaZnamenke(input){
+    var samoBrojevi = input.value.replace(/[^0-9]/g, '').slice(0, 11);
+    if (samoBrojevi !== input.value) { input.value = samoBrojevi; }
+  }
+
+  // ---- OIB → predpopunjavanje podataka iz Sudskog registra (Saša, 6.10.2026.) ----
+  // Kad se upiše ispravan OIB (11 znamenki), poslužitelj (javniOibPodaci) vraća javne podatke iz sudskog registra
+  // pa se prazna polja popune (naziv, adresa, grad, poštanski broj, MBS, oblik subjekta). Ono što je korisnik već
+  // sam upisao NE prepisuje se; polja koja je popunilo ovo automatski ažuriraju se ako promijeni OIB.
+  // Obrt/OPG nisu u sudskom registru — tada se samo prikaže poruka i sve se upisuje ručno.
+  function oibPredpopuni_(oibInput, polja, statusEl) {
+    if (!oibInput) { return; }
+    if (!statusEl) {
+      statusEl = document.createElement('div');
+      statusEl.style.cssText = 'font-size:12.5px;line-height:1.4;margin:4px 0 0;min-height:0;';
+      oibInput.insertAdjacentElement('afterend', statusEl);
+    }
+    var zadnji = '', brojac = 0;
+    function poruka(t, boja) { statusEl.textContent = t || ''; statusEl.style.color = boja || ''; }
+    function oblikIzNaziva(naziv) {
+      var n = String(naziv || '').toLowerCase();
+      if (/\bj\.\s?d\.\s?o\.\s?o\./.test(n)) { return 'j.d.o.o. – jednostavno društvo s ograničenom odgovornošću'; }
+      if (/\bd\.\s?o\.\s?o\./.test(n)) { return 'd.o.o. – društvo s ograničenom odgovornošću'; }
+      if (/\bd\.\s?d\./.test(n)) { return 'd.d. – dioničko društvo'; }
+      if (/zadruga/.test(n)) { return 'ZADRUGA'; }
+      return '';
+    }
+    function postavi(el, v) {
+      if (!el || !v) { return; }
+      if (el.value && String(el.value).trim() && el.getAttribute('data-oib-auto') !== '1') { return; }   // korisnikov unos ostaje
+      if (el.tagName === 'SELECT') {
+        var ima = Array.prototype.some.call(el.options, function(o) { return o.value === v; });
+        if (!ima) { return; }
+      }
+      el.value = v;
+      el.dispatchEvent(new Event('input', { bubbles: true }));
+      el.dispatchEvent(new Event('change', { bubbles: true }));
+      el.setAttribute('data-oib-auto', '1');
+    }
+    Object.keys(polja).forEach(function(k) {
+      var el = polja[k];
+      if (el) { el.addEventListener('input', function() { el.removeAttribute('data-oib-auto'); }); el.addEventListener('change', function(ev) { if (ev.isTrusted) { el.removeAttribute('data-oib-auto'); } }); }
+    });
+    oibInput.addEventListener('input', function() {
+      var oib = oibInput.value.replace(/\D/g, '');
+      if (oib.length !== 11) { zadnji = ''; poruka(''); return; }
+      if (oib === zadnji) { return; }
+      zadnji = oib; var moj = ++brojac;
+      poruka('Tražimo podatke o tvrtki…', '#555');
+      var ctl = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+      var t = setTimeout(function() { if (ctl) { ctl.abort(); } }, 20000);
+      fetch(GAS_WEB_APP_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: 'javniOibPodaci', oib: oib }), signal: ctl ? ctl.signal : undefined })
+        .then(function(r) { return r.json(); })
+        .then(function(res) {
+          clearTimeout(t);
+          if (moj !== brojac) { return; }
+          if (!res || res.status !== 'ok') {
+            if (res && res.code === 'limit') { zadnji = ''; poruka('Trenutno je puno upita — pričekajte minutu pa ponovno upišite OIB ili unesite podatke ručno.', '#a15c00'); }
+            else { poruka('Automatsko popunjavanje trenutno nije dostupno — molimo unesite podatke ručno.', '#a15c00'); }
+            return;
+          }
+          if (res.neispravan) { poruka('Provjerite OIB — kontrolna znamenka ne odgovara.', '#b3261e'); return; }
+          if (!res.pronadjen) { poruka('Tvrtka nije pronađena u sudskom registru (npr. obrt ili OPG) — molimo unesite podatke ručno.', '#555'); return; }
+          postavi(polja.naziv, res.naziv);
+          postavi(polja.oblik, oblikIzNaziva(res.naziv));
+          postavi(polja.adresa, res.adresa);
+          postavi(polja.grad, res.grad);
+          postavi(polja.pbr, res.pbr);
+          postavi(polja.mbs, res.mbs);
+          poruka('✓ Podaci o tvrtki preuzeti iz Sudskog registra' + (res.aktivan === false ? ' (napomena: subjekt nije označen kao aktivan)' : '') + ' — molimo provjerite ih i po potrebi ispravite.', '#1b6e3c');
+        })
+        .catch(function() { clearTimeout(t); if (moj !== brojac) { return; } zadnji = ''; poruka('Automatsko popunjavanje trenutno nije dostupno — molimo unesite podatke ručno.', '#a15c00'); });
+    });
+  }
+
+
+  (function povezi_(){
+    function pov() { oibPredpopuni_(document.getElementById('pp-oib'), { naziv: document.getElementById('pp-naziv') }); }
+    if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', pov); } else { pov(); }
+  })();
+
+  // Popis vrsta povlači se s poslužitelja (da se i vlastite vrste koje Saša doda pojave bez izmjene stranice); ugrađeni popis u HTML-u je rezerva.
+  (function osvjeziVrste_(){
+    var ctl = (typeof AbortController !== 'undefined') ? new AbortController() : null, t = setTimeout(function(){ if (ctl) { ctl.abort(); } }, 15000);
+    fetch(GAS_WEB_APP_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: 'javniProblemVrste' }), signal: ctl ? ctl.signal : undefined })
+      .then(function(r){ return r.json(); })
+      .then(function(res){
+        clearTimeout(t);
+        if (!res || res.status !== 'ok' || !res.grupe || !res.grupe.length) { return; }
+        if (res.awb && res.awb.length) { AWB_VRSTE_ = res.awb; }
+        var sel = document.getElementById('pp-vrsta'), tr = sel.value;
+        sel.innerHTML = '<option value="">— odaberite —</option>' + res.grupe.map(function(g){ return '<optgroup label="' + esc_(g.grupa) + '">' + g.vrste.map(function(v){ return '<option>' + esc_(v) + '</option>'; }).join('') + '</optgroup>'; }).join('');
+        sel.value = tr; osvjeziAwbPolje_();
+      }).catch(function(){ clearTimeout(t); });
+  })();
+  // Broj pošiljke je OBAVEZAN za probleme koji se tiču pošiljke (dostava, šteta, carina, povrat…). Popis dolazi s poslužitelja; ugrađeni je rezerva.
+  var AWB_VRSTE_ = null, AWB_GRUPE_ = ['Dostava', 'Šteta', 'Carina', 'Povrat'], AWB_EXTRA_ = ['Praćenje pošiljke pokazuje krivi status', 'Otkupnina (pouzeće) nije isplaćena'];
+  function trebaAwb_() {
+    var sel = document.getElementById('pp-vrsta'), v = sel.value; if (!v) { return false; }
+    if (AWB_VRSTE_) { return AWB_VRSTE_.indexOf(v) !== -1; }
+    var opt = sel.options[sel.selectedIndex], g = opt && opt.parentNode && opt.parentNode.label;
+    return AWB_GRUPE_.indexOf(g) !== -1 || AWB_EXTRA_.indexOf(v) !== -1;
+  }
+  // Broj pošiljke: HRVATSKA/SLOVENIJA = točno 14 znakova (HR2000 + 8 znamenki, npr. HR200026507624; prefiks se upiše sam).
+  // MEĐUNARODNA pošiljka = HAWB broj (slova i znamenke, 8–20 znakova, bez prefiksa).
+  function awbTip(sel) { return sel && sel.value === 'INT' ? 'INT' : 'HR'; }
+  function awbPolje(el, sel) {
+    if (!el || el._awb) { return; } el._awb = true; el.autocomplete = 'off'; el.style.letterSpacing = '.03em';
+    function placeholder() { el.placeholder = awbTip(sel) === 'INT' ? 'HAWB broj (8–20 znakova)' : 'HR2000 + 8 znamenki'; }
+    function fix() {
+      var v = el.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+      if (awbTip(sel) === 'INT') { v = v.slice(0, 20); }
+      else {
+        if (v.indexOf('HR2000HR') === 0) { v = v.slice(6); }
+        if (v.length && v.length < 6 && 'HR2000'.indexOf(v) === 0) { v = 'HR2000'; } else if (/^\d+$/.test(v)) { v = 'HR2000' + v; }
+        v = v.slice(0, 14);
+      }
+      if (el.value !== v) { el.value = v; }
+    }
+    el.addEventListener('input', fix);
+    el.addEventListener('focus', function() { if (!el.value && awbTip(sel) === 'HR') { el.value = 'HR2000'; try { el.setSelectionRange(6, 6); } catch (e) {} } });
+    el.addEventListener('blur', function() { if (el.value === 'HR2000') { el.value = ''; } });
+    if (sel) { sel.addEventListener('change', function() { if (el.value === 'HR2000') { el.value = ''; } placeholder(); fix(); }); }
+    placeholder();
+  }
+  function awbVrijednost(el, sel) { var v = String(el.value || '').trim().toUpperCase().replace(/[^A-Z0-9]/g, ''); return (v === 'HR2000' && awbTip(sel) === 'HR') ? '' : v; }
+  function awbIspravan(v, sel) { return v === '' || (awbTip(sel) === 'INT' ? /^[A-Z0-9]{8,20}$/.test(v) : /^HR2000\d{8}$/.test(v)); }
+  function awbPoruka(sel) { return awbTip(sel) === 'INT' ? 'HAWB broj mora imati 8 do 20 znakova (slova i znamenke).' : 'Broj pošiljke za Hrvatsku/Sloveniju mora imati točno 14 znakova: HR2000 i još 8 znamenki (npr. HR200026507624).'; }
+  awbPolje(document.getElementById('pp-awb'), document.getElementById('pp-awb-tip'));
+  function osvjeziAwbPolje_() {
+    var treba = trebaAwb_();
+    var nazivB = awbTip(document.getElementById('pp-awb-tip')) === 'INT' ? 'HAWB broj' : 'Broj pošiljke';
+    document.getElementById('pp-awb-label').innerHTML = treba ? nazivB + ' *' : nazivB + ' <span class="opc">(ako postoji)</span>';
+    document.getElementById('pp-awb-hint').hidden = !treba;
+  }
+  document.getElementById('pp-vrsta').addEventListener('change', osvjeziAwbPolje_);
+  document.getElementById('pp-awb-tip').addEventListener('change', osvjeziAwbPolje_);
+  // Poslovnice (samo nazivi) povlače se s poslužitelja; polje se prikaže tek ako ih ima. Odabir ubrzava usmjeravanje prijave odgovornoj osobi.
+  (function osvjeziPoslovnice_(){
+    var ctl = (typeof AbortController !== 'undefined') ? new AbortController() : null, t = setTimeout(function(){ if (ctl) { ctl.abort(); } }, 15000);
+    fetch(GAS_WEB_APP_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: 'javniProblemPoslovnice' }), signal: ctl ? ctl.signal : undefined })
+      .then(function(r){ return r.json(); })
+      .then(function(res){
+        clearTimeout(t);
+        if (!res || res.status !== 'ok' || !res.poslovnice || !res.poslovnice.length) { return; }
+        var sel = document.getElementById('pp-poslovnica');
+        sel.innerHTML = '<option value="">— ne znam / nije bitno —</option>' + res.poslovnice.map(function(n){ return '<option>' + esc_(n) + '</option>'; }).join('');
+        document.getElementById('pp-poslovnica-blok').hidden = false;
+      }).catch(function(){ clearTimeout(t); });
+  })();
+  function esc_(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+
+  function prikaziGresku_(t) { var g = document.getElementById('prijava-greska'); g.textContent = t || ''; g.classList.toggle('active', !!t); if (t) { g.scrollIntoView({ behavior: 'smooth', block: 'center' }); } }
+
+  function posaljiPrijavu(e) {
+    e.preventDefault();
+    var v = function(id) { return document.getElementById(id).value.trim(); };
+    var p = { action: 'javniProblemPrijava', oib: v('pp-oib'), naziv: v('pp-naziv'), kontakt: v('pp-kontakt'), telefon: v('pp-telefon'), email: v('pp-email'), vrsta: v('pp-vrsta'), awb: awbVrijednost(document.getElementById('pp-awb'), document.getElementById('pp-awb-tip')), awbTip: awbTip(document.getElementById('pp-awb-tip')), poslovnica: v('pp-poslovnica'), opis: v('pp-opis'), web: v('pp-web') };
+    prikaziGresku_('');
+    if (!p.naziv) { prikaziGresku_('Upišite naziv tvrtke.'); return false; }
+    if (!p.kontakt) { prikaziGresku_('Upišite ime i prezime osobe za kontakt.'); return false; }
+    if (!/^[^\s@,;]+@[^\s@,;]+\.[^\s@,;]{2,}$/.test(p.email)) { prikaziGresku_('Upišite ispravnu e-mail adresu — na nju šaljemo odgovor.'); return false; }
+    if (p.oib && p.oib.length !== 11) { prikaziGresku_('OIB ima 11 znamenki (a Vaš unos ' + p.oib.length + ') — ispravite ga ili ostavite prazno.'); return false; }
+    if (!p.vrsta) { prikaziGresku_('Odaberite vrstu problema.'); return false; }
+    if (trebaAwb_() && !p.awb) { prikaziGresku_('Upišite broj pošiljke — bez njega ne možemo pronaći pošiljku.'); document.getElementById('pp-awb').focus(); return false; }
+    if (!awbIspravan(p.awb, document.getElementById('pp-awb-tip'))) { prikaziGresku_(awbPoruka(document.getElementById('pp-awb-tip'))); document.getElementById('pp-awb').focus(); return false; }
+    if (p.opis.length < 10) { prikaziGresku_('Opišite problem u nekoliko rečenica.'); return false; }
+    var gumb = document.getElementById('prijava-gumb'); gumb.disabled = true; gumb.textContent = 'Šaljem…';
+    var ctl = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+    var t = setTimeout(function() { if (ctl) { ctl.abort(); } }, 30000);
+    fetch(GAS_WEB_APP_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(p), signal: ctl ? ctl.signal : undefined })
+      .then(function(r) { return r.json(); })
+      .then(function(res) {
+        clearTimeout(t);
+        if (!res || res.status !== 'ok') { gumb.disabled = false; gumb.textContent = 'Pošalji prijavu'; prikaziGresku_((res && res.message) || 'Slanje nije uspjelo. Pokušajte ponovno ili nas nazovite na 01 6254 444.'); return; }
+        document.getElementById('prijava-broj').textContent = res.broj || '';
+        if (res.awb) { var aw = document.getElementById('prijava-awb'); aw.textContent = '📦 Broj pošiljke: ' + res.awb; aw.hidden = false; }
+        if (res.statusLink && /^https:\/\//.test(res.statusLink)) { document.getElementById('prijava-status-link').href = res.statusLink; }
+        document.getElementById('prijava-form').style.display = 'none';
+        var z = document.getElementById('prijava-zahvala'); z.classList.add('active'); z.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      })
+      .catch(function() { clearTimeout(t); gumb.disabled = false; gumb.textContent = 'Pošalji prijavu'; prikaziGresku_('Slanje nije uspjelo (provjerite internetsku vezu). Pokušajte ponovno ili nas nazovite na 01 6254 444.'); });
+    return false;
+  }
+</script>
+</body>
+</html>
