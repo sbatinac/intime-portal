@@ -1204,6 +1204,13 @@
   .af-gotovo-akcije .gk{color:#1b6e3c;border-color:#2e9d57;}
   .af-gotovo-akcije .gi{color:#3a4668;border-color:#8591ad;}
   .af-gotovo-akcije button:hover{background:#f0fbfa;}
+  .af-gotovo-stavka{flex-wrap:wrap;}
+  .af-gotovo-stavka .af-dok-naziv{flex:1 1 100%;}
+  .af-gotovo-stavka .af-gotovo-akcije{flex:1 1 100%;min-width:0;flex-wrap:wrap;gap:4px;}
+  .af-gotovo-stavka{min-width:0;padding:6px 8px;}
+  .af-gotovo-akcije .gz{color:#8a6a00;border-color:#d9b92e;background:#fffbea;}
+  .af-gotovo-akcije .gp{color:#1f5f9f;border-color:#7fb0dd;background:#eaf2fb;}
+  .af-gotovo-akcije .gl{color:#6d3a9c;border-color:#b98be0;background:#f5eefc;}
   .af-dok-sustav-putanja{font-size:11px;color:var(--grey);margin-bottom:6px;line-height:1.5;word-break:break-word;}
   .af-dok-sustav-putanja a{color:var(--purple);cursor:pointer;text-decoration:none;}
   .af-dok-sustav-putanja a:hover{text-decoration:underline;}
@@ -16447,6 +16454,7 @@
       // kopiranje radi adminPripremiDokumenteZaPonudu (slotKljuc gotovo_klijent / gotovo_interno).
       // ============================================================
       var dokumentiGotovi = [];
+      var dokPostaviUSlot_ = {};   // slotKljuc -> funkcija postaviStavkuUSlot_ (popunjava se u petlji fiksnih polja niže)
       try {
         var sirovoGotovi = fieldVal(entry, 'Gotovi dokumenti (admin, JSON)');
         if (sirovoGotovi) { var pg_ = JSON.parse(sirovoGotovi); if (Array.isArray(pg_)) { dokumentiGotovi = pg_; } }
@@ -16508,7 +16516,7 @@
         okvir.addEventListener('drop', function(ev) {
           ev.preventDefault(); ev.stopPropagation(); okvir.classList.remove('af-dok-drag-over');
           var sirovo = ev.dataTransfer.getData('text/plain'); if (!sirovo) { return; }
-          try { var st = JSON.parse(sirovo); if (st && st.source === 'gotovo' && st.id) { dodajGotovo_(st, par[1]); } } catch (errDropGotovo) { /* nevaljan drop */ }
+          try { var st = JSON.parse(sirovo); if (st && (st.gotovo || st.source === 'gotovo') && st.id) { dodajGotovo_(st, par[1]); } } catch (errDropGotovo) { /* nevaljan drop */ }
         });
       });
 
@@ -16528,18 +16536,34 @@
           var h = '';
           res.podfolderi.forEach(function(f) { h += '<div class="af-dok-stavka af-dok-stavka-folder" data-id="' + esc(f.id) + '"><span>📁</span><span class="af-dok-naziv">' + esc(f.name) + '</span></div>'; });
           res.datoteke.forEach(function(f) {
-            h += '<div class="af-dok-stavka" draggable="true" data-id="' + esc(f.id) + '" data-name="' + esc(f.name) + '" data-url="' + esc(f.url) + '"><span>📄</span><span class="af-dok-naziv" title="' + esc(f.name) + '">' + esc(f.name) + '</span>' +
-              '<span class="af-gotovo-akcije"><button type="button" class="gk" data-c="klijent">→ Klijent</button><button type="button" class="gi" data-c="interno">→ Interno</button></span></div>';
+            h += '<div class="af-dok-stavka af-gotovo-stavka" draggable="true" data-id="' + esc(f.id) + '" data-name="' + esc(f.name) + '" data-url="' + esc(f.url) + '"><span>📄</span><span class="af-dok-naziv" title="' + esc(f.name) + '">' + esc(f.name) + '</span>' +
+              '<span class="af-gotovo-akcije"><button type="button" class="gk" data-c="klijent">→ Klijent</button><button type="button" class="gi" data-c="interno">→ Interno</button>' +
+              '<button type="button" class="gz" data-slot="analiticki" title="Analitički cjenik (Excel)">→ Analitički cjenik</button><button type="button" class="gp" data-slot="cjenikhr" title="Cjenik Hrvatska (Excel)">→ Cjenik Hrvatska</button><button type="button" class="gl" data-slot="ponudasuradnja" title="Ponuda za suradnju (PDF)">→ Ponuda za suradnju</button></span></div>';
           });
           gotovoIzvorLista.innerHTML = h || '<div class="af-dok-prazno">Mapa je prazna.</div>';
           Array.prototype.slice.call(gotovoIzvorLista.querySelectorAll('.af-dok-stavka-folder')).forEach(function(el) {
             el.addEventListener('click', function(ev) { ev.stopPropagation(); gotovoTrenutniFolderId = el.getAttribute('data-id'); ucitajGotovePreglednik_(); });
           });
           Array.prototype.slice.call(gotovoIzvorLista.querySelectorAll('.af-dok-stavka:not(.af-dok-stavka-folder)')).forEach(function(el) {
-            var stavka = { source: 'gotovo', id: el.getAttribute('data-id'), name: el.getAttribute('data-name'), url: el.getAttribute('data-url') };
+            var stavka = { source: 'osnovna', gotovo: true, id: el.getAttribute('data-id'), name: el.getAttribute('data-name'), url: el.getAttribute('data-url') };   // source 'osnovna' + gotovo:true — da ga prihvate i fiksna polja (Analitički cjenik/Cjenik Hrvatska/Ponuda za suradnju) i "Ostali dokumenti"
             el.addEventListener('dragstart', function(ev) { ev.dataTransfer.setData('text/plain', JSON.stringify(stavka)); ev.dataTransfer.effectAllowed = 'copy'; });
             Array.prototype.slice.call(el.querySelectorAll('.af-gotovo-akcije button')).forEach(function(b) {
-              b.addEventListener('click', function(ev) { ev.stopPropagation(); dodajGotovo_(stavka, b.getAttribute('data-c')); });
+              b.addEventListener('click', function(ev) {
+                ev.stopPropagation();
+                var slot = b.getAttribute('data-slot');
+                if (slot) {
+                  var def = DOK_FIKSNI_SLOTOVI_[slot];
+                  if (!dokProvjeriTip_(stavka.name, def.tipovi)) {
+                    gotovoStatus.textContent = '"' + stavka.name + '" nije dozvoljeni tip za "' + def.naziv + '" — dozvoljeno: ' + def.opisTipa + '.';
+                    gotovoStatus.classList.add('error');
+                    return;
+                  }
+                  gotovoStatus.classList.remove('error'); gotovoStatus.textContent = '';
+                  if (dokPostaviUSlot_[slot]) { dokPostaviUSlot_[slot]({ id: stavka.id, name: stavka.name, url: stavka.url }); }
+                  return;
+                }
+                dodajGotovo_(stavka, b.getAttribute('data-c'));
+              });
             });
           });
         }).catch(function() { gotovoIzvorLista.innerHTML = '<div class="af-dok-prazno">Greška u komunikaciji s poslužiteljem.</div>'; });
@@ -16713,6 +16737,7 @@
         };
 
         renderSlot_();
+        dokPostaviUSlot_[slotKljuc] = postaviStavkuUSlot_;
 
         slotEl.addEventListener('dragover', function(ev) { ev.preventDefault(); slotEl.classList.add('af-dok-drag-over'); });
         slotEl.addEventListener('dragleave', function() { slotEl.classList.remove('af-dok-drag-over'); });
