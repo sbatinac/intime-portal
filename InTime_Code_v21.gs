@@ -1497,6 +1497,109 @@ function adminListOsnovnaDokumentacija(token) {
   }
 }
 
+// ============================================================
+// "GOTOVE PONUDE" (10.10.2026., Sašin izričit zahtjev) — mapa u koju Claude sprema već
+// ispravno imenovane dokumente ponude. Admin je prikazuje u okviru "Gotove ponude" (preglednik)
+// i odatle se dokumenti povlače u "ZA KLIJENTA" / "SAMO INTERNO" — kopiraju se BEZ preimenovanja.
+// Zadano: poddirektorij "GOTOVE PONUDE" u glavnoj mapi sustava (sam se stvori); zupčanik u Adminu
+// može postaviti bilo koju drugu mapu (Script Property GOTOVE_PONUDE_FOLDER_ID).
+// ============================================================
+var GOTOVE_PONUDE_ZADANA_MAPA_ID_ = '1uk1lP10HZ5uuVZZLjQ_N5hzNk7oIS82r';   // mapa "Claude ponude" (Sašina)
+var GOTOVE_PONUDE_ARHIVA_MAPA_ID_ = '1X9QaPjbvlWO1KjSAoVy0LDgs1C6mCL1f';     // ARHIVA — kamo ide izvorni direktorij nakon slanja
+function gotovePonudeMapa_() {
+  var props = PropertiesService.getScriptProperties();
+  var id = props.getProperty('GOTOVE_PONUDE_FOLDER_ID') || GOTOVE_PONUDE_ZADANA_MAPA_ID_;
+  try { var f = DriveApp.getFolderById(id); if (!f.isTrashed()) { return f; } } catch (e) { /* pad na automatski stvorenu mapu */ }
+  return getOrCreateChildFolder_(getSustavRootFolder_(), 'GOTOVE PONUDE');
+}
+
+// Nakon STVARNOG slanja ponude: direktorij(i) iz kojih su uzeti gotovi dokumenti (okviri "Za klijenta"/"Samo interno")
+// premještaju se u ARHIVU i preimenuju u "POSLANO - <ime ponude>" (ime ponude = dotadašnji naziv direktorija).
+// Dokumenti izravno u korijenu mape "Claude ponude" (bez poddirektorija) se NE diraju. Greška ne smije srušiti slanje.
+function arhivirajGotoveMape_(rowIndex) {
+  var rezultat = { premjesteno: [], preskoceno: 0 };
+  var sheet = getOrCreateUpitiSheet();
+  var lastCol = sheet.getLastColumn();
+  var header = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
+  var props = PropertiesService.getScriptProperties();
+  var arhiva = DriveApp.getFolderById(props.getProperty('GOTOVE_PONUDE_ARHIVA_FOLDER_ID') || GOTOVE_PONUDE_ARHIVA_MAPA_ID_);
+  var korijenId = gotovePonudeMapa_().getId();
+  // Popis datoteka čije mape treba arhivirati: (1) okviri "Za klijenta"/"Samo interno" (dokumenti_gotovi) i
+  // (2) tri fiksna polja — ALI samo ako je datoteka iz mape Claude (potomak korijena "Gotove ponude"),
+  // da se nikad ne premjesti npr. "Osnovna dokumentacija" ili stari klijentski direktorij.
+  var lista = [];
+  var col = header.indexOf(ADMIN_ONLY_FIELDS.dokumenti_gotovi);
+  if (col !== -1) {
+    var sirovo = sheet.getRange(rowIndex, col + 1).getValue();
+    if (sirovo) { try { var pl = JSON.parse(sirovo); if (Array.isArray(pl)) { lista = pl.slice(); } } catch (e) { /* ignoriraj */ } }
+  }
+  var jeUnutarKorijena_ = function(mapa) {
+    var trenutna = mapa;
+    for (var razina = 0; razina < 8; razina++) {
+      var roditeljIt = trenutna.getParents();
+      if (!roditeljIt.hasNext()) { return false; }
+      var roditelj = roditeljIt.next();
+      if (roditelj.getId() === korijenId) { return true; }
+      trenutna = roditelj;
+    }
+    return false;
+  };
+  [ADMIN_ONLY_FIELDS.dokument_analiticki_cjenik, ADMIN_ONLY_FIELDS.dokument_cjenik_hrvatska, ADMIN_ONLY_FIELDS.dokument_ponuda_suradnja].forEach(function(naziv) {
+    var c = header.indexOf(naziv);
+    if (c === -1) { return; }
+    var sv = sheet.getRange(rowIndex, c + 1).getValue();
+    if (!sv) { return; }
+    try { var o = JSON.parse(sv); if (o && o.id) { lista.push({ id: o.id, samoUnutarKorijena: true }); } } catch (e) { /* ignoriraj */ }
+  });
+  if (!lista.length) { return rezultat; }
+  var obradeno = {};
+  lista.forEach(function(d) {
+    if (!d || !d.id) { return; }
+    var file;
+    try { file = DriveApp.getFileById(d.id); } catch (e) { return; }
+    var roditelji = file.getParents();
+    while (roditelji.hasNext()) {
+      var mapa = roditelji.next();
+      var mid = mapa.getId();
+      if (d.samoUnutarKorijena && !jeUnutarKorijena_(mapa)) { continue; }
+      if (obradeno[mid]) { continue; }
+      obradeno[mid] = true;
+      if (mid === korijenId || mid === arhiva.getId()) { rezultat.preskoceno++; continue; }
+      // već u ARHIVI (npr. ponovno slanje) — ne dirati
+      var uArhivi = false, nad = mapa.getParents();
+      while (nad.hasNext()) { if (nad.next().getId() === arhiva.getId()) { uArhivi = true; } }
+      if (uArhivi) { continue; }
+      var ime = mapa.getName();
+      var novoIme = (ime.indexOf('POSLANO - ') === 0) ? ime : ('POSLANO - ' + ime);
+      mapa.setName(novoIme);
+      mapa.moveTo(arhiva);
+      rezultat.premjesteno.push(novoIme);
+    }
+  });
+  return rezultat;
+}
+function adminGotovePonudeStanje(token) {
+  if (!isValidAdminToken_(token)) { return { status: 'error', message: 'Sesija je istekla — prijavite se ponovno.' }; }
+  try {
+    var f = gotovePonudeMapa_();
+    return { status: 'ok', naziv: f.getName(), url: f.getUrl(), zadano: !PropertiesService.getScriptProperties().getProperty('GOTOVE_PONUDE_FOLDER_ID') };
+  } catch (e) { return { status: 'error', message: 'Mapa nije dostupna: ' + e.message }; }
+}
+function adminGotovePonudePostaviMapu(token, unos) {
+  if (!isValidAdminToken_(token)) { return { status: 'error', message: 'Sesija je istekla — prijavite se ponovno.' }; }
+  var props = PropertiesService.getScriptProperties();
+  unos = String(unos || '').trim();
+  if (!unos) { props.deleteProperty('GOTOVE_PONUDE_FOLDER_ID'); return adminGotovePonudeStanje(token); }
+  var m = unos.match(/\/folders\/([A-Za-z0-9_-]{10,})/) || unos.match(/[?&]id=([A-Za-z0-9_-]{10,})/) || unos.match(/^([A-Za-z0-9_-]{10,})$/);
+  if (!m) { return { status: 'error', message: 'Ne prepoznajem poveznicu. Zalijepi poveznicu mape s Drivea (…/folders/…) ili njen ID.' }; }
+  try {
+    var f = DriveApp.getFolderById(m[1]);
+    if (f.isTrashed()) { return { status: 'error', message: 'Ta je mapa u smeću.' }; }
+    props.setProperty('GOTOVE_PONUDE_FOLDER_ID', m[1]);
+    return adminGotovePonudeStanje(token);
+  } catch (e) { return { status: 'error', message: 'Mapa nije pronađena ili nemam pristup: ' + e.message }; }
+}
+
 // Generički preglednik dva direktorija sustava — "KLIJENTI" i "ARHIVA" —
 // za ponovnu upotrebu STARIH dokumenata drugih klijenata pri izradi nove
 // ponude (Sašin izričit zahtjev, 24.9.2026.: "da u stvaranju ponuda mogu
@@ -1523,12 +1626,12 @@ function adminListOsnovnaDokumentacija(token) {
 // dodatnih poziva.
 function adminBrowseSustavFolder(token, korijen, folderId) {
   if (!isValidAdminToken_(token)) { return { status: 'error', message: 'Sesija je istekla — prijavite se ponovno.' }; }
-  if (korijen !== 'klijenti' && korijen !== 'arhiva') {
+  if (korijen !== 'klijenti' && korijen !== 'arhiva' && korijen !== 'gotove') {
     return { status: 'error', message: 'Nepoznat korijenski direktorij.' };
   }
   try {
     var sub = getSustavSubfolders_();
-    var korijenFolder = sub[korijen];
+    var korijenFolder = (korijen === 'gotove') ? gotovePonudeMapa_() : sub[korijen];
     var ciljFolder = folderId ? DriveApp.getFolderById(folderId) : korijenFolder;
 
     var lanac = [];
@@ -1663,6 +1766,17 @@ function izvuciCistNaziv_(imeDatoteke) {
     baza = imeDatoteke.substring(0, dotIdx);
     ext = imeDatoteke.substring(dotIdx);
   }
+  // ISPRAVAK (10.10.2026.): naziv koji već počinje ŠIFROM PONUDE (npr. "4356-26-SB - Beauty Studio Nera j.d.o.o. - Zagreb - FedEx cjenik.pdf",
+  // tj. već imenovan po programu/Claudeu: ŠIFRA - Klijent - Grad - Dokument) NE smije se rezati po prvoj " - " (ostala bi samo stara
+  // šifra!). Skine se šifra (i -P1), a ako ostane ≥3 dijela, izbace se prva dva (Klijent, Grad) — ostane naziv dokumenta.
+  var sifraRe_ = /^\s*\d{3,5}-\d{2}-[A-Za-z]{2,4}(?:-P\d+)?(?:[\s_]*-[\s_]*|[\s_]+)/;
+  if (sifraRe_.test(baza)) {
+    var ostatak_ = baza.replace(sifraRe_, '').replace(/_-_|_-|-_/g, ' - ');
+    var dijelovi_ = ostatak_.split(/\s+-\s+/).map(function(x) { return x.trim(); }).filter(function(x) { return x; });
+    if (dijelovi_.length >= 3) { dijelovi_ = dijelovi_.slice(2); }
+    var rez_ = dijelovi_.join(' - ').trim();
+    if (rez_) { return rez_ + ext; }
+  }
   var prefiksi = ['InTime d.o.o. - ', 'In Time d.o.o. - '];
   for (var i = 0; i < prefiksi.length; i++) {
     if (baza.indexOf(prefiksi[i]) === 0) {
@@ -1752,6 +1866,18 @@ function azurirajEvidencijuPripreme_(verzijaFolder, naziv, oib, grad, brojPonude
   doc.saveAndClose();
 }
 
+// Naziv kopije gotovog dokumenta: ručno ispravljeni naziv (noviNaziv, bez / \\, uz zadržan nastavak) ili izvorni naziv.
+function gotovoEfektivniNaziv_(originalIme, noviNaziv) {
+  originalIme = String(originalIme || '');
+  var nov = String(noviNaziv || '').replace(/[\\\/]/g, '-').trim();
+  if (!nov) { return originalIme; }
+  if (nov.length > 200) { nov = nov.substring(0, 200); }
+  var dot = originalIme.lastIndexOf('.');
+  var ext = dot > 0 ? originalIme.substring(dot) : '';
+  if (ext && nov.toLowerCase().slice(-ext.length) !== ext.toLowerCase()) { nov += ext; }
+  return nov;
+}
+
 function adminPripremiDokumenteZaPonudu(token, rowIndex, stavke) {
   if (!isValidAdminToken_(token)) { return { status: 'error', message: 'Sesija je istekla — prijavite se ponovno.' }; }
   rowIndex = parseInt(rowIndex, 10);
@@ -1773,6 +1899,22 @@ function adminPripremiDokumenteZaPonudu(token, rowIndex, stavke) {
     var verzijaCol = header.indexOf(ADMIN_ONLY_FIELDS.ponuda_verzija);
     var verzija = (verzijaCol !== -1 && parseInt(row[verzijaCol], 10)) || 1;
     var brojPonude = sifraSirova + '-P' + verzija;
+
+    // Provjera naziva gotovih dokumenata (Sašin izričit zahtjev 10.10.2026.): dokumenti iz okvira "Za klijenta"/"Samo interno"
+    // se NE preimenuju automatski, pa naziv MORA sadržavati šifru ponude — inače se ništa ne kopira (zaštita i ako front-end zakaže).
+    var gnNorm_ = function(t) { return String(t || '').toLowerCase().replace(/[^a-z0-9]/g, ''); };
+    var gnSifraNorm_ = gnNorm_(sifraSirova);
+    var gnLosi_ = [];
+    stavke.forEach(function(st) {
+      if (!st || !st.id || (st.slotKljuc !== 'gotovo_klijent' && st.slotKljuc !== 'gotovo_interno')) { return; }
+      var fGn;
+      try { fGn = DriveApp.getFileById(st.id); } catch (errGn) { return; }
+      var imeGn = gotovoEfektivniNaziv_(fGn.getName(), st.noviNaziv);
+      if (gnNorm_(imeGn).indexOf(gnSifraNorm_) === -1) { gnLosi_.push(imeGn); }
+    });
+    if (gnLosi_.length) {
+      return { status: 'error', message: 'Naziv ne sadrži šifru ponude (' + sifraSirova + '): ' + gnLosi_.join('; ') + ' — ispravi naziv u okviru „Za klijenta"/„Samo interno" (crveni ⚠ → „Ispravi").' };
+    }
 
     var sub = getSustavSubfolders_();
     var klijentFolderName = 'PONUDA - ' + naziv + ' - ' + oib + ' - ' + grad;
@@ -1839,7 +1981,11 @@ function adminPripremiDokumenteZaPonudu(token, rowIndex, stavke) {
       try { izvorFile = DriveApp.getFileById(stavka.id); } catch (errNadji) { return; }
       var originalIme = izvorFile.getName();
       var noviNaziv;
-      if (stavka.fiksniNaziv) {
+      var jeGotovo_ = (stavka.slotKljuc === 'gotovo_klijent' || stavka.slotKljuc === 'gotovo_interno');
+      if (jeGotovo_) {
+        // Gotovi dokumenti (od Claudea) već su ispravno imenovani — NE preimenuju se (Sašin izričit zahtjev).
+        noviNaziv = gotovoEfektivniNaziv_(originalIme, stavka.noviNaziv);
+      } else if (stavka.fiksniNaziv) {
         var ext = '';
         var dotIdx = originalIme.lastIndexOf('.');
         if (dotIdx > 0) { ext = originalIme.substring(dotIdx); }
@@ -1852,7 +1998,15 @@ function adminPripremiDokumenteZaPonudu(token, rowIndex, stavke) {
       // izričit zahtjev — vidi napomenu uz azurirajEvidencijuPripreme_ gore).
       var parNaziva_ = { staro: originalIme, novo: noviNaziv };
       sviNaziviPripreme_.push(parNaziva_);
-      if (slot === 'analiticki' || slot === 'cjenikhr') {
+      if (slot === 'gotovo_interno') {
+        // Samo interni direktorij ponude (evidencija) — klijent ih NE vidi.
+        izvorFile.makeCopy(noviNaziv, verzijaFolder);
+      } else if (slot === 'gotovo_klijent') {
+        // Ide klijentu (POSLANO) + jedan primjerak ostaje u internom direktoriju ponude.
+        izvorFile.makeCopy(noviNaziv, verzijaFolder);
+        izvorFile.makeCopy(noviNaziv, poslanoFolder);
+        poslaniNaziviPripreme_.push(parNaziva_);
+      } else if (slot === 'analiticki' || slot === 'cjenikhr') {
         // Interni dokumenti — SAMO u predirektoriju, klijent ih ne smije vidjeti.
         izvorFile.makeCopy(noviNaziv, verzijaFolder);
       } else if (slot === 'ponudasuradnja') {
@@ -7352,6 +7506,12 @@ function doPost(e) {
       result = adminUpdateAnketaFields(data.token, data.rowIndex, data.fields);
     } else if (data.action === 'adminExportKlijent') {
       result = adminExportKlijent(data.token, data.rowIndex);
+    } else if (data.action === 'adminAiIntegracijaExport') {
+      result = adminAiIntegracijaExport(data.token, data.rowIndex);
+    } else if (data.action === 'adminAiIntegracijaStanje') {
+      result = adminAiIntegracijaStanje(data.token);
+    } else if (data.action === 'adminAiIntegracijaPostaviMapu') {
+      result = adminAiIntegracijaPostaviMapu(data.token, data.unos);
     } else if (data.action === 'adminExportOdbijenica') {
       result = adminExportOdbijenica(data.token, data.rowIndex);
     } else if (data.action === 'adminExportAnketa') {
@@ -7544,6 +7704,10 @@ function doPost(e) {
       result = adminZoneArhivaList(data.token);
     } else if (data.action === 'adminZoneArhivaRestore') {
       result = adminZoneArhivaRestore(data.token, data.fileId);
+    } else if (data.action === 'adminGotovePonudeStanje') {
+      result = adminGotovePonudeStanje(data.token);
+    } else if (data.action === 'adminGotovePonudePostaviMapu') {
+      result = adminGotovePonudePostaviMapu(data.token, data.unos);
     } else if (data.action === 'listZoneJavno') {
       result = listZoneJavno();
     } else if (data.action === 'adminKalkulatorCjenikStatus') {
@@ -7658,6 +7822,10 @@ function doPost(e) {
       result = adminResetBrojac(data.token, data.tipBroja);
     } else if (data.action === 'adminMasterResetBrojace') {
       result = adminMasterResetBrojace(data.token);
+    } else if (data.action === 'adminProdPregled') {
+      result = adminProdPregled(data.token);
+    } else if (data.action === 'adminProdOcisti') {
+      result = adminProdOcisti(data.token, data.kljucevi, data.potvrda);
     } else if (data.action === 'adminSetBrojac') {
       result = adminSetBrojac(data.token, data.tipBroja, data.sljedeciBroj);
     } else if (data.action === 'gorivoDohvatiPostotke') {
@@ -7750,6 +7918,78 @@ function doPost(e) {
       result = adminPismaMobilno(data.token, data.predlozakId, data.potvrdjeno);
     } else if (data.action === 'adminPismaPogodci') {
       result = adminPismaPogodci(data.token);
+    } else if (data.action === 'javniProblemPrijava') {
+      result = javniProblemPrijava(data);
+    } else if (data.action === 'problemSluzbaPodaci') {
+      result = problemSluzbaPodaci(data);
+    } else if (data.action === 'problemSluzbaPreuzmi') {
+      result = problemSluzbaPreuzmi(data);
+    } else if (data.action === 'problemSluzbaBiljeska') {
+      result = problemSluzbaBiljeska(data);
+    } else if (data.action === 'problemSluzbaRijesi') {
+      result = problemSluzbaRijesi(data);
+    } else if (data.action === 'javniProblemVrste') {
+      result = javniProblemVrste();
+    } else if (data.action === 'adminProblemZakljuci') {
+      result = adminProblemZakljuci(data.token, data.broj, data.razlog, data.opis, data.obavijesti === true);
+    } else if (data.action === 'brziProblemZakljuci') {
+      result = brziProblemZakljuci(data.token, data.broj, data.razlog, data.opis, data.obavijesti === true);
+    } else if (data.action === 'problemStatusKlijent') {
+      result = problemStatusKlijent(data);
+    } else if (data.action === 'javniProblemPoslovnice') {
+      result = javniProblemPoslovnice();
+    } else if (data.action === 'adminProblemiPoslovniceSpremi') {
+      result = adminProblemiPoslovniceSpremi(data.token, data.poslovnice);
+    } else if (data.action === 'adminProblemMailPosalji') {
+      result = adminProblemMailPosalji(data.token, data.broj, data.uvod, data.cilj);
+    } else if (data.action === 'brziProblemMailPosalji') {
+      result = brziProblemMailPosalji(data.token, data.broj, data.uvod, data.cilj);
+    } else if (data.action === 'adminProblemRecenice') {
+      result = adminProblemRecenice(data.token);
+    } else if (data.action === 'adminProblemRecenice_Spremi') {
+      result = adminProblemRecenice_Spremi(data.token, data.recenice);
+    } else if (data.action === 'adminProblemZaduzi') {
+      result = adminProblemZaduzi(data.token, data.broj, data.zaduzeni, data.poslovnica);
+    } else if (data.action === 'brziProblemZaduzi') {
+      result = brziProblemZaduzi(data.token, data.broj, data.zaduzeni, data.poslovnica);
+    } else if (data.action === 'adminProblemiVrstaDodaj') {
+      result = adminProblemiVrstaDodaj(data.token, data.naziv, data.sluzba);
+    } else if (data.action === 'adminProblemiVrstaObrisi') {
+      result = adminProblemiVrstaObrisi(data.token, data.naziv);
+    } else if (data.action === 'adminProblemiImenik') {
+      result = adminProblemiImenik(data.token);
+    } else if (data.action === 'adminProblemProslijedi') {
+      result = adminProblemProslijedi(data.token, data.broj, data.cilj);
+    } else if (data.action === 'adminProblemiRute') {
+      result = adminProblemiRute(data.token);
+    } else if (data.action === 'adminProblemiRuteSpremi') {
+      result = adminProblemiRuteSpremi(data.token, data.podaci);
+    } else if (data.action === 'adminProblemiLista') {
+      result = adminProblemiLista(data.token);
+    } else if (data.action === 'adminProblemDodaj') {
+      result = adminProblemDodaj(data.token, data.podaci);
+    } else if (data.action === 'adminProblemMailovi') {
+      result = adminProblemMailovi(data.token, data.oib, data.naziv);
+    } else if (data.action === 'adminProblemMailTijelo') {
+      result = adminProblemMailTijelo(data.token, data.red);
+    } else if (data.action === 'adminProblemBiljeska') {
+      result = adminProblemBiljeska(data.token, data.broj, data.tekst);
+    } else if (data.action === 'adminProblemStatus') {
+      result = adminProblemStatus(data.token, data.broj, data.status, data.kakoRijeseno);
+    } else if (data.action === 'adminProblemRok') {
+      result = adminProblemRok(data.token, data.broj, data.rok);
+    } else if (data.action === 'adminProblemBrisi') {
+      result = adminProblemBrisi(data.token, data.broj, data.lozinka, data.rijec);
+    } else if (data.action === 'brziProblemiLista') {
+      result = brziProblemiLista(data.token);
+    } else if (data.action === 'brziProblemDodaj') {
+      result = brziProblemDodaj(data.token, data.podaci);
+    } else if (data.action === 'brziProblemBiljeska') {
+      result = brziProblemBiljeska(data.token, data.broj, data.tekst);
+    } else if (data.action === 'brziProblemStatus') {
+      result = brziProblemStatus(data.token, data.broj, data.status, data.kakoRijeseno);
+    } else if (data.action === 'brziProblemRok') {
+      result = brziProblemRok(data.token, data.broj, data.rok);
     } else if (data.action === 'adminRaskidPostavke') {
       result = adminRaskidPostavke(data.token, data.autoLink, data.predlozakId);
     } else if (data.action === 'adminRaskidPostavkeSpremi') {
@@ -8438,7 +8678,11 @@ var ADMIN_ONLY_FIELDS = {
   // (admin)" stupac ostaje u tablici (zbog postojećih redaka) ali se više ne
   // koristi — vidi adminDohvatiKartuPrikupa.
   karta_prikupa_lat: 'Karta prikupa - lat (admin)',
-  karta_prikupa_lon: 'Karta prikupa - lon (admin)'
+  karta_prikupa_lon: 'Karta prikupa - lon (admin)',
+  // NOVO (10.10.2026., Sašin izričit zahtjev) — "Gotovi dokumenti": JSON popis [{id,name,url,cilj}], cilj = 'klijent'
+  // (ide klijentu u POSLANO + primjerak u interni direktorij ponude) ili 'interno' (samo interni direktorij ponude, klijent ne vidi).
+  // Dokumenti dolaze iz mape "GOTOVE PONUDE" (generira ih Claude, već ispravno imenovani) i NE PREIMENUJU se.
+  dokumenti_gotovi: 'Gotovi dokumenti (admin, JSON)'
   // (30.9.2026., ISPRAVAK ISTI DAN: polje "dokumenti_klijent_pristup" koje je
   // ovdje kratko postojalo — po-klijentu JSON popis mail-priloga — u
   // potpunosti je UKLONJENO. Saša je pojasnio da su ti dokumenti OPĆE upute
@@ -9238,7 +9482,9 @@ function adminGetCounters(token) {
   var ankete = Math.max(0, anketaSheet.getLastRow() - 1);
   var raskidovi = 0;
   try { raskidovi = Math.max(0, getOrCreateRaskidSheet().getLastRow() - 1); } catch (eR) { raskidovi = 0; }
-  return { status: 'ok', posjete: posjete, posjeteDanas: posjeteDanas, posjeteSveukupno: posjeteSveukupno, pozitivno: pozitivno, negativno: negativno, ankete: ankete, raskidovi: raskidovi };
+  var problemiOtv = 0;
+  try { problemiOtv = problemiBrojOtvorenih_(); } catch (eP) { problemiOtv = 0; }
+  return { status: 'ok', posjete: posjete, posjeteDanas: posjeteDanas, posjeteSveukupno: posjeteSveukupno, pozitivno: pozitivno, negativno: negativno, ankete: ankete, raskidovi: raskidovi, problemi: problemiOtv };
 }
 
 // Vraća SVE retke (Interes + Odbijenica) s punim podacima, ključano po
@@ -10243,6 +10489,7 @@ function adminRestartPonudu(token, rowIndex) {
   var poljaZaBrisanje_ = [
     ADMIN_ONLY_FIELDS.sifra_ponude,
     ADMIN_ONLY_FIELDS.dokumenti_ponude,
+    ADMIN_ONLY_FIELDS.dokumenti_gotovi,
     ADMIN_ONLY_FIELDS.dokument_analiticki_cjenik,
     ADMIN_ONLY_FIELDS.dokument_cjenik_hrvatska,
     ADMIN_ONLY_FIELDS.dokument_ponuda_suradnja,
@@ -10586,6 +10833,129 @@ function adminExportKlijent(token, rowIndex) {
     return { status: 'ok', folderUrl: klijentFolder.getUrl(), folderName: folderName, fileUrl: docFile.getUrl() };
   } catch (err) {
     return { status: 'error', message: 'Export nije uspio: ' + err.message };
+  }
+}
+
+// ============================================================
+// AI INTEGRACIJA (9.10.2026., Sašin izričit zahtjev — "veliki četvrtasta tipka
+// ispod Početka otvaranja klijenta, export svih podataka o klijentu odmah u
+// direktorij na Google Driveu 'PANTHER - novi klijneti', i mali kotačić da se
+// može prebaciti u drugi direktorij"). Ništa se ne integrira — tipka samo
+// izveze podatke klijenta u datoteke u odabranu Drive mapu:
+//   • podmapa "{Naziv} - {OIB} - {MJESTO}" u odredišnoj mapi,
+//   • JSON (svi popunjeni stupci retka, redom kojim su u tablici) +
+//   • Google dokument s istim podacima po poglavljima + admin dio.
+// Ponovljeni klik zamjenjuje stare datoteke istog naziva (stare idu u smeće).
+// IZUZETA je jedino lozinka ("OB lozinka (admin)") — zaporke se ne izvoze.
+// Odredišna mapa: Script Property AI_INTEGRACIJA_FOLDER_ID (zadano ispod).
+// ============================================================
+var AI_INTEGRACIJA_ZADANA_MAPA_ID_ = '1BuWwnCGZsZAvNmUQnp8li7HF-1yz4nJi';
+var AI_INTEGRACIJA_IZUZETA_POLJA_ = ['OB lozinka (admin)'];
+
+function aiIntegracijaMapa_() {
+  var id = PropertiesService.getScriptProperties().getProperty('AI_INTEGRACIJA_FOLDER_ID') || AI_INTEGRACIJA_ZADANA_MAPA_ID_;
+  var f = DriveApp.getFolderById(id);
+  if (f.isTrashed()) { throw new Error('Odredišna mapa je u smeću.'); }
+  return f;
+}
+
+function adminAiIntegracijaStanje(token) {
+  if (!isValidAdminToken_(token)) { return { status: 'error', message: 'Sesija je istekla — prijavite se ponovno.' }; }
+  try {
+    var f = aiIntegracijaMapa_();
+    var id = PropertiesService.getScriptProperties().getProperty('AI_INTEGRACIJA_FOLDER_ID') || '';
+    return { status: 'ok', naziv: f.getName(), url: f.getUrl(), zadano: !id || id === AI_INTEGRACIJA_ZADANA_MAPA_ID_ };
+  } catch (e) {
+    return { status: 'error', message: 'Odredišna mapa nije dostupna: ' + e.message };
+  }
+}
+
+// unos = poveznica na Drive mapu, ID mape, ili prazno (vrati na zadanu mapu)
+function adminAiIntegracijaPostaviMapu(token, unos) {
+  if (!isValidAdminToken_(token)) { return { status: 'error', message: 'Sesija je istekla — prijavite se ponovno.' }; }
+  var props = PropertiesService.getScriptProperties();
+  unos = String(unos || '').trim();
+  if (!unos) {
+    props.deleteProperty('AI_INTEGRACIJA_FOLDER_ID');
+    return adminAiIntegracijaStanje(token);
+  }
+  var m = unos.match(/\/folders\/([A-Za-z0-9_-]{10,})/) || unos.match(/[?&]id=([A-Za-z0-9_-]{10,})/) || unos.match(/^([A-Za-z0-9_-]{10,})$/);
+  if (!m) { return { status: 'error', message: 'Ne prepoznajem poveznicu. Zalijepi poveznicu mape s Drivea (…/folders/…) ili njen ID.' }; }
+  try {
+    var f = DriveApp.getFolderById(m[1]);
+    if (f.isTrashed()) { return { status: 'error', message: 'Ta je mapa u smeću.' }; }
+    props.setProperty('AI_INTEGRACIJA_FOLDER_ID', m[1]);
+    return { status: 'ok', naziv: f.getName(), url: f.getUrl(), zadano: m[1] === AI_INTEGRACIJA_ZADANA_MAPA_ID_ };
+  } catch (e) {
+    return { status: 'error', message: 'Mapa nije pronađena ili nemam pristup: ' + e.message };
+  }
+}
+
+function adminAiIntegracijaExport(token, rowIndex) {
+  if (!isValidAdminToken_(token)) { return { status: 'error', message: 'Sesija je istekla — prijavite se ponovno.' }; }
+  rowIndex = parseInt(rowIndex, 10);
+  if (!rowIndex || rowIndex < 2) { return { status: 'error', message: 'Neispravan redak.' }; }
+  var sheet = getOrCreateUpitiSheet();
+  if (rowIndex > sheet.getLastRow()) { return { status: 'error', message: 'Redak više ne postoji (možda je već obrisan).' }; }
+
+  var ocekivano = izracunajOcekivanoZaglavljeUpiti_();
+  var lastCol = Math.min(sheet.getLastColumn(), ocekivano.length);
+  var header = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
+  var row = sheet.getRange(rowIndex, 1, 1, lastCol).getValues()[0];
+  var fields = {};     // sva polja (za dokument)
+  var polja = {};      // samo popunjena (za JSON), redoslijed stupaca
+  for (var c = 0; c < header.length; c++) {
+    var naziv0 = String(header[c]);
+    if (!naziv0 || AI_INTEGRACIJA_IZUZETA_POLJA_.indexOf(naziv0) !== -1) { continue; }
+    var v = formatirajSheetVrijednost_(row[c]);
+    fields[naziv0] = v;
+    if (v !== '' && v !== null && v !== undefined) { polja[naziv0] = v; }
+  }
+
+  var naziv = (fields['Naziv tvrtke'] || '').toString().trim() || '(bez naziva)';
+  var grad = (fields['Mjesto'] || '').toString().trim().toUpperCase() || '(bez mjesta)';
+  var oib = (fields['OIB'] || '').toString().trim() || '(bez OIB-a)';
+  var sifra = (fields['Broj'] || '').toString().trim() || '(bez šifre)';
+  var imeMape = (naziv + ' - ' + oib + ' - ' + grad).replace(/[\\/:*?"<>|]/g, '-');
+  var imeDat = ('AI INTEGRACIJA - ' + sifra + ' - ' + naziv + ' - ' + oib).replace(/[\\/:*?"<>|]/g, '-');
+
+  try {
+    var odrediste = aiIntegracijaMapa_();
+    var klijentMapa = getOrCreateChildFolder_(odrediste, imeMape);
+
+    [imeDat + '.json', imeDat].forEach(function(ime) {
+      var stari = klijentMapa.getFilesByName(ime);
+      while (stari.hasNext()) { stari.next().setTrashed(true); }
+    });
+
+    var izvezeno = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'dd.MM.yyyy. HH:mm:ss');
+    var json = JSON.stringify({
+      izvor: 'In Time — InTime_Upiti',
+      izvezeno: izvezeno,
+      redak: rowIndex,
+      tip: fields['Tip'] || '',
+      sifra: sifra,
+      klijent: { naziv: naziv, oib: oib, mjesto: grad },
+      polja: polja
+    }, null, 2);
+    var jsonFile = klijentMapa.createFile(imeDat + '.json', json, 'application/json');
+
+    // Google dokument: poglavlja upitnika (UPIT_FIELDS) + admin dio (sve ostalo, osim lozinke).
+    var poznata = { 'Timestamp': 1, 'Tip': 1, 'Broj': 1 };
+    UPIT_FIELDS.forEach(function(f) { if (!f.sec) { poznata[f[1]] = 1; } });
+    var adminRedci = [];
+    Object.keys(polja).forEach(function(k) { if (!poznata[k]) { adminRedci.push(k + ': ' + polja[k]); } });
+    var doc = DocumentApp.create(imeDat);
+    popuniExportDoc_(doc.getBody(), 'IN TIME — AI INTEGRACIJA: podaci klijenta', 'Šifra upitnika', fields, UPIT_FIELDS,
+      adminRedci.length ? [{ naslov: 'Podaci koje popunjava In Time (admin) i ostalo', tekst: adminRedci.join('\n') }] : null);
+    doc.saveAndClose();
+    var docFile = DriveApp.getFileById(doc.getId());
+    klijentMapa.addFile(docFile);
+    DriveApp.getRootFolder().removeFile(docFile);
+
+    return { status: 'ok', mapaNaziv: odrediste.getName(), folderUrl: klijentMapa.getUrl(), docUrl: docFile.getUrl(), jsonUrl: jsonFile.getUrl(), podMapa: imeMape };
+  } catch (err) {
+    return { status: 'error', message: 'AI INTEGRACIJA export nije uspio: ' + err.message };
   }
 }
 
@@ -11302,6 +11672,310 @@ function adminMasterResetBrojace(token) {
     props.deleteProperty('BROJ_' + tip.toUpperCase() + '_' + godina);
   });
   return { status: 'ok' };
+}
+
+// ============================================================
+// PRIPREMA ZA PRODUKCIJU — brisanje testnih podataka (9.10.2026., Sašin
+// izričit zahtjev: "sve su testni podaci, želim očistiti sustav programima
+// koje smo napravili da mogu krenuti u operativu").
+//
+// Dva koraka: (1) adminProdPregled() — SAMO ČITA i vraća popis kategorija s
+// brojem stavki (ništa ne mijenja), (2) adminProdOcisti() — briše samo
+// kategorije koje je admin označio. Zaštita (potvrda riječju + admin
+// lozinka) provodi se u InTime_Admin.html PRIJE drugog poziva; ovdje se
+// provjerava valjani admin token i fiksna potvrdna riječ.
+//
+// Što NE dira nikad: zaglavlja tablica (briše se samo sadržaj redaka),
+// konfiguracijske tablice (Zone, FAQ, Gorivo, MailPredlosci, Logistički
+// centri/osobe/kontakti, Centri_Pristup), osnovni cjenik i njegova arhiva
+// (KALKULATOR_CJENIK_*), galerije, OSNOVNA DOKUMENTACIJA, IMENIK mape,
+// PREDLOSCI SLIKE, OPĆI DOKUMENTI, lozinke/PIN-ovi/sesije u Script
+// Properties, okidači (triggeri). Datoteke i mape idu u Drive SMEĆE
+// (setTrashed) — mogu se vratiti, ništa se ne briše trajno.
+//
+// ZAŠTITA (9.10.2026., Sašin zahtjev "napravi dobru zaštitu prije pokretanja"):
+// (1) u Adminu: pregled → upis riječi BRISATI → nasumična riječ (superjunak)
+// → admin lozinka; (2) ovdje: valjani admin token + potvrda BRISATI;
+// (3) PRIJE brisanja tablica automatski se pravi SIGURNOSNA KOPIJA svake
+// tablice koja ima redaka (Drive mapa "SIGURNOSNE KOPIJE PRIJE ČIŠĆENJA" u
+// korijenu sustava, podmapa po datumu/vremenu) + tekstualna kopija brojača.
+// Ako kopija ne uspije, ta kategorija se NE briše.
+// ============================================================
+var PROD_POTVRDA_ = 'BRISATI';
+var PROD_BACKUP_MAPA_ = 'SIGURNOSNE KOPIJE PRIJE ČIŠĆENJA';
+
+function prodKategorije_() {
+  return [
+    { k: 'upiti', naziv: 'Upiti, ponude i klijenti', opis: 'Svi redci u tablici InTime_Upiti (Zainteresirani, Ponude, Klijenti, Nisu zainteresirani, Arhiva)', zadano: true },
+    { k: 'ankete', naziv: 'Ankete kvalitete', opis: 'Redci u tablici InTime_Ankete', zadano: true },
+    { k: 'raskidi', naziv: 'Raskidi', opis: 'Odgovori (InTime_Raskidi) i evidencija poslanih pisama (InTime_Raskid_Poslano)', zadano: true },
+    { k: 'problemi', naziv: 'Servis klijenata (problemi)', opis: 'Redci u tablici InTime_Problemi i arhiva mailova (list „Mailovi")', zadano: true },
+    { k: 'pisma', naziv: 'Pisma namjere / kampanje', opis: 'Evidencija poslanih pisama (InTime_Pisma_Kampanje)', zadano: true },
+    { k: 'battle', naziv: 'Battleships evidencija', opis: 'Redci u evidenciji igre (InTime_Battleships_Evidencija)', zadano: true },
+    { k: 'evidencije', naziv: 'Evidencije kalkulatora', opis: 'Dnevnici prijava i izračuna (InTime_Kalkulator_Evidencija, InTime_Kalkulacije_Evidencija, arhiva klijentskih cjenika — log)', zadano: true },
+    { k: 'imenik', naziv: 'Imenik', opis: 'Redci u tablici InTime_Imenik (kontakti iz testnih upitnika; već izvezeni Google kontakti ostaju)', zadano: true },
+    { k: 'biljeske', naziv: 'Brzi — bilješke i podsjetnici', opis: 'Redci u InTime_Brzi_Biljeske (događaji u Google kalendaru ostaju)', zadano: true },
+    { k: 'driveMape', naziv: 'Mape klijenata na Driveu', opis: 'Sve unutar mapa KLIJENTI, PONUDE, ODBIJENICE, OCJENE KVALITETE, POTENCIJALNI KLIJENTI i ARHIVA (same mape ostaju, prazne) — ide u Drive smeće', zadano: true },
+    { k: 'kalkMape', naziv: 'Datoteke alata KALKULACIJE', opis: 'Cjenici korisnika (mape po korisniku), privici mailova i arhiva klijentskih cjenika — ide u Drive smeće', zadano: true },
+    { k: 'gmailOB', naziv: 'Stari OB mailovi u Gmailu', opis: 'Niti s naslovom koji sadrži "[ID: OB-" (do 500) — ide u Gmail smeće', zadano: true },
+    { k: 'brojaci', naziv: 'Brojači i testni prekidači', opis: 'Numeracija (Upitnik, Odbijenica, Ocjena kvalitete) natrag na 0001, isključuje testni način numeracije, nulira brojače posjeta', zadano: true },
+    { k: 'kolege', naziv: 'Korisnici alata KALKULACIJE (kolege)', opis: 'Redci u InTime_Kalkulacije_Korisnici — OVO BRIŠE I PRAVE KOLEGE (npr. Jadro Čačić); zadano NIJE označeno', zadano: false }
+  ];
+}
+
+function prodImenaTablica_(k) {
+  var m = {
+    upiti: [SHEET_NAME],
+    ankete: [ANKETA_SHEET_NAME],
+    raskidi: [RASKID_SHEET_NAME, RASKID_POSLANO_SHEET_],
+    problemi: [PROBLEMI_SHEET_],
+    pisma: [PISMA_SHEET_NAME_],
+    battle: [BATTLE_SHEET_NAME_],
+    evidencije: [KALKULATOR_EVIDENCIJA_SHEET_NAME_, KOLEGE_EVID_SHEET_NAME, KALKULATOR_CJENIK_KLIJENT_ARHIVA_SHEET_NAME],
+    imenik: [IMENIK_SHEET_NAME],
+    biljeske: [BRZI_BILJESKE_SHEET_NAME],
+    kalkMape: [CJENIK_ARHIVA_SHEET_NAME],
+    kolege: [KOLEGE_SHEET_NAME]
+  };
+  return m[k] || [];
+}
+
+// Sve tablice (prvi list) s ovim imenom — i dupli primjerci, bez smeća.
+function prodListovi_(ime) {
+  var out = [];
+  var it = DriveApp.getFilesByName(ime);
+  while (it.hasNext()) {
+    var f = it.next();
+    try {
+      if (f.isTrashed()) { continue; }
+      if (f.getMimeType() !== MimeType.GOOGLE_SHEETS) { continue; }
+      out.push(SpreadsheetApp.openById(f.getId()).getSheets()[0]);
+    } catch (e) { /* preskoči nečitljivu datoteku */ }
+  }
+  return out;
+}
+
+function prodBrojRedaka_(imena) {
+  var n = 0;
+  imena.forEach(function(ime) {
+    prodListovi_(ime).forEach(function(sh) { n += Math.max(0, sh.getLastRow() - 1); });
+  });
+  return n;
+}
+
+// Briše SAMO sadržaj redaka od 2. nadalje (zaglavlje, formati i širine
+// stupaca ostaju — npr. tekstualni format telefona/OIB-a).
+function prodOcistiRedke_(imena) {
+  var n = 0;
+  imena.forEach(function(ime) {
+    prodListovi_(ime).forEach(function(sh) {
+      var last = sh.getLastRow();
+      if (last < 2) { return; }
+      var cols = Math.max(1, sh.getMaxColumns());
+      var r = sh.getRange(2, 1, last - 1, cols);
+      r.clearContent();
+      try { r.clearNote(); } catch (e) { /* nije kritično */ }
+      n += (last - 1);
+    });
+  });
+  return n;
+}
+
+
+// Arhiva mailova servisa klijenata je drugi list ("Mailovi") u tablici InTime_Problemi — čisti se uz problemi.
+function prodOcistiMailove_() {
+  var n = 0;
+  prodDatotekeTablica_(PROBLEMI_SHEET_).forEach(function(f) {
+    var sh = SpreadsheetApp.openById(f.getId()).getSheetByName(PROBLEMI_MAIL_LIST_);
+    if (!sh) { return; }
+    var last = sh.getLastRow();
+    if (last < 2) { return; }
+    sh.getRange(2, 1, last - 1, Math.max(1, sh.getMaxColumns())).clearContent();
+    n += (last - 1);
+  });
+  return n;
+}
+
+function prodDatotekeTablica_(ime) {
+  var out = [];
+  var it = DriveApp.getFilesByName(ime);
+  while (it.hasNext()) {
+    var f = it.next();
+    try {
+      if (f.isTrashed()) { continue; }
+      if (f.getMimeType() !== MimeType.GOOGLE_SHEETS) { continue; }
+      out.push(f);
+    } catch (e) { /* preskoči */ }
+  }
+  return out;
+}
+
+// Sigurnosna kopija tablica kategorije (cijela datoteka, makeCopy) — samo
+// onih koje imaju barem jedan redak podataka. Vraća broj napravljenih kopija.
+function prodKopirajTablice_(imena, mapa) {
+  var n = 0;
+  imena.forEach(function(ime) {
+    prodDatotekeTablica_(ime).forEach(function(f) {
+      var sh = SpreadsheetApp.openById(f.getId()).getSheets()[0];
+      if (sh.getLastRow() < 2) { return; }
+      f.makeCopy(ime + ' — kopija prije čišćenja', mapa);
+      n++;
+    });
+  });
+  return n;
+}
+
+function prodSigurnosnaMapa_(stamp) {
+  var root = getSustavRootFolder_();
+  var it = root.getFoldersByName(PROD_BACKUP_MAPA_);
+  var glavna = it.hasNext() ? it.next() : root.createFolder(PROD_BACKUP_MAPA_);
+  return glavna.createFolder(stamp);
+}
+
+function prodDjecaMape_(mapa) {
+  var n = 0;
+  var fi = mapa.getFolders(); while (fi.hasNext()) { fi.next(); n++; }
+  var fl = mapa.getFiles(); while (fl.hasNext()) { fl.next(); n++; }
+  return n;
+}
+
+function prodTrashDjecu_(mapa) {
+  var n = 0;
+  var fi = mapa.getFolders();
+  while (fi.hasNext()) { fi.next().setTrashed(true); n++; }
+  var fl = mapa.getFiles();
+  while (fl.hasNext()) { fl.next().setTrashed(true); n++; }
+  return n;
+}
+
+// Mape čiji se SADRŽAJ čisti (mape same ostaju).
+function prodMapeZaKategoriju_(k) {
+  var out = [];
+  if (k === 'driveMape') {
+    var s = getSustavSubfolders_();
+    ['klijenti', 'ponude', 'odbijenice', 'oceneKvalitete', 'potencijalniKlijenti', 'arhiva'].forEach(function(kk) {
+      if (s[kk]) { out.push(s[kk]); }
+    });
+  } else if (k === 'kalkMape') {
+    [KOLEGE_CJENICI_FOLDER_NAME, KOLEGE_MAIL_PRILOZI_FOLDER_NAME, CJENIK_ARHIVA_FOLDER_NAME].forEach(function(ime) {
+      var it = DriveApp.getFoldersByName(ime);
+      while (it.hasNext()) { var f = it.next(); try { if (!f.isTrashed()) { out.push(f); } } catch (e) {} }
+    });
+  }
+  return out;
+}
+
+function prodGmailNiti_() {
+  return GmailApp.search('subject:"[ID: OB-"', 0, 500);
+}
+
+function adminProdPregled(token) {
+  if (!isValidAdminToken_(token)) { return { status: 'error', message: 'Sesija je istekla — prijavite se ponovno.' }; }
+  var kat = prodKategorije_();
+  var out = [];
+  kat.forEach(function(c) {
+    var broj = 0, jedinica = 'redaka', greska = '';
+    try {
+      if (c.k === 'driveMape' || c.k === 'kalkMape') {
+        jedinica = 'stavki na Driveu';
+        prodMapeZaKategoriju_(c.k).forEach(function(m) { broj += prodDjecaMape_(m); });
+        if (c.k === 'kalkMape') { broj += prodBrojRedaka_(prodImenaTablica_('kalkMape')); }
+      } else if (c.k === 'gmailOB') {
+        jedinica = 'niti';
+        broj = prodGmailNiti_().length;
+      } else if (c.k === 'brojaci') {
+        jedinica = 'brojača';
+        var p = PropertiesService.getScriptProperties().getProperties();
+        Object.keys(p).forEach(function(kljuc) {
+          if (/^BROJ_(UPITNIK|ODBIJENICA|ANKETA)_\d{4}$/.test(kljuc) && parseInt(p[kljuc], 10) > 0) { broj++; }
+          if (/^BROJ_TEST_/.test(kljuc) && p[kljuc] === 'true') { broj++; }
+        });
+        broj += (parseInt(p['POSJETE_COUNT'] || '0', 10) > 0 ? 1 : 0) + (parseInt(p['POSJETE_SVEUKUPNO'] || '0', 10) > 0 ? 1 : 0) + (parseInt(p['POSJETE_DANAS'] || '0', 10) > 0 ? 1 : 0);
+      } else {
+        broj = prodBrojRedaka_(prodImenaTablica_(c.k));
+      }
+    } catch (e) { greska = String(e && e.message || e); }
+    out.push({ k: c.k, naziv: c.naziv, opis: c.opis, zadano: c.zadano, broj: broj, jedinica: jedinica, greska: greska });
+  });
+  var zadnje = '';
+  try { zadnje = PropertiesService.getScriptProperties().getProperty('PROD_ZADNJE_CISCENJE') || ''; } catch (eZ) {}
+  return { status: 'ok', kategorije: out, zadnje: zadnje };
+}
+
+function adminProdOcisti(token, kljucevi, potvrda) {
+  if (!isValidAdminToken_(token)) { return { status: 'error', message: 'Sesija je istekla — prijavite se ponovno.' }; }
+  if (potvrda !== PROD_POTVRDA_) { return { status: 'error', message: 'Nedostaje potvrda.' }; }
+  if (!kljucevi || !kljucevi.length) { return { status: 'error', message: 'Ništa nije odabrano.' }; }
+  var dozvoljeni = {};
+  prodKategorije_().forEach(function(c) { dozvoljeni[c.k] = true; });
+  var lock = LockService.getScriptLock();
+  lock.waitLock(30000);
+  var rez = [];
+  var backupUrl = '';
+  try {
+    var stamp = Utilities.formatDate(new Date(), 'Europe/Zagreb', 'yyyy-MM-dd HH-mm-ss');
+    var backup = null;
+    var dajBackup = function() {
+      if (!backup) { backup = prodSigurnosnaMapa_(stamp); backupUrl = backup.getUrl(); }
+      return backup;
+    };
+    kljucevi.forEach(function(k) {
+      if (!dozvoljeni[k]) { return; }
+      var obrisano = 0, greska = '', kopija = 0;
+      try {
+        // ---- 1) sigurnosna kopija (ako padne, preskoči brisanje ove kategorije) ----
+        try {
+          if (k === 'brojaci') {
+            var sviProps = PropertiesService.getScriptProperties().getProperties();
+            var sacuvaj = {};
+            Object.keys(sviProps).forEach(function(kk) {
+              if (/^(BROJ_|POSJETE_)/.test(kk)) { sacuvaj[kk] = sviProps[kk]; }
+            });
+            dajBackup().createFile('brojaci.json', JSON.stringify(sacuvaj, null, 2), MimeType.PLAIN_TEXT);
+            kopija = 1;
+          } else if (k !== 'driveMape' && k !== 'gmailOB') {
+            var imenaK = prodImenaTablica_(k);
+            if (imenaK.length) {
+              if (prodBrojRedaka_(imenaK) > 0) { kopija = prodKopirajTablice_(imenaK, dajBackup()); }
+            }
+          }
+        } catch (eB) {
+          rez.push({ k: k, obrisano: 0, greska: 'Sigurnosna kopija nije uspjela, ništa nije obrisano: ' + String(eB && eB.message || eB) });
+          return;
+        }
+        // ---- 2) brisanje ----
+        if (k === 'driveMape' || k === 'kalkMape') {
+          prodMapeZaKategoriju_(k).forEach(function(m) { obrisano += prodTrashDjecu_(m); });
+          if (k === 'kalkMape') { obrisano += prodOcistiRedke_(prodImenaTablica_('kalkMape')); }
+        } else if (k === 'gmailOB') {
+          var niti = prodGmailNiti_();
+          niti.forEach(function(t) { t.moveToTrash(); obrisano++; });
+        } else if (k === 'brojaci') {
+          var props = PropertiesService.getScriptProperties();
+          var sve = props.getProperties();
+          Object.keys(sve).forEach(function(kljuc) {
+            if (/^BROJ_(UPITNIK|ODBIJENICA|ANKETA)_\d{4}$/.test(kljuc)) { props.deleteProperty(kljuc); obrisano++; }
+            else if (/^BROJ_TEST_(UPITNIK|ODBIJENICA|ANKETA)$/.test(kljuc)) { props.setProperty(kljuc, 'false'); }
+          });
+          props.setProperty('POSJETE_COUNT', '0');
+          props.setProperty('POSJETE_SVEUKUPNO', '0');
+          props.setProperty('POSJETE_DANAS', '0');
+          props.setProperty('POSJETE_DANAS_DATUM', Utilities.formatDate(new Date(), 'Europe/Zagreb', 'yyyy-MM-dd'));
+        } else {
+          obrisano = prodOcistiRedke_(prodImenaTablica_(k));
+          if (k === 'problemi') { obrisano += prodOcistiMailove_(); }   // arhiva mailova (list "Mailovi") čisti se zajedno s problemima
+        }
+      } catch (e) { greska = String(e && e.message || e); }
+      rez.push({ k: k, obrisano: obrisano, greska: greska, kopija: kopija });
+    });
+    SpreadsheetApp.flush();
+    try {
+      PropertiesService.getScriptProperties().setProperty('PROD_ZADNJE_CISCENJE', stamp + ' — ' + kljucevi.join(', '));
+    } catch (eP) {}
+  } finally {
+    lock.releaseLock();
+  }
+  return { status: 'ok', rezultat: rez, sigurnosnaKopija: backupUrl };
 }
 
 // Ručno postavlja SLJEDEĆI broj (proizvoljan, ne nužno 1) za jednu od tri
@@ -12291,6 +12965,14 @@ function zabiljeziEvidencijuSlanja_(rowIndex, primatelji, kada, nazivPredloska, 
   if (Array.isArray(ostaliRaw)) {
     ostaliRaw.forEach(function(d) { if (d && d.name) { poslaniNazivi.push(d.name); } });
   }
+  var gotoviRaw = citajJson_('dokumenti_gotovi');
+  if (Array.isArray(gotoviRaw)) {
+    gotoviRaw.forEach(function(d) {
+      if (!d || !d.name) { return; }
+      if (d.cilj === 'interno') { arhiviraniNazivi.push(d.name + ' (interno, ne šalje se)'); }
+      else { poslaniNazivi.push(d.name); arhiviraniNazivi.push(d.name + ' (kopija)'); }
+    });
+  }
   var analiticki = citajJson_('dokument_analiticki_cjenik');
   if (analiticki && analiticki.name) { arhiviraniNazivi.push(analiticki.name); }
   var cjenikHr = citajJson_('dokument_cjenik_hrvatska');
@@ -12356,6 +13038,10 @@ function adminPosaljiPonudaMail(token, rowIndex, primatelji, predmet, tijelo, ko
     // Evidencija slanja — SAMO kod stvarnog slanja, ne smije srušiti slanje
     // ako zakaže (npr. INTRIX šifra još nije potvrđena).
     try { zabiljeziEvidencijuSlanja_(rowIndex, primatelji, new Date(), nazivPredloska, predmet, tijelo, jeHtml); } catch (errEvid) { /* zanemari */ }
+
+    // Gotovi dokumenti (od Claudea): izvorni direktorij → ARHIVA, preimenovan u "POSLANO - ime ponude".
+    var arhivirano_ = [];
+    try { arhivirano_ = arhivirajGotoveMape_(rowIndex).premjesteno; } catch (errArh) { /* ne smije srušiti slanje */ }
 
     // ISPRAVAK (22.9.2026., deveti krug — Sašin izričit zahtjev, TTD bug;
     // NADOGRAĐENO 23.9.2026. da vrijedi i za "Generiraj novu ponudu"): OVO
@@ -12428,7 +13114,7 @@ function adminPosaljiPonudaMail(token, rowIndex, primatelji, predmet, tijelo, ko
       }
     } catch (errTtd) { /* postavljanje datuma slanja ne smije srušiti već izvršeno slanje maila */ }
 
-    return { status: 'ok', poslanoNa: primatelji, kopijaSebi: !!kopijaSebi, datumSlanjaPrikaz: datumSlanjaPrikaz, datumSlanjaPrikazSek: datumSlanjaPrikazSek, datumIstekaPrikaz: datumIstekaPrikaz, rokDanaPostavljen: rokDanaPostavljen };
+    return { status: 'ok', arhivirano: arhivirano_, poslanoNa: primatelji, kopijaSebi: !!kopijaSebi, datumSlanjaPrikaz: datumSlanjaPrikaz, datumSlanjaPrikazSek: datumSlanjaPrikazSek, datumIstekaPrikaz: datumIstekaPrikaz, rokDanaPostavljen: rokDanaPostavljen };
   } catch (err) {
     return { status: 'error', message: 'Slanje ponude nije uspjelo: ' + err.message };
   }
@@ -13739,6 +14425,8 @@ function izracunajOcekivanoZaglavljeUpiti_() {
   header.push('Datum slanja obavijesti nadležnim poslovnicama (admin)');
   // NOVO (3.10.2026.) — vidi ADMIN_ONLY_FIELDS.datum_slanja_sve_poslovnice_obavijest.
   header.push('Datum slanja obavijesti svim poslovnicama (admin)');
+  // NOVO (10.10.2026.) — vidi ADMIN_ONLY_FIELDS.dokumenti_gotovi. Dodano na sam kraj.
+  header.push('Gotovi dokumenti (admin, JSON)');
   // (30.9.2026., ISPRAVAK ISTI DAN: stupac "Dokumenti uz pristupne podatke
   // (admin, JSON)" koji je ovdje kratko bio dodan uklonjen je zajedno s
   // ADMIN_ONLY_FIELDS.dokumenti_klijent_pristup gore — vidi napomenu ondje.
@@ -15305,6 +15993,7 @@ function brziPregled(token) {
   try { brojke.ankete = brziAnketeCitajSve_().length; } catch (e1) { brojke.ankete = 0; }
   try { brojke.odbijenice = brziOdbijeniceCitaj_().length; } catch (e2) { brojke.odbijenice = 0; }
   try { brojke.raskidi = raskidBrojOveGodine_(); } catch (e3) { brojke.raskidi = 0; }
+  try { brojke.problemi = problemiBrojOtvorenih_(); } catch (e4) { brojke.problemi = 0; }
   return { status: 'ok', brojke: brojke, kontakata: kontakata, zadnji: zadnji, dospjeli: dospjeli, nadolazeci: podsjetnici.filter(function(b) { return b.podsjetnik > danas; }).slice(0, 5), danas: danas, pinZadani: brziPinJeZadani_() };
 }
 
@@ -18208,4 +18897,1147 @@ function adminPismaArhivaBrisi(token, lozinka, rijec, stavke) {
     });
     return { status: 'ok', obrisano: obrisano, preskoceno: preskoceno };
   } finally { lock.releaseLock(); }
+}
+
+// ============================================================
+// PROBLEMI KLIJENATA (7.10.2026.)
+// Izgubljene/nedostavljene pošiljke, krivi obračun, reklamacije oštećenja itd. Prijavljuje klijent sam (javna stranica
+// InTime_PrijavaProblema.html → javniProblemPrijava) ILI Saša iz admina / s mobitela. Svaki problem ima broj (P-2026-001),
+// status Novo → U obradi → Riješeno, dnevnik bilješki, "Kako riješeno" i vezu na klijenta preko OIB-a.
+// Sheet "InTime_Problemi". Riješeni problemi ostaju u arhivi (ne brišu se; brisanje samo admin uz lozinku).
+// ============================================================
+var PROBLEMI_SHEET_ = 'InTime_Problemi';
+var PROBLEMI_HEADER_ = ['Broj', 'Datum prijave', 'Naziv klijenta', 'OIB', 'Kontakt osoba', 'Telefon', 'E-mail', 'Vrsta', 'Broj pošiljke', 'Opis', 'Status', 'Rok', 'Dnevnik', 'Kako riješeno', 'Datum rješenja', 'Zadnja promjena', 'Izvor', 'Služba', 'Preuzeo', 'Preuzeto u', 'Zadnji podsjetnik', 'Token', 'Zakačeno na (JSON)', 'Poslovnica', 'Zaduženi (JSON)', 'Token klijenta', 'Odredište'];
+// Vrste prigovora grupirane po službi koja ih po zadanom rješava (služba se može promijeniti u adminu: Problemi → Službe i usmjeravanje).
+// Prvih 5 naziva (Izgubljena…, Nedostavljena…, Krivi obračun…, Reklamacija oštećenja, Ostalo) ostaju isti kao prije — stari zapisi ostaju valjani.
+var PROBLEMI_GRUPE_ = [
+  { grupa: 'Dostava', sluzba: 'operativa', vrste: ['Izgubljena pošiljka', 'Nedostavljena pošiljka', 'Kašnjenje dostave', 'Promjena adrese dostave', 'Promjena primatelja', 'Dostava na pogrešnu adresu ili osobi', 'Prikup nije obavljen ili kasni', 'Nova dostava / novi termin', 'Ponašanje kurira'] },
+  { grupa: 'Šteta', sluzba: 'steta', vrste: ['Reklamacija oštećenja', 'Nedostaje sadržaj ili krađa', 'Zahtjev za naknadu štete'] },
+  { grupa: 'Račun i naplata', sluzba: 'financije', vrste: ['Krivi obračun računa', 'Dvostruka naplata', 'Neočekivani dodaci (gorivo, doplatak, težina)', 'Cjenik ili popust nije primijenjen', 'Storno / odobrenje računa', 'Otkupnina (pouzeće) nije isplaćena'] },
+  { grupa: 'Carina', sluzba: 'carina', vrste: ['Pošiljka zadržana na carini', 'Krive carinske naknade ili PDV', 'Nedostaje dokumentacija'] },
+  { grupa: 'Povrat', sluzba: 'operativa', vrste: ['Povrat pošiljke pošiljatelju', 'Povrat nije stigao ili je krivi'] },
+  { grupa: 'Tehničko', sluzba: 'it', vrste: ['Praćenje pošiljke pokazuje krivi status', 'Online booking ili naljepnica ne radi'] },
+  { grupa: 'Komercijala', sluzba: 'komercijala', vrste: ['Ponuda, ugovor ili promjena uvjeta', 'Komunikacija (nitko se ne javlja)'] },
+  { grupa: 'Posebne situacije', sluzba: 'operativa', vrste: ['Crni petak'] },
+  { grupa: 'Ostalo', sluzba: 'ostalo', vrste: ['Ostalo'] }
+];
+var PROBLEMI_VLASTITE_KLJUC_ = 'PROBLEMI_VLASTITE';   // vrste koje Saša sam dodaje u adminu: [{ naziv, sluzba }] — idu u grupu "Posebne situacije"
+// Sve grupe = ugrađene + Sašine vlastite vrste (dodane u grupu "Posebne situacije", s vlastitom zadanom službom).
+function problemiVlastite_() {
+  try { var x = JSON.parse(PropertiesService.getScriptProperties().getProperty(PROBLEMI_VLASTITE_KLJUC_) || '[]'); return Array.isArray(x) ? x.filter(function(v) { return v && v.naziv; }) : []; } catch (e) { return []; }
+}
+function problemiGrupe_() {
+  var vl = problemiVlastite_();
+  return PROBLEMI_GRUPE_.map(function(g) {
+    if (g.grupa !== 'Posebne situacije') { return { grupa: g.grupa, sluzba: g.sluzba, vrste: g.vrste, zadano: {}, vlastite: [] }; }
+    var zadano = {}, vrste = g.vrste.slice(), vlastite = [];
+    vl.forEach(function(v) { if (vrste.indexOf(v.naziv) === -1) { vrste.push(v.naziv); zadano[v.naziv] = v.sluzba || g.sluzba; vlastite.push(v.naziv); } });
+    return { grupa: g.grupa, sluzba: g.sluzba, vrste: vrste, zadano: zadano, vlastite: vlastite };
+  });
+}
+function problemiVrste_() { var l = []; problemiGrupe_().forEach(function(g) { g.vrste.forEach(function(v) { l.push(v); }); }); return l; }
+var PROBLEMI_STATUSI_ = ['Novo', 'U obradi', 'Riješeno'];
+// Vrste problema koje se tiču konkretne pošiljke — za njih je broj pošiljke OBAVEZAN kad prijavljuje klijent.
+var PROBLEMI_AWB_GRUPE_ = ['Dostava', 'Šteta', 'Carina', 'Povrat'];
+var PROBLEMI_AWB_VRSTE_ = ['Praćenje pošiljke pokazuje krivi status', 'Otkupnina (pouzeće) nije isplaćena'];
+
+function problemiVrsteSAwb_() {
+  var l = [];
+  problemiGrupe_().forEach(function(g) { if (PROBLEMI_AWB_GRUPE_.indexOf(g.grupa) !== -1) { g.vrste.forEach(function(v) { l.push(v); }); } });
+  PROBLEMI_AWB_VRSTE_.forEach(function(v) { if (l.indexOf(v) === -1) { l.push(v); } });
+  return l;
+}
+function problemiTrebaAwb_(vrsta) { return problemiVrsteSAwb_().indexOf(String(vrsta || '')) !== -1; }
+// AWB: velika slova, razmaci složeni; više pošiljki odvaja se zarezom ili razmakom.
+function problemiAwbNorm_(v) { return String(v == null ? '' : v).replace(/[\u0000-\u001F]/g, ' ').replace(/[;]+/g, ',').replace(/\s+/g, ' ').trim().toUpperCase().slice(0, 60); }
+// Broj pošiljke: točno 14 znakova = HR2000 + 8 znamenki (npr. HR200026507624). Samo „HR2000" = prazno; 8 znamenki → dopuni prefiks.
+function problemiBrojPosiljke_(v) {
+  var s = String(v == null ? '' : v).toUpperCase().replace(/[^A-Z0-9]/g, '');
+  if (s === 'HR2000') { return ''; }
+  if (s.indexOf('HR2000HR') === 0) { s = s.slice(6); }
+  if (/^\d{8}$/.test(s)) { s = 'HR2000' + s; }
+  return s.slice(0, 30);
+}
+var PROBLEM_PRACENJE_URL_ = 'https://intimeolb.azurewebsites.net/shipment-tracking/';
+
+function problemiBrojPosiljkeOk_(s) { return /^HR2000\d{8}$/.test(String(s || '')); }
+// Međunarodne pošiljke imaju HAWB broj (slova/znamenke, 8–20 znakova, bez fiksnog prefiksa). Tip: 'HR' (Hrvatska/Slovenija, HR2000…) ili 'INT'.
+function problemiHawbOcisti_(v) { return String(v == null ? '' : v).toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 30); }
+function problemiHawbOk_(s) { return /^[A-Z0-9]{8,20}$/.test(String(s || '')); }
+function problemiAwbLista_(v) { return problemiAwbNorm_(v).split(/[\s,]+/).filter(function(x) { return x; }); }
+var PROBLEMI_SLUZBE_DEFAULT_ = [
+  { id: 'operativa', naziv: 'Operativa / dostava', email: '' },
+  { id: 'steta', naziv: 'Reklamacije i šteta', email: '' },
+  { id: 'financije', naziv: 'Financije / naplata', email: '' },
+  { id: 'carina', naziv: 'Carina', email: '' },
+  { id: 'it', naziv: 'IT / tehnička podrška', email: '' },
+  { id: 'komercijala', naziv: 'Komercijala', email: '' },
+  { id: 'ostalo', naziv: 'Ostalo (Saša)', email: '' }
+];
+var PROBLEMI_RUTE_KLJUC_ = 'PROBLEMI_RUTE';
+var PROBLEM_SLUZBA_STRANICA_URL_ = 'https://sbatinac.github.io/intime-portal/InTime_ProblemSluzba.html';
+// javna stranica: klijent prati svoju prijavu (osobni token u poveznici)
+var PROBLEM_STATUS_STRANICA_URL_ = 'https://sbatinac.github.io/intime-portal/InTime_StatusProblema.html';
+
+function getOrCreateProblemiSheet_() {
+  var files = DriveApp.getFilesByName(PROBLEMI_SHEET_);
+  var ss = files.hasNext() ? SpreadsheetApp.open(files.next()) : SpreadsheetApp.create(PROBLEMI_SHEET_);
+  var sheet = ss.getSheets()[0];
+  if (sheet.getMaxColumns() < PROBLEMI_HEADER_.length) { sheet.insertColumnsAfter(sheet.getMaxColumns(), PROBLEMI_HEADER_.length - sheet.getMaxColumns()); }
+  if (sheet.getLastRow() === 0) {
+    sheet.appendRow(PROBLEMI_HEADER_);
+    sheet.getRange(1, 1, 1, PROBLEMI_HEADER_.length).setFontWeight('bold');
+    sheet.setFrozenRows(1);
+  } else if (String(sheet.getRange(1, PROBLEMI_HEADER_.length).getValue()) !== PROBLEMI_HEADER_[PROBLEMI_HEADER_.length - 1]) {
+    sheet.getRange(1, 1, 1, PROBLEMI_HEADER_.length).setValues([PROBLEMI_HEADER_]).setFontWeight('bold');   // stariji sheet (17 stupaca) → dodaj nove stupce
+  }
+  return sheet;
+}
+function problemiTxtCelija_(v) { v = String(v == null ? '' : v).replace(/^'/, ''); return v ? "'" + v : ''; }   // OIB/telefon/broj pošiljke kao tekst (čuva vodeće nule)
+function problemiTekst_(v, maks) { return String(v == null ? '' : v).replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, '').trim().slice(0, maks); }
+// ---- ARHIVA MAILOVA PO KLIJENTU (cijeli mail) ----
+// Svaki mail koji sustav pošalje u vezi prijave (potvrda klijentu, preuzeto/riješeno klijentu, mail zaposlenima, zaključeno)
+// sprema se u drugi list ("Mailovi") iste tablice InTime_Problemi, s punim HTML-om. Klijent = OIB, a ako ga nema, naziv firme.
+var PROBLEMI_MAIL_LIST_ = 'Mailovi';
+var PROBLEMI_MAIL_HEADER_ = ['Datum', 'Broj prijave', 'Klijent', 'OIB', 'Vrsta maila', 'Primatelji', 'Predmet', 'Mail (HTML)', 'Poslao'];
+function getOrCreateProblemiMailSheet_() {
+  var files = DriveApp.getFilesByName(PROBLEMI_SHEET_);
+  var ss = files.hasNext() ? SpreadsheetApp.open(files.next()) : SpreadsheetApp.create(PROBLEMI_SHEET_);
+  var sh = ss.getSheetByName(PROBLEMI_MAIL_LIST_);
+  if (!sh) {
+    sh = ss.insertSheet(PROBLEMI_MAIL_LIST_);
+    sh.appendRow(PROBLEMI_MAIL_HEADER_);
+    sh.getRange(1, 1, 1, PROBLEMI_MAIL_HEADER_.length).setFontWeight('bold');
+    sh.setFrozenRows(1);
+  }
+  return sh;
+}
+// meta: { broj, naziv, oib }. Nikad ne ruši slanje (try/catch).
+function problemiMailArhiviraj_(meta, vrsta, primatelji, predmet, plain, html, tko) {
+  try {
+    meta = meta || {};
+    var tijelo = String(html || ('<div style="font-family:Arial,sans-serif;white-space:pre-wrap;">' + pismaEsc_(plain || '') + '</div>'));
+    if (tijelo.length > 45000) { tijelo = tijelo.slice(0, 45000) + '<p>… (mail je skraćen u arhivi)</p>'; }
+    var oib = String(meta.oib || '').replace(/\D/g, '');
+    getOrCreateProblemiMailSheet_().appendRow([new Date(), String(meta.broj || ''), String(meta.naziv || ''), oib ? "'" + oib : '', String(vrsta || ''), String(primatelji || ''), String(predmet || '').slice(0, 300), tijelo, String(tko || 'Sustav')]);
+  } catch (e) { /* arhiva ne smije srušiti slanje */ }
+}
+// Pošalje mail i arhivira ga uz klijenta.
+function problemiMail_(meta, vrsta, tko, to, predmet, plain, opcije) {
+  posaljiMail_(to, predmet, plain, opcije);
+  problemiMailArhiviraj_(meta, vrsta, to, predmet, plain, opcije && opcije.htmlBody, tko);
+}
+function problemiKljucKlijenta_(oib, naziv) { var o = String(oib || '').replace(/\D/g, ''); return o ? 'o' + o : 'n' + String(naziv || '').trim().toLowerCase(); }
+// Popis mailova jednog klijenta (bez tijela), najnoviji prvi.
+function problemiMailoviKlijenta_(oib, naziv) {
+  var sh = getOrCreateProblemiMailSheet_(), last = sh.getLastRow();
+  if (last < 2) { return []; }
+  var kljuc = problemiKljucKlijenta_(oib, naziv);
+  var v = sh.getRange(2, 1, last - 1, 7).getValues(), tko = sh.getRange(2, 9, last - 1, 1).getValues(), izlaz = [];
+  for (var i = 0; i < v.length; i++) {
+    var r = v[i];
+    if (!r[1] || problemiKljucKlijenta_(r[3], r[2]) !== kljuc) { continue; }
+    izlaz.push({ red: i + 2, datumMs: (r[0] instanceof Date) ? r[0].getTime() : 0, datum: (r[0] instanceof Date) ? Utilities.formatDate(r[0], BRZI_TZ_, 'dd.MM.yyyy. HH:mm') : String(r[0] || ''),
+      broj: String(r[1]), vrsta: String(r[4] || ''), primatelji: String(r[5] || ''), predmet: String(r[6] || ''), tko: String(tko[i][0] || '') });
+  }
+  izlaz.sort(function(a, b) { return b.datumMs - a.datumMs; });
+  return izlaz.slice(0, 300);
+}
+function adminProblemMailovi(token, oib, naziv) {
+  if (!isValidAdminToken_(token)) { return pismaAuthGreska_(); }
+  return { status: 'ok', mailovi: problemiMailoviKlijenta_(oib, naziv) };
+}
+function adminProblemMailTijelo(token, red) {
+  if (!isValidAdminToken_(token)) { return pismaAuthGreska_(); }
+  red = parseInt(red, 10);
+  var sh = getOrCreateProblemiMailSheet_();
+  if (!(red >= 2 && red <= sh.getLastRow())) { return { status: 'error', message: 'Mail nije pronađen.' }; }
+  var r = sh.getRange(red, 1, 1, 9).getValues()[0];
+  return { status: 'ok', predmet: String(r[6] || ''), primatelji: String(r[5] || ''), html: String(r[7] || '') };
+}
+function problemiOdBroja_(sheet) {
+  var god = Utilities.formatDate(new Date(), BRZI_TZ_, 'yyyy'), maks = 0, last = sheet.getLastRow();
+  if (last > 1) {
+    sheet.getRange(2, 1, last - 1, 1).getValues().forEach(function(r) {
+      var m = /^P-(\d{4})-(\d+)$/.exec(String(r[0] || ''));
+      if (m && m[1] === god) { maks = Math.max(maks, parseInt(m[2], 10)); }
+    });
+  }
+  return 'P-' + god + '-' + ('000' + (maks + 1)).slice(-3);
+}
+function problemiRute_() {
+  var spremljeno = {};
+  try { spremljeno = JSON.parse(PropertiesService.getScriptProperties().getProperty(PROBLEMI_RUTE_KLJUC_) || '{}') || {}; } catch (e) { spremljeno = {}; }
+  var sluzbe = PROBLEMI_SLUZBE_DEFAULT_.map(function(d) {
+    var q = (spremljeno.sluzbe || []).filter(function(x) { return x && x.id === d.id; })[0];
+    return { id: d.id, naziv: (q && q.naziv) || d.naziv, email: (q && q.email) || '',
+      osobe: (q && Array.isArray(q.osobe)) ? q.osobe : [], centri: (q && Array.isArray(q.centri)) ? q.centri : [] };
+  });
+  var rute = {};
+  problemiGrupe_().forEach(function(g) {
+    g.vrste.forEach(function(v) {
+      var id = (spremljeno.rute || {})[v];
+      rute[v] = sluzbe.some(function(x) { return x.id === id; }) ? id : (g.zadano[v] || g.sluzba);
+    });
+  });
+  var rok = parseInt(spremljeno.rokSati, 10);
+  if (!(rok >= 1 && rok <= 168)) { rok = 4; }
+  var poslovnice = {};
+  if (spremljeno.poslovnice && typeof spremljeno.poslovnice === 'object') {
+    Object.keys(spremljeno.poslovnice).forEach(function(g) { var l = spremljeno.poslovnice[g]; if (Array.isArray(l) && l.length) { poslovnice[g] = l.map(String).slice(0, 2); } });
+  }
+  return { sluzbe: sluzbe, rute: rute, rokSati: rok, eskalacija: spremljeno.eskalacija !== false, poslovnice: poslovnice, sluzbaAuto: false, poluAuto: true };   // od 10.10.2026. uvijek RUČNO slanje (prekidači su maknuti): prijava se upiše, a Saša šalje preko „✉ Mail…"
+}
+// Zaduženi na problemu: JSON [{id, n}] (n = ime u trenutku dodjele), najviše 2 osobe.
+function problemiZaduzeni_(v) {
+  try { var x = JSON.parse(String(v || '[]')); return Array.isArray(x) ? x.filter(function(z) { return z && z.id; }).map(function(z) { return { id: String(z.id), n: String(z.n || '') }; }).slice(0, 2) : []; } catch (e) { return []; }
+}
+function problemiZaduzeniTekst_(l) { return (l || []).map(function(z) { return z.n; }).filter(Boolean).join(' i '); }
+// Poslovnica = centar iz „Logistički centri i servisi" (naziv se mora točno poklapati; javno vrsta „centar" i „vanjski izvršitelj" — klijentu se prikazuju samo kao gradovi, bez oznake da su vanjski; 10.10.2026.).
+function problemiPoslovnicaIspravna_(v, imenik, javno) {
+  v = problemiTekst_(v, 80).toLowerCase(); if (!v) { return ''; }
+  var c = imenik.centri.filter(function(x) { return x.grad.toLowerCase() === v && (!javno || x.vrsta === 'centar' || x.vrsta === 'vanjski'); })[0];
+  return c ? c.grad : '';
+}
+// Tko je zadužen: 1) ručno odabrane osobe, 2) zadane osobe poslovnice (Službe i usmjeravanje), 3) nitko (ide služba).
+function problemiRazrijesiZaduzene_(ids, poslovnica, rute, imenik) {
+  var pick = function(lst) {
+    var out = [];
+    (lst || []).forEach(function(id) {
+      var o = imenik.osobe.filter(function(x) { return x.id === String(id); })[0];
+      if (o && out.length < 2 && !out.some(function(z) { return z.id === o.id; })) { out.push({ id: o.id, n: o.naziv }); }
+    });
+    return out;
+  };
+  var r = pick(ids);
+  if (r.length) { return { zaduzeni: r, izvor: 'rucno' }; }
+  if (poslovnica && rute.poslovnice[poslovnica]) { r = pick(rute.poslovnice[poslovnica]); if (r.length) { return { zaduzeni: r, izvor: 'poslovnica' }; } }
+  return { zaduzeni: [], izvor: '' };
+}
+// Kome ide mail: zakačeno → zaduženi (e-mail se uzima iz imenika u trenutku slanja) → služba.
+function problemiOdrediPrimatelje_(zak, zaduzeni, sluzbaId, rute, imenik, poslovnica) {
+  if (zak && zak.e) { return { tip: 'zakaceno', naziv: zak.l, email: zak.e, bezMaila: [] }; }
+  var em = [], nazivi = [], bez = [];
+  (zaduzeni || []).forEach(function(z) {
+    var o = imenik.osobe.filter(function(x) { return x.id === z.id; })[0], e = o ? String(o.email || '').trim().toLowerCase() : '';
+    nazivi.push(o ? o.naziv : z.n);
+    if (e && /^[^\s@,;]+@[^\s@,;]+\.[^\s@,;]{2,}$/.test(e)) { if (em.indexOf(e) === -1) { em.push(e); } } else { bez.push(o ? o.naziv : z.n); }
+  });
+  if (em.length) { return { tip: 'zaduzeni', naziv: nazivi.join(' i '), email: em.join(', '), bezMaila: bez }; }
+  // Nema zaduženog → AUTOMATSKI na kontakte poslovnice/servisa (e-mail centra + osobe-kontakti iz „Logistički centri i servisi").
+  if (poslovnica) {
+    var kp = problemiPrimatelji_({ centri: [poslovnica] }, imenik);
+    if (kp.emails.length) { return { tip: 'poslovnica', naziv: 'kontakti poslovnice ' + poslovnica, email: kp.emails.join(', '), bezMaila: bez }; }
+  }
+  // Nema zaduženog ni kontakata poslovnice → NE šalje se nikome (ni "svima"): problem ostaje kod Saše dok ga ne dodijeli.
+  // Služba dobiva problem samo ako je to izričito uključeno (Službe i usmjeravanje → „Šalji i službi kad nema zaduženog").
+  var sl0 = rute.sluzbe.filter(function(x) { return x.id === sluzbaId; })[0] || { naziv: '', email: '', osobe: [], centri: [] };
+  if (!rute.sluzbaAuto) { return { tip: 'nitko', naziv: '', email: '', bezMaila: bez }; }
+  return { tip: 'sluzba', naziv: sl0.naziv, email: problemiPrimatelji_(sl0, imenik).emails.join(', '), bezMaila: bez };
+}
+function problemiSluzbaNaziv_(id, rute) {
+  rute = rute || problemiRute_();
+  var x = rute.sluzbe.filter(function(q) { return q.id === id; })[0];
+  return x ? x.naziv : '';
+}
+function problemiZakaceno_(v) {
+  try { var x = JSON.parse(String(v || '')); return { l: String(x.l || ''), e: String(x.e || '') }; } catch (e) { return { l: '', e: '' }; }
+}
+function problemiRed_(r, i, rute) {
+  var d = r[1], dn = [];
+  try { dn = JSON.parse(String(r[12] || '[]')); if (!Array.isArray(dn)) { dn = []; } } catch (e) { dn = []; }
+  var dr = r[14], pu = r[19], sl = String(r[17] || ''), st = String(r[10] || 'Novo'), pr = String(r[18] || '');
+  return {
+    rowIndex: i + 2, broj: String(r[0] || ''),
+    datum: (d instanceof Date) ? Utilities.formatDate(d, BRZI_TZ_, 'dd.MM.yyyy. HH:mm') : String(d || ''), datumMs: (d instanceof Date) ? d.getTime() : 0,
+    naziv: String(r[2] || ''), oib: String(r[3] || ''), kontakt: String(r[4] || ''), telefon: String(r[5] || ''), email: String(r[6] || ''),
+    vrsta: String(r[7] || ''), awb: String(r[8] || ''), opis: String(r[9] || ''), status: st,
+    rok: (r[11] instanceof Date) ? Utilities.formatDate(r[11], BRZI_TZ_, 'yyyy-MM-dd') : String(r[11] || ''),
+    dnevnik: dn, kakoRijeseno: String(r[13] || ''),
+    datumRjesenja: (dr instanceof Date) ? Utilities.formatDate(dr, BRZI_TZ_, 'dd.MM.yyyy. HH:mm') : String(dr || ''),
+    izvor: String(r[16] || ''),
+    sluzba: sl, sluzbaNaziv: problemiSluzbaNaziv_(sl, rute), preuzeo: pr, zakaceno: problemiZakaceno_(r[22]).l,
+    poslovnica: String(r[23] || ''), odrediste: String(r[26] || ''), trebaAwb: problemiTrebaAwb_(String(r[7] || '')), zaduzeni: problemiZaduzeni_(r[24]), zaduzeniTekst: problemiZaduzeniTekst_(problemiZaduzeni_(r[24])),
+    preuzetoU: (pu instanceof Date) ? Utilities.formatDate(pu, BRZI_TZ_, 'dd.MM.yyyy. HH:mm') : String(pu || ''),
+    cekaSati: (st === 'Novo' && !pr && (d instanceof Date)) ? Math.max(0, Math.floor((Date.now() - d.getTime()) / 3600000)) : 0
+  };
+}
+// Svi problemi, najnoviji prvi. Dodaje: koliko problema ima isti klijent (po OIB-u ili nazivu) i je li firma u sustavu (faza).
+function problemiCitaj_() {
+  var sheet = getOrCreateProblemiSheet_(), last = sheet.getLastRow();
+  if (last < 2) { return []; }
+  var rute = problemiRute_();
+  var v = sheet.getRange(2, 1, last - 1, PROBLEMI_HEADER_.length).getValues();
+  var lista = v.map(function(r, i) { return problemiRed_(r, i, rute); }).filter(function(p) { return p.broj; });
+  var kljuc = function(p) { return p.oib ? 'o' + p.oib : 'n' + p.naziv.toLowerCase(); };
+  var brojac = {};
+  lista.forEach(function(p) { brojac[kljuc(p)] = (brojac[kljuc(p)] || 0) + 1; });
+  var faze = {};
+  try { brziCitajUpite_().forEach(function(u) { if (u.oib) { faze[String(u.oib).replace(/\D/g, '')] = u.faza; } }); } catch (e) { faze = {}; }
+  lista.forEach(function(p) { p.ukupnoKlijent = brojac[kljuc(p)]; p.faza = p.oib ? (faze[p.oib] || '') : ''; });
+  lista.sort(function(a, b) { return b.datumMs - a.datumMs; });
+  return lista;
+}
+function problemiBrojOtvorenih_() {
+  var sheet = getOrCreateProblemiSheet_(), last = sheet.getLastRow();
+  if (last < 2) { return 0; }
+  return sheet.getRange(2, 11, last - 1, 1).getValues().filter(function(r) { return r[0] && r[0] !== 'Riješeno'; }).length;
+}
+// Odredište pošiljke (10.10.2026.): mjesto + poštanski broj + zona iz baze "InTime_Zone" (Grad, Postanski, Zona).
+// Vraća {tekst:'Zagreb, 10000 · zona 1', zona, grad, pbr} ili null ako par grad+poštanski broj ne postoji u bazi.
+function problemiZonaTekst_(z) { z = String(z == null ? '' : z).trim(); return !z ? '' : (/^\d+$/.test(z) ? 'zona ' + z : z); }
+function problemiOdredisteNadji_(grad, pbr) {
+  grad = String(grad || '').trim().toLowerCase(); pbr = String(pbr || '').trim();
+  if (!grad) { return null; }
+  var sheet = getOrCreateZoneSheet(), last = sheet.getLastRow();
+  if (last < 2) { return null; }
+  var d = sheet.getRange(2, 1, last - 1, 3).getValues();
+  for (var i = 0; i < d.length; i++) {
+    if (String(d[i][0] || '').trim().toLowerCase() !== grad) { continue; }
+    var pb = String(d[i][1] || '').trim();
+    if (pbr && pb !== pbr) { continue; }
+    var zona = String(d[i][2] || '').trim();
+    var g1 = String(d[i][0]).trim();
+    return { grad: g1, pbr: pb, zona: zona, tekst: g1 + ', ' + pb + (zona ? ' · ' + problemiZonaTekst_(zona) : '') };
+  }
+  return null;
+}
+function problemiValidiraj_(podaci, javno) {
+  podaci = podaci || {};
+  var p = {
+    naziv: problemiTekst_(podaci.naziv, 120), oib: String(podaci.oib || '').replace(/\D/g, ''), kontakt: problemiTekst_(podaci.kontakt, 80),
+    telefon: problemiTekst_(podaci.telefon, 30), email: problemiTekst_(podaci.email, 120).toLowerCase(), vrsta: problemiTekst_(podaci.vrsta, 40),
+    awbTip: (String(podaci.awbTip || '').toUpperCase() === 'INT' ? 'INT' : 'HR'), awb: (String(podaci.awbTip || '').toUpperCase() === 'INT' ? problemiHawbOcisti_(podaci.awb) : problemiBrojPosiljke_(podaci.awb)), opis: problemiTekst_(podaci.opis, 3000), rok: problemiTekst_(podaci.rok, 10),
+    poslovnica: problemiTekst_(podaci.poslovnica, 80),
+    odredisteGrad: problemiTekst_(podaci.odredisteGrad, 80), odredistePbr: problemiTekst_(podaci.odredistePbr, 12), odrediste: '',
+    zaduzeniIds: (!javno && Array.isArray(podaci.zaduzeni)) ? podaci.zaduzeni.map(function(x) { return String(x).slice(0, 60); }).filter(Boolean).slice(0, 2) : []
+  };
+  if (!p.naziv) { return { greska: 'Upišite naziv firme.' }; }
+  if (problemiVrste_().indexOf(p.vrsta) === -1) { return { greska: 'Odaberite vrstu problema.' }; }
+  if (javno && problemiTrebaAwb_(p.vrsta) && !p.awb) { return { greska: 'Upišite broj pošiljke — bez njega ne možemo pronaći pošiljku.' }; }
+  if (p.awb && p.awbTip === 'INT' && !problemiHawbOk_(p.awb)) { return { greska: 'HAWB broj mora imati 8 do 20 znakova (slova i znamenke).' }; }
+  if (p.awb && p.awbTip !== 'INT' && !problemiBrojPosiljkeOk_(p.awb)) { return { greska: 'Broj pošiljke za Hrvatsku/Sloveniju mora imati točno 14 znakova: HR2000 i još 8 znamenki (npr. HR200026507624).' }; }
+  if (!p.opis || p.opis.length < (javno ? 10 : 3)) { return { greska: 'Opišite problem (nekoliko rečenica).' }; }
+  if (javno && !p.oib) { return { greska: 'Upišite OIB tvrtke (11 znamenki).' }; }
+  if (p.oib && !/^\d{11}$/.test(p.oib)) { return { greska: javno ? 'OIB mora imati 11 znamenki.' : 'OIB mora imati 11 znamenki (ili ga ostavite praznog).' }; }
+  if (p.oib && javno && !oibIspravan_(p.oib)) { return { greska: 'OIB nije ispravan — provjerite ga.' }; }
+  if (p.email && !/^[^\s@,;]+@[^\s@,;]+\.[^\s@,;]{2,}$/.test(p.email)) { return { greska: 'E-mail adresa nije ispravna.' }; }
+  if (javno && !p.email) { return { greska: 'Upišite e-mail adresu na koju Vam možemo odgovoriti.' }; }
+  if (javno && !p.kontakt) { return { greska: 'Upišite ime i prezime osobe za kontakt.' }; }
+  if (javno && String(p.telefon || '').replace(/\D/g, '').length < 8) { return { greska: 'Upišite broj mobitela (barem 8 znamenki).' }; }
+  if (p.rok && !/^\d{4}-\d{2}-\d{2}$/.test(p.rok)) { p.rok = ''; }
+  if (p.odredisteGrad) {
+    var od = problemiOdredisteNadji_(p.odredisteGrad, p.odredistePbr);
+    if (!od) { return { greska: 'Odaberite mjesto odredišta s popisa (ili obrišite polje).' }; }
+    p.odrediste = od.tekst;
+  }
+  return { p: p };
+}
+function problemiNovaBiljeska_(dn, tko, tekst) {
+  dn.push({ t: Utilities.formatDate(new Date(), BRZI_TZ_, 'dd.MM.yyyy. HH:mm'), tko: tko, tekst: problemiTekst_(tekst, 1500) });
+  if (dn.length > 200) { dn = dn.slice(dn.length - 200); }
+  return dn;
+}
+function problemiDodaj_(podaci, izvor, javno) {
+  var v = problemiValidiraj_(podaci, javno);
+  if (v.greska) { return { status: 'error', message: v.greska }; }
+  var p = v.p;
+  var lock = LockService.getScriptLock();
+  if (!lock.tryLock(20000)) { return { status: 'error', message: 'Sustav je zauzet, pokušajte ponovno za nekoliko sekundi.' }; }
+  try {
+    var sheet = getOrCreateProblemiSheet_();
+    var broj = problemiOdBroja_(sheet);
+    var dn = problemiNovaBiljeska_([], izvor, izvor === 'Klijent' ? 'Prijava zaprimljena preko web stranice.' : 'Problem unesen (' + izvor + ').');
+    var rute = problemiRute_(), sluzba = rute.rute[p.vrsta] || 'ostalo';
+    var token = Utilities.getUuid().replace(/-/g, '').slice(0, 24);
+    var imenik = problemiImenik_(), ktoken = Utilities.getUuid().replace(/-/g, '').slice(0, 24);
+    p.poslovnica = problemiPoslovnicaIspravna_(p.poslovnica, imenik, javno);
+    var zad = problemiRazrijesiZaduzene_(p.zaduzeniIds, rute.poluAuto ? '' : p.poslovnica, rute, imenik);
+    sheet.appendRow([broj, new Date(), p.naziv, problemiTxtCelija_(p.oib), p.kontakt, problemiTxtCelija_(p.telefon), p.email, p.vrsta, problemiTxtCelija_(p.awb), p.opis, 'Novo', p.rok, JSON.stringify(dn), '', '', new Date(), izvor, sluzba, '', '', '', token, '', p.poslovnica, zad.zaduzeni.length ? JSON.stringify(zad.zaduzeni) : '', ktoken, p.odrediste || '']);
+    return { status: 'ok', broj: broj, podaci: p, sluzba: sluzba, token: token, zaduzeni: zad.zaduzeni, zaduzeniIzvor: zad.izvor, ktoken: ktoken };
+  } finally { lock.releaseLock(); }
+}
+// Izmjena jednog retka pod zaključavanjem; fn(red, sheet, rowIndex) vraća {status:'error',message} ili popunjava red i vraća null.
+function problemiIzmijeni_(broj, fn) {
+  broj = String(broj || '').trim();
+  var lock = LockService.getScriptLock();
+  if (!lock.tryLock(20000)) { return { status: 'error', message: 'Sustav je zauzet, pokušajte ponovno.' }; }
+  try {
+    var sheet = getOrCreateProblemiSheet_(), last = sheet.getLastRow();
+    if (last < 2) { return { status: 'error', message: 'Problem ne postoji.' }; }
+    var brojevi = sheet.getRange(2, 1, last - 1, 1).getValues(), ri = -1;
+    for (var i = 0; i < brojevi.length; i++) { if (String(brojevi[i][0]) === broj) { ri = i + 2; break; } }
+    if (ri === -1) { return { status: 'error', message: 'Problem ne postoji (možda je obrisan).' }; }
+    var red = sheet.getRange(ri, 1, 1, PROBLEMI_HEADER_.length).getValues()[0];
+    var greska = fn(red);
+    if (greska) { return greska; }
+    red[15] = new Date();
+    var zapis = red.slice();
+    [3, 5, 8].forEach(function(k) { zapis[k] = problemiTxtCelija_(zapis[k]); });
+    sheet.getRange(ri, 1, 1, PROBLEMI_HEADER_.length).setValues([zapis]);
+    return { status: 'ok', problem: problemiRed_(red, ri - 2) };
+  } finally { lock.releaseLock(); }
+}
+function problemiDnevnikRed_(red) { try { var x = JSON.parse(String(red[12] || '[]')); return Array.isArray(x) ? x : []; } catch (e) { return []; } }
+function problemiBiljeska_(broj, tekst, tko) {
+  tekst = problemiTekst_(tekst, 1500);
+  if (!tekst) { return { status: 'error', message: 'Upišite bilješku.' }; }
+  return problemiIzmijeni_(broj, function(red) { red[12] = JSON.stringify(problemiNovaBiljeska_(problemiDnevnikRed_(red), tko, tekst)); return null; });
+}
+// ---- Obavijest klijentu o napretku (preuzeto / riješeno) + poveznica na stranicu statusa ----
+function problemiStatusPoveznica_(broj, ktoken) { return PROBLEM_STATUS_STRANICA_URL_ + '?p=' + encodeURIComponent(broj) + '&k=' + encodeURIComponent(ktoken); }
+// Vraća poveznicu; ako stari redak nema token klijenta, izdaje ga (red[25]) — pozivatelj sprema red.
+function problemiKlijentPoveznica_(red) {
+  if (!red[25]) { red[25] = Utilities.getUuid().replace(/-/g, '').slice(0, 24); }
+  return problemiStatusPoveznica_(String(red[0] || ''), String(red[25]));
+}
+// dogadjaj: 'preuzeto' | 'rijeseno'. Nikad ne ruši radnju (try/catch); vraća true ako je mail poslan.
+function problemiObavijestiKlijenta_(red, dogadjaj) {
+  try {
+    var em = String(red[6] || '').trim();
+    if (!/^[^\s@,;]+@[^\s@,;]+\.[^\s@,;]{2,}$/.test(em)) { return false; }
+    var broj = String(red[0] || ''), vrsta = String(red[7] || ''), kontakt = String(red[4] || ''), link = problemiKlijentPoveznica_(red);
+    var rijeseno = dogadjaj === 'rijeseno';
+    var predmet = '[' + broj + '] ' + (rijeseno ? 'Vaš problem je riješen' : 'Vaš problem je preuzet u obradu') + ' — IN TIME';
+    var poruka = rijeseno
+      ? 'Vaš problem (' + vrsta + ') označen je kao riješen. Ako smatrate da nije, odgovorite na ovaj e-mail pa ćemo ga ponovno otvoriti.'
+      : 'Naš djelatnik preuzeo je Vaš problem (' + vrsta + ') i radi na njemu. Javit ćemo Vam se čim imamo informaciju.';
+    problemiMail_({ broj: broj, naziv: String(red[2] || ''), oib: String(red[3] || '') }, rijeseno ? 'Klijentu — riješeno' : 'Klijentu — preuzeto', 'Sustav', em, predmet, 'Poštovani, ' + poruka + ' Status prijave ' + broj + ': ' + link + ' IN TIME d.o.o.', {
+      name: 'IN TIME d.o.o.',
+      htmlBody: '<div style="font-family:Arial,sans-serif;max-width:640px;margin:0 auto;color:#1a1a1a;">' +
+        '<img src="' + EMAIL_HEADER_IMG + '" alt="In Time d.o.o." style="width:100%;max-width:640px;height:auto;display:block;">' +
+        '<div style="padding:24px;"><p>Poštovani' + (kontakt ? ' ' + pismaEsc_(kontakt) : '') + ',</p>' +
+        '<p style="background:' + (rijeseno ? '#e8f5e9' : '#fff4e5') + ';border-left:5px solid ' + (rijeseno ? '#2e7d32' : '#f57c00') + ';padding:10px 14px;"><b>' + (rijeseno ? '✓ Problem je riješen' : '✋ Problem je preuzet u obradu') + '</b> · ' + pismaEsc_(broj) + '<br>' + pismaEsc_(poruka) + '</p>' +
+        '<p><a href="' + link + '" style="display:inline-block;background:#e4161b;color:#ffffff;text-decoration:none;font-weight:700;padding:11px 20px;border-radius:8px;">Pogledaj status prijave</a></p>' +
+        '<p style="color:#555;">S poštovanjem,<br>IN TIME d.o.o.</p></div></div>'
+    });
+    return true;
+  } catch (e) { return false; }
+}
+
+// Postavlja status na retku (zajedničko za admin, mobitel i stranicu službe). Vraća {status:'error',...} ili null.
+function problemiPostaviStatus_(red, status, kakoRijeseno, tko) {
+  var stari = String(red[10] || 'Novo'), dn = problemiDnevnikRed_(red), sad = new Date();
+  if (stari === status && status !== 'Riješeno') { return { status: 'error', message: 'Problem već ima taj status.' }; }
+  red[10] = status;
+  if (status === 'Riješeno') {
+    red[13] = kakoRijeseno; red[14] = sad; dn = problemiNovaBiljeska_(dn, tko, kakoRijeseno ? 'RIJEŠENO: ' + kakoRijeseno : 'RIJEŠENO (bez napomene o rješenju)');
+    if (!red[18]) { red[18] = tko; red[19] = sad; }
+  } else {
+    if (stari === 'Riješeno') { red[13] = ''; red[14] = ''; }
+    if (status === 'U obradi' && !red[18]) { red[18] = tko; red[19] = sad; }
+    if (status === 'Novo') { red[18] = ''; red[19] = ''; red[20] = ''; }
+    dn = problemiNovaBiljeska_(dn, tko, stari === 'Riješeno' ? 'Ponovno otvoreno — status: ' + status : 'Status: ' + status);
+  }
+  if ((status === 'U obradi' && stari === 'Novo') || (status === 'Riješeno' && stari !== 'Riješeno')) {
+    var dog = status === 'Riješeno' ? 'rijeseno' : 'preuzeto';
+    if (problemiObavijestiKlijenta_(red, dog)) { dn = problemiNovaBiljeska_(dn, 'Sustav', 'Klijentu poslana obavijest (' + (dog === 'rijeseno' ? 'riješeno' : 'preuzeto u obradu') + ') s poveznicom na status.'); }
+  }
+  red[12] = JSON.stringify(dn);
+  return null;
+}
+function problemiStatus_(broj, status, kakoRijeseno, tko) {
+  status = String(status || '');
+  if (PROBLEMI_STATUSI_.indexOf(status) === -1) { return { status: 'error', message: 'Nepoznat status.' }; }
+  kakoRijeseno = problemiTekst_(kakoRijeseno, 2000);
+  return problemiIzmijeni_(broj, function(red) { return problemiPostaviStatus_(red, status, kakoRijeseno, tko); });
+}
+function problemiRok_(broj, rok, tko) {
+  rok = problemiTekst_(rok, 10);
+  if (rok && !/^\d{4}-\d{2}-\d{2}$/.test(rok)) { return { status: 'error', message: 'Neispravan datum.' }; }
+  return problemiIzmijeni_(broj, function(red) {
+    red[11] = rok; red[12] = JSON.stringify(problemiNovaBiljeska_(problemiDnevnikRed_(red), tko, rok ? 'Rok za nastavak: ' + rok.split('-').reverse().join('.') + '.' : 'Rok uklonjen.'));
+    return null;
+  });
+}
+
+// ---- Admin ----
+function problemiListaOdgovor_() {
+  var rute = problemiRute_(), imenik = problemiImenik_();
+  return { status: 'ok', problemi: problemiCitaj_(), vrste: problemiVrste_(), grupe: problemiGrupe_().map(function(g) { return { grupa: g.grupa, vrste: g.vrste }; }), statusi: PROBLEMI_STATUSI_, sluzbe: rute.sluzbe.map(function(x) { return { id: x.id, naziv: x.naziv, imaEmail: problemiPrimatelji_(x, imenik).emails.length > 0 }; }), rokSati: rute.rokSati,
+    osobe: imenik.osobe.map(function(o) { return { id: o.id, naziv: o.naziv, funkcija: o.funkcija, imaEmail: !!o.email }; }),
+    razlozi: PROBLEMI_RAZLOZI_ZAKLJUCKA_, awbVrste: problemiVrsteSAwb_(), recenice: problemiRecenice_(), poluAuto: rute.poluAuto === true,
+    poslovnice: imenik.centri.filter(function(c) { return c.vrsta !== 'vanjski'; }).map(function(c) { return { naziv: c.grad, vrsta: c.vrsta, zadaniIds: (rute.poslovnice[c.grad] || []), zadani: (rute.poslovnice[c.grad] || []).map(function(id) { var o = imenik.osobe.filter(function(x) { return x.id === id; })[0]; return o ? o.naziv : ''; }).filter(Boolean) }; }) };
+}
+function adminProblemiLista(token) {
+  if (!isValidAdminToken_(token)) { return pismaAuthGreska_(); }
+  return problemiListaOdgovor_();
+}
+function adminProblemDodaj(token, podaci) {
+  if (!isValidAdminToken_(token)) { return pismaAuthGreska_(); }
+  var r = problemiDodaj_(podaci, 'Admin', false);
+  if (r.status !== 'ok') { return r; }
+  var u = problemiPoslijeDodavanja_(r, 'Admin');
+  return { status: 'ok', broj: r.broj, usmjereno: u.poslano ? u.sluzba.naziv : '' };
+}
+function adminProblemBiljeska(token, broj, tekst) { if (!isValidAdminToken_(token)) { return pismaAuthGreska_(); } return problemiBiljeska_(broj, tekst, 'Admin'); }
+function adminProblemStatus(token, broj, status, kakoRijeseno) { if (!isValidAdminToken_(token)) { return pismaAuthGreska_(); } return problemiStatus_(broj, status, kakoRijeseno, 'Admin'); }
+function adminProblemRok(token, broj, rok) { if (!isValidAdminToken_(token)) { return pismaAuthGreska_(); } return problemiRok_(broj, rok, 'Admin'); }
+function adminProblemBrisi(token, broj, lozinka, rijec) {
+  if (!isValidAdminToken_(token)) { return pismaAuthGreska_(); }
+  if (String(rijec || '').trim() !== 'BRISATI') { return { status: 'error', message: 'Upiši riječ BRISATI velikim slovima.' }; }
+  if (!provjeriAdminLozinku_(lozinka)) { return { status: 'error', message: 'Pogrešna admin lozinka.' }; }
+  broj = String(broj || '').trim();
+  var lock = LockService.getScriptLock();
+  if (!lock.tryLock(20000)) { return { status: 'error', message: 'Sustav je zauzet, pokušaj ponovno.' }; }
+  try {
+    var sheet = getOrCreateProblemiSheet_(), last = sheet.getLastRow();
+    if (last < 2) { return { status: 'error', message: 'Problem ne postoji.' }; }
+    var b = sheet.getRange(2, 1, last - 1, 1).getValues();
+    for (var i = 0; i < b.length; i++) { if (String(b[i][0]) === broj) { sheet.deleteRow(i + 2); return { status: 'ok' }; } }
+    return { status: 'error', message: 'Problem ne postoji.' };
+  } finally { lock.releaseLock(); }
+}
+
+// ---- Gotove rečenice za ručni mail (generator maila na kartici problema) ----
+var PROBLEMI_RECENICE_KLJUC_ = 'PROBLEMI_RECENICE';
+
+var PROBLEMI_RECENICE_DEFAULT_ = [
+  'Poštovani, molim vas da pogledate ovaj slučaj i javite klijentu do kraja dana.',
+  'Hitno je — klijent čeka odgovor.',
+  'Molim provjeru statusa pošiljke u sustavu i povratnu informaciju.',
+  'Molim provjeru je li pošiljka dostavljena i potvrdu dostave (POD).',
+  'Molim da kontaktirate kurira i javite što je utvrđeno.',
+  'Molim provjeru obračuna / računa i pripremu ispravka.',
+  'Klijent traži povrat / storno — molim obradu.',
+  'Ako nije vaša nadležnost, javite mi kome da proslijedim.',
+  'Nakon rješavanja kliknite „Riješeno" i upišite što je učinjeno.',
+  'Hvala.'
+];
+
+function problemiRecenice_() {
+  try {
+    var x = JSON.parse(PropertiesService.getScriptProperties().getProperty(PROBLEMI_RECENICE_KLJUC_) || 'null');
+    if (Array.isArray(x) && x.length) { return x.map(function(t) { return String(t); }); }
+  } catch (e) { /* vrati zadano */ }
+  return PROBLEMI_RECENICE_DEFAULT_.slice();
+}
+function adminProblemRecenice(token) { if (!isValidAdminToken_(token)) { return pismaAuthGreska_(); } return { status: 'ok', recenice: problemiRecenice_() }; }
+function adminProblemRecenice_Spremi(token, lista) {
+  if (!isValidAdminToken_(token)) { return pismaAuthGreska_(); }
+  var cist = [];
+  (Array.isArray(lista) ? lista : []).forEach(function(t) {
+    t = problemiTekst_(String(t == null ? '' : t).replace(/\s+/g, ' '), 300);
+    if (t && cist.indexOf(t) === -1 && cist.length < 40) { cist.push(t); }
+  });
+  var sp = PropertiesService.getScriptProperties();
+  if (cist.length) { sp.setProperty(PROBLEMI_RECENICE_KLJUC_, JSON.stringify(cist)); } else { sp.deleteProperty(PROBLEMI_RECENICE_KLJUC_); }
+  return { status: 'ok', recenice: problemiRecenice_() };
+}
+// Ručno slanje problema: tekst ispred (složen od gotovih rečenica) + podaci o problemu + gumbi Preuzimam/Riješeno.
+// cilj = { sluzbe: [id…], osobe: [id…], emails: 'a@b.hr, …' } — barem jedan primatelj.
+function problemiPosaljiRucno_(broj, uvod, cilj, tko) {
+  cilj = cilj || {};
+  uvod = String(uvod == null ? '' : uvod).replace(/\r/g, '').replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, '').replace(/\n{3,}/g, '\n\n').trim().slice(0, 2000);
+  if (!problemiOgranici_('PROBLEM_RUCNI_' + tko, 80, 3600)) { return { status: 'error', message: 'Previše poslanih mailova u kratkom roku — pričekaj malo.' }; }
+  var rute = problemiRute_(), imenik = problemiImenik_(), emails = [], nazivi = [];
+  var dodaj = function(e) { e = String(e || '').trim().toLowerCase(); if (e && /^[^\s@,;]+@[^\s@,;]+\.[^\s@,;]{2,}$/.test(e) && emails.indexOf(e) === -1) { emails.push(e); return true; } return false; };
+  (Array.isArray(cilj.sluzbe) ? cilj.sluzbe : []).slice(0, 8).forEach(function(id) {
+    var sl = rute.sluzbe.filter(function(x) { return x.id === String(id); })[0];
+    if (!sl) { return; }
+    var pr = problemiPrimatelji_(sl, imenik);
+    if (pr.emails.length) { pr.emails.forEach(dodaj); nazivi.push(sl.naziv); }
+  });
+  (Array.isArray(cilj.osobe) ? cilj.osobe : []).slice(0, 8).forEach(function(id) {
+    var o = imenik.osobe.filter(function(x) { return x.id === String(id); })[0];
+    if (o && dodaj(o.email)) { nazivi.push(o.naziv); }
+  });
+  var vlastiti = String(cilj.emails || '').split(/[,;\s]+/).map(function(m) { return m.trim(); }).filter(Boolean).slice(0, 8);
+  for (var k = 0; k < vlastiti.length; k++) {
+    if (!/^[^\s@,;]+@[^\s@,;]+\.[^\s@,;]{2,}$/.test(vlastiti[k])) { return { status: 'error', message: 'E-mail nije ispravan: ' + vlastiti[k] }; }
+    if (dodaj(vlastiti[k])) { nazivi.push(vlastiti[k].toLowerCase()); }
+  }
+  if (!emails.length) { return { status: 'error', message: 'Odaberi barem jednog primatelja (služba ili osoba s e-mailom, ili upiši e-mail).' }; }
+  if (emails.length > 15) { return { status: 'error', message: 'Previše primatelja (najviše 15).' }; }
+  var upoz = '';
+  var res = problemiIzmijeni_(broj, function(red) {
+    var token = String(red[21] || '');
+    if (!token) { token = Utilities.getUuid().replace(/-/g, '').slice(0, 24); red[21] = token; }
+    var p = { naziv: String(red[2] || ''), oib: String(red[3] || ''), kontakt: String(red[4] || ''), telefon: String(red[5] || ''), email: String(red[6] || ''), vrsta: String(red[7] || ''), awb: String(red[8] || ''), opis: String(red[9] || '') };
+    try { problemiMailSluzbi_(String(red[0]), p, token, { naziv: nazivi.join(', '), email: emails.join(', ') }, tko, false, 0, { poslovnica: String(red[23] || ''), uvod: uvod, rucno: true }); }
+    catch (e) { return { status: 'error', message: 'Slanje maila nije uspjelo: ' + e }; }
+    red[20] = new Date();
+    red[12] = JSON.stringify(problemiNovaBiljeska_(problemiDnevnikRed_(red), tko, 'Poslan mail iz generatora: ' + nazivi.join(', ') + ' (' + emails.join(', ') + ')' + (uvod ? ' — tekst: „' + uvod.slice(0, 400) + (uvod.length > 400 ? '…' : '') + '"' : ' — bez dodatnog teksta') + '.'));
+    return null;
+  });
+  if (res.status === 'ok') { res.poslanoNa = nazivi; res.brojPrimatelja = emails.length; }
+  return res;
+}
+function adminProblemMailPosalji(token, broj, uvod, cilj) { if (!isValidAdminToken_(token)) { return pismaAuthGreska_(); } return problemiPosaljiRucno_(broj, uvod, cilj, 'Admin'); }
+function brziProblemMailPosalji(token, broj, uvod, cilj) { if (!isValidBrziToken_(token)) { return brziAuthGreska_(); } return problemiPosaljiRucno_(broj, uvod, cilj, 'Mobitel'); }
+
+// ---- Mobitel ----
+function brziProblemiLista(token) {
+  if (!isValidBrziToken_(token)) { return brziAuthGreska_(); }
+  return problemiListaOdgovor_();
+}
+function brziProblemDodaj(token, podaci) {
+  if (!isValidBrziToken_(token)) { return brziAuthGreska_(); }
+  var r = problemiDodaj_(podaci, 'Mobitel', false);
+  if (r.status !== 'ok') { return r; }
+  var u = problemiPoslijeDodavanja_(r, 'Mobitel');
+  return { status: 'ok', broj: r.broj, usmjereno: u.poslano ? u.sluzba.naziv : '' };
+}
+function brziProblemBiljeska(token, broj, tekst) { if (!isValidBrziToken_(token)) { return brziAuthGreska_(); } return problemiBiljeska_(broj, tekst, 'Mobitel'); }
+function brziProblemStatus(token, broj, status, kakoRijeseno) { if (!isValidBrziToken_(token)) { return brziAuthGreska_(); } return problemiStatus_(broj, status, kakoRijeseno, 'Mobitel'); }
+function brziProblemRok(token, broj, rok) { if (!isValidBrziToken_(token)) { return brziAuthGreska_(); } return problemiRok_(broj, rok, 'Mobitel'); }
+
+// ---- Javna prijava klijenta (InTime_PrijavaProblema.html) ----
+// Zaštite: skriveno "web" polje (zamka za botove), ograničenje prijava (ukupno 30/sat, 3/sat po e-mailu), provjera OIB-a/e-maila,
+// ograničene duljine; prema van se ne vraćaju nikakvi interni podaci osim broja prijave.
+function problemiOgranici_(kljuc, maks, sekunde) {
+  var cache = CacheService.getScriptCache(), n = parseInt(cache.get(kljuc) || '0', 10) || 0;
+  if (n >= maks) { return false; }
+  cache.put(kljuc, String(n + 1), sekunde);
+  return true;
+}
+function javniProblemPrijava(data) {
+  data = data || {};
+  if (String(data.web || '').trim() !== '') { return { status: 'ok', broj: 'P-0000-000' }; }   // bot: tiho "uspjeh"
+  var em = problemiTekst_(data.email, 120).toLowerCase();
+  if (!problemiOgranici_('PROBLEMI_JAVNO_SAT', 30, 3600) || (em && !problemiOgranici_('PROBLEMI_JAVNO_' + em, 3, 3600))) {
+    return { status: 'error', message: 'Previše prijava u kratkom vremenu. Pokušajte kasnije ili nas nazovite.' };
+  }
+  var r = problemiDodaj_(data, 'Klijent', true);
+  if (r.status !== 'ok') { return r; }
+  var p = r.podaci;
+  var usm = { poslano: false, sluzba: { naziv: '', email: '' } };
+  try { usm = problemiPoslijeDodavanja_(r, 'Klijent'); } catch (e0) { /* usmjeravanje ne smije srušiti prijavu */ }
+  try {
+    problemiMail_({ broj: r.broj, naziv: p.naziv, oib: p.oib }, 'Klijentu — potvrda prijave', 'Sustav', p.email, '[' + r.broj + '] Zaprimili smo Vašu prijavu' + (p.awb ? ' (broj pošiljke ' + p.awb + ')' : '') + ' — IN TIME', 'Poštovani, zaprimili smo Vašu prijavu broj ' + r.broj + ' (' + p.vrsta + (p.awb ? ', broj pošiljke ' + p.awb : '') + '). Javit ćemo Vam se uskoro. Status prijave: ' + problemiStatusPoveznica_(r.broj, r.ktoken) + ' IN TIME d.o.o.', {
+      name: 'IN TIME d.o.o.',
+      htmlBody: '<div style="font-family:Arial,sans-serif;max-width:640px;margin:0 auto;color:#1a1a1a;">' +
+        '<img src="' + EMAIL_HEADER_IMG + '" alt="In Time d.o.o." style="width:100%;max-width:640px;height:auto;display:block;">' +
+        '<div style="padding:24px;"><p>Poštovani' + (p.kontakt ? ' ' + pismaEsc_(p.kontakt) : '') + ',</p>' +
+        '<p>zaprimili smo Vašu prijavu <b>' + r.broj + '</b> (' + pismaEsc_(p.vrsta) + ').</p>' +
+        '<p style="background:#f4f7f8;border-radius:8px;padding:10px 14px;">Broj slučaja: <b>' + r.broj + '</b>' + (p.awb ? '<br>Broj pošiljke: <b>' + pismaEsc_(p.awb) + '</b>' : '') + (p.odrediste ? '<br>Odredište: <b>' + pismaEsc_(p.odrediste) + '</b>' : '') + '<br><span style="color:#555;font-size:13px;">Status možete pratiti pomoću bilo kojeg od ova dva broja.</span></p>' +
+        '<p>Provjeravamo slučaj i javit ćemo Vam se na ovu e-mail adresu čim imamo informaciju. Broj prijave čuvajte za daljnju komunikaciju.</p>' +
+        '<p>Napredak prijave (zaprimljeno → preuzeto → riješeno) možete pratiti ovdje: <a href="' + problemiStatusPoveznica_(r.broj, r.ktoken) + '" style="display:inline-block;background:#e4161b;color:#ffffff;text-decoration:none;font-weight:700;padding:10px 18px;border-radius:8px;">Pogledaj status prijave</a></p>' +
+        '<p style="color:#555;">S poštovanjem,<br>IN TIME d.o.o.</p></div></div>'
+    });
+  } catch (e1) { /* potvrda klijentu ne smije srušiti prijavu */ }
+  try {
+    posaljiMail_(NOTIFY_EMAIL, '[' + r.broj + '] NOVA PRIJAVA PROBLEMA — ' + p.naziv + ' — ' + p.vrsta, 'Nova prijava ' + r.broj + ' od ' + p.naziv + ' (' + p.kontakt + ', ' + p.email + ', ' + p.telefon + '). ' + p.vrsta + (p.awb ? ' — ' + p.awb : '') + '\n\n' + p.opis, {
+      htmlBody: '<div style="font-family:Arial,sans-serif;max-width:640px;margin:0 auto;color:#1a1a1a;"><div style="padding:16px 18px;">' +
+        '<p style="background:#fff4e5;border-left:5px solid #f57c00;padding:10px 14px;"><b>Nova prijava problema ' + r.broj + '</b><br>' + pismaEsc_(p.vrsta) + (p.awb ? ' · ' + pismaEsc_(p.awb) : '') + '<br>' +
+          (p.poslovnica ? '📍 Poslovnica: <b>' + pismaEsc_(p.poslovnica) + '</b><br>' : '') + (p.odrediste ? '🎯 Odredište pošiljke: <b>' + pismaEsc_(p.odrediste) + '</b><br>' : '') +
+          (usm.poslano ? (usm.sluzba.tip === 'zaduzeni' ? 'Dodijeljeno: <b>' + pismaEsc_(usm.sluzba.naziv) + '</b> (' + pismaEsc_(usm.sluzba.email) + ')' : (usm.sluzba.tip === 'poslovnica' ? 'Poslano: <b>' + pismaEsc_(usm.sluzba.naziv) + '</b> (' + pismaEsc_(usm.sluzba.email) + ')<br><span style="color:#a04400;">Nitko nije posebno zadužen — jedan od kontakata neka preuzme, ili dodijeli osobu u adminu (Servis klijenata → Dodjela).</span>' : 'Proslijeđeno službi: <b>' + pismaEsc_(usm.sluzba.naziv) + '</b> (' + pismaEsc_(usm.sluzba.email) + ')<br><b style="color:#b80d12;">⚠ Nema zadužene osobe</b> — dodijeli 1–2 osobe u adminu (Servis klijenata → Dodjela) ili zadaj osobu poslovnici.')) : (usm.poluAuto ? '<b style="color:#2d3a8c;">🖐 Prijava je upisana, ali nije poslana nikome</b><br>Otvori problem u adminu (<b>Servis klijenata → Otvoreni</b>), klikni <b>✉ Mail…</b>, dodaj gotove rečenice i odaberi koga želiš.' : '<b style="color:#b80d12;">⏳ ČEKA TVOJU DODJELU — nije poslano nikome</b><br>Nema zadužene osobe ni kontakata poslovnice' + (p.poslovnica ? ' (' + pismaEsc_(p.poslovnica) + ')' : '') + '. Dodijeli osobu u adminu: <b>Servis klijenata → Dodjela</b> — tek tada ide mail s gumbom „Preuzimam".')) + '</p>' +
+        '<p><b>' + pismaEsc_(p.naziv) + '</b>' + (p.oib ? ' · OIB ' + pismaEsc_(p.oib) : '') + '<br>' + pismaEsc_(p.kontakt) + ' · ' + pismaEsc_(p.email) + (p.telefon ? ' · ' + pismaEsc_(p.telefon) : '') + '</p>' +
+        '<p style="white-space:pre-wrap;">' + pismaEsc_(p.opis) + '</p><p style="color:#777;font-size:12px;">Otvori u adminu: tab „Problemi".</p></div></div>'
+    });
+  } catch (e2) { /* obavijest ne smije srušiti prijavu */ }
+  return { status: 'ok', broj: r.broj, awb: p.awb, statusLink: problemiStatusPoveznica_(r.broj, r.ktoken) };
+}
+
+// ============================================================
+// PROBLEMI — USMJERAVANJE NA SLUŽBE, "PREUZIMAM" I PODSJETNIK (6.10.2026.)
+// Svaka vrsta problema ima službu (Problemi → Službe i usmjeravanje). Pri prijavi služba dobije mail s gumbima
+// "Preuzimam" i "Riješeno" koji vode na stranicu InTime_ProblemSluzba.html (bez prijave; zaštita = nasumični token u
+// poveznici, svaki problem ima svoj). Stranica NIKAD ne mijenja stanje na samo otvaranje (da ga ne "preuzme" antivirus
+// koji otvara poveznice u mailu) — tek na klik gumba. Ako nitko ne preuzme u zadanom roku, okidač (svaki sat, 7–20 h)
+// šalje podsjetnik službi i sažetak Saši.
+// ============================================================
+function problemiPoveznica_(broj, token, akcija) {
+  return PROBLEM_SLUZBA_STRANICA_URL_ + '?p=' + encodeURIComponent(broj) + '&t=' + encodeURIComponent(token) + '&a=' + akcija;
+}
+function problemiMailSluzbi_(broj, p, token, sl, izvor, podsjetnik, cekaSati, dod) {
+  dod = dod || {};
+  var l1 = problemiPoveznica_(broj, token, 'preuzmi'), l2 = problemiPoveznica_(broj, token, 'rijesi');
+  var gumb = function(href, tekst, boja) { return '<a href="' + href + '" style="display:inline-block;background:' + boja + ';color:#ffffff;text-decoration:none;font-weight:700;font-size:15px;padding:12px 22px;border-radius:8px;margin:0 8px 8px 0;">' + tekst + '</a>'; };
+  var predmet = (dod.rucno ? 'PROBLEM KLIJENTA: ' : podsjetnik ? 'PODSJETNIK — nitko nije preuzeo: ' : (dod.zaduzeni ? 'DODIJELJEN VAM PROBLEM: ' : 'NOVI PROBLEM: ')) + '[' + broj + '] ' + p.vrsta + (p.awb ? ' — broj pošiljke ' + p.awb : '') + ' — ' + p.naziv;
+  var dodTekst = (p.awb ? 'BROJ POŠILJKE: ' + p.awb + (problemiBrojPosiljkeOk_(p.awb) ? ' (praćenje: ' + PROBLEM_PRACENJE_URL_ + p.awb + ')' : '') + '\n' : '') + (dod.poslovnica ? 'Poslovnica: ' + dod.poslovnica + '\n' : '') + (p.odrediste ? 'Odredište pošiljke: ' + p.odrediste + '\n' : '') + (dod.kontakti ? 'Poslano svim kontaktima poslovnice — jedan neka klikne „Preuzimam" da ga ne rješavate dvaput.\n' : '') + (dod.zaduzeni ? 'Zaduženi: ' + dod.zaduzeni + (dod.dvoje ? ' (dvoje ste zaduženi — jedan klik na „Preuzimam" je dovoljan, drugi se može pridružiti)' : '') + '\n' : '');
+  var dodHtml = (dod.poslovnica || dod.zaduzeni || p.awb || p.odrediste) ? '<p style="background:#eef2ff;border-left:5px solid #2d3a8c;padding:8px 14px;margin:0 0 12px;font-size:13.5px;">' +
+    (p.awb ? '📦 Broj pošiljke: <b style="font-size:16px;">' + (problemiBrojPosiljkeOk_(p.awb) ? '<a href="' + PROBLEM_PRACENJE_URL_ + p.awb + '" style="color:#2d3a8c;">' + pismaEsc_(p.awb) + '</a>' : pismaEsc_(p.awb)) + '</b><br>' : '') +
+    (dod.poslovnica ? '📍 Poslovnica: <b>' + pismaEsc_(dod.poslovnica) + '</b><br>' : '') +
+    (p.odrediste ? '🎯 Odredište pošiljke: <b>' + pismaEsc_(p.odrediste) + '</b><br>' : '') +
+    (dod.kontakti ? '👥 Poslano svim kontaktima poslovnice — <b>jedan neka klikne „Preuzimam"</b> da problem ne rješavate dvaput.<br>' : '') +
+    (dod.zaduzeni ? '👤 Zaduženi: <b>' + pismaEsc_(dod.zaduzeni) + '</b>' + (dod.dvoje ? '<br><span style="color:#444;">Zadužene ste dvije osobe — dovoljan je jedan klik na „Preuzimam", druga osoba se može pridružiti.</span>' : '') : '') + '</p>' : '';
+  var tijelo = (dod.uvod ? dod.uvod + '\n\n————————\n' : '') + (podsjetnik ? 'PODSJETNIK: problem još nitko nije preuzeo' + (cekaSati ? ' (čeka ' + cekaSati + ' h)' : '') + '.\n\n' : '') +
+    dodTekst + 'Problem ' + broj + ' (' + p.vrsta + ') — ' + p.naziv + (p.oib ? ' (OIB ' + p.oib + ')' : '') + '\nKontakt: ' + [p.kontakt, p.telefon, p.email].filter(Boolean).join(', ') + (p.awb ? '\nBroj pošiljke: ' + p.awb : '') + '\n\n' + p.opis +
+    '\n\nPREUZIMAM: ' + l1 + '\nRIJEŠENO: ' + l2;
+  var html = '<div style="font-family:Arial,sans-serif;max-width:640px;margin:0 auto;color:#1a1a1a;"><div style="padding:16px 18px;">' +
+    (dod.uvod ? '<p style="white-space:pre-wrap;font-size:15px;line-height:1.55;margin:0 0 14px;">' + pismaEsc_(dod.uvod) + '</p><hr style="border:0;border-top:1px solid #dddddd;margin:0 0 14px;">' : '') +
+    '<p style="background:' + (podsjetnik ? '#fdecea' : '#fff4e5') + ';border-left:5px solid ' + (podsjetnik ? '#e4161b' : '#f57c00') + ';padding:10px 14px;margin:0 0 14px;"><b>' + (podsjetnik ? '⏰ Podsjetnik — još nitko nije preuzeo' + (cekaSati ? ' (čeka ' + cekaSati + ' h)' : '') : (dod.rucno ? 'Problem klijenta' : 'Novi problem klijenta')) + ' · ' + pismaEsc_(broj) + '</b><br>' + pismaEsc_(p.vrsta) + '</p>' + dodHtml +
+    '<p style="margin:0 0 4px;"><b>' + pismaEsc_(p.naziv) + '</b>' + (p.oib ? ' · OIB ' + pismaEsc_(p.oib) : '') + '</p>' +
+    '<p style="margin:0 0 12px;color:#444;">' + pismaEsc_([p.kontakt, p.telefon, p.email].filter(Boolean).join(' · ')) + '</p>' +
+    '<p style="white-space:pre-wrap;background:#f7f7f7;border-radius:8px;padding:12px 14px;margin:0 0 16px;">' + pismaEsc_(p.opis) + '</p>' +
+    gumb(l1, '✋ Preuzimam', '#f57c00') + gumb(l2, '✓ Riješeno', '#2e7d32') +
+    '<p style="color:#777;font-size:12px;margin-top:10px;">Klik na „Preuzimam" označava da se problemom bavite — ostali u službi to vide i ne prate ga dvaput. Poveznice su osobne za ovaj problem; nemojte ih prosljeđivati izvan tvrtke.</p></div></div>';
+  problemiMail_({ broj: broj, naziv: p.naziv, oib: p.oib }, podsjetnik ? 'Podsjetnik zaposlenima' : 'Zaposlenima', izvor, sl.email, predmet, tijelo, { name: 'IN TIME d.o.o. — Problemi', htmlBody: html });
+}
+// Nakon spremanja: pošalji zaduženoj osobi/osobama (ili, ako ih nema, službi) i zabilježi u dnevnik što se dogodilo.
+// Ide SAMO zaduženima (1–2 osobe) — ne cijeloj službi, da netko ne čeka da problem riješi netko drugi.
+function problemiPoslijeDodavanja_(r, izvor) {
+  var rute = problemiRute_(), imenik = problemiImenik_(), zad = r.zaduzeni || [];
+  var pr = problemiOdrediPrimatelje_(null, zad, r.sluzba, rute, imenik, r.podaci.poslovnica || '');
+  var poluAuto = true;   // nikad se ne šalje automatski: prijava se samo upiše, Saša šalje iz „✉ Mail…"
+  pr = { tip: 'nitko', naziv: '', email: '', bezMaila: [] };   // polu-automatski način: ništa se ne šalje zaposlenima, Saša šalje iz generatora maila
+  var sl = { id: r.sluzba, naziv: pr.naziv, email: pr.email, tip: pr.tip };
+  var poslano = false, bilj = '', pos = r.podaci.poslovnica || '';
+  var dod = { poslovnica: pos, zaduzeni: pr.tip === 'zaduzeni' ? pr.naziv : '', dvoje: pr.tip === 'zaduzeni' && zad.length === 2, kontakti: pr.tip === 'poslovnica' };
+  if (pr.email) {
+    try {
+      problemiMailSluzbi_(r.broj, r.podaci, r.token, sl, izvor, false, 0, dod);
+      poslano = true;
+      bilj = pr.tip === 'zaduzeni'
+        ? 'Dodijeljeno: ' + pr.naziv + (r.zaduzeniIzvor === 'poslovnica' ? ' (zadana osoba za poslovnicu ' + pos + ')' : '') + ' — poslan mail (' + pr.email + ').'
+        : (pr.tip === 'poslovnica' ? 'Poslano kontaktima poslovnice ' + pos + ' (' + pr.email + ') — jedan neka klikne „Preuzimam". Nema zadužene osobe: dodijeli je u Servis klijenata → Dodjela.' : 'Proslijeđeno službi: ' + pr.naziv + ' (' + pr.email + ').' + (pos ? ' Poslovnica: ' + pos + ' nema kontakata s e-mailom — problem dobiva služba.' : ''));
+    } catch (e) { bilj = 'Slanje „' + pr.naziv + '" nije uspjelo: ' + e; }
+  } else if (poluAuto) { bilj = 'Prijava je upisana, nikome nije poslano (šalje se ručno).' + (zad.length ? ' Zadužen/a: ' + problemiZaduzeniTekst_(zad) + '.' : '') + ' Otvori je u Servisu klijenata i pošalji preko „✉ Mail…" (gotove rečenice + odabir službe/osobe).'; }
+  else if (pr.tip === 'nitko') { bilj = 'NA ČEKANJU — nema zadužene osobe ni kontakata poslovnice' + (pos ? ' (' + pos + ')' : '') + '. Nije poslano nikome; čeka dodjelu (Servis klijenata → Dodjela).'; }
+  else { bilj = 'Služba „' + pr.naziv + '" nema upisan e-mail ni povezanu osobu/centar — nije proslijeđeno.'; }
+  if (pr.bezMaila.length) { bilj += ' Bez e-maila u imeniku: ' + pr.bezMaila.join(', ') + '.'; }
+  try { problemiBiljeska_(r.broj, bilj, 'Sustav'); } catch (e2) { /* ne smije srušiti prijavu */ }
+  return { poslano: poslano, sluzba: sl, zaduzeni: zad, poslovnica: pos, poluAuto: poluAuto };
+}
+
+// ---- Stranica službe (javno, zaštita = token) ----
+function problemiTokenRed_(broj, token) {
+  broj = String(broj || '').trim(); token = String(token || '').trim();
+  if (!/^P-\d{4}-\d+$/.test(broj) || !/^[0-9a-f]{24}$/.test(token)) { return null; }
+  var sheet = getOrCreateProblemiSheet_(), last = sheet.getLastRow();
+  if (last < 2) { return null; }
+  var b = sheet.getRange(2, 1, last - 1, 1).getValues();
+  for (var i = 0; i < b.length; i++) {
+    if (String(b[i][0]) === broj) {
+      var red = sheet.getRange(i + 2, 1, 1, PROBLEMI_HEADER_.length).getValues()[0];
+      return (String(red[21] || '') === token) ? { ri: i + 2, red: red } : null;
+    }
+  }
+  return null;
+}
+function problemiJavniPrikaz_(p) {
+  return { broj: p.broj, datum: p.datum, naziv: p.naziv, oib: p.oib, kontakt: p.kontakt, telefon: p.telefon, email: p.email, vrsta: p.vrsta, awb: p.awb, opis: p.opis, status: p.status,
+    sluzbaNaziv: p.sluzbaNaziv, poslovnica: p.poslovnica, zaduzeniTekst: p.zaduzeniTekst, preuzeo: p.preuzeo, preuzetoU: p.preuzetoU, kakoRijeseno: p.kakoRijeseno, datumRjesenja: p.datumRjesenja, dnevnik: p.dnevnik.slice(-15) };
+}
+function problemiSluzbaUvod_(data) {
+  if (!problemiOgranici_('PROBLEM_SL_' + String(data.broj || '').slice(0, 20), 120, 3600)) { return { status: 'error', message: 'Previše pokušaja — pričekajte malo.' }; }
+  if (!problemiTokenRed_(data.broj, data.token)) { return { status: 'error', message: 'Poveznica nije ispravna ili je problem obrisan.' }; }
+  return null;
+}
+function problemiJavniOdgovor_(res) {
+  return res.status === 'ok' ? { status: 'ok', problem: problemiJavniPrikaz_(res.problem) } : res;
+}
+function problemSluzbaPodaci(data) {
+  data = data || {};
+  var g = problemiSluzbaUvod_(data); if (g) { return g; }
+  var t = problemiTokenRed_(data.broj, data.token);
+  return { status: 'ok', problem: problemiJavniPrikaz_(problemiRed_(t.red, t.ri - 2)) };
+}
+function problemSluzbaPreuzmi(data) {
+  data = data || {};
+  var ime = problemiTekst_(data.ime, 60);
+  if (ime.length < 2) { return { status: 'error', message: 'Upišite svoje ime i prezime.' }; }
+  var g = problemiSluzbaUvod_(data); if (g) { return g; }
+  return problemiJavniOdgovor_(problemiIzmijeni_(data.broj, function(red) {
+    var st = String(red[10] || 'Novo');
+    if (st === 'Riješeno') { return { status: 'error', message: 'Problem je već riješen.' }; }
+    if (red[18]) {
+      // Dvoje zaduženih: druga osoba se može pridružiti (jedan "vlasnik" ostaje prvi koji je preuzeo).
+      var zd = problemiZaduzeni_(red[24]);
+      var vecU = String(red[18]).toLowerCase().indexOf(ime.toLowerCase()) !== -1;
+      if (zd.length === 2 && String(red[18]).indexOf(' + ') === -1 && !vecU) {
+        red[18] = String(red[18]) + ' + ' + ime;
+        red[12] = JSON.stringify(problemiNovaBiljeska_(problemiDnevnikRed_(red), 'Služba', 'PRIDRUŽIO/LA SE: ' + ime + ' (zaduženi: ' + problemiZaduzeniTekst_(zd) + ')'));
+        return null;
+      }
+      return { status: 'error', message: 'Problem je već preuzeo/la: ' + red[18] + '.' };
+    }
+    var naziv = problemiSluzbaNaziv_(String(red[17] || ''));
+    var sad = new Date();
+    red[10] = 'U obradi'; red[18] = ime + (naziv && !red[24] ? ' (' + naziv + ')' : ''); red[19] = sad;
+    var dnp = problemiNovaBiljeska_(problemiDnevnikRed_(red), 'Služba', 'PREUZEO/LA: ' + red[18] + ' — status: U obradi');
+    if (problemiObavijestiKlijenta_(red, 'preuzeto')) { dnp = problemiNovaBiljeska_(dnp, 'Sustav', 'Klijentu poslana obavijest (preuzeto u obradu) s poveznicom na status.'); }
+    red[12] = JSON.stringify(dnp);
+    return null;
+  }));
+}
+function problemSluzbaBiljeska(data) {
+  data = data || {};
+  var ime = problemiTekst_(data.ime, 60);
+  if (ime.length < 2) { return { status: 'error', message: 'Upišite svoje ime i prezime.' }; }
+  var g = problemiSluzbaUvod_(data); if (g) { return g; }
+  return problemiJavniOdgovor_(problemiBiljeska_(data.broj, data.tekst, 'Služba: ' + ime));
+}
+function problemSluzbaRijesi(data) {
+  data = data || {};
+  var ime = problemiTekst_(data.ime, 60);
+  if (ime.length < 2) { return { status: 'error', message: 'Upišite svoje ime i prezime.' }; }
+  var g = problemiSluzbaUvod_(data); if (g) { return g; }
+  return problemiJavniOdgovor_(problemiStatus_(data.broj, 'Riješeno', data.kako, 'Služba: ' + ime));
+}
+
+// ---- Podsjetnik / eskalacija (okidač svaki sat) ----
+function problemiEskalacija_() {
+  var rute = problemiRute_();
+  if (!rute.eskalacija) { return; }
+  var sat = parseInt(Utilities.formatDate(new Date(), BRZI_TZ_, 'H'), 10);
+  if (sat < 7 || sat >= 20) { return; }   // noću ne šaljemo
+  var lock = LockService.getScriptLock();
+  if (!lock.tryLock(30000)) { return; }
+  var kasne = [];
+  try {
+    var sheet = getOrCreateProblemiSheet_(), last = sheet.getLastRow();
+    if (last < 2) { return; }
+    var v = sheet.getRange(2, 1, last - 1, PROBLEMI_HEADER_.length).getValues();
+    var granica = rute.rokSati * 3600000, sad = Date.now(), imenikE = problemiImenik_();
+    for (var i = 0; i < v.length; i++) {
+      var r = v[i];
+      if (!r[0] || String(r[10] || 'Novo') !== 'Novo' || r[18] || !(r[1] instanceof Date)) { continue; }
+      var zadnji = (r[20] instanceof Date) ? r[20].getTime() : 0;
+      if (sad - Math.max(r[1].getTime(), zadnji) < granica) { continue; }
+      var ri = i + 2, token = String(r[21] || '');
+      if (!token) { token = Utilities.getUuid().replace(/-/g, '').slice(0, 24); sheet.getRange(ri, 22).setValue(token); }
+      var cekaSati = Math.floor((sad - r[1].getTime()) / 3600000);
+      var zad = problemiZaduzeni_(r[24]);
+      var pr = problemiOdrediPrimatelje_(problemiZakaceno_(r[22]), zad, String(r[17] || ''), rute, imenikE, String(r[23] || ''));
+      if (rute.poluAuto && !zad.length && !problemiZakaceno_(r[22]).e) { pr = { tip: 'nitko', naziv: '', email: '', bezMaila: [] }; }
+      var sl = { naziv: pr.naziv, email: pr.email };
+      var p = { naziv: String(r[2] || ''), oib: String(r[3] || ''), kontakt: String(r[4] || ''), telefon: String(r[5] || ''), email: String(r[6] || ''), vrsta: String(r[7] || ''), awb: String(r[8] || ''), opis: String(r[9] || '') };
+      var poslano = false, nitko = pr.tip === 'nitko';
+      /* podsjetnik zaposlenima se NE šalje (samo ručno slanje) — upozoren je samo Saša zbirnim mailom */
+      var dn = problemiDnevnikRed_(r);
+      dn = problemiNovaBiljeska_(dn, 'Sustav', 'Podsjetnik: nitko nije preuzeo već ' + cekaSati + ' h' + (poslano ? ' — ponovno poslano: ' + sl.naziv + '.' : ' — nije slano nikome (samo ručno slanje), upozoren samo Saša.'));
+      sheet.getRange(ri, 13).setValue(JSON.stringify(dn));
+      sheet.getRange(ri, 21).setValue(new Date());
+      kasne.push({ broj: String(r[0]), naziv: p.naziv, vrsta: p.vrsta, sluzba: nitko ? 'ČEKA DODJELU' : sl.naziv, cekaSati: cekaSati, poslano: poslano, nitko: nitko });
+    }
+  } finally { lock.releaseLock(); }
+  if (kasne.length) {
+    try {
+      var redovi = kasne.map(function(k) { return '<li><b>' + pismaEsc_(k.broj) + '</b> — ' + pismaEsc_(k.naziv) + ' · ' + pismaEsc_(k.vrsta) + ' · služba: ' + pismaEsc_(k.sluzba) + ' · čeka ' + k.cekaSati + ' h' + (k.poslano ? '' : (k.nitko ? ' <span style="color:#b80d12;">(dodijeli osobu: Servis klijenata → Dodjela)</span>' : '')) + '</li>'; }).join('');
+      posaljiMail_(NOTIFY_EMAIL, '⏰ Problemi koje nitko nije preuzeo (' + kasne.length + ')', kasne.map(function(k) { return k.broj + ' ' + k.naziv + ' — ' + k.sluzba + ' — čeka ' + k.cekaSati + ' h'; }).join('\n'), {
+        htmlBody: '<div style="font-family:Arial,sans-serif;max-width:640px;margin:0 auto;padding:16px 18px;"><p style="background:#fdecea;border-left:5px solid #e4161b;padding:10px 14px;"><b>Nitko nije preuzeo ' + kasne.length + ' problem(a) u roku od ' + rute.rokSati + ' h</b></p><ul>' + redovi + '</ul><p style="color:#777;font-size:12px;">Zaposlenima nije ništa poslano (samo ručno slanje: ✉ Mail… na kartici problema). Pregled: admin → Servis klijenata.</p></div>' });
+    } catch (e2) { /* sažetak ne smije srušiti okidač */ }
+  }
+}
+function problemiPostaviOkidac_(upali) {
+  var postojeci = ScriptApp.getProjectTriggers();
+  for (var i = 0; i < postojeci.length; i++) {
+    if (postojeci[i].getHandlerFunction() === 'problemiEskalacija_') { ScriptApp.deleteTrigger(postojeci[i]); }
+  }
+  if (upali) { ScriptApp.newTrigger('problemiEskalacija_').timeBased().everyHours(1).create(); }
+  return !!upali;
+}
+
+// ---- Admin: službe i usmjeravanje ----
+function adminProblemiRute(token) {
+  if (!isValidAdminToken_(token)) { return pismaAuthGreska_(); }
+  var okidac = false;
+  try { okidac = ScriptApp.getProjectTriggers().some(function(t) { return t.getHandlerFunction() === 'problemiEskalacija_'; }); } catch (e) { okidac = false; }
+  return { status: 'ok', rute: problemiRute_(), grupe: problemiGrupe_(), okidac: okidac, imenik: problemiImenik_(), primatelji: problemiPrimateljiPoSluzbi_() };
+}
+function adminProblemiRuteSpremi(token, podaci) {
+  if (!isValidAdminToken_(token)) { return pismaAuthGreska_(); }
+  podaci = podaci || {};
+  var stari = problemiRute_(), sluzbe = [], i;
+  for (i = 0; i < stari.sluzbe.length; i++) {
+    var d = stari.sluzbe[i], q = (podaci.sluzbe || []).filter(function(x) { return x && x.id === d.id; })[0] || {};
+    var naziv = problemiTekst_(q.naziv, 60) || d.naziv;
+    var mailovi = String(q.email || '').split(/[,;\s]+/).map(function(m) { return m.trim().toLowerCase(); }).filter(function(m) { return m; });
+    for (var k = 0; k < mailovi.length; k++) {
+      if (!/^[^\s@,;]+@[^\s@,;]+\.[^\s@,;]{2,}$/.test(mailovi[k])) { return { status: 'error', message: 'E-mail nije ispravan (' + naziv + '): ' + mailovi[k] }; }
+    }
+    var osobeIds = (Array.isArray(q.osobe) ? q.osobe : []).map(function(x) { return String(x).slice(0, 60); }).filter(function(x) { return x; }).slice(0, 50);
+    var centriIds = (Array.isArray(q.centri) ? q.centri : []).map(function(x) { return String(x).slice(0, 120); }).filter(function(x) { return x; }).slice(0, 50);
+    sluzbe.push({ id: d.id, naziv: naziv, email: mailovi.join(', '), osobe: osobeIds, centri: centriIds });
+  }
+  var rute = {};
+  problemiVrste_().forEach(function(v) {
+    var id = (podaci.rute || {})[v];
+    if (id && !sluzbe.some(function(x) { return x.id === id; })) { rute[v] = null; return; }
+    if (id) { rute[v] = id; }
+  });
+  var rok = parseInt(podaci.rokSati, 10);
+  if (!(rok >= 1 && rok <= 168)) { return { status: 'error', message: 'Rok za podsjetnik mora biti između 1 i 168 sati.' }; }
+  var esk = podaci.eskalacija !== false;
+  var poslov = {}, imenikP = problemiImenik_();
+  if (podaci.poslovnice === undefined) { poslov = stari.poslovnice; }   // ovaj ekran ne dira zadane osobe poslovnica (njih uređuje kartica „Dodjela problema")
+  Object.keys(podaci.poslovnice || {}).forEach(function(g) {
+    var l = podaci.poslovnice[g];
+    if (!Array.isArray(l) || !imenikP.centri.some(function(c) { return c.grad === g; })) { return; }
+    l = l.map(String).filter(function(id) { return imenikP.osobe.some(function(o) { return o.id === id; }); }).filter(function(id, k, a) { return a.indexOf(id) === k; }).slice(0, 2);
+    if (l.length) { poslov[g] = l; }
+  });
+  var cisto = {};
+  Object.keys(rute).forEach(function(v) { if (rute[v]) { cisto[v] = rute[v]; } });
+  PropertiesService.getScriptProperties().setProperty(PROBLEMI_RUTE_KLJUC_, JSON.stringify({ sluzbe: sluzbe, rute: cisto, rokSati: rok, eskalacija: esk, poslovnice: poslov, sluzbaAuto: (podaci.sluzbaAuto === undefined ? stari.sluzbaAuto : podaci.sluzbaAuto === true), poluAuto: (podaci.poluAuto === undefined ? stari.poluAuto : podaci.poluAuto === true) }));
+  var okidac = false, greskaOkidaca = '';
+  try { okidac = problemiPostaviOkidac_(esk); } catch (e) { greskaOkidaca = String(e && e.message ? e.message : e); }
+  return { status: 'ok', rute: problemiRute_(), okidac: okidac, greskaOkidaca: greskaOkidaca, primatelji: problemiPrimateljiPoSluzbi_() };
+}
+
+// ---- Veza s "Logistički centri i servisi" (imenik osoba i centara) ----
+// Osobe (InTime_Logisticki_Osobe: ID, Ime, Prezime, Funkcija, Telefon, Email…) i centri/servisi (InTime_Logisticki_Centri:
+// naziv, adresa, telefon, email, pokriva, kontakti (JSON osobaId+funkcija), datum, vrsta, boja). Službu ili pojedini problem
+// možeš "zakačiti" na osobu ili centar — e-mail se uzima iz imenika u trenutku slanja, pa naknadno dodane/izmijenjene osobe rade.
+function problemiImenik_() {
+  var osobe = [], centri = [], mapa = {};
+  try {
+    var so = getOrCreateLogistickiOsobeSheet_(), lo = so.getLastRow();
+    if (lo > 1) {
+      so.getRange(2, 1, lo - 1, 8).getValues().forEach(function(r) {
+        var id = String(r[0] || '').trim(); if (!id) { return; }
+        var ime = (String(r[1] || '') + ' ' + String(r[2] || '')).trim(); if (!ime) { return; }
+        var o = { id: id, naziv: ime, funkcija: String(r[3] || ''), email: String(r[5] || '').trim() };
+        osobe.push(o); mapa[id] = o;
+      });
+    }
+  } catch (e1) { osobe = []; }
+  try {
+    var sc = getOrCreateLogistickiCentriSheet_(), lc = sc.getLastRow();
+    if (lc > 1) {
+      sc.getRange(2, 1, lc - 1, 9).getValues().forEach(function(r) {
+        var grad = String(r[0] || '').trim(); if (!grad) { return; }
+        var refs = []; try { refs = JSON.parse(r[5] || '[]'); } catch (e) { refs = []; }
+        if (!Array.isArray(refs)) { refs = []; }
+        var emaili = [];
+        var cEm = String(r[3] || '').trim(); if (cEm) { emaili.push(cEm); }
+        refs.forEach(function(ref) { var o = mapa[ref && ref.osobaId]; if (o && o.email && emaili.indexOf(o.email) === -1) { emaili.push(o.email); } });
+        centri.push({ grad: grad, vrsta: String(r[7] || 'centar'), brojKontakata: refs.length, emaili: emaili });
+      });
+    }
+  } catch (e2) { centri = []; }
+  osobe.sort(function(a, b) { return a.naziv.localeCompare(b.naziv, 'hr'); });
+  centri.sort(function(a, b) { return a.grad.localeCompare(b.grad, 'hr'); });
+  return { osobe: osobe, centri: centri };
+}
+// cilj: { email: 'a@b.hr, c@d.hr', osobe: [id…], centri: [naziv…] } → { emails: [...], nazivi: [...] }
+function problemiPrimatelji_(cilj, imenik) {
+  imenik = imenik || problemiImenik_();
+  var emails = [], nazivi = [];
+  var dodaj = function(e) { e = String(e || '').trim().toLowerCase(); if (e && /^[^\s@,;]+@[^\s@,;]+\.[^\s@,;]{2,}$/.test(e) && emails.indexOf(e) === -1) { emails.push(e); } };
+  String((cilj && cilj.email) || '').split(/[,;\s]+/).forEach(dodaj);
+  ((cilj && cilj.osobe) || []).forEach(function(id) {
+    var o = imenik.osobe.filter(function(x) { return x.id === id; })[0];
+    if (o) { nazivi.push(o.naziv); dodaj(o.email); }
+  });
+  ((cilj && cilj.centri) || []).forEach(function(g) {
+    var c = imenik.centri.filter(function(x) { return x.grad === g; })[0];
+    if (c) { nazivi.push(c.grad); c.emaili.forEach(dodaj); }
+  });
+  return { emails: emails, nazivi: nazivi };
+}
+function problemiPrimateljiPoSluzbi_() {
+  var rute = problemiRute_(), imenik = problemiImenik_(), out = {};
+  rute.sluzbe.forEach(function(sl) { out[sl.id] = problemiPrimatelji_(sl, imenik); });
+  return out;
+}
+function adminProblemiImenik(token) {
+  if (!isValidAdminToken_(token)) { return pismaAuthGreska_(); }
+  var im = problemiImenik_();
+  return { status: 'ok', osobe: im.osobe.map(function(o) { return { id: o.id, naziv: o.naziv, funkcija: o.funkcija, imaEmail: !!o.email }; }),
+    centri: im.centri.map(function(c) { return { grad: c.grad, vrsta: c.vrsta, brojKontakata: c.brojKontakata, imaEmail: c.emaili.length > 0 }; }) };
+}
+// Zakači/proslijedi konkretan problem osobi ili centru: { osobaId | centar | email } → mail s gumbima "Preuzimam" / "Riješeno".
+function adminProblemProslijedi(token, broj, cilj) {
+  if (!isValidAdminToken_(token)) { return pismaAuthGreska_(); }
+  cilj = cilj || {};
+  var prim = problemiPrimatelji_({ email: cilj.email, osobe: cilj.osobaId ? [String(cilj.osobaId)] : [], centri: cilj.centar ? [String(cilj.centar)] : [] });
+  if (!prim.emails.length) { return { status: 'error', message: 'Odabrana osoba/centar nema upisan e-mail (Logistički centri i servisi) — upiši e-mail ručno.' }; }
+  var oznaka = (prim.nazivi.concat(String(cilj.email || '').trim() ? [String(cilj.email).trim()] : [])).join(', ') || prim.emails.join(', ');
+  broj = String(broj || '').trim();
+  var sheet = getOrCreateProblemiSheet_(), last = sheet.getLastRow(), ri = -1, red = null;
+  if (last >= 2) {
+    var b = sheet.getRange(2, 1, last - 1, 1).getValues();
+    for (var i = 0; i < b.length; i++) { if (String(b[i][0]) === broj) { ri = i + 2; break; } }
+  }
+  if (ri === -1) { return { status: 'error', message: 'Problem ne postoji.' }; }
+  red = sheet.getRange(ri, 1, 1, PROBLEMI_HEADER_.length).getValues()[0];
+  var token2 = String(red[21] || '');
+  if (!token2) { token2 = Utilities.getUuid().replace(/-/g, '').slice(0, 24); sheet.getRange(ri, 22).setValue(token2); }
+  var p = { naziv: String(red[2] || ''), oib: String(red[3] || ''), kontakt: String(red[4] || ''), telefon: String(red[5] || ''), email: String(red[6] || ''), vrsta: String(red[7] || ''), awb: String(red[8] || ''), opis: String(red[9] || '') };
+  try { problemiMailSluzbi_(broj, p, token2, { naziv: oznaka, email: prim.emails.join(', ') }, 'Admin', false, 0, { poslovnica: String(red[23] || '') }); }
+  catch (e) { return { status: 'error', message: 'Slanje maila nije uspjelo: ' + e }; }
+  return problemiIzmijeni_(broj, function(r) {
+    r[22] = JSON.stringify({ l: oznaka, e: prim.emails.join(', ') });
+    r[20] = new Date();   // rok za podsjetnik se računa ispočetka od zakačivanja
+    r[12] = JSON.stringify(problemiNovaBiljeska_(problemiDnevnikRed_(r), 'Admin', 'Zakačeno/proslijeđeno: ' + oznaka + ' (' + prim.emails.join(', ') + ') — poslan mail s gumbom „Preuzimam".'));
+    return null;
+  });
+}
+
+// Zadane osobe po poslovnici/servisu (kartica „Dodjela problema"): { "Osijek": [osobaId, osobaId?], ... } — mijenja samo to, ostale postavke ostaju.
+function adminProblemiPoslovniceSpremi(token, poslovnice) {
+  if (!isValidAdminToken_(token)) { return pismaAuthGreska_(); }
+  var imenik = problemiImenik_(), poslov = {};
+  Object.keys(poslovnice || {}).forEach(function(g) {
+    var l = poslovnice[g];
+    if (!Array.isArray(l) || !imenik.centri.some(function(c) { return c.grad === g; })) { return; }
+    l = l.map(String).filter(function(id) { return imenik.osobe.some(function(o) { return o.id === id; }); }).filter(function(id, k, a) { return a.indexOf(id) === k; }).slice(0, 2);
+    if (l.length) { poslov[g] = l; }
+  });
+  var lock = LockService.getScriptLock();
+  if (!lock.tryLock(20000)) { return { status: 'error', message: 'Sustav je zauzet, pokušaj ponovno.' }; }
+  try {
+    var sp = {};
+    try { sp = JSON.parse(PropertiesService.getScriptProperties().getProperty(PROBLEMI_RUTE_KLJUC_) || '{}') || {}; } catch (e) { sp = {}; }
+    sp.poslovnice = poslov;
+    PropertiesService.getScriptProperties().setProperty(PROBLEMI_RUTE_KLJUC_, JSON.stringify(sp));
+  } finally { lock.releaseLock(); }
+  return problemiListaOdgovor_();
+}
+
+// ---- Ručno zaključivanje slučaja (Saša): npr. riješio netko drugi / riješilo se samo od sebe — uz obaveznu napomenu što se desilo ----
+var PROBLEMI_RAZLOZI_ZAKLJUCKA_ = ['Riješio netko drugi', 'Riješilo se samo od sebe', 'Klijent odustao / više nije aktualno', 'Ostalo'];
+
+function problemiZakljuci_(broj, razlog, opis, obavijesti, tko) {
+  razlog = String(razlog || '').trim();
+  if (PROBLEMI_RAZLOZI_ZAKLJUCKA_.indexOf(razlog) === -1) { return { status: 'error', message: 'Odaberi razlog zaključivanja.' }; }
+  opis = problemiTekst_(opis, 2000);
+  if (opis.length < 3) { return { status: 'error', message: 'Napiši napomenu što se desilo (barem nekoliko riječi).' }; }
+  var primatelji = null;
+  var res = problemiIzmijeni_(broj, function(red) {
+    if (String(red[10] || 'Novo') === 'Riješeno') { return { status: 'error', message: 'Problem je već riješen.' }; }
+    var sad = new Date(), dn = problemiDnevnikRed_(red), tekst = 'ZAKLJUČENO RUČNO (' + razlog + '): ' + opis;
+    red[10] = 'Riješeno'; red[13] = razlog + ': ' + opis; red[14] = sad;
+    if (!red[18]) { red[18] = tko; red[19] = sad; }
+    dn = problemiNovaBiljeska_(dn, tko, tekst);
+    if (obavijesti === true && problemiObavijestiKlijenta_(red, 'rijeseno')) { dn = problemiNovaBiljeska_(dn, 'Sustav', 'Klijentu poslana obavijest (riješeno) s poveznicom na status.'); }
+    red[12] = JSON.stringify(dn);
+    // zaduženima/zakačenima javi da je slučaj zaključen (da ne rade dvaput) — samo izričito dodijeljenima, ne "svima"
+    try {
+      var zak = problemiZakaceno_(red[22]), imenik = problemiImenik_(), pr = problemiOdrediPrimatelje_(zak, problemiZaduzeni_(red[24]), '', problemiRute_(), imenik, '');
+      if ((pr.tip === 'zaduzeni' || pr.tip === 'zakaceno') && pr.email) { primatelji = { email: pr.email, broj: String(red[0]), naziv: String(red[2] || ''), oib: String(red[3] || ''), vrsta: String(red[7] || ''), awb: String(red[8] || '') }; }
+    } catch (e) { primatelji = null; }
+    return null;
+  });
+  return res;
+}
+function adminProblemZakljuci(token, broj, razlog, opis, obavijesti) { if (!isValidAdminToken_(token)) { return pismaAuthGreska_(); } return problemiZakljuci_(broj, razlog, opis, obavijesti, 'Admin'); }
+function brziProblemZakljuci(token, broj, razlog, opis, obavijesti) { if (!isValidBrziToken_(token)) { return brziAuthGreska_(); } return problemiZakljuci_(broj, razlog, opis, obavijesti, 'Mobitel'); }
+
+// ---- Dodjela zaduženih (1–2 osobe) i poslovnice postojećem problemu (admin i mobitel) ----
+// ids: [osobaId, ...] (0–2; prazno = ukloni zadužene), poslovnica: string | undefined (undefined = ne mijenjaj).
+// Mail s gumbima „Preuzimam / Riješeno" dobivaju samo NOVO dodani; rok za podsjetnik kreće ispočetka.
+function problemiZaduzi_(broj, ids, poslovnica, tko) {
+  var imenik = problemiImenik_(), rute = problemiRute_();
+  ids = (Array.isArray(ids) ? ids : []).map(function(x) { return String(x).slice(0, 60); }).filter(Boolean);
+  if (ids.length > 2) { return { status: 'error', message: 'Problem se može dodijeliti najviše dvjema osobama.' }; }
+  var nove = [];
+  ids.forEach(function(id) {
+    var o = imenik.osobe.filter(function(x) { return x.id === id; })[0];
+    if (!o) { return; }
+    if (!nove.some(function(z) { return z.id === o.id; })) { nove.push({ id: o.id, n: o.naziv }); }
+  });
+  if (ids.length && !nove.length) { return { status: 'error', message: 'Odabrana osoba ne postoji u „Logistički centri i servisi".' }; }
+  var upoz = [];
+  var res = problemiIzmijeni_(broj, function(red) {
+    if (String(red[10] || 'Novo') === 'Riješeno') { return { status: 'error', message: 'Problem je riješen — prvo ga ponovno otvori.' }; }
+    var stare = problemiZaduzeni_(red[24]);
+    if (poslovnica !== undefined) { red[23] = problemiPoslovnicaIspravna_(poslovnica, imenik, false); }
+    var dn = problemiDnevnikRed_(red);
+    var dodani = nove.filter(function(z) { return !stare.some(function(s0) { return s0.id === z.id; }); });
+    red[24] = nove.length ? JSON.stringify(nove) : '';
+    if (!nove.length) {
+      var kp = String(red[23] || '') ? problemiOdrediPrimatelje_(null, [], String(red[17] || ''), rute, imenik, String(red[23])) : { tip: 'nitko' };
+      red[12] = JSON.stringify(problemiNovaBiljeska_(dn, tko, 'Zaduženi uklonjeni' + (stare.length ? ' (bili: ' + problemiZaduzeniTekst_(stare) + ')' : '') + '.'));
+      return null;
+    }
+    var token = String(red[21] || '');
+    if (!token) { token = Utilities.getUuid().replace(/-/g, '').slice(0, 24); red[21] = token; }
+    var p = { naziv: String(red[2] || ''), oib: String(red[3] || ''), kontakt: String(red[4] || ''), telefon: String(red[5] || ''), email: String(red[6] || ''), vrsta: String(red[7] || ''), awb: String(red[8] || ''), opis: String(red[9] || '') };
+    var tekst = 'Dodijeljeno: ' + problemiZaduzeniTekst_(nove) + (poslovnica !== undefined && red[23] ? ' · poslovnica: ' + red[23] : '') + '.';
+    if (dodani.length) { tekst += ' Mail nije poslan (samo ručno slanje) — pošalji ga preko „✉ Mail…".'; }   // dodjela samo bilježi osobu, ne šalje ništa
+    red[20] = new Date();
+    red[12] = JSON.stringify(problemiNovaBiljeska_(dn, tko, tekst));
+    return null;
+  });
+  if (res.status === 'ok' && upoz.length) { res.upozorenje = upoz.join(' '); }
+  return res;
+}
+function adminProblemZaduzi(token, broj, ids, poslovnica) { if (!isValidAdminToken_(token)) { return pismaAuthGreska_(); } return problemiZaduzi_(broj, ids, poslovnica, 'Admin'); }
+function brziProblemZaduzi(token, broj, ids, poslovnica) { if (!isValidBrziToken_(token)) { return brziAuthGreska_(); } return problemiZaduzi_(broj, ids, poslovnica, 'Mobitel'); }
+
+// ---- Vlastite vrste prigovora (Saša dodaje/briše u adminu: Problemi → Službe i usmjeravanje) ----
+function problemiSluzbeIds_() { return PROBLEMI_SLUZBE_DEFAULT_.map(function(x) { return x.id; }); }
+function adminProblemiVrstaDodaj(token, naziv, sluzba) {
+  if (!isValidAdminToken_(token)) { return pismaAuthGreska_(); }
+  naziv = problemiTekst_(naziv, 60);
+  if (naziv.length < 3) { return { status: 'error', message: 'Naziv vrste mora imati barem 3 znaka.' }; }
+  if (problemiSluzbeIds_().indexOf(String(sluzba || '')) === -1) { return { status: 'error', message: 'Odaberi službu.' }; }
+  var lock = LockService.getScriptLock();
+  if (!lock.tryLock(20000)) { return { status: 'error', message: 'Sustav je zauzet, pokušaj ponovno.' }; }
+  try {
+    var vl = problemiVlastite_();
+    if (vl.length >= 40) { return { status: 'error', message: 'Dosegnut je najveći broj vlastitih vrsta (40).' }; }
+    var postoji = problemiVrste_().some(function(v) { return v.toLowerCase() === naziv.toLowerCase(); });
+    if (postoji) { return { status: 'error', message: 'Vrsta s tim nazivom već postoji.' }; }
+    vl.push({ naziv: naziv, sluzba: String(sluzba) });
+    PropertiesService.getScriptProperties().setProperty(PROBLEMI_VLASTITE_KLJUC_, JSON.stringify(vl));
+  } finally { lock.releaseLock(); }
+  return { status: 'ok', grupe: problemiGrupe_(), rute: problemiRute_() };
+}
+// Briše se samo vrsta s popisa za NOVE prijave; već spremljeni problemi te vrste ostaju (i dalje se prikazuju) .
+function adminProblemiVrstaObrisi(token, naziv) {
+  if (!isValidAdminToken_(token)) { return pismaAuthGreska_(); }
+  naziv = String(naziv || '').trim();
+  var lock = LockService.getScriptLock();
+  if (!lock.tryLock(20000)) { return { status: 'error', message: 'Sustav je zauzet, pokušaj ponovno.' }; }
+  try {
+    var vl = problemiVlastite_(), n = vl.filter(function(v) { return v.naziv !== naziv; });
+    if (n.length === vl.length) { return { status: 'error', message: 'Vlastita vrsta ne postoji (ugrađene vrste se ne brišu).' }; }
+    PropertiesService.getScriptProperties().setProperty(PROBLEMI_VLASTITE_KLJUC_, JSON.stringify(n));
+  } finally { lock.releaseLock(); }
+  return { status: 'ok', grupe: problemiGrupe_(), rute: problemiRute_() };
+}
+// Javno: popis vrsta za obrazac na naslovnici (da se i vlastite vrste pojave bez izmjene HTML-a). Bez ikakvih internih podataka.
+function javniProblemVrste() {
+  return { status: 'ok', grupe: problemiGrupe_().map(function(g) { return { grupa: g.grupa, vrste: g.vrste }; }), awb: problemiVrsteSAwb_() };
+}
+// Javno: popis poslovnica (samo nazivi centara) za obrazac na naslovnici — klijent bira odakle je pošiljka poslana. Bez ikakvih kontakata.
+function javniProblemPoslovnice() {
+  var l = [];
+  try { l = problemiImenik_().centri.filter(function(c) { return c.vrsta === 'centar' || c.vrsta === 'vanjski'; }).map(function(c) { return c.grad; }); } catch (e) { l = []; }
+  return { status: 'ok', poslovnice: l };
+}
+// Javno: klijent prati svoju prijavu (poveznica iz maila: broj + osobni token klijenta). Vraća samo korake i datume — nikakve interne bilješke, imena djelatnika ni kontakte.
+function problemiStatusKoraci_(r) {
+  var fmt = function(d) { return (d instanceof Date) ? Utilities.formatDate(d, BRZI_TZ_, 'dd.MM.yyyy. HH:mm') : String(d || ''); };
+  var st = String(r[10] || 'Novo'), preuzeto = !!r[18], rij = st === 'Riješeno';
+  return { broj: String(r[0] || ''), vrsta: String(r[7] || ''), awb: String(r[8] || ''), naziv: String(r[2] || ''), poslovnica: String(r[23] || ''), stanje: st,
+    koraci: [
+      { naslov: 'Prijava zaprimljena', opis: 'Zaprimili smo Vašu prijavu.', datum: fmt(r[1]), gotovo: true },
+      { naslov: 'Preuzeto u obradu', opis: 'Naš djelatnik se bavi Vašim problemom.', datum: preuzeto ? fmt(r[19]) : '', gotovo: preuzeto || rij },
+      { naslov: 'Riješeno', opis: 'Problem je riješen.', datum: rij ? fmt(r[14]) : '', gotovo: rij }
+    ] };
+}
+function problemStatusKlijent(data) {
+  data = data || {};
+  var sheet, last, v;
+  // A) poveznica iz maila: broj slučaja + osobni token
+  if (data.token) {
+    var broj = String(data.broj || '').trim(), tok = String(data.token || '').trim();
+    if (!/^P-\d{4}-\d+$/.test(broj) || !/^[0-9a-f]{24}$/.test(tok)) { return { status: 'error', message: 'Poveznica nije ispravna.' }; }
+    if (!problemiOgranici_('PROBLEM_ST_' + broj, 120, 3600)) { return { status: 'error', message: 'Previše pokušaja — pričekajte malo.' }; }
+    sheet = getOrCreateProblemiSheet_(); last = sheet.getLastRow();
+    if (last < 2) { return { status: 'error', message: 'Prijava nije pronađena.' }; }
+    v = sheet.getRange(2, 1, last - 1, PROBLEMI_HEADER_.length).getValues();
+    for (var i = 0; i < v.length; i++) {
+      if (String(v[i][0]) !== broj) { continue; }
+      if (!v[i][25] || String(v[i][25]) !== tok) { return { status: 'error', message: 'Poveznica nije ispravna.' }; }
+      return { status: 'ok', prijava: problemiStatusKoraci_(v[i]) };
+    }
+    return { status: 'error', message: 'Prijava nije pronađena.' };
+  }
+  // B) ručni upit: broj slučaja ILI broj pošiljke + e-mail s kojim je prijava poslana
+  var upit = problemiAwbNorm_(data.upit), em = problemiTekst_(data.email, 120).toLowerCase();
+  if (upit.length < 4 || !/^[^\s@,;]+@[^\s@,;]+\.[^\s@,;]{2,}$/.test(em)) { return { status: 'error', message: 'Upišite broj slučaja ili broj pošiljke i e-mail s kojim ste prijavili problem.' }; }
+  var jeSlucaj = /^P-\d{4}-\d+$/.test(upit), upitSirovi = problemiHawbOcisti_(upit), upitBr = jeSlucaj ? '' : problemiBrojPosiljke_(upit);
+  if (!jeSlucaj && !problemiBrojPosiljkeOk_(upitBr) && !problemiHawbOk_(upitSirovi)) { return { status: 'error', message: 'Upišite broj pošiljke (HR200026507624 ili HAWB broj) ili broj slučaja (npr. P-2026-012).' }; }
+  if (!problemiOgranici_('PROBLEM_STQ_SAT', 300, 3600) || !problemiOgranici_('PROBLEM_STQ_' + em, 15, 3600)) { return { status: 'error', message: 'Previše pokušaja — pokušajte kasnije.' }; }
+  sheet = getOrCreateProblemiSheet_(); last = sheet.getLastRow();
+  var nadjeno = [];
+  if (last >= 2) {
+    var trazeni = [upitBr, upitSirovi], jeBroj = /^P-\d{4}-\d+$/.test(upit);
+    v = sheet.getRange(2, 1, last - 1, PROBLEMI_HEADER_.length).getValues();
+    v.forEach(function(r) {
+      if (!r[0] || String(r[6] || '').trim().toLowerCase() !== em) { return; }
+      var pogodak = jeBroj ? String(r[0]).toUpperCase() === upit : problemiAwbLista_(String(r[8] || '')).some(function(a) { return trazeni.indexOf(problemiBrojPosiljke_(a)) !== -1 || trazeni.indexOf(problemiHawbOcisti_(a)) !== -1; });
+      if (pogodak) { nadjeno.push(r); }
+    });
+  }
+  if (!nadjeno.length) { return { status: 'error', message: 'Nismo pronašli prijavu za te podatke. Provjerite broj slučaja / broj pošiljke i e-mail s kojim ste prijavili problem.' }; }
+  nadjeno.sort(function(a, b) { return (b[1] instanceof Date ? b[1].getTime() : 0) - (a[1] instanceof Date ? a[1].getTime() : 0); });
+  return { status: 'ok', prijave: nadjeno.slice(0, 5).map(problemiStatusKoraci_) };
 }

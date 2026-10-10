@@ -1155,7 +1155,7 @@
       var z1 = kart.querySelector('[data-pbm-z1]').value, z2 = kart.querySelector('[data-pbm-z2]').value, ps = kart.querySelector('[data-pbm-pos]').value;
       if (z1 && z1 === z2) { st.style.color = '#c0392b'; st.textContent = 'Odaberi dvije različite osobe.'; return; }
       var ids = [z1, z2].filter(Boolean);
-      if (!ids.length && !window.confirm('Nijedna osoba nije odabrana. Ako poslovnica ima kontakte, mail ide njima; inače problem ostaje kod tebe, nikome se ne šalje. Nastaviti?')) { return; }
+      if (!ids.length && !window.confirm('Nijedna osoba nije odabrana — zaduženi će se ukloniti s problema. Nastaviti?')) { return; }
       gumb.disabled = true; st.textContent = 'Šaljem…';
       api({ action:'brziProblemZaduzi', token: token, broj: broj, zaduzeni: ids, poslovnica: ps }).then(function(r){ nakon(r, function(){ pbmUpoz = r.upozorenje || ''; }); }).catch(greska); return;
     }

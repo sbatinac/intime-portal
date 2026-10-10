@@ -89,7 +89,7 @@
       <form id="prijava-form" onsubmit="return posaljiPrijavu(event)" novalidate>
         <div id="prijava-form-wrap" class="anketa-card">
 
-          <label for="pp-oib">OIB tvrtke <span class="opc">(nije obavezan — ubrzava prepoznavanje i popunjava naziv firme)</span></label>
+          <label for="pp-oib">OIB tvrtke * <span class="opc">(popunjava naziv firme iz sudskog registra)</span></label>
           <input type="text" id="pp-oib" name="oib" inputmode="numeric" maxlength="11" autocomplete="off" oninput="ogranicniOibNaZnamenke(this)">
 
           <label for="pp-naziv">Naziv tvrtke *</label>
@@ -107,7 +107,7 @@
             <div><label for="pp-vrsta">O kakvom se problemu radi? *</label>
               <select id="pp-vrsta" name="vrsta">
                 <option value="">— odaberite —</option>
-                <optgroup label="Dostava"><option>Izgubljena pošiljka</option><option>Nedostavljena pošiljka</option><option>Kašnjenje dostave</option><option>Dostava na pogrešnu adresu ili osobi</option><option>Prikup nije obavljen ili kasni</option><option>Nova dostava / novi termin</option><option>Ponašanje kurira</option></optgroup>
+                <optgroup label="Dostava"><option>Izgubljena pošiljka</option><option>Nedostavljena pošiljka</option><option>Kašnjenje dostave</option><option>Promjena adrese dostave</option><option>Promjena primatelja</option><option>Dostava na pogrešnu adresu ili osobi</option><option>Prikup nije obavljen ili kasni</option><option>Nova dostava / novi termin</option><option>Ponašanje kurira</option></optgroup>
                 <optgroup label="Šteta"><option>Reklamacija oštećenja</option><option>Nedostaje sadržaj ili krađa</option><option>Zahtjev za naknadu štete</option></optgroup>
                 <optgroup label="Račun i naplata"><option>Krivi obračun računa</option><option>Dvostruka naplata</option><option>Neočekivani dodaci (gorivo, doplatak, težina)</option><option>Cjenik ili popust nije primijenjen</option><option>Storno / odobrenje računa</option><option>Otkupnina (pouzeće) nije isplaćena</option></optgroup>
                 <optgroup label="Carina"><option>Pošiljka zadržana na carini</option><option>Krive carinske naknade ili PDV</option><option>Nedostaje dokumentacija</option></optgroup>
@@ -369,11 +369,12 @@
     var v = function(id) { return document.getElementById(id).value.trim(); };
     var p = { action: 'javniProblemPrijava', oib: v('pp-oib'), naziv: v('pp-naziv'), kontakt: v('pp-kontakt'), telefon: v('pp-telefon'), email: v('pp-email'), vrsta: v('pp-vrsta'), awb: awbVrijednost(document.getElementById('pp-awb'), document.getElementById('pp-awb-tip')), awbTip: awbTip(document.getElementById('pp-awb-tip')), poslovnica: v('pp-poslovnica'), odredisteGrad: odOdabir_ ? odOdabir_.grad : '', odredistePbr: odOdabir_ ? odOdabir_.postanski : '', opis: v('pp-opis'), web: v('pp-web') };
     prikaziGresku_('');
+    if (!p.oib) { prikaziGresku_('Upišite OIB tvrtke (11 znamenki).'); document.getElementById('pp-oib').focus(); return false; }
     if (!p.naziv) { prikaziGresku_('Upišite naziv tvrtke.'); return false; }
     if (!p.kontakt) { prikaziGresku_('Upišite ime i prezime osobe za kontakt.'); return false; }
     if (p.telefon.replace(/\D/g, '').length < 8) { prikaziGresku_('Upišite broj mobitela (barem 8 znamenki) — da Vas možemo nazvati ako zatreba.'); document.getElementById('pp-telefon').focus(); return false; }
     if (!/^[^\s@,;]+@[^\s@,;]+\.[^\s@,;]{2,}$/.test(p.email)) { prikaziGresku_('Upišite ispravnu e-mail adresu — na nju šaljemo odgovor.'); return false; }
-    if (p.oib && p.oib.length !== 11) { prikaziGresku_('OIB ima 11 znamenki (a Vaš unos ' + p.oib.length + ') — ispravite ga ili ostavite prazno.'); return false; }
+    if (p.oib.length !== 11) { prikaziGresku_('OIB ima 11 znamenki (a Vaš unos ' + p.oib.length + ') — ispravite ga.'); document.getElementById('pp-oib').focus(); return false; }
     if (!p.vrsta) { prikaziGresku_('Odaberite vrstu problema.'); return false; }
     if (trebaAwb_() && !p.awb) { prikaziGresku_('Upišite broj pošiljke — bez njega ne možemo pronaći pošiljku.'); document.getElementById('pp-awb').focus(); return false; }
     if (!awbIspravan(p.awb, document.getElementById('pp-awb-tip'))) { prikaziGresku_(awbPoruka(document.getElementById('pp-awb-tip'))); document.getElementById('pp-awb').focus(); return false; }
