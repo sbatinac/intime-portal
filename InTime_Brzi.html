@@ -1039,6 +1039,7 @@
       '<div style="margin-top:4px;"><span class="pbm-ozn ' + k + '">' + esc(p.status) + '</span><span class="pbm-ozn vrsta">' + esc(p.vrsta) + '</span>' +
       (p.sluzbaNaziv ? '<span class="pbm-ozn sluzba">→ ' + esc(p.sluzbaNaziv) + '</span>' : '') +
       (p.poslovnica ? '<span class="pbm-ozn preuzeo">📍 ' + esc(p.poslovnica) + '</span>' : '') +
+      (p.odrediste ? '<span class="pbm-ozn vrsta">🎯 ' + esc(p.odrediste) + '</span>' : '') +
       (p.awb ? '<span class="pbm-ozn vrsta">📦 ' + esc(p.awb) + '</span>' : (p.trebaAwb && p.status !== 'Riješeno' ? '<span class="pbm-ozn cekaj2">📦 nema broja pošiljke</span>' : '')) +
       (p.zaduzeniTekst ? '<span class="pbm-ozn sluzba">👤 ' + esc(p.zaduzeniTekst) + '</span>' : (p.status !== 'Riješeno' ? '<span class="pbm-ozn cekaj2">👤 nije dodijeljeno</span>' : '')) +
       (p.zakaceno ? '<span class="pbm-ozn sluzba">📎 ' + esc(p.zakaceno) + '</span>' : '') +
@@ -1185,6 +1186,7 @@
     L.push('Klijent: ' + p.naziv + (p.oib ? ' (OIB ' + p.oib + ')' : ''));
     L.push('Kontakt: ' + [p.kontakt, p.telefon, p.email].filter(Boolean).join(' · '));
     if (p.poslovnica) { L.push('Poslovnica: ' + p.poslovnica); }
+    if (p.odrediste) { L.push('Odredište pošiljke: ' + p.odrediste); }
     if (p.awb) { L.push('Broj pošiljke: ' + p.awb + (/^HR2000\d{8}$/.test(p.awb) ? ' (praćenje: https://intimeolb.azurewebsites.net/shipment-tracking/' + p.awb + ')' : '')); }
     if (p.zaduzeniTekst) { L.push('Zaduženi: ' + p.zaduzeniTekst); }
     if (p.zakaceno) { L.push('Zakačeno: ' + p.zakaceno); }

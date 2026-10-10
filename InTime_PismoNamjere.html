@@ -738,6 +738,13 @@
     text-align:center;
   }
 
+  /* Prijava problema — ugrađena (iframe) ispod kartice, isti obrazac kao anketa/kalkulator (7.10.2026.: Sašin zahtjev — ne novi prozor, nego da se kartica otvori na stranici) */
+  .problem-embed-wrap{display:none;margin-top:14px;}
+  .problem-embed-wrap.active{display:block;}
+  .problem-embed-bar{display:flex;justify-content:space-between;align-items:center;background:linear-gradient(135deg,#d8160f 0%,#a60d08 100%);color:#fff;padding:10px 16px;border-radius:10px 10px 0 0;font-weight:700;font-size:14px;}
+  .problem-embed-close{background:transparent;border:1px solid rgba(255,255,255,.55);color:#fff;border-radius:6px;padding:5px 12px;font-size:12px;cursor:pointer;font-family:inherit;}
+  .problem-embed-close:hover{background:rgba(255,255,255,.15);}
+  .problem-embed-iframe{width:100%;height:900px;border:1px solid var(--line);border-top:none;border-radius:0 0 10px 10px;display:block;background:#fff;}
   /* ANKETA — ugrađena (iframe) ispod CTA kutije, vidi opširnu napomenu uz HTML */
   .anketa-embed-wrap{display:none;margin-top:18px;}
   .anketa-embed-wrap.active{display:block;}
@@ -1346,10 +1353,10 @@
   footer > .wrap{
     position:relative;
     background:
-      linear-gradient(180deg,rgba(8,22,36,.10) 0%,rgba(8,22,36,.25) 55%,rgba(8,22,36,.40) 100%),
-      url('https://i.imgur.com/vZcqmsR.png') center/cover no-repeat,
+      linear-gradient(90deg,rgba(6,18,32,.78) 0%,rgba(6,18,32,.55) 45%,rgba(6,18,32,.12) 100%),
+      url('https://i.imgur.com/9H6eqU8.png') center/cover no-repeat,
       #0d2438;
-    aspect-ratio:2374/662;
+    aspect-ratio:2048/610;
     color:#e7eef0;
     text-shadow:0 1px 4px rgba(0,0,0,.55);
     border-radius:14px;
@@ -1510,11 +1517,12 @@
   .btn-narancasti:hover{background:linear-gradient(135deg,#ff544a 0%,#d8160f 100%);color:#fff;}
   .btn-narancasti .sim-problem{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;background:#fff;color:#d8160f;font-size:15px;font-weight:900;text-shadow:none;flex:0 0 auto;}
   /* Velika kartica PROBLEM na kraju galerija (isti oblik kao Dokumenti/Slike/Video, ali crvena + simbol upozorenja; vodi na stranicu za prijavu problema) */
-  a.galerija-toggle-btn.tema-problem{text-decoration:none;background:linear-gradient(135deg,#ff3b30 0%,#a60d08 100%);border:2px solid rgba(255,255,255,.35);box-shadow:0 4px 18px rgba(200,20,15,.35);}
-  a.galerija-toggle-btn.tema-problem:hover{background:linear-gradient(135deg,#ff5a50 0%,#c2120c 100%);color:#fff;}
-  a.galerija-toggle-btn.tema-problem .problem-sim{display:inline-flex;align-items:center;justify-content:center;width:46px;height:46px;border-radius:50%;background:#fff;color:#d8160f;font-size:28px;font-weight:900;margin-right:16px;text-shadow:none;flex:0 0 auto;}
-  a.galerija-toggle-btn.tema-problem .problem-tekst small{display:block;font-weight:500;font-size:14px;opacity:.95;margin-top:3px;}
-  @media (max-width:640px){a.galerija-toggle-btn.tema-problem{padding:26px 18px;font-size:16px;}a.galerija-toggle-btn.tema-problem .problem-sim{width:38px;height:38px;font-size:22px;margin-right:12px;}}
+  button.galerija-toggle-btn.tema-problem{text-align:left;font-family:inherit;cursor:pointer;align-items:center;min-height:104px;padding:20px 32px;background:linear-gradient(90deg,rgba(25,0,0,.80) 0%,rgba(25,0,0,.55) 45%,rgba(25,0,0,.12) 100%),url('https://i.imgur.com/hhSIgLN.png') center 24%/cover no-repeat,#a60d08;border:2px solid rgba(255,255,255,.35);box-shadow:0 4px 18px rgba(200,20,15,.35);}
+  button.galerija-toggle-btn.tema-problem:hover{background:linear-gradient(90deg,rgba(45,0,0,.85) 0%,rgba(45,0,0,.6) 45%,rgba(45,0,0,.2) 100%),url('https://i.imgur.com/hhSIgLN.png') center 24%/cover no-repeat,#c2120c;color:#fff;}
+  button.galerija-toggle-btn.tema-problem .problem-sim{display:inline-flex;align-items:center;justify-content:center;width:46px;height:46px;border-radius:50%;background:#e3170f;color:#fff;border:2px solid #fff;box-shadow:0 0 10px rgba(227,23,15,.7);font-size:28px;font-weight:900;margin-right:16px;text-shadow:none;flex:0 0 auto;}
+  button.galerija-toggle-btn.tema-problem .problem-tekst{font-size:18px;text-shadow:0 2px 6px rgba(0,0,0,.7);}
+  button.galerija-toggle-btn.tema-problem .problem-tekst small{display:block;font-weight:500;font-size:14px;opacity:.97;margin-top:3px;}
+  @media (max-width:640px){button.galerija-toggle-btn.tema-problem{padding:16px 16px;font-size:16px;min-height:104px;}button.galerija-toggle-btn.tema-problem .problem-tekst{font-size:16px;}button.galerija-toggle-btn.tema-problem .problem-sim{width:38px;height:38px;font-size:22px;margin-right:12px;}}
   .cta-raskid{text-align:center;margin-top:2px;}
   .cta-raskid a{color:#d8dedd;font-size:13px;text-decoration:underline;text-underline-offset:3px;opacity:.85;}
   .cta-raskid a:hover{opacity:1;color:#fff;}
@@ -1838,13 +1846,20 @@
     </div>
   </section>
 
-  <!-- NOVO (6.10.2026.): kartica "Prijava problema" — zadnja u nizu velikih kartica; vodi na InTime_PrijavaProblema.html -->
+  <!-- Kartica "Prijava problema" — klik otvara InTime_PrijavaProblema.html UGRAĐENO (iframe) ispod kartice, ne u novom prozoru -->
   <section id="problem-kartica-section">
     <div class="wrap-galerija">
-      <a class="galerija-toggle-btn tema-problem" href="InTime_PrijavaProblema.html" target="_blank" rel="noopener">
+      <button type="button" id="problem-toggle-btn" class="galerija-toggle-btn tema-problem" onclick="toggleProblemEmbed(event)" aria-expanded="false" aria-controls="problem-embed-wrap">
         <span style="display:flex;align-items:center;"><span class="problem-sim">!</span><span class="problem-tekst">Imate problem s pošiljkom ili računom?<small>Izgubljena ili nedostavljena pošiljka, krivi obračun, oštećenje… Prijavite nam — javit ćemo Vam se.</small></span></span>
-        <span class="galerija-toggle-arrow" style="transform:none;">→</span>
-      </a>
+        <span class="galerija-toggle-arrow">▾</span>
+      </button>
+      <div id="problem-embed-wrap" class="problem-embed-wrap">
+        <div class="problem-embed-bar">
+          <span>Prijava problema</span>
+          <button type="button" class="problem-embed-close" onclick="closeProblemEmbed()">Zatvori ✕</button>
+        </div>
+        <iframe id="problem-embed-iframe" class="problem-embed-iframe" title="Prijava problema s pošiljkom ili računom" loading="lazy"></iframe>
+      </div>
     </div>
   </section>
 
@@ -1894,8 +1909,6 @@
             <button type="button" class="btn btn-zuti btn-mali" onclick="toggleAnketaEmbed(event)">Hvala Vam što ste naš klijent.<br>Vaše mišljenje nam je važno – ocijenite našu uslugu →</button>
             <button class="btn btn-secondary btn-mali" onclick="showPanel('odbijenica')">NE, trenutno nas ne zanima</button>
           </div>
-          <!-- NOVO (6.10.2026.): narančasti gumb — postojeći klijent sam prijavljuje problem (pošiljka/račun/reklamacija) → InTime_PrijavaProblema.html -->
-          <a class="btn btn-narancasti" href="InTime_PrijavaProblema.html" target="_blank" rel="noopener"><span class="sim-problem">!</span>Imate problem s pošiljkom ili računom? Prijavite nam →</a>
           <div class="cta-raskid"><a href="InTime_RaskidSuradnje.html" target="_blank" rel="noopener">Prekidate suradnju s nama? Recite nam zašto →</a></div>
         </div>
       </div>
@@ -6122,6 +6135,7 @@
   // u upitniku (`skociNaSidro()`, vidi njen komentar niže) umjesto scrollIntoView-a,
   // koja skače na POČETAK ciljanog elementa, ne na njegovu sredinu.
   function showPanel(which){
+    closeProblemEmbed();
     closeAnketaEmbed();
     closeBookingEmbed();
     closeKalkulatorEmbed();
@@ -6178,6 +6192,7 @@
   }
 
   function openAnketaEmbed(){
+    closeProblemEmbed();
     document.getElementById('panel-interes').classList.remove('active');
     document.getElementById('panel-odbijenica').classList.remove('active');
     document.getElementById('confirm-box').classList.remove('active');
@@ -6225,6 +6240,7 @@
   }
 
   function openBookingEmbed(){
+    closeProblemEmbed();
     document.getElementById('panel-interes').classList.remove('active');
     document.getElementById('panel-odbijenica').classList.remove('active');
     document.getElementById('confirm-box').classList.remove('active');
@@ -6318,6 +6334,7 @@
     document.getElementById('confirm-box').classList.remove('active');
     closeAnketaEmbed();
     closeBookingEmbed();
+    closeProblemEmbed();
     var wrap = document.getElementById('kalkulator-embed-wrap');
     var iframe = document.getElementById('kalkulator-embed-iframe');
     iframe.src = 'InTime_KalkulatorCijena.html?kalk_u=' + encodeURIComponent(username) + '&kalk_p=' + encodeURIComponent(lozinka);
@@ -6398,6 +6415,41 @@
       toggleKalkulatorFullscreen();
     }
   });
+
+  // ---- PRIJAVA PROBLEMA UGRAĐENA (iframe) — otvaranje/zatvaranje; visina se prilagođava sadržaju ----
+  var problemEmbedResizeInterval = null;
+  function toggleProblemEmbed(event){
+    if (event) { event.stopPropagation(); }
+    if (document.getElementById('problem-embed-wrap').classList.contains('active')) { closeProblemEmbed(); } else { openProblemEmbed(); }
+  }
+  function openProblemEmbed(){
+    closeAnketaEmbed(); closeBookingEmbed(); closeKalkulatorEmbed();
+    var wrap = document.getElementById('problem-embed-wrap'), iframe = document.getElementById('problem-embed-iframe');
+    if (!iframe.getAttribute('src')) {
+      iframe.src = 'InTime_PrijavaProblema.html';
+      iframe.addEventListener('load', function(){ resizeProblemIframe(); setTimeout(resizeProblemIframe, 300); });
+    }
+    wrap.classList.add('active');
+    var btn = document.getElementById('problem-toggle-btn'); btn.classList.add('otvoreno'); btn.setAttribute('aria-expanded', 'true');
+    if (problemEmbedResizeInterval) { clearInterval(problemEmbedResizeInterval); }
+    problemEmbedResizeInterval = setInterval(resizeProblemIframe, 600);
+    wrap.scrollIntoView({behavior:'smooth', block:'start'});
+  }
+  function closeProblemEmbed(){
+    var wrap = document.getElementById('problem-embed-wrap');
+    if (!wrap) { return; }
+    wrap.classList.remove('active');
+    var btn = document.getElementById('problem-toggle-btn'); btn.classList.remove('otvoreno'); btn.setAttribute('aria-expanded', 'false');
+    if (problemEmbedResizeInterval) { clearInterval(problemEmbedResizeInterval); problemEmbedResizeInterval = null; }
+  }
+  window.addEventListener('message', function(ev){
+    var f = document.getElementById('problem-embed-iframe');
+    if (f && ev.source === f.contentWindow && ev.data && typeof ev.data.intimeProblemVisina === 'number' && ev.data.intimeProblemVisina > 0) { f.style.height = (ev.data.intimeProblemVisina + 4) + 'px'; }
+  });
+  function resizeProblemIframe(){
+    var iframe = document.getElementById('problem-embed-iframe');
+    try { var h = iframe.contentWindow.document.body.scrollHeight; if (h > 0) { iframe.style.height = (h + 4) + 'px'; } } catch (err) { /* druga domena — ostaje zadana visina */ }
+  }
 
   function resizeAnketaIframe(){
     var iframe = document.getElementById('anketa-embed-iframe');

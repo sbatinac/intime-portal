@@ -22,6 +22,8 @@
   .anketa-header-back{color:var(--purple);font-size:13.5px;text-decoration:none;}
   .anketa-header-back:hover{text-decoration:underline;}
   section{padding:36px 0;}
+  body.ugradjeno .anketa-header,body.ugradjeno .pp-nazad{display:none;}
+  body.ugradjeno section{padding:20px 0;}
   h2{font-size:23px;color:var(--graphite);border-left:4px solid var(--orange);padding-left:12px;margin:0 0 14px;}
   p{margin:0 0 14px;color:#333;}
   .anketa-card{background:#fff;border:1px solid var(--line);border-radius:10px;padding:26px 24px;margin-top:8px;}
@@ -42,11 +44,17 @@
   .confirm-msg.active{display:block;}
   .confirm-msg .check{width:52px;height:52px;border-radius:50%;background:var(--orange);color:#fff;display:flex;align-items:center;justify-content:center;font-size:26px;margin:0 auto 14px;}
   .confirm-msg .broj{display:inline-block;background:#fff4e5;border:1px solid #f7c58a;color:var(--orange-dark);border-radius:8px;padding:6px 16px;font-size:20px;font-weight:800;margin:4px 0 12px;}
+  .od-wrap{position:relative;}
+  .od-lista{position:absolute;left:0;right:0;top:100%;z-index:20;background:#fff;border:1px solid var(--line);border-radius:6px;box-shadow:0 8px 22px rgba(0,0,0,.14);max-height:260px;overflow-y:auto;margin-top:2px;}
+  .od-lista[hidden]{display:none;}
+  .od-stavka{display:flex;justify-content:space-between;gap:10px;padding:8px 12px;font-size:14px;cursor:pointer;border-bottom:1px solid #f0eef3;}
+  .od-stavka:last-child{border-bottom:none;}
+  .od-stavka:hover,.od-stavka.aktivna{background:#fff4e5;}
+  .od-stavka .od-meta{color:var(--grey);font-size:12.5px;white-space:nowrap;}
+  .od-hint{padding:10px 12px;font-size:13px;color:var(--grey);}
+  .od-zona{margin-top:8px;padding:10px 14px;border-radius:8px;background:#fff4e5;border:1px solid #f7c58a;color:#8a4b00;font-size:14.5px;font-weight:700;}
+  .od-zona[hidden]{display:none;}
   @media(max-width:640px){.pair{grid-template-columns:1fr;}}
-  footer{background:#fff;color:var(--grey);padding:0 0 30px;font-size:14.5px;}
-  footer > .wrap-wide{border-top:1px solid var(--line);padding-top:30px;margin-top:20px;}
-  footer b{color:var(--graphite);}
-  footer a{color:var(--purple);text-decoration:none;}
   .footer-badge{display:inline-block;margin-top:10px;font-size:12px;color:var(--grey);}
 </style>
 </head>
@@ -72,7 +80,7 @@
         <p id="prijava-awb" style="margin:2px 0 8px;font-weight:700;" hidden></p>
         <p>Potvrdu s brojem slučaja i brojem pošiljke poslali smo Vam na e-mail. Status možete pratiti pomoću bilo kojeg od ta dva broja.</p>
         <p><a id="prijava-status-link" href="InTime_StatusProblema.html" style="color:var(--purple);font-weight:700;">📍 Prati status prijave</a></p>
-        <p><a href="InTime_PismoNamjere.html" style="color:var(--purple);">← Povratak na glavnu stranicu</a></p>
+        <p class="pp-nazad"><a href="InTime_PismoNamjere.html" style="color:var(--purple);">← Povratak na glavnu stranicu</a></p>
       </div>
 
       <p style="font-size:14px;margin:0 0 6px;">Već ste prijavili problem? <a href="InTime_StatusProblema.html" style="color:var(--purple);font-weight:700;">Pratite status prijave</a> pomoću broja slučaja ili broja pošiljke.</p>
@@ -88,7 +96,7 @@
 
           <div class="pair">
             <div><label for="pp-kontakt">Ime i prezime osobe za kontakt *</label><input type="text" id="pp-kontakt" name="kontakt" maxlength="80" autocomplete="name"></div>
-            <div><label for="pp-telefon">Telefon <span class="opc">(nije obavezan)</span></label><input type="tel" id="pp-telefon" name="telefon" maxlength="30" autocomplete="tel"></div>
+            <div><label for="pp-telefon">Broj mobitela *</label><input type="tel" id="pp-telefon" name="telefon" maxlength="30" autocomplete="tel" inputmode="tel" placeholder="npr. 091 234 5678"></div>
           </div>
 
           <label for="pp-email">E-mail na koji Vam odgovaramo *</label>
@@ -113,6 +121,15 @@
               <select id="pp-poslovnica" name="poslovnica"><option value="">— ne znam / nije bitno —</option></select></div>
           </div>
 
+          <div id="pp-odrediste-blok" hidden>
+            <label for="pp-odrediste">U koji grad / mjesto je pošiljka upućena? <span class="opc">(ako znate — upišite grad ili poštanski broj)</span></label>
+            <div class="od-wrap">
+              <input type="text" id="pp-odrediste" maxlength="80" autocomplete="off" placeholder="npr. Osijek ili 31000" role="combobox" aria-expanded="false" aria-controls="pp-odrediste-lista">
+              <div id="pp-odrediste-lista" class="od-lista" role="listbox" hidden></div>
+            </div>
+            <div id="pp-odrediste-zona" class="od-zona" hidden></div>
+          </div>
+
           <label for="pp-opis">Opišite problem *</label>
           <textarea id="pp-opis" name="opis" maxlength="3000" placeholder="Što se dogodilo? Kada je pošiljka predana/očekivana, na koji se račun odnosi, što je krivo…"></textarea>
 
@@ -128,25 +145,18 @@
     </div>
   </section>
 
-  <footer>
-    <div class="wrap-wide">
-      <div><b>Saša Batinac</b> — Sales and Marketing Manager, Voditelj ključnih kupaca</div>
-      <div>In Time d.o.o. — Licensee of FedEx</div>
-      <div>Zelena aleja 28, 10410 Vukovina</div>
-      <div>Tel: 01 6254 444</div>
-      <div>M: +385 91 6262 171 · <a href="mailto:sasa.batinac@in-time.hr">sasa.batinac@in-time.hr</a></div>
-      <div><a href="https://in-time.hr" target="_blank">in-time.hr</a> · <a href="https://fedex.com" target="_blank">fedex.com</a></div>
-      <div class="footer-badge">In Time d.o.o. · FedEx zastupništvo · Hrvatska, BiH, Srbija, Slovenija, Crna Gora, Sjeverna Makedonija</div>
-      <div style="margin-top:14px;font-size:12px;opacity:.85;">
-        Izradio Saša Batinac. Sva prava pridržana.<br>
-        Saša Batinac univ. spec. oec. — voditelj ključnih klijenata — In Time d.o.o. — regija istok
-      </div>
-    </div>
-  </footer>
-
 <script>
   // ISTI Apps Script Web App kao u ostalim stranicama (InTime_Code.gs)
   var GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbz73zkx72GhrDZ-t3CamF5wuz-9V7Uxe5z9IkFxHA8F5FBlrIlc7zMUd4_EHTILD9FTAw/exec";
+
+  // Ugrađeno u naslovnicu (iframe): bez zaglavlja/podnožja, a linkovi (status prijave) idu u novi tab da ne zamijene formu.
+  (function(){
+    try { if (window.parent && window.parent !== window) {
+      document.body.classList.add('ugradjeno');
+      var b = document.createElement('base'); b.target = '_blank'; document.head.appendChild(b);
+      setInterval(function(){ try { window.parent.postMessage({ intimeProblemVisina: document.body.scrollHeight }, '*'); } catch (e) {} }, 600);
+    } } catch (e) {}
+  })();
 
   function ogranicniOibNaZnamenke(input){
     var samoBrojevi = input.value.replace(/[^0-9]/g, '').slice(0, 11);
@@ -300,20 +310,73 @@
   })();
   function esc_(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
 
+  // Odredište pošiljke: pretraga po gradu/poštanskom broju iz naše baze zona (listZoneJavno). Polje se prikaže tek kad se popis učita.
+  var odZone_ = [], odOdabir_ = null, odAkt_ = -1, odPrikazano_ = [];
+  function odNorm_(t){ t = String(t == null ? '' : t).toLowerCase(); try { t = t.normalize('NFD').replace(/[\u0300-\u036f]/g, ''); } catch (e) {} return t.replace(/đ/g, 'd').replace(/\s+/g, ' ').trim(); }
+  function odZonaTekst_(z){ z = String(z == null ? '' : z).trim(); return !z ? '' : (/^\d+$/.test(z) ? 'zona ' + z : z); }
+  function odOcisti_(){ odOdabir_ = null; var zb = document.getElementById('pp-odrediste-zona'); zb.hidden = true; zb.textContent = ''; }
+  function odZatvori_(){ var l = document.getElementById('pp-odrediste-lista'); l.hidden = true; document.getElementById('pp-odrediste').setAttribute('aria-expanded', 'false'); odAkt_ = -1; }
+  function odOdaberi_(z){
+    odOdabir_ = z;
+    document.getElementById('pp-odrediste').value = z.grad + ' (' + z.postanski + ')';
+    var zz = String(z.zona == null ? '' : z.zona).trim(), zb = document.getElementById('pp-odrediste-zona');
+    zb.textContent = '📍 ' + z.grad + ', ' + z.postanski + (zz ? (/^\d+$/.test(zz) ? ' — poslali ste pošiljku u zonu ' + zz + '.' : ' — zona: ' + zz) : '');
+    zb.hidden = false;
+    odZatvori_();
+  }
+  function odPrikazi_(){
+    var inp = document.getElementById('pp-odrediste'), l = document.getElementById('pp-odrediste-lista'), q = odNorm_(inp.value);
+    if (!q) { odZatvori_(); return; }
+    var isBroj = /^\d+$/.test(q);
+    var nadjeno = odZone_.filter(function(z){ return isBroj ? z._p.indexOf(q) === 0 : z._g.indexOf(q) !== -1; });
+    if (!isBroj) { nadjeno.sort(function(a, b){ var pa = a._g.indexOf(q) === 0 ? 0 : 1, pb = b._g.indexOf(q) === 0 ? 0 : 1; return pa - pb || (a._g < b._g ? -1 : a._g > b._g ? 1 : 0); }); }
+    odPrikazano_ = nadjeno.slice(0, 40); odAkt_ = -1;
+    if (!odPrikazano_.length) { l.innerHTML = '<div class="od-hint">Nema rezultata — provjerite upis ili ostavite polje prazno.</div>'; }
+    else {
+      l.innerHTML = odPrikazano_.map(function(z, i){ var zt = odZonaTekst_(z.zona); return '<div class="od-stavka" role="option" data-i="' + i + '"><span>' + esc_(z.grad) + '</span><span class="od-meta">' + esc_(z.postanski) + (zt ? ' · ' + esc_(zt) : '') + '</span></div>'; }).join('')
+        + (nadjeno.length > odPrikazano_.length ? '<div class="od-hint">Prikazano prvih ' + odPrikazano_.length + ' od ' + nadjeno.length + ' — upišite još slova za uži izbor.</div>' : '');
+    }
+    l.hidden = false; inp.setAttribute('aria-expanded', 'true');
+  }
+  (function odInit_(){
+    var inp = document.getElementById('pp-odrediste'), l = document.getElementById('pp-odrediste-lista');
+    inp.addEventListener('input', function(){ odOcisti_(); odPrikazi_(); });
+    inp.addEventListener('focus', function(){ if (inp.value && !odOdabir_) { odPrikazi_(); } });
+    inp.addEventListener('keydown', function(e){
+      var st = l.querySelectorAll('.od-stavka');
+      if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { if (!st.length || l.hidden) { return; } e.preventDefault(); odAkt_ = (odAkt_ + (e.key === 'ArrowDown' ? 1 : -1) + st.length) % st.length; Array.prototype.forEach.call(st, function(x, i){ x.classList.toggle('aktivna', i === odAkt_); }); st[odAkt_].scrollIntoView({ block: 'nearest' }); }
+      else if (e.key === 'Enter') { if (!l.hidden && st.length) { e.preventDefault(); odOdaberi_(odPrikazano_[odAkt_ >= 0 ? odAkt_ : 0]); } }
+      else if (e.key === 'Escape') { odZatvori_(); }
+    });
+    l.addEventListener('mousedown', function(e){ var el = e.target.closest ? e.target.closest('.od-stavka') : null; if (!el) { return; } e.preventDefault(); odOdaberi_(odPrikazano_[+el.getAttribute('data-i')]); });
+    document.addEventListener('click', function(e){ if (!e.target.closest || !e.target.closest('.od-wrap')) { odZatvori_(); } });
+    var ctl = (typeof AbortController !== 'undefined') ? new AbortController() : null, t = setTimeout(function(){ if (ctl) { ctl.abort(); } }, 20000);
+    fetch(GAS_WEB_APP_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: 'listZoneJavno' }), signal: ctl ? ctl.signal : undefined })
+      .then(function(r){ return r.json(); })
+      .then(function(res){
+        clearTimeout(t);
+        if (!res || res.status !== 'ok' || !res.zone || !res.zone.length) { return; }
+        odZone_ = res.zone.map(function(z){ return { grad: z.grad, postanski: String(z.postanski), zona: z.zona, _g: odNorm_(z.grad), _p: String(z.postanski).trim() }; });
+        document.getElementById('pp-odrediste-blok').hidden = false;
+      }).catch(function(){ clearTimeout(t); });
+  })();
+
   function prikaziGresku_(t) { var g = document.getElementById('prijava-greska'); g.textContent = t || ''; g.classList.toggle('active', !!t); if (t) { g.scrollIntoView({ behavior: 'smooth', block: 'center' }); } }
 
   function posaljiPrijavu(e) {
     e.preventDefault();
     var v = function(id) { return document.getElementById(id).value.trim(); };
-    var p = { action: 'javniProblemPrijava', oib: v('pp-oib'), naziv: v('pp-naziv'), kontakt: v('pp-kontakt'), telefon: v('pp-telefon'), email: v('pp-email'), vrsta: v('pp-vrsta'), awb: awbVrijednost(document.getElementById('pp-awb'), document.getElementById('pp-awb-tip')), awbTip: awbTip(document.getElementById('pp-awb-tip')), poslovnica: v('pp-poslovnica'), opis: v('pp-opis'), web: v('pp-web') };
+    var p = { action: 'javniProblemPrijava', oib: v('pp-oib'), naziv: v('pp-naziv'), kontakt: v('pp-kontakt'), telefon: v('pp-telefon'), email: v('pp-email'), vrsta: v('pp-vrsta'), awb: awbVrijednost(document.getElementById('pp-awb'), document.getElementById('pp-awb-tip')), awbTip: awbTip(document.getElementById('pp-awb-tip')), poslovnica: v('pp-poslovnica'), odredisteGrad: odOdabir_ ? odOdabir_.grad : '', odredistePbr: odOdabir_ ? odOdabir_.postanski : '', opis: v('pp-opis'), web: v('pp-web') };
     prikaziGresku_('');
     if (!p.naziv) { prikaziGresku_('Upišite naziv tvrtke.'); return false; }
     if (!p.kontakt) { prikaziGresku_('Upišite ime i prezime osobe za kontakt.'); return false; }
+    if (p.telefon.replace(/\D/g, '').length < 8) { prikaziGresku_('Upišite broj mobitela (barem 8 znamenki) — da Vas možemo nazvati ako zatreba.'); document.getElementById('pp-telefon').focus(); return false; }
     if (!/^[^\s@,;]+@[^\s@,;]+\.[^\s@,;]{2,}$/.test(p.email)) { prikaziGresku_('Upišite ispravnu e-mail adresu — na nju šaljemo odgovor.'); return false; }
     if (p.oib && p.oib.length !== 11) { prikaziGresku_('OIB ima 11 znamenki (a Vaš unos ' + p.oib.length + ') — ispravite ga ili ostavite prazno.'); return false; }
     if (!p.vrsta) { prikaziGresku_('Odaberite vrstu problema.'); return false; }
     if (trebaAwb_() && !p.awb) { prikaziGresku_('Upišite broj pošiljke — bez njega ne možemo pronaći pošiljku.'); document.getElementById('pp-awb').focus(); return false; }
     if (!awbIspravan(p.awb, document.getElementById('pp-awb-tip'))) { prikaziGresku_(awbPoruka(document.getElementById('pp-awb-tip'))); document.getElementById('pp-awb').focus(); return false; }
+    if (v('pp-odrediste') && !odOdabir_) { prikaziGresku_('Odredište odaberite s popisa koji se otvori dok upisujete — ili obrišite polje.'); document.getElementById('pp-odrediste').focus(); return false; }
     if (p.opis.length < 10) { prikaziGresku_('Opišite problem u nekoliko rečenica.'); return false; }
     var gumb = document.getElementById('prijava-gumb'); gumb.disabled = true; gumb.textContent = 'Šaljem…';
     var ctl = (typeof AbortController !== 'undefined') ? new AbortController() : null;

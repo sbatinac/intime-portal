@@ -1187,6 +1187,23 @@
   .af-dok-sustav-klijenti .af-dok-osvjezi{color:#1b6e3c;}
   .af-dok-sustav-arhiva .af-dok-osvjezi{color:#1c4a8a;}
   .af-dok-sustav-preglednik .af-dok-osvjezi:hover{opacity:.85;background:#fff;}
+  /* GOTOVI DOKUMENTI (10.10.2026., Sašin izričit zahtjev): tri okvira — preglednik mape "Gotove ponude" (Claude), "Za klijenta" (šalje se),
+     "Samo interno" (ne šalje se). Dokumenti se kopiraju BEZ preimenovanja. */
+  .af-gotovo-preglednik{border-color:#c77d00;}
+  .af-gotovo-preglednik .af-dok-okvir-naslov{margin:-10px -10px 8px;padding:8px 10px;border-radius:12px 12px 0 0;color:#fff;background:#c77d00;}
+  .af-gotovo-preglednik .af-dok-osvjezi{background:#fff;border-color:#fff;color:#c77d00;}
+  .af-gotovo-preglednik .af-dok-osvjezi:hover{opacity:.85;background:#fff;}
+  .af-gotovo-klijent{background:#eefaf1;border-color:#2e9d57;}
+  .af-gotovo-klijent .af-dok-okvir-naslov{color:#1b6e3c;}
+  .af-gotovo-interno{background:#f1f3f8;border-color:#8591ad;}
+  .af-gotovo-interno .af-dok-okvir-naslov{color:#3a4668;}
+  .af-gotovo-klijent.af-dok-drag-over,.af-gotovo-interno.af-dok-drag-over{box-shadow:0 0 0 3px rgba(34,152,145,.35);}
+  .af-gotovo-lista{min-height:70px;}
+  .af-gotovo-akcije{display:flex;gap:3px;flex:0 0 auto;}
+  .af-gotovo-akcije button{border:1px solid var(--line);background:#fff;border-radius:5px;font-size:11px;font-weight:700;cursor:pointer;padding:1px 6px;line-height:1.5;}
+  .af-gotovo-akcije .gk{color:#1b6e3c;border-color:#2e9d57;}
+  .af-gotovo-akcije .gi{color:#3a4668;border-color:#8591ad;}
+  .af-gotovo-akcije button:hover{background:#f0fbfa;}
   .af-dok-sustav-putanja{font-size:11px;color:var(--grey);margin-bottom:6px;line-height:1.5;word-break:break-word;}
   .af-dok-sustav-putanja a{color:var(--purple);cursor:pointer;text-decoration:none;}
   .af-dok-sustav-putanja a:hover{text-decoration:underline;}
@@ -1779,6 +1796,8 @@
     background:#fff;border-radius:10px;padding:24px;
     max-width:400px;width:100%;
     box-shadow:0 10px 32px rgba(0,0,0,.25);
+    /* 10.10.2026.: dugi prozori (npr. Postavke) mogu se skrolati */
+    max-height:calc(100vh - 40px);max-height:calc(100dvh - 40px);overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;
   }
   .modal-box h2{margin-bottom:14px;}
   .modal-box input[type=password], .modal-box input[type=text]{
@@ -9860,6 +9879,7 @@
             '<div><b>OIB:</b> ' + esc(p.oib || '—') + '</div>' +
             '<div><b>📦 Broj pošiljke:</b> ' + (p.awb ? '<b style="font-size:14.5px;">' + awbLink(p.awb) + '</b> <span class="pb-sitno">(klik = praćenje)</span>' : '<span style="color:' + (p.trebaAwb ? '#b80d12;font-weight:700' : '#7a6a55') + ';">—' + (p.trebaAwb ? ' (treba dopuniti)' : '') + '</span>') + '</div>' +
             '<div><b>Poslovnica / servis:</b> ' + esc(p.poslovnica || '—') + '</div>' +
+            (p.odrediste ? '<div><b>🎯 Odredište pošiljke:</b> ' + esc(p.odrediste) + '</div>' : '') +
             '<div><b>Zaduženi:</b> ' + (p.zaduzeniTekst ? esc(p.zaduzeniTekst) : '<span style="color:#b80d12;font-weight:700;">nitko — dodijeli</span>') + '</div>' +
             '<div><b>Služba:</b> ' + esc(p.sluzbaNaziv || '—') + '</div>' +
             (p.zakaceno ? '<div><b>Zakačeno na:</b> ' + esc(p.zakaceno) + '</div>' : '') +
@@ -10143,7 +10163,7 @@
       var u = red.querySelector('[data-ml-uvod]').value.trim();
       el.innerHTML = (u ? '<p style="white-space:pre-wrap;margin:0 0 8px;font-size:14px;">' + esc(u) + '</p><hr style="border:0;border-top:1px solid #ddd;margin:0 0 8px;">' : '') +
         '<div style="background:#fff4e5;border-left:4px solid #f57c00;padding:6px 10px;margin-bottom:8px;"><b>Problem klijenta · ' + esc(p.broj) + '</b><br>' + esc(p.vrsta) + '</div>' +
-        (p.awb ? '<div>📦 Broj pošiljke: <b>' + esc(p.awb) + '</b></div>' : '') + (p.poslovnica ? '<div>📍 Poslovnica: <b>' + esc(p.poslovnica) + '</b></div>' : '') +
+        (p.awb ? '<div>📦 Broj pošiljke: <b>' + esc(p.awb) + '</b></div>' : '') + (p.poslovnica ? '<div>📍 Poslovnica: <b>' + esc(p.poslovnica) + '</b></div>' : '') + (p.odrediste ? '<div>🎯 Odredište: <b>' + esc(p.odrediste) + '</b></div>' : '') +
         '<div style="margin-top:6px;"><b>' + esc(p.naziv) + '</b>' + (p.oib ? ' · OIB ' + esc(p.oib) : '') + '</div><div style="color:#555;">' + esc([p.kontakt, p.telefon, p.email].filter(Boolean).join(' · ')) + '</div>' +
         '<div style="white-space:pre-wrap;background:#f7f7f7;border-radius:6px;padding:8px 10px;margin:6px 0;">' + esc(p.opis) + '</div><div><span style="background:#f57c00;color:#fff;border-radius:6px;padding:4px 10px;font-weight:700;">✋ Preuzimam</span> <span style="background:#2e7d32;color:#fff;border-radius:6px;padding:4px 10px;font-weight:700;">✓ Riješeno</span></div>';
     }
@@ -10258,6 +10278,7 @@
     L.push('Klijent: ' + p.naziv + (p.oib ? ' (OIB ' + p.oib + ')' : ''));
     L.push('Kontakt: ' + [p.kontakt, p.telefon, p.email].filter(Boolean).join(' · '));
     if (p.poslovnica) { L.push('Poslovnica: ' + p.poslovnica); }
+    if (p.odrediste) { L.push('Odredište pošiljke: ' + p.odrediste); }
     if (p.awb) { L.push('Broj pošiljke: ' + p.awb + (/^HR2000\d{8}$/.test(p.awb) ? ' (praćenje: https://intimeolb.azurewebsites.net/shipment-tracking/' + p.awb + ')' : '')); }
     if (p.zaduzeniTekst) { L.push('Zaduženi: ' + p.zaduzeniTekst); }
     if (p.zakaceno) { L.push('Zakačeno: ' + p.zakaceno); }
@@ -14397,6 +14418,30 @@
               '<div class="af-dok-lista af-dok-sustav-lista"><div class="af-dok-prazno">Učitavanje…</div></div>' +
             '</div>' +
           '</div>' +
+          // GOTOVI DOKUMENTI (10.10.2026., Sašin izričit zahtjev) — vidi CSS .af-gotovo-* i JS blok "GOTOVI DOKUMENTI".
+          '<div class="af-dok-okviri" style="margin-top:10px;">' +
+            '<div class="af-dok-okvir af-gotovo-preglednik">' +
+              '<div class="af-dok-okvir-naslov"><span>🤖 Gotove ponude (od Claudea)</span>' +
+                '<span><button type="button" class="af-dok-osvjezi af-gotovo-mapa-btn" title="Promijeni mapu koja se prikazuje">⚙ Mapa</button> ' +
+                '<button type="button" class="af-dok-osvjezi af-gotovo-osvjezi" title="Ponovno učitaj">⟳ Osvježi</button></span></div>' +
+              '<div class="af-dok-sustav-putanja af-gotovo-putanja"></div>' +
+              '<div class="af-dok-lista af-gotovo-izvor-lista"><div class="af-dok-prazno">Učitavanje…</div></div>' +
+              '<div class="af-dok-cilj-hint">Klikni <b>→ Klijent</b> ili <b>→ Interno</b> uz dokument (ili ga povuci u okvir desno). Dokumenti se kopiraju <b>bez preimenovanja</b>.</div>' +
+            '</div>' +
+            '<div class="af-dok-cilj-kolona">' +
+              '<div class="af-dok-okvir af-gotovo-klijent">' +
+                '<div class="af-dok-okvir-naslov"><span>📤 Za klijenta — ide na OBA mjesta</span></div>' +
+                '<div class="af-dok-lista af-gotovo-lista af-gotovo-lista-klijent"></div>' +
+                '<div class="af-dok-cilj-hint">Ide na <b>oba mjesta</b>: u direktorij koji klijent dobiva linkom (šalje se) <b>i</b> jedan primjerak u interni direktorij ponude.</div>' +
+              '</div>' +
+              '<div class="af-dok-okvir af-gotovo-interno">' +
+                '<div class="af-dok-okvir-naslov"><span>🔒 Samo interno — ne šalje se</span></div>' +
+                '<div class="af-dok-lista af-gotovo-lista af-gotovo-lista-interno"></div>' +
+                '<div class="af-dok-cilj-hint">Ostaje samo u internom direktoriju ponude (evidencija). Klijent ih ne vidi.</div>' +
+              '</div>' +
+              '<div class="af-dok-status af-gotovo-status"></div>' +
+            '</div>' +
+          '</div>' +
           '<div class="af-dok-priprema">' +
             '<button type="button" class="af-dok-priprema-btn">📁 Pripremi direktorij i link</button>' +
             // ISPRAVAK (23.9.2026., Sašin izričit zahtjev — tekst je bio
@@ -14406,7 +14451,7 @@
             // odjeljku "Ponuda — slanje i status", i vidljiv je samo kad je
             // ponuda odbijena/istekla/poništena. Tekst sad izričito imenuje
             // taj drugi gumb i njegovu lokaciju.
-            '<p class="af-dok-cilj-hint" style="margin-top:6px;">Kopira i preimenuje sve dokumente iznad (fiksna polja + ostali) u zaseban direktorij na Driveu za TRENUTNU verziju ponude, i priprema link koji se šalje klijentu tagom <code>{{LINK_DOKUMENTI}}</code> — umjesto fizičkih priloga na mailu. Ponovni klik na OVAJ gumb samo osvježava sadržaj istog direktorija — link ostaje isti.</p>' +
+            '<p class="af-dok-cilj-hint" style="margin-top:6px;">Kopira sve dokumente iznad u zaseban direktorij na Driveu (fiksna polja + ostali se preimenuju; dokumenti iz okvira „Za klijenta" i „Samo interno" kopiraju se BEZ preimenovanja) u zaseban direktorij na Driveu za TRENUTNU verziju ponude, i priprema link koji se šalje klijentu tagom <code>{{LINK_DOKUMENTI}}</code> — umjesto fizičkih priloga na mailu. Ponovni klik na OVAJ gumb samo osvježava sadržaj istog direktorija — link ostaje isti.</p>' +
             '<p class="af-dok-cilj-hint">Ako je ponuda već izdana, ponovna priprema mijenja samo sadržaj na tom istom linku — klijent kojem je link poslan o promjeni ne dobiva nikakvu obavijest.</p>' +
             '<p class="af-dok-cilj-hint">Upozorenje: kad KASNIJE klikneš gumb "↻ Generiraj novu ponudu" (niže na stranici, u odjeljku "Ponuda — slanje i status") da napraviš novu verziju cijele ponude, OVAJ link automatski prestaje raditi.</p>' +
             '<div class="af-dok-priprema-status"></div>' +
@@ -16393,6 +16438,131 @@
       };
       Array.prototype.slice.call(wrap.querySelectorAll('.af-dok-sustav-preglednik')).forEach(izgradiSustavPreglednik_);
 
+      // ============================================================
+      // GOTOVI DOKUMENTI (10.10.2026., Sašin izričit zahtjev) — tri okvira:
+      //  (1) preglednik mape "Gotove ponude" u kojoj Claude sprema već ispravno imenovane dokumente,
+      //  (2) "Za klijenta" — ide u POSLANO (link) + jedan primjerak u interni direktorij ponude,
+      //  (3) "Samo interno" — samo u interni direktorij ponude, klijent ne vidi.
+      // NIŠTA se ne preimenuje. Pohrana: ADMIN_ONLY_FIELDS.dokumenti_gotovi u InTime_Code.gs;
+      // kopiranje radi adminPripremiDokumenteZaPonudu (slotKljuc gotovo_klijent / gotovo_interno).
+      // ============================================================
+      var dokumentiGotovi = [];
+      try {
+        var sirovoGotovi = fieldVal(entry, 'Gotovi dokumenti (admin, JSON)');
+        if (sirovoGotovi) { var pg_ = JSON.parse(sirovoGotovi); if (Array.isArray(pg_)) { dokumentiGotovi = pg_; } }
+      } catch (errGotovi) { dokumentiGotovi = []; }
+      var gotovoListaKlijent = wrap.querySelector('.af-gotovo-lista-klijent');
+      var gotovoListaInterno = wrap.querySelector('.af-gotovo-lista-interno');
+      var gotovoStatus = wrap.querySelector('.af-gotovo-status');
+      var gotovoIzvorLista = wrap.querySelector('.af-gotovo-izvor-lista');
+      var gotovoPutanja = wrap.querySelector('.af-gotovo-putanja');
+
+      var spremiGotove_ = function() {
+        gotovoStatus.textContent = 'Spremanje…'; gotovoStatus.classList.remove('error');
+        gasCall({ action: 'adminUpdateFields', token: adminToken, rowIndex: entry.rowIndex, fields: { dokumenti_gotovi: JSON.stringify(dokumentiGotovi) } }).then(function(res) {
+          if (handleAuthError(res)) { return; }
+          if (res.status === 'ok') {
+            gotovoStatus.textContent = 'Spremljeno. Kopira se u direktorij ponude kad klikneš „Pripremi direktorij i link".';
+            entry.fields['Gotovi dokumenti (admin, JSON)'] = JSON.stringify(dokumentiGotovi);
+          } else { gotovoStatus.textContent = res.message || 'Greška pri spremanju.'; gotovoStatus.classList.add('error'); }
+        }).catch(function() { gotovoStatus.textContent = 'Greška u komunikaciji s poslužiteljem.'; gotovoStatus.classList.add('error'); });
+        if (typeof azurirajPripremaGumb_ === 'function') { azurirajPripremaGumb_(); }
+        if (typeof azurirajOsiguracSlanja_ === 'function') { azurirajOsiguracSlanja_(); }
+      };
+      var renderGotove_ = function() {
+        [['klijent', gotovoListaKlijent], ['interno', gotovoListaInterno]].forEach(function(par) {
+          var cilj = par[0], el = par[1];
+          var popis = dokumentiGotovi.filter(function(d) { return d.cilj === cilj; });
+          if (!popis.length) { el.innerHTML = '<div class="af-dok-prazno">Još ništa nije dodano.</div>'; return; }
+          el.innerHTML = popis.map(function(d) {
+            var drugi = (cilj === 'klijent') ? 'interno' : 'klijent';
+            return '<div class="af-dok-cilj-stavka"><span>📄</span><span class="af-dok-naziv" title="' + esc(d.name) + '">' + esc(d.name) + '</span>' +
+              '<span class="af-gotovo-akcije"><button type="button" class="' + (drugi === 'klijent' ? 'gk' : 'gi') + '" data-id="' + esc(d.id) + '" data-akcija="prebaci" title="Prebaci u okvir ' + (drugi === 'klijent' ? '„Za klijenta"' : '„Samo interno"') + '">' + (drugi === 'klijent' ? '→ Klijent' : '→ Interno') + '</button></span>' +
+              '<button type="button" class="af-dok-ukloni" data-id="' + esc(d.id) + '" data-akcija="ukloni" title="Ukloni">✕</button></div>';
+          }).join('');
+          Array.prototype.slice.call(el.querySelectorAll('button')).forEach(function(b) {
+            b.addEventListener('click', function(ev) {
+              ev.stopPropagation();
+              var id = b.getAttribute('data-id'), akcija = b.getAttribute('data-akcija');
+              var idx = -1; dokumentiGotovi.forEach(function(d, i) { if (d.id === id) { idx = i; } });
+              if (idx === -1) { return; }
+              if (akcija === 'ukloni') { dokumentiGotovi.splice(idx, 1); }
+              else { dokumentiGotovi[idx].cilj = (dokumentiGotovi[idx].cilj === 'klijent') ? 'interno' : 'klijent'; }
+              renderGotove_(); spremiGotove_();
+            });
+          });
+        });
+      };
+      var dodajGotovo_ = function(stavka, cilj) {
+        var idx = -1; dokumentiGotovi.forEach(function(d, i) { if (d.id === stavka.id) { idx = i; } });
+        if (idx !== -1) { if (dokumentiGotovi[idx].cilj === cilj) { return; } dokumentiGotovi[idx].cilj = cilj; }
+        else { dokumentiGotovi.push({ id: stavka.id, name: stavka.name, url: stavka.url, cilj: cilj }); }
+        renderGotove_(); spremiGotove_();
+      };
+      renderGotove_();
+
+      [['.af-gotovo-klijent', 'klijent'], ['.af-gotovo-interno', 'interno']].forEach(function(par) {
+        var okvir = wrap.querySelector(par[0]);
+        okvir.addEventListener('dragover', function(ev) { ev.preventDefault(); okvir.classList.add('af-dok-drag-over'); });
+        okvir.addEventListener('dragleave', function() { okvir.classList.remove('af-dok-drag-over'); });
+        okvir.addEventListener('drop', function(ev) {
+          ev.preventDefault(); ev.stopPropagation(); okvir.classList.remove('af-dok-drag-over');
+          var sirovo = ev.dataTransfer.getData('text/plain'); if (!sirovo) { return; }
+          try { var st = JSON.parse(sirovo); if (st && st.source === 'gotovo' && st.id) { dodajGotovo_(st, par[1]); } } catch (errDropGotovo) { /* nevaljan drop */ }
+        });
+      });
+
+      var gotovoTrenutniFolderId = null;
+      var ucitajGotovePreglednik_ = function() {
+        gotovoIzvorLista.innerHTML = '<div class="af-dok-prazno">Učitavanje…</div>';
+        gasCall({ action: 'adminBrowseSustavFolder', token: adminToken, korijen: 'gotove', folderId: gotovoTrenutniFolderId }).then(function(res) {
+          if (handleAuthError(res)) { return; }
+          if (res.status !== 'ok') { gotovoIzvorLista.innerHTML = '<div class="af-dok-prazno">Greška: ' + esc(res.message || 'nepoznata greška') + '</div>'; return; }
+          gotovoTrenutniFolderId = res.folderId;
+          gotovoPutanja.innerHTML = res.putanja.map(function(p, i) {
+            return (i === res.putanja.length - 1) ? '<span class="trenutno">' + esc(p.name) + '</span>' : ('<a data-id="' + esc(p.id) + '">' + esc(p.name) + '</a> / ');
+          }).join('');
+          Array.prototype.slice.call(gotovoPutanja.querySelectorAll('a')).forEach(function(a) {
+            a.addEventListener('click', function(ev) { ev.stopPropagation(); gotovoTrenutniFolderId = a.getAttribute('data-id'); ucitajGotovePreglednik_(); });
+          });
+          var h = '';
+          res.podfolderi.forEach(function(f) { h += '<div class="af-dok-stavka af-dok-stavka-folder" data-id="' + esc(f.id) + '"><span>📁</span><span class="af-dok-naziv">' + esc(f.name) + '</span></div>'; });
+          res.datoteke.forEach(function(f) {
+            h += '<div class="af-dok-stavka" draggable="true" data-id="' + esc(f.id) + '" data-name="' + esc(f.name) + '" data-url="' + esc(f.url) + '"><span>📄</span><span class="af-dok-naziv" title="' + esc(f.name) + '">' + esc(f.name) + '</span>' +
+              '<span class="af-gotovo-akcije"><button type="button" class="gk" data-c="klijent">→ Klijent</button><button type="button" class="gi" data-c="interno">→ Interno</button></span></div>';
+          });
+          gotovoIzvorLista.innerHTML = h || '<div class="af-dok-prazno">Mapa je prazna.</div>';
+          Array.prototype.slice.call(gotovoIzvorLista.querySelectorAll('.af-dok-stavka-folder')).forEach(function(el) {
+            el.addEventListener('click', function(ev) { ev.stopPropagation(); gotovoTrenutniFolderId = el.getAttribute('data-id'); ucitajGotovePreglednik_(); });
+          });
+          Array.prototype.slice.call(gotovoIzvorLista.querySelectorAll('.af-dok-stavka:not(.af-dok-stavka-folder)')).forEach(function(el) {
+            var stavka = { source: 'gotovo', id: el.getAttribute('data-id'), name: el.getAttribute('data-name'), url: el.getAttribute('data-url') };
+            el.addEventListener('dragstart', function(ev) { ev.dataTransfer.setData('text/plain', JSON.stringify(stavka)); ev.dataTransfer.effectAllowed = 'copy'; });
+            Array.prototype.slice.call(el.querySelectorAll('.af-gotovo-akcije button')).forEach(function(b) {
+              b.addEventListener('click', function(ev) { ev.stopPropagation(); dodajGotovo_(stavka, b.getAttribute('data-c')); });
+            });
+          });
+        }).catch(function() { gotovoIzvorLista.innerHTML = '<div class="af-dok-prazno">Greška u komunikaciji s poslužiteljem.</div>'; });
+      };
+      wrap.querySelector('.af-gotovo-osvjezi').addEventListener('click', function(ev) { ev.stopPropagation(); ucitajGotovePreglednik_(); });
+      wrap.querySelector('.af-gotovo-mapa-btn').addEventListener('click', function(ev) {
+        ev.stopPropagation();
+        gasCall({ action: 'adminGotovePonudeStanje', token: adminToken }).then(function(st) {
+          if (handleAuthError(st)) { return; }
+          var tekst = (st.status === 'ok')
+            ? ('Trenutna mapa: ' + st.naziv + (st.zadano ? ' (zadana)' : '') + '\n\nZalijepi poveznicu druge Drive mape u koju Claude sprema ponude (ili ostavi prazno za zadanu mapu):')
+            : 'Zalijepi poveznicu Drive mape s gotovim ponudama (ili ostavi prazno za zadanu):';
+          var unos = window.prompt(tekst, '');
+          if (unos === null) { return; }
+          gasCall({ action: 'adminGotovePonudePostaviMapu', token: adminToken, unos: unos }).then(function(r) {
+            if (handleAuthError(r)) { return; }
+            if (r.status === 'ok') { gotovoTrenutniFolderId = null; ucitajGotovePreglednik_(); gotovoStatus.textContent = 'Mapa: ' + r.naziv; gotovoStatus.classList.remove('error'); }
+            else { gotovoStatus.textContent = r.message || 'Greška.'; gotovoStatus.classList.add('error'); }
+          });
+        });
+      });
+      ucitajGotovePreglednik_();
+
       dokCiljOkvir.addEventListener('dragover', function(ev) {
         ev.preventDefault();
         dokCiljOkvir.classList.add('af-dok-drag-over');
@@ -16611,6 +16781,8 @@
         var nedostaju = ['analiticki', 'cjenikhr', 'ponudasuradnja']
           .filter(function(k) { return !dokFiksniPolja[k]; })
           .map(function(k) { return DOK_FIKSNI_SLOTOVI_[k].naziv; });
+        // Gotovi dokumenti (od Claudea) zamjenjuju obavezna 3 fiksna polja — dovoljan je barem jedan.
+        if (dokumentiGotovi.length) { nedostaju = []; }
         if (nedostaju.length) {
           pripremaBtn.disabled = true;
           pripremaStatusEl.textContent = 'Nedostaje: ' + nedostaju.join(', ') + ' — direktorij se ne može pripremiti dok sva tri dokumenta nisu učitana.';
@@ -16645,6 +16817,7 @@
         // direktorij ide svaka stavka (predirektorij / POSLANO / oba), vidi
         // napomenu uz restrukturiranje u adminPripremiDokumenteZaPonudu.
         var stavke = dokumentiPonude.map(function(d) { return { id: d.id, slotKljuc: 'ostalo' }; });
+        dokumentiGotovi.forEach(function(d) { if (d && d.id) { stavke.push({ id: d.id, slotKljuc: (d.cilj === 'interno' ? 'gotovo_interno' : 'gotovo_klijent') }); } });
         ['analiticki', 'cjenikhr', 'ponudasuradnja'].forEach(function(slotKljuc) {
           var stavka = dokFiksniPolja[slotKljuc];
           if (stavka && stavka.id) { stavke.push({ id: stavka.id, fiksniNaziv: DOK_FIKSNI_SLOTOVI_[slotKljuc].naziv, slotKljuc: slotKljuc }); }
@@ -17483,7 +17656,8 @@
         var poslovnicaOk = !!(poslovnicaToggle && poslovnicaToggle.disabled);
         var sifraOk = !!(sifraInput && sifraInput.readOnly && sifraInput.value.trim());
         var brojDok = ['analiticki', 'cjenikhr', 'ponudasuradnja'].filter(function(k) { return !!dokFiksniPolja[k]; }).length;
-        var dokOk = brojDok === 3;
+        var gotoviZaKlijenta = dokumentiGotovi.filter(function(d) { return d.cilj !== 'interno'; }).length;
+        var dokOk = brojDok === 3 || gotoviZaKlijenta > 0;
         // Peti uvjet (Sašin izričit zahtjev, 24.9.2026.: "jedna od uvjeta za
         // slanje ponude bude i definiranje roka... aktivacija roka i linka
         // među ostalim [uvjetima]") — provjerava je li rok/link već
@@ -17496,7 +17670,7 @@
         var uvjeti = [
           { ok: poslovnicaOk, tekst: poslovnicaOk ? 'Nadležna poslovnica potvrđena' : 'Nadležna poslovnica nije potvrđena' },
           { ok: sifraOk, tekst: sifraOk ? 'Interna In Time šifra ponude (INTRIX) potvrđena' : 'Interna In Time šifra ponude (INTRIX) nije potvrđena' },
-          { ok: dokOk, tekst: dokOk ? 'Sva 3 osnovna priloga postavljena' : ('Nedostaju osnovni prilozi — postavljeno ' + brojDok + '/3 (Analitički cjenik, Cjenik Hrvatska, Ponuda za suradnju)') },
+          { ok: dokOk, tekst: dokOk ? (brojDok === 3 ? 'Sva 3 osnovna priloga postavljena' : ('Gotovi dokumenti za klijenta postavljeni (' + gotoviZaKlijenta + ')')) : ('Nedostaju osnovni prilozi — postavljeno ' + brojDok + '/3 (Analitički cjenik, Cjenik Hrvatska, Ponuda za suradnju)') },
           { ok: rokOk, tekst: rokOk ? 'Rok i link ponude aktivirani' : 'Rok i link ponude nisu aktivirani — klikni "Aktiviraj rok i link" u odjeljku "Ponuda — slanje i status"' },
           { ok: mailOk, tekst: mailOk ? 'Označena barem 1 mail adresa za slanje ponude' : 'Nijedna mail adresa nije označena za slanje ponude' }
         ];
@@ -17719,7 +17893,7 @@
                   if (typeof renderRokBlok_ === 'function') { renderRokBlok_(); }
                 }
                 zavrsiSlanjeProgress_(true, '✅ Ponuda poslana!');
-                slanjePostaviStatus_('Ponuda poslana na: ' + primatelji.join(', ') + (kopijaSebi ? ' (+ kopija tebi).' : '.'), 'ok');
+                slanjePostaviStatus_('Ponuda poslana na: ' + primatelji.join(', ') + (kopijaSebi ? ' (+ kopija tebi).' : '.') + ((res.arhivirano && res.arhivirano.length) ? ' Direktorij premješten u ARHIVU: ' + res.arhivirano.join(', ') + '.' : ''), 'ok');
               } else {
                 zavrsiSlanjeProgress_(false, '✖ Slanje nije uspjelo.');
                 slanjePostaviStatus_(res.message || 'Slanje ponude nije uspjelo.', 'error');

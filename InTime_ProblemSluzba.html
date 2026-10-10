@@ -71,6 +71,7 @@
     var p = P, k = klasa(p.status), tel = String(p.telefon || '').split(',')[0].replace(/[^\d+]/g, '');
     var h = '<div class="kartica"><span class="ozn ' + k + '">' + esc(p.status) + '</span><span class="ozn vrsta">' + esc(p.vrsta) + '</span>' + (p.awb ? '<span class="ozn vrsta">📦 Broj pošiljke: ' + awbLink(p.awb, 'color:inherit;') + '</span>' : '') +
       '<h1>' + esc(p.naziv) + '</h1><div class="pod">' + esc(p.broj + ' · prijavljeno ' + p.datum + (p.sluzbaNaziv ? ' · služba: ' + p.sluzbaNaziv : '')) + '</div>' +
+      (p.odrediste ? '<div class="pod" style="margin-top:4px;">🎯 Odredište pošiljke: <b>' + esc(p.odrediste) + '</b></div>' : '') +
       ((p.poslovnica || p.zaduzeniTekst) ? '<div class="pod" style="margin-top:4px;">' + (p.poslovnica ? '📍 Poslovnica: <b>' + esc(p.poslovnica) + '</b>' : '') + (p.poslovnica && p.zaduzeniTekst ? ' · ' : '') + (p.zaduzeniTekst ? '👤 Zaduženi: <b>' + esc(p.zaduzeniTekst) + '</b>' : '') + '</div>' : '') +
       '<div class="podaci"><div><b>Kontakt:</b> ' + esc(p.kontakt || '—') + '</div><div><b>Telefon:</b> ' + (tel ? '<a href="tel:' + esc(tel) + '">' + esc(p.telefon) + '</a>' : '—') + '</div>' +
       '<div><b>E-mail:</b> ' + (p.email ? '<a href="mailto:' + esc(p.email) + '">' + esc(p.email) + '</a>' : '—') + '</div><div><b>OIB:</b> ' + esc(p.oib || '—') + '</div><div><b>Broj pošiljke:</b> ' + (p.awb ? awbLink(p.awb) : '—') + '</div></div>' +
