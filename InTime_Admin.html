@@ -1211,6 +1211,24 @@
   .af-gotovo-akcije .gz{color:#8a6a00;border-color:#d9b92e;background:#fffbea;}
   .af-gotovo-akcije .gp{color:#1f5f9f;border-color:#7fb0dd;background:#eaf2fb;}
   .af-gotovo-akcije .gl{color:#6d3a9c;border-color:#b98be0;background:#f5eefc;}
+  /* Označavanje klika (10.10.2026.): kliknuti redak i kliknuti gumb potamne/promijene boju da se vidi što je odabrano */
+  .af-dok-stavka.odabrano{background:#cdeceb;border-color:var(--purple);box-shadow:inset 5px 0 0 var(--purple),0 0 0 2px rgba(34,152,145,.35);font-weight:700;}
+  .af-gotovo-akcije button:active{transform:scale(.94);filter:brightness(.85);}
+  .af-gotovo-akcije .gk.zadnji{background:#2e9d57;color:#fff;border-color:#1b6e3c;box-shadow:0 0 0 2px rgba(46,157,87,.35);}
+  .af-gotovo-akcije .gi.zadnji{background:#5a6a94;color:#fff;border-color:#3a4668;box-shadow:0 0 0 2px rgba(90,106,148,.35);}
+  .af-gotovo-akcije .gz.zadnji{background:#f0c929;color:#4d3b00;border-color:#a98400;box-shadow:0 0 0 2px rgba(217,185,46,.45);}
+  .af-gotovo-akcije .gp.zadnji{background:#2f7fcf;color:#fff;border-color:#1f5f9f;box-shadow:0 0 0 2px rgba(47,127,207,.35);}
+  .af-gotovo-akcije .gl.zadnji{background:#8a4fc4;color:#fff;border-color:#6d3a9c;box-shadow:0 0 0 2px rgba(138,79,196,.35);}
+  /* Provjera naziva gotovih dokumenata (10.10.2026.): naziv mora sadržavati šifru ponude */
+  .af-gn-bedz{flex:0 0 auto;font-size:11px;font-weight:800;border-radius:10px;padding:0 6px;line-height:1.6;}
+  .af-gn-bedz.ok{color:#fff;background:#2e9d57;}
+  .af-gn-bedz.lose{color:#fff;background:#d23b3b;}
+  .af-gn-bedz.cekaj{color:#fff;background:#8591ad;}
+  .af-gotovo-lista .af-dok-cilj-stavka.lose,.af-gotovo-lista-klijent .af-dok-cilj-stavka.lose,.af-gotovo-lista-interno .af-dok-cilj-stavka.lose{flex-wrap:wrap;border-color:#d23b3b;background:#fff3f3;}
+  .af-gn-popravak{flex:1 1 100%;display:flex;gap:4px;align-items:center;flex-wrap:wrap;font-size:11px;color:#a02020;}
+  .af-gn-popravak input{flex:1 1 180px;min-width:0;font-size:11px;padding:3px 5px;border:1px solid #d23b3b;border-radius:5px;}
+  .af-gn-popravak button{border:1px solid #a02020;background:#d23b3b;color:#fff;border-radius:5px;font-size:11px;font-weight:700;padding:2px 8px;cursor:pointer;}
+  .af-gn-nova{flex:1 1 100%;font-size:11px;color:#1b6e3c;}
   .af-dok-sustav-putanja{font-size:11px;color:var(--grey);margin-bottom:6px;line-height:1.5;word-break:break-word;}
   .af-dok-sustav-putanja a{color:var(--purple);cursor:pointer;text-decoration:none;}
   .af-dok-sustav-putanja a:hover{text-decoration:underline;}
@@ -15620,6 +15638,8 @@
           sifraPromijeniBtn.style.display = '';
           sifraStatusEl.textContent = 'Potvrđeno.';
           sifraStatusEl.classList.remove('error');
+          if (typeof renderGotove_ === 'function') { renderGotove_(); }
+          if (typeof azurirajPripremaGumb_ === 'function') { azurirajPripremaGumb_(); }
           if (typeof renderPregled_ === 'function') { renderPregled_(); }
           if (typeof azurirajOsiguracSlanja_ === 'function') { azurirajOsiguracSlanja_(); }
         } else {
@@ -16470,12 +16490,35 @@
         gasCall({ action: 'adminUpdateFields', token: adminToken, rowIndex: entry.rowIndex, fields: { dokumenti_gotovi: JSON.stringify(dokumentiGotovi) } }).then(function(res) {
           if (handleAuthError(res)) { return; }
           if (res.status === 'ok') {
-            gotovoStatus.textContent = 'Spremljeno. Kopira se u direktorij ponude kad klikneš „Pripremi direktorij i link".';
+            var losih_ = (typeof gnBrojLosih_ === 'function') ? gnBrojLosih_() : 0;
+            gotovoStatus.textContent = losih_ ? ('⚠ ' + losih_ + ' dokument(a) nema šifru ponude u nazivu — ispravi prije pripreme/slanja.') : 'Spremljeno. Kopira se u direktorij ponude kad klikneš „Pripremi direktorij i link".';
+            if (losih_) { gotovoStatus.classList.add('error'); }
             entry.fields['Gotovi dokumenti (admin, JSON)'] = JSON.stringify(dokumentiGotovi);
           } else { gotovoStatus.textContent = res.message || 'Greška pri spremanju.'; gotovoStatus.classList.add('error'); }
         }).catch(function() { gotovoStatus.textContent = 'Greška u komunikaciji s poslužiteljem.'; gotovoStatus.classList.add('error'); });
         if (typeof azurirajPripremaGumb_ === 'function') { azurirajPripremaGumb_(); }
         if (typeof azurirajOsiguracSlanja_ === 'function') { azurirajOsiguracSlanja_(); }
+      };
+      // Provjera naziva (Sašin izričit zahtjev 10.10.2026.): dokumenti u okvirima "Za klijenta"/"Samo interno" se NE preimenuju
+      // automatski, pa se svaki naziv provjerava — mora sadržavati šifru ponude (npr. 4567-26-SB). Ako ne sadrži: crveni ⚠,
+      // predloženi naziv koji se može urediti + "Ispravi" (preimenuje se samo KOPIJA pri pripremi, original na Driveu ostaje).
+      var gnNorm_ = function(t) { return String(t || '').toLowerCase().replace(/[^a-z0-9]/g, ''); };
+      var gnSifra_ = function() {
+        var inp = wrap.querySelector('.af-sifra-ponude');
+        var v = (inp && inp.readOnly && inp.value) ? inp.value : fieldVal(entry, 'Šifra ponude (admin)');
+        return String(v || '').trim();
+      };
+      var gnEfektivni_ = function(d) { return (d.noviNaziv && String(d.noviNaziv).trim()) ? String(d.noviNaziv).trim() : d.name; };
+      // 'ok' | 'lose' | 'cekaj' (šifra još nije potvrđena pa se ne može provjeriti)
+      var gnStanje_ = function(d) {
+        var sif = gnNorm_(gnSifra_());
+        if (!sif) { return 'cekaj'; }
+        return gnNorm_(gnEfektivni_(d)).indexOf(sif) !== -1 ? 'ok' : 'lose';
+      };
+      var gnBrojLosih_ = function() { return dokumentiGotovi.filter(function(d) { return gnStanje_(d) === 'lose'; }).length; };
+      var gnPrijedlog_ = function(d) {
+        var sif = gnSifra_(), ime = gnEfektivni_(d);
+        return sif ? (sif + ' - ' + ime) : ime;
       };
       var renderGotove_ = function() {
         [['klijent', gotovoListaKlijent], ['interno', gotovoListaInterno]].forEach(function(par) {
@@ -16484,9 +16527,21 @@
           if (!popis.length) { el.innerHTML = '<div class="af-dok-prazno">Još ništa nije dodano.</div>'; return; }
           el.innerHTML = popis.map(function(d) {
             var drugi = (cilj === 'klijent') ? 'interno' : 'klijent';
-            return '<div class="af-dok-cilj-stavka"><span>📄</span><span class="af-dok-naziv" title="' + esc(d.name) + '">' + esc(d.name) + '</span>' +
+            var st = gnStanje_(d);
+            var bedz = (st === 'ok') ? '<span class="af-gn-bedz ok" title="Naziv sadrži šifru ponude">✓</span>'
+              : (st === 'lose') ? '<span class="af-gn-bedz lose" title="Naziv NE sadrži šifru ponude — ispravi">⚠</span>'
+              : '<span class="af-gn-bedz cekaj" title="Šifra ponude još nije potvrđena — naziv se ne može provjeriti">?</span>';
+            var popravak = '';
+            if (st === 'lose') {
+              popravak = '<div class="af-gn-popravak">Naziv ne sadrži šifru ponude (' + esc(gnSifra_()) + '). Kopija će se zvati:' +
+                '<input type="text" class="af-gn-unos" data-id="' + esc(d.id) + '" value="' + esc(gnPrijedlog_(d)) + '">' +
+                '<button type="button" data-id="' + esc(d.id) + '" data-akcija="ispravi">Ispravi</button></div>';
+            } else if (d.noviNaziv && String(d.noviNaziv).trim() && d.noviNaziv !== d.name) {
+              popravak = '<div class="af-gn-nova">Kopija će se zvati: ' + esc(d.noviNaziv) + '</div>';
+            }
+            return '<div class="af-dok-cilj-stavka' + (st === 'lose' ? ' lose' : '') + '">' + bedz + '<span>📄</span><span class="af-dok-naziv" title="' + esc(d.name) + '">' + esc(d.name) + '</span>' +
               '<span class="af-gotovo-akcije"><button type="button" class="' + (drugi === 'klijent' ? 'gk' : 'gi') + '" data-id="' + esc(d.id) + '" data-akcija="prebaci" title="Prebaci u okvir ' + (drugi === 'klijent' ? '„Za klijenta"' : '„Samo interno"') + '">' + (drugi === 'klijent' ? '→ Klijent' : '→ Interno') + '</button></span>' +
-              '<button type="button" class="af-dok-ukloni" data-id="' + esc(d.id) + '" data-akcija="ukloni" title="Ukloni">✕</button></div>';
+              '<button type="button" class="af-dok-ukloni" data-id="' + esc(d.id) + '" data-akcija="ukloni" title="Ukloni">✕</button>' + popravak + '</div>';
           }).join('');
           Array.prototype.slice.call(el.querySelectorAll('button')).forEach(function(b) {
             b.addEventListener('click', function(ev) {
@@ -16494,6 +16549,21 @@
               var id = b.getAttribute('data-id'), akcija = b.getAttribute('data-akcija');
               var idx = -1; dokumentiGotovi.forEach(function(d, i) { if (d.id === id) { idx = i; } });
               if (idx === -1) { return; }
+              if (akcija === 'ispravi') {
+                var unosEl = b.parentNode.querySelector('.af-gn-unos');
+                var nov = String(unosEl ? unosEl.value : '').replace(/[\\\/]/g, '-').trim();
+                var orig = dokumentiGotovi[idx].name || '';
+                var dot = orig.lastIndexOf('.');
+                var ext = dot > 0 ? orig.substring(dot) : '';
+                if (ext && nov.toLowerCase().slice(-ext.length) !== ext.toLowerCase()) { nov += ext; }
+                if (gnNorm_(nov).indexOf(gnNorm_(gnSifra_())) === -1) {
+                  gotovoStatus.textContent = 'Naziv i dalje ne sadrži šifru ponude (' + gnSifra_() + ').'; gotovoStatus.classList.add('error');
+                  return;
+                }
+                dokumentiGotovi[idx].noviNaziv = nov;
+                renderGotove_(); spremiGotove_();
+                return;
+              }
               if (akcija === 'ukloni') { dokumentiGotovi.splice(idx, 1); }
               else { dokumentiGotovi[idx].cilj = (dokumentiGotovi[idx].cilj === 'klijent') ? 'interno' : 'klijent'; }
               renderGotove_(); spremiGotove_();
@@ -16547,10 +16617,17 @@
           Array.prototype.slice.call(gotovoIzvorLista.querySelectorAll('.af-dok-stavka:not(.af-dok-stavka-folder)')).forEach(function(el) {
             var stavka = { source: 'osnovna', gotovo: true, id: el.getAttribute('data-id'), name: el.getAttribute('data-name'), url: el.getAttribute('data-url') };   // source 'osnovna' + gotovo:true — da ga prihvate i fiksna polja (Analitički cjenik/Cjenik Hrvatska/Ponuda za suradnju) i "Ostali dokumenti"
             el.addEventListener('dragstart', function(ev) { ev.dataTransfer.setData('text/plain', JSON.stringify(stavka)); ev.dataTransfer.effectAllowed = 'copy'; });
+            el.addEventListener('click', function() {
+              Array.prototype.slice.call(gotovoIzvorLista.querySelectorAll('.af-dok-stavka.odabrano')).forEach(function(r) { r.classList.remove('odabrano'); });
+              el.classList.add('odabrano');
+            });
             Array.prototype.slice.call(el.querySelectorAll('.af-gotovo-akcije button')).forEach(function(b) {
               b.addEventListener('click', function(ev) {
                 ev.stopPropagation();
                 var slot = b.getAttribute('data-slot');
+                Array.prototype.slice.call(gotovoIzvorLista.querySelectorAll('.af-dok-stavka.odabrano')).forEach(function(r) { r.classList.remove('odabrano'); });
+                Array.prototype.slice.call(gotovoIzvorLista.querySelectorAll('.af-gotovo-akcije button.zadnji')).forEach(function(x) { x.classList.remove('zadnji'); });
+                el.classList.add('odabrano');
                 if (slot) {
                   var def = DOK_FIKSNI_SLOTOVI_[slot];
                   if (!dokProvjeriTip_(stavka.name, def.tipovi)) {
@@ -16559,9 +16636,11 @@
                     return;
                   }
                   gotovoStatus.classList.remove('error'); gotovoStatus.textContent = '';
+                  b.classList.add('zadnji');
                   if (dokPostaviUSlot_[slot]) { dokPostaviUSlot_[slot]({ id: stavka.id, name: stavka.name, url: stavka.url }); }
                   return;
                 }
+                b.classList.add('zadnji');
                 dodajGotovo_(stavka, b.getAttribute('data-c'));
               });
             });
@@ -16808,7 +16887,12 @@
           .map(function(k) { return DOK_FIKSNI_SLOTOVI_[k].naziv; });
         // Gotovi dokumenti (od Claudea) zamjenjuju obavezna 3 fiksna polja — dovoljan je barem jedan.
         if (dokumentiGotovi.length) { nedostaju = []; }
-        if (nedostaju.length) {
+        var losihGotovih_ = (typeof gnBrojLosih_ === 'function') ? gnBrojLosih_() : 0;
+        if (losihGotovih_) {
+          pripremaBtn.disabled = true;
+          pripremaStatusEl.textContent = 'Ispravi nazive: ' + losihGotovih_ + ' gotov(ih) dokument(a) nema šifru ponude u nazivu (vidi crveni ⚠ u okvirima „Za klijenta"/„Samo interno").';
+          pripremaStatusEl.classList.add('error');
+        } else if (nedostaju.length) {
           pripremaBtn.disabled = true;
           pripremaStatusEl.textContent = 'Nedostaje: ' + nedostaju.join(', ') + ' — direktorij se ne može pripremiti dok sva tri dokumenta nisu učitana.';
           pripremaStatusEl.classList.add('error');
@@ -16842,7 +16926,7 @@
         // direktorij ide svaka stavka (predirektorij / POSLANO / oba), vidi
         // napomenu uz restrukturiranje u adminPripremiDokumenteZaPonudu.
         var stavke = dokumentiPonude.map(function(d) { return { id: d.id, slotKljuc: 'ostalo' }; });
-        dokumentiGotovi.forEach(function(d) { if (d && d.id) { stavke.push({ id: d.id, slotKljuc: (d.cilj === 'interno' ? 'gotovo_interno' : 'gotovo_klijent') }); } });
+        dokumentiGotovi.forEach(function(d) { if (d && d.id) { stavke.push({ id: d.id, slotKljuc: (d.cilj === 'interno' ? 'gotovo_interno' : 'gotovo_klijent'), noviNaziv: (d.noviNaziv || '') }); } });
         ['analiticki', 'cjenikhr', 'ponudasuradnja'].forEach(function(slotKljuc) {
           var stavka = dokFiksniPolja[slotKljuc];
           if (stavka && stavka.id) { stavke.push({ id: stavka.id, fiksniNaziv: DOK_FIKSNI_SLOTOVI_[slotKljuc].naziv, slotKljuc: slotKljuc }); }
@@ -17682,7 +17766,8 @@
         var sifraOk = !!(sifraInput && sifraInput.readOnly && sifraInput.value.trim());
         var brojDok = ['analiticki', 'cjenikhr', 'ponudasuradnja'].filter(function(k) { return !!dokFiksniPolja[k]; }).length;
         var gotoviZaKlijenta = dokumentiGotovi.filter(function(d) { return d.cilj !== 'interno'; }).length;
-        var dokOk = brojDok === 3 || gotoviZaKlijenta > 0;
+        var losihGotovihSlanje_ = (typeof gnBrojLosih_ === 'function') ? gnBrojLosih_() : 0;
+        var dokOk = (brojDok === 3 || gotoviZaKlijenta > 0) && !losihGotovihSlanje_;
         // Peti uvjet (Sašin izričit zahtjev, 24.9.2026.: "jedna od uvjeta za
         // slanje ponude bude i definiranje roka... aktivacija roka i linka
         // među ostalim [uvjetima]") — provjerava je li rok/link već
@@ -17695,7 +17780,7 @@
         var uvjeti = [
           { ok: poslovnicaOk, tekst: poslovnicaOk ? 'Nadležna poslovnica potvrđena' : 'Nadležna poslovnica nije potvrđena' },
           { ok: sifraOk, tekst: sifraOk ? 'Interna In Time šifra ponude (INTRIX) potvrđena' : 'Interna In Time šifra ponude (INTRIX) nije potvrđena' },
-          { ok: dokOk, tekst: dokOk ? (brojDok === 3 ? 'Sva 3 osnovna priloga postavljena' : ('Gotovi dokumenti za klijenta postavljeni (' + gotoviZaKlijenta + ')')) : ('Nedostaju osnovni prilozi — postavljeno ' + brojDok + '/3 (Analitički cjenik, Cjenik Hrvatska, Ponuda za suradnju)') },
+          { ok: dokOk, tekst: losihGotovihSlanje_ ? ('Gotovi dokumenti: ' + losihGotovihSlanje_ + ' bez šifre ponude u nazivu — ispravi (crveni ⚠)') : dokOk ? (brojDok === 3 ? 'Sva 3 osnovna priloga postavljena' : ('Gotovi dokumenti za klijenta postavljeni (' + gotoviZaKlijenta + ')')) : ('Nedostaju osnovni prilozi — postavljeno ' + brojDok + '/3 (Analitički cjenik, Cjenik Hrvatska, Ponuda za suradnju)') },
           { ok: rokOk, tekst: rokOk ? 'Rok i link ponude aktivirani' : 'Rok i link ponude nisu aktivirani — klikni "Aktiviraj rok i link" u odjeljku "Ponuda — slanje i status"' },
           { ok: mailOk, tekst: mailOk ? 'Označena barem 1 mail adresa za slanje ponude' : 'Nijedna mail adresa nije označena za slanje ponude' }
         ];
