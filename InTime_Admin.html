@@ -1214,6 +1214,8 @@
   /* Označavanje klika (10.10.2026.): kliknuti redak i kliknuti gumb potamne/promijene boju da se vidi što je odabrano */
   .af-dok-stavka.odabrano{background:#cdeceb;border-color:var(--purple);box-shadow:inset 5px 0 0 var(--purple),0 0 0 2px rgba(34,152,145,.35);font-weight:700;}
   .af-gotovo-akcije button:active{transform:scale(.94);filter:brightness(.85);}
+  .af-gotovo-akcije button.zadnji .st{display:none;}
+  .af-gotovo-akcije button.zadnji::before{content:'✓ ';font-weight:900;}
   .af-gotovo-akcije .gk.zadnji{background:#2e9d57;color:#fff;border-color:#1b6e3c;box-shadow:0 0 0 2px rgba(46,157,87,.35);}
   .af-gotovo-akcije .gi.zadnji{background:#5a6a94;color:#fff;border-color:#3a4668;box-shadow:0 0 0 2px rgba(90,106,148,.35);}
   .af-gotovo-akcije .gz.zadnji{background:#f0c929;color:#4d3b00;border-color:#a98400;box-shadow:0 0 0 2px rgba(217,185,46,.45);}
@@ -1228,6 +1230,8 @@
   .af-gn-popravak{flex:1 1 100%;display:flex;gap:4px;align-items:center;flex-wrap:wrap;font-size:11px;color:#a02020;}
   .af-gn-popravak input{flex:1 1 180px;min-width:0;font-size:11px;padding:3px 5px;border:1px solid #d23b3b;border-radius:5px;}
   .af-gn-popravak button{border:1px solid #a02020;background:#d23b3b;color:#fff;border-radius:5px;font-size:11px;font-weight:700;padding:2px 8px;cursor:pointer;}
+  .af-gn-sve{margin-top:8px;border:1px solid #a02020;background:#d23b3b;color:#fff;border-radius:6px;font-size:12px;font-weight:800;padding:6px 12px;cursor:pointer;}
+  .af-gn-sve[hidden]{display:none;}
   .af-gn-nova{flex:1 1 100%;font-size:11px;color:#1b6e3c;}
   .af-dok-sustav-putanja{font-size:11px;color:var(--grey);margin-bottom:6px;line-height:1.5;word-break:break-word;}
   .af-dok-sustav-putanja a{color:var(--purple);cursor:pointer;text-decoration:none;}
@@ -14464,6 +14468,7 @@
                 '<div class="af-dok-lista af-gotovo-lista af-gotovo-lista-interno"></div>' +
                 '<div class="af-dok-cilj-hint">Ostaje samo u internom direktoriju ponude (evidencija). Klijent ih ne vidi.</div>' +
               '</div>' +
+              '<button type="button" class="af-gn-sve" hidden>✎ Ispravi sve nazive automatski (dodaj šifru ponude)</button>' +
               '<div class="af-dok-status af-gotovo-status"></div>' +
             '</div>' +
           '</div>' +
@@ -16571,6 +16576,32 @@
           });
         });
       };
+      var gnSveBtn = wrap.querySelector('.af-gn-sve');
+      var gnOsvjeziSve_ = function() { if (gnSveBtn) { gnSveBtn.hidden = !(gnBrojLosih_() > 0 && gnSifra_()); } };
+      if (gnSveBtn) {
+        gnSveBtn.addEventListener('click', function(ev) {
+          ev.stopPropagation();
+          dokumentiGotovi.forEach(function(d) { if (gnStanje_(d) === 'lose') { d.noviNaziv = gnPrijedlog_(d); } });
+          renderGotove_(); spremiGotove_();
+        });
+      }
+      // Gumbi uz dokumente u pregledniku POTAMNE (puna boja + ✓) kad je dokument STVARNO u tom okviru/polju (stanje, ne samo klik —
+      // ostaje i nakon osvježavanja popisa; nestaje kad se dokument ukloni ili prebaci drugamo).
+      var oznaciGotoveGumbe_ = function() {
+        if (!gotovoIzvorLista) { return; }
+        Array.prototype.slice.call(gotovoIzvorLista.querySelectorAll('.af-gotovo-stavka')).forEach(function(red) {
+          var id = red.getAttribute('data-id');
+          var zapis = null; dokumentiGotovi.forEach(function(d) { if (d.id === id) { zapis = d; } });
+          Array.prototype.slice.call(red.querySelectorAll('.af-gotovo-akcije button')).forEach(function(b) {
+            var slot = b.getAttribute('data-slot'), c = b.getAttribute('data-c'), on = false;
+            if (slot) { on = !!(dokFiksniPolja[slot] && dokFiksniPolja[slot].id === id); }
+            else { on = !!(zapis && zapis.cilj === c); }
+            b.classList.toggle('zadnji', on);
+          });
+        });
+      };
+      var gnOrigRender_ = renderGotove_;
+      renderGotove_ = function() { gnOrigRender_(); gnOsvjeziSve_(); oznaciGotoveGumbe_(); };
       var dodajGotovo_ = function(stavka, cilj) {
         var idx = -1; dokumentiGotovi.forEach(function(d, i) { if (d.id === stavka.id) { idx = i; } });
         if (idx !== -1) { if (dokumentiGotovi[idx].cilj === cilj) { return; } dokumentiGotovi[idx].cilj = cilj; }
@@ -16607,10 +16638,11 @@
           res.podfolderi.forEach(function(f) { h += '<div class="af-dok-stavka af-dok-stavka-folder" data-id="' + esc(f.id) + '"><span>📁</span><span class="af-dok-naziv">' + esc(f.name) + '</span></div>'; });
           res.datoteke.forEach(function(f) {
             h += '<div class="af-dok-stavka af-gotovo-stavka" draggable="true" data-id="' + esc(f.id) + '" data-name="' + esc(f.name) + '" data-url="' + esc(f.url) + '"><span>📄</span><span class="af-dok-naziv" title="' + esc(f.name) + '">' + esc(f.name) + '</span>' +
-              '<span class="af-gotovo-akcije"><button type="button" class="gk" data-c="klijent">→ Klijent</button><button type="button" class="gi" data-c="interno">→ Interno</button>' +
-              '<button type="button" class="gz" data-slot="analiticki" title="Analitički cjenik (Excel)">→ Analitički cjenik</button><button type="button" class="gp" data-slot="cjenikhr" title="Cjenik Hrvatska (Excel)">→ Cjenik Hrvatska</button><button type="button" class="gl" data-slot="ponudasuradnja" title="Ponuda za suradnju (PDF)">→ Ponuda za suradnju</button></span></div>';
+              '<span class="af-gotovo-akcije"><button type="button" class="gk" data-c="klijent"><i class="st">→ </i>Klijent</button><button type="button" class="gi" data-c="interno"><i class="st">→ </i>Interno</button>' +
+              '<button type="button" class="gz" data-slot="analiticki" title="Analitički cjenik (Excel)"><i class="st">→ </i>Analitički cjenik</button><button type="button" class="gp" data-slot="cjenikhr" title="Cjenik Hrvatska (Excel)"><i class="st">→ </i>Cjenik Hrvatska</button><button type="button" class="gl" data-slot="ponudasuradnja" title="Ponuda za suradnju (PDF)"><i class="st">→ </i>Ponuda za suradnju</button></span></div>';
           });
           gotovoIzvorLista.innerHTML = h || '<div class="af-dok-prazno">Mapa je prazna.</div>';
+          setTimeout(function() { oznaciGotoveGumbe_(); }, 0);
           Array.prototype.slice.call(gotovoIzvorLista.querySelectorAll('.af-dok-stavka-folder')).forEach(function(el) {
             el.addEventListener('click', function(ev) { ev.stopPropagation(); gotovoTrenutniFolderId = el.getAttribute('data-id'); ucitajGotovePreglednik_(); });
           });
@@ -16626,7 +16658,6 @@
                 ev.stopPropagation();
                 var slot = b.getAttribute('data-slot');
                 Array.prototype.slice.call(gotovoIzvorLista.querySelectorAll('.af-dok-stavka.odabrano')).forEach(function(r) { r.classList.remove('odabrano'); });
-                Array.prototype.slice.call(gotovoIzvorLista.querySelectorAll('.af-gotovo-akcije button.zadnji')).forEach(function(x) { x.classList.remove('zadnji'); });
                 el.classList.add('odabrano');
                 if (slot) {
                   var def = DOK_FIKSNI_SLOTOVI_[slot];
@@ -16636,12 +16667,12 @@
                     return;
                   }
                   gotovoStatus.classList.remove('error'); gotovoStatus.textContent = '';
-                  b.classList.add('zadnji');
                   if (dokPostaviUSlot_[slot]) { dokPostaviUSlot_[slot]({ id: stavka.id, name: stavka.name, url: stavka.url }); }
+                  oznaciGotoveGumbe_();
                   return;
                 }
-                b.classList.add('zadnji');
                 dodajGotovo_(stavka, b.getAttribute('data-c'));
+                oznaciGotoveGumbe_();
               });
             });
           });
@@ -16887,6 +16918,7 @@
           .map(function(k) { return DOK_FIKSNI_SLOTOVI_[k].naziv; });
         // Gotovi dokumenti (od Claudea) zamjenjuju obavezna 3 fiksna polja — dovoljan je barem jedan.
         if (dokumentiGotovi.length) { nedostaju = []; }
+        if (typeof oznaciGotoveGumbe_ === 'function') { oznaciGotoveGumbe_(); }
         var losihGotovih_ = (typeof gnBrojLosih_ === 'function') ? gnBrojLosih_() : 0;
         if (losihGotovih_) {
           pripremaBtn.disabled = true;

@@ -34,8 +34,9 @@
   textarea{resize:vertical;min-height:120px;}
   .pair{display:grid;grid-template-columns:1fr 1fr;gap:0 16px;}
   .hp{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden;opacity:0;}
-  .form-submit{margin-top:22px;background:var(--orange);color:#fff;border:none;border-radius:6px;padding:12px 28px;font-size:14.5px;font-weight:700;cursor:pointer;}
-  .form-submit:hover{background:var(--orange-dark);}
+  .form-submit{margin-top:26px;background:#d62828;color:#fff;border:none;border-radius:10px;padding:20px 48px;min-width:280px;font-size:20px;font-weight:800;letter-spacing:.02em;cursor:pointer;box-shadow:0 4px 12px rgba(214,40,40,.35);}
+  .form-submit:hover{background:#a81c1c;}
+  @media(max-width:520px){.form-submit{width:100%;min-width:0;}}
   .form-submit:disabled{opacity:.6;cursor:default;}
   .form-note{font-size:12px;color:var(--grey);margin-top:10px;}
   .greska{display:none;margin-top:14px;padding:10px 14px;border-radius:6px;background:#fdecea;border:1px solid #f5c2bd;color:#8a1c12;font-size:13.5px;}
