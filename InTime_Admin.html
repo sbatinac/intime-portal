@@ -11376,8 +11376,8 @@
         '<div class="ov-kartica"><div class="ov-glava"><span>✉ Nova otvorena ponuda</span><small>ponuda ide odmah, podatke klijent šalje poslije</small></div><div class="ov-tijelo">' +
           '<div class="ov-mreza">' +
             '<label class="ov-polje">Broj ponude (šifra)<input type="text" id="ov-broj" placeholder="npr. 4567-26-SB" autocomplete="off"></label>' +
-            '<label class="ov-polje">OIB<input type="text" id="ov-oib" inputmode="numeric" maxlength="11" placeholder="11 znamenki" autocomplete="off"></label>' +
-            '<label class="ov-polje">Naziv firme<input type="text" id="ov-naziv" placeholder="npr. Primjer d.o.o." autocomplete="off"></label>' +
+            '<label class="ov-polje">OIB<input type="text" id="ov-oib" inputmode="numeric" maxlength="11" placeholder="11 znamenki" autocomplete="off"><small id="ov-oib-status" style="font-weight:600;color:#4a5a57;min-height:14px;"></small></label>' +
+            '<label class="ov-polje">Naziv firme<input type="text" id="ov-naziv" placeholder="upiši OIB — naziv se popuni sam" autocomplete="off"></label>' +
             '<label class="ov-polje">Mail<input type="email" id="ov-mail" placeholder="ime@firma.hr" autocomplete="off"></label>' +
           '</div>' +
           '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;"><button type="button" class="ov-gumb" id="ov-stvori">➕ Stvori ponudu</button><span class="ov-status" id="ov-slanje-status"></span></div>' +
@@ -11387,7 +11387,34 @@
         '<div class="ov-karte entry-list-inner" id="ov-karte"></div>';
       var $ = function(id) { return paneSlanje.querySelector('#' + id); };
       function status(t, greska) { var el = $('ov-slanje-status'); el.textContent = t || ''; el.className = 'ov-status' + (greska ? ' greska' : ''); }
-      $('ov-oib').addEventListener('input', function() { this.value = this.value.replace(/\D/g, '').slice(0, 11); });
+      // OIB → sudski registar (isto kao u Pismima): kad je OIB potpun, naziv firme se popuni sam (samo ako je prazan)
+      var oibZadnji = '';
+      function oibStatus(t, greska) { var el = $('ov-oib-status'); el.textContent = t || ''; el.style.color = greska ? '#c0392b' : '#4a5a57'; }
+      $('ov-oib').addEventListener('input', function() {
+        this.value = this.value.replace(/\D/g, '').slice(0, 11);
+        var oib = this.value;
+        if (oib.length !== 11) { oibZadnji = ''; oibStatus(''); return; }
+        if (!otvOibOk_(oib)) { oibStatus('OIB nije ispravan (kontrolna znamenka).', true); return; }
+        if (oib === oibZadnji) { return; }
+        oibZadnji = oib; oibStatus('Tražim u sudskom registru…');
+        gasCall({ action: 'adminOibPodaci', token: adminToken, oib: oib }).then(function(res) {
+          if (handleAuthError(res)) { return; }
+          if ($('ov-oib').value !== oib) { return; }
+          if (res.status !== 'ok') { oibStatus((res.code === 'nepodeseno' ? 'Sudski registar nije podešen (⚙ Postavke)' : (res.message || 'Pretraga nije uspjela')) + ' — upiši naziv ručno.', true); if (res.code === 'limit') { oibZadnji = ''; } return; }
+          if (!res.pronadjen) { oibStatus('Nije u sudskom registru (obrt/OPG?) — upiši naziv ručno.'); return; }
+          if (res.naziv && !$('ov-naziv').value.trim()) { $('ov-naziv').value = res.naziv; }
+          oibStatus('✓ Sudski registar: ' + res.naziv + (res.aktivan === false ? ' (⚠ nije aktivan)' : ''));
+          if (!$('ov-mail').value.trim()) { $('ov-mail').focus(); }
+        }).catch(function() { oibStatus('Nema veze s poslužiteljem — upiši naziv ručno.', true); oibZadnji = ''; });
+      });
+      // Enter = idući korak (broj → OIB → naziv → mail → Stvori ponudu)
+      ['ov-broj', 'ov-oib', 'ov-naziv', 'ov-mail'].forEach(function(id, i, a) {
+        $(id).addEventListener('keydown', function(ev) {
+          if (ev.key !== 'Enter') { return; }
+          ev.preventDefault();
+          if (i < a.length - 1) { $(a[i + 1]).focus(); } else { $('ov-stvori').click(); }
+        });
+      });
       function stvori(potvrdjenoDuplikat) {
         var p = { broj: $('ov-broj').value.trim(), oib: $('ov-oib').value.trim(), naziv: $('ov-naziv').value.trim(), primatelj: $('ov-mail').value.trim(), docs: [], rowIndex: 0, potvrdjenoDuplikat: !!potvrdjenoDuplikat };
         if (!p.broj || p.broj.length < 3 || /[\s\/\\]/.test(p.broj)) { status('Upiši broj ponude (bez razmaka), npr. 4567-26-SB.', true); return; }
