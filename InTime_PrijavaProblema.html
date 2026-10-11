@@ -80,6 +80,7 @@
         <div class="broj" id="prijava-broj"></div>
         <p id="prijava-awb" style="margin:2px 0 8px;font-weight:700;" hidden></p>
         <p>Potvrdu s brojem slučaja i brojem pošiljke poslali smo Vam na e-mail. Status možete pratiti pomoću bilo kojeg od ta dva broja.</p>
+        <p><button type="button" id="prijava-nova" class="form-submit" style="margin-top:6px;padding:14px 32px;min-width:0;font-size:16px;" onclick="novaPrijava_()">➕ Pošalji novu prijavu</button></p>
         <p><a id="prijava-status-link" href="InTime_StatusProblema.html" style="color:var(--purple);font-weight:700;">📍 Prati status prijave</a></p>
         <p class="pp-nazad"><a href="InTime_PismoNamjere.html" style="color:var(--purple);">← Povratak na glavnu stranicu</a></p>
       </div>
@@ -363,6 +364,22 @@
   })();
 
   function prikaziGresku_(t) { var g = document.getElementById('prijava-greska'); g.textContent = t || ''; g.classList.toggle('active', !!t); if (t) { g.scrollIntoView({ behavior: 'smooth', block: 'center' }); } }
+
+  // Nakon slanja: vraća čist obrazac bez ponovnog učitavanja stranice. Podaci tvrtke i osobe za kontakt (OIB, naziv, ime, mobitel, e-mail) ostaju
+  // upisani da ih se ne mora tipkati ponovno; briše se sve vezano uz sam problem (vrsta, broj pošiljke, poslovnica, odredište, opis).
+  function novaPrijava_() {
+    var $ = function(id) { return document.getElementById(id); };
+    ['pp-vrsta', 'pp-awb', 'pp-poslovnica', 'pp-odrediste', 'pp-opis'].forEach(function(id) { var el = $(id); if (el) { el.value = ''; } });
+    try { odOcisti_(); odZatvori_(); } catch (e) {}
+    try { osvjeziAwbPolje_(); } catch (e2) {}
+    prikaziGresku_('');
+    var aw = $('prijava-awb'); aw.hidden = true; aw.textContent = '';
+    $('prijava-broj').textContent = '';
+    var g = $('prijava-gumb'); g.disabled = false; g.textContent = 'Pošalji prijavu';
+    $('prijava-zahvala').classList.remove('active');
+    $('prijava-form').style.display = '';
+    try { $('pp-vrsta').scrollIntoView({ behavior: 'smooth', block: 'center' }); $('pp-vrsta').focus(); } catch (e3) {}
+  }
 
   function posaljiPrijavu(e) {
     e.preventDefault();

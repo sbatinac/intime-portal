@@ -33,6 +33,11 @@
   .korak.gotovo::before{background:var(--green);}
   .kruz{position:absolute;left:0;top:0;width:33px;height:33px;border-radius:50%;background:#e9eef0;color:#9aa7ab;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:16px;}
   .korak.gotovo .kruz{background:var(--green);color:#fff;}
+  /* boje završenih koraka: 1. crveno (zaprimljeno), 2. žuto (u obradi), 3. zeleno (riješeno) */
+  .korak.gotovo.k0 .kruz{background:var(--red);}
+  .korak.gotovo.k1 .kruz{background:#f4b400;}
+  .korak.gotovo.k0::before{background:var(--red);}
+  .korak.gotovo.k1::before{background:#f4b400;}
   .korak.tren .kruz{background:#fff;border:3px solid var(--or);color:var(--or);}
   .korak b{display:block;font-size:16px;}
   .korak.nije b{color:#9aa7ab;}
@@ -75,7 +80,7 @@
       (p.poslovnica ? '<div class="pod">Poslovnica: ' + esc(p.poslovnica) + '</div>' : '') +
       '<span class="ozn ' + k + '">' + esc(tekstStanja) + '</span>' +
       '<ul class="koraci">' + p.koraci.map(function(s, i){
-        var cls = s.gotovo ? 'gotovo' : (i === tren + 1 ? 'tren' : 'nije');
+        var cls = (s.gotovo ? 'gotovo' : (i === tren + 1 ? 'tren' : 'nije')) + ' k' + i;
         return '<li class="korak ' + cls + '"><div class="kruz">' + (s.gotovo ? '✓' : (i + 1)) + '</div><b>' + esc(s.naslov) + '</b>' +
           '<div class="d">' + (s.gotovo ? esc(s.datum) + ' — ' + esc(s.opis) : (i === tren + 1 ? 'Na redu — ' + esc(s.opis).toLowerCase() : '')) + '</div>' +
           (i === p.koraci.length - 1 && s.gotovo && p.rjesenje ? '<div class="rjesenje"><small>Kako je riješeno</small>' + esc(p.rjesenje) + '</div>' : '') + '</li>';

@@ -4909,7 +4909,76 @@ window.kalkSinhroUvezi_ = function(snap){
   scheduleLiveIzracunaj();
 };
 
-if(!ucitajAdminPrijavuIzUrlaAkoPostoji_() && !ucitajKolegaPrijavuIzUrlaAkoPostoji_()){
+// TESTNI KALKULATOR (11.10.2026., Sašin izričit zahtjev): ?kalk_test=<token ponude> — klijent uz ponudu dobiva kalkulator s cijenama i
+// uvjetima IZ SVOJE PONUDE (server ih čita iz priloženog "Cjenik Hrvatska"), bez korisničkog imena/lozinke, da procijeni koliko je ponuda
+// povoljna. Server ga ISKLJUČUJE čim ponuda bude prihvaćena/odbijena/poništena/istekne ili klijent dobije pravi kalkulator — zato se
+// stanje provjerava pri učitavanju i povremeno dok je stranica otvorena. Cjenik/učitavanje datoteke su zaključani, evidencija korisnika se ne vodi.
+var testniKalkToken_ = null;
+var testniKalkTimer_ = null;
+function testniKalkBanner_(html, greska){
+  var el = document.getElementById('testniKalkBanner');
+  if(!el){
+    el = document.createElement('div');
+    el.id = 'testniKalkBanner';
+    var ref = document.getElementById('prijavaKlijentaCard') || document.getElementById('kalkSadrzajGate');
+    ref.parentNode.insertBefore(el, ref);
+  }
+  el.style.cssText = 'margin:0 0 14px;padding:12px 16px;border-radius:10px;font-size:14px;line-height:1.5;font-weight:600;' +
+    (greska ? 'background:#fdecea;border:2px solid #c0392b;color:#8e2a1f;' : 'background:#fff7e0;border:2px solid #f2b600;color:#5b4300;');
+  el.innerHTML = html;
+}
+function testniKalkIskljuci_(poruka){
+  var gate = document.getElementById('kalkSadrzajGate');
+  if(gate){ gate.style.display = 'none'; }
+  if(testniKalkTimer_){ clearInterval(testniKalkTimer_); testniKalkTimer_ = null; }
+  testniKalkBanner_('🔒 ' + (poruka || 'Testni kalkulator je isključen.'), true);
+}
+function testniKalkProvjeri_(){
+  if(!testniKalkToken_){ return; }
+  gorivoGasCall_({ action: 'kalkulatorTestniPrijava', ponudaToken: testniKalkToken_ }).then(function(res){
+    if(!res || res.status !== 'ok'){ testniKalkIskljuci_((res && res.message) ? res.message : 'Testni kalkulator je isključen.'); }
+  }).catch(function(){ /* privremena greška mreže — ne isključuj */ });
+}
+function ucitajTestniKalkulatorIzUrlaAkoPostoji_(){
+  var params;
+  try{ params = new URLSearchParams(window.location.search); }catch(eUrl){ return false; }
+  var tok = params.get('kalk_test');
+  if(!tok){ return false; }
+  var card = document.getElementById('prijavaKlijentaCard');
+  if(card){ card.style.display = 'none'; }
+  testniKalkBanner_('Učitavam testni kalkulator s cijenama iz Vaše ponude…', false);
+  gorivoGasCall_({ action: 'kalkulatorTestniPrijava', ponudaToken: tok }).then(function(res){
+    if(!res || res.status !== 'ok'){
+      testniKalkIskljuci_((res && res.message) ? res.message : 'Testni kalkulator nije dostupan.');
+      return;
+    }
+    testniKalkToken_ = tok;
+    korisnikUcitaoVlastitiCjenik_ = true;
+    if(Array.isArray(res.cjenik) && res.cjenik.length){
+      CURRENT_CJENIK = res.cjenik.slice();
+      renderCjenikTable(CURRENT_CJENIK);
+    }
+    primijeniKalkulatorPostavke_(res.postavke);
+    scheduleLiveIzracunaj();
+    var fileInput = document.getElementById('cjenikFile');
+    if(fileInput){ fileInput.disabled = true; }
+    var resetBtn = document.querySelector('button[onclick="resetCjenik()"]');
+    if(resetBtn){ resetBtn.disabled = true; resetBtn.title = 'Onemogućeno u testnom kalkulatoru.'; }
+    var gate = document.getElementById('kalkSadrzajGate');
+    if(gate){ gate.style.display = ''; }
+    testniKalkBanner_('🧪 TESTNI KALKULATOR' + (res.naziv ? (' — ' + String(res.naziv).replace(/[&<>"]/g, '')) : '') +
+      '<br><span style="font-weight:400;">Izračun po cijenama i uvjetima iz Vaše ponude, kako biste procijenili koliko je ponuda povoljna. Dostupan je dok je ponuda aktivna; nakon prihvata ponude dobit ćete pristup pravom kalkulatoru.</span>', false);
+    testniKalkTimer_ = setInterval(testniKalkProvjeri_, 60000);
+    document.addEventListener('visibilitychange', function(){ if(!document.hidden){ testniKalkProvjeri_(); } });
+    var izrBtn = document.querySelector('button[onclick^="izracunaj"]');
+    if(izrBtn){ izrBtn.addEventListener('click', testniKalkProvjeri_); }
+  }).catch(function(){
+    testniKalkBanner_('Greška u komunikaciji s poslužiteljem — osvježite stranicu i pokušajte ponovno.', true);
+  });
+  return true;
+}
+
+if(!ucitajTestniKalkulatorIzUrlaAkoPostoji_() && !ucitajAdminPrijavuIzUrlaAkoPostoji_() && !ucitajKolegaPrijavuIzUrlaAkoPostoji_()){
   ucitajPrijavuIzUrlaAkoPostoji_();
 }
 </script>
