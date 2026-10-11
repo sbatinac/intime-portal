@@ -7970,7 +7970,7 @@
 
   // ============================================================
   // LOGISTIČKI KONTAKTI (4.10.2026.) — svaka kartica "Osnovni logistički podaci"
-  // ide i kao kontakt (Google Contacts, naljepnica "In Time — Logistika" =
+  // ide i kao kontakt (Google Contacts, naljepnica "PANTHER - logistički podaci" =
   // izdvojena lista na mobitelu; uz to popis + CSV na Driveu). Podatke kartice
   // (logPodaciZaEntry_) računa ovaj frontend i šalje backendu; hash otkriva
   // promjene. Auto-prijenos (prekidač, traži lozinku) radi čim se admin učita
@@ -8077,7 +8077,7 @@
     };
     if (!ukljuci) { posalji(''); return; }
     openAdminPasswordConfirmModal('Uključi automatski prijenos u kontakte',
-      'Čim se klijent prebaci među klijente (i pri svakoj promjeni njegovih logističkih podataka) kontakt se sam napravi/ažurira u Google Contacts (lista "In Time — Logistika") i na Driveu. Kontakt sadrži i lozinke. Unesi admin lozinku.',
+      'Čim se klijent prebaci među klijente (i pri svakoj promjeni njegovih logističkih podataka) kontakt se sam napravi/ažurira u Google Contacts (lista "PANTHER - logistički podaci") i na Driveu. Kontakt sadrži i lozinke. Unesi admin lozinku.',
       function() { var l = lastConfirmedAdminPassword_; lastConfirmedAdminPassword_ = null; posalji(l); });
   }
 
@@ -8100,13 +8100,13 @@
       '<label style="display:inline-flex;gap:6px;align-items:center;margin:0 10px;"><input type="checkbox" class="lk-auto"' + (st.enabled ? ' checked' : '') + '> Automatski prenesi nove i promijenjene kartice</label>' +
       '<button type="button" class="btn btn-small lk-sve">📇 Prebaci sve sada</button> ' +
       '<button type="button" class="btn btn-outline btn-small lk-brisi">🗑 Obriši sve logističke kontakte</button> ' +
-      '<span class="lp-postavke-hint">Lista "In Time — Logistika" u Google Contacts + popis i CSV na Driveu (mapa Imenik → Logistički kontakti). U kontaktu su svi podaci kartice, uključujući OB i kalkulator korisničko ime i lozinku. Prebačeno: ' + broj + '.</span> ' +
+      '<span class="lp-postavke-hint">Lista "PANTHER - logistički podaci" u Google Contacts + popis i CSV na Driveu (mapa Imenik → Logistički kontakti). U kontaktu su svi podaci kartice, uključujući OB i kalkulator korisničko ime i lozinku. Prebačeno: ' + broj + '.</span> ' +
       '<span class="lk-status faq-admin-status">' + esc(st.radi ? (st.poruka || 'Prijenos u kontakte…') : st.poruka) + '</span>';
     box.querySelector('.lk-auto').addEventListener('change', function() { var c = this; if (!c.checked) { logKontaktAutoPrekidac_(false); } else { c.checked = false; logKontaktAutoPrekidac_(true); } });
     box.querySelector('.lk-sve').addEventListener('click', function() { logKontaktRucno_(logKontaktSviPayloadi_()); });
     box.querySelector('.lk-brisi').addEventListener('click', function() {
       openAdminPasswordConfirmModal('Brisanje svih logističkih kontakata',
-        'Briše sve kontakte s liste "In Time — Logistika" u Google Contacts i njihov popis na Driveu. Same kartice i klijenti ostaju. Unesi admin lozinku, zatim slijedi upis riječi BRISATI.',
+        'Briše sve kontakte s liste "PANTHER - logistički podaci" u Google Contacts i njihov popis na Driveu. Same kartice i klijenti ostaju. Unesi admin lozinku, zatim slijedi upis riječi BRISATI.',
         function() { var l = lastConfirmedAdminPassword_; lastConfirmedAdminPassword_ = null; openBulkDeleteWordModal([], 'BRISATI', { akcija: 'logk-obrisi', lozinka: l, broj: Object.keys(st.stanje).length }); });
     });
     return box;
@@ -8130,7 +8130,7 @@
       '<div class="lp-card-sub">' + (oib ? 'OIB ' + esc(oib) : '') + (otvoreno ? (oib ? ' · ' : '') + 'klijent u sustavu od ' + esc(otvoreno) : '') + '</div>' +
       '</div><div class="lp-card-actions">' +
       (nedostaje.length ? '<span class="lp-badge-nedostaje" title="' + esc(nedostaje.map(function(r) { return r.label; }).join(', ')) + '">Nedostaje: ' + nedostaje.length + '</span>' : '<span class="lp-badge-ok">✓ Potpuno</span>') +
-      (function() { var x = logKontaktState_.stanje[logKontaktPayload_(entry).kljuc]; return x && x.prebaceno ? '<span class="lp-badge-ok" title="Kontakt je u Google Contacts (lista In Time — Logistika)">📇 u kontaktima</span>' : (x && x.greska ? '<span class="lp-badge-nedostaje" title="' + esc(x.greska) + '">📇 greška</span>' : ''); })() +
+      (function() { var x = logKontaktState_.stanje[logKontaktPayload_(entry).kljuc]; return x && x.prebaceno ? '<span class="lp-badge-ok" title="Kontakt je u Google Contacts (lista PANTHER - logistički podaci)">📇 u kontaktima</span>' : (x && x.greska ? '<span class="lp-badge-nedostaje" title="' + esc(x.greska) + '">📇 greška</span>' : ''); })() +
       '<button type="button" class="btn btn-outline btn-small lp-u-kontakt">📇 U kontakte</button>' +
       '<button type="button" class="btn btn-outline btn-small lp-kopiraj-sve">📋 Kopiraj sve</button>' +
       '<button type="button" class="btn btn-outline btn-small lp-otvori">↗ Otvori karticu klijenta</button>' +
@@ -14230,7 +14230,7 @@
       '<div class="imenik-autosync-head">' +
         '<div>' +
           '<div class="imenik-autosync-title">Automatski prijenos u Google Contacts (sbatinac.intime@gmail.com)</div>' +
-          '<div class="imenik-autosync-desc">Kad je uključeno, novi kontakti iz označenih vrsta obrazaca odmah se šalju u Google Contacts, bez čekanja na ručni odabir ispod. Uključivanje traži admin lozinku i potvrdu riječju.</div>' +
+          '<div class="imenik-autosync-desc">Svi kontakti iz Imenika ulaze u Google oznaku <b>PANTHER - imenik</b>. Kad je uključeno, novi kontakti iz označenih vrsta obrazaca odmah se šalju u Google Contacts, bez čekanja na ručni odabir ispod. Uključivanje traži admin lozinku i potvrdu riječju.</div>' +
         '</div>' +
         '<label class="broj-toggle-switch"><input type="checkbox" id="imenik-autosync-toggle"' + (uklj ? ' checked' : '') + '><span class="broj-toggle-slider"></span></label>' +
       '</div>' +
@@ -22135,7 +22135,7 @@
         { n: '⭐ Ocjena kvalitete (anketa)', o: 'Samostalna stranica ankete za postojeće klijente.', u: B + 'InTime_Anketa.html' },
         { n: '🛠 Prijava problema', o: 'Obrazac za prijavu problema s pošiljkom ili računom.', u: B + 'InTime_PrijavaProblema.html' },
         { n: '📍 Status prijave problema', o: 'Klijent upiše broj slučaja ili pošiljke i vidi status.', u: B + 'InTime_StatusProblema.html' },
-        { n: '⛽ Gorivo (trendovi)', o: 'Samo trendovi goriva i dodatka (bez ostatka naslovnice).', u: B + 'InTime_PismoNamjere.html?otvori=gorivo' },
+        { n: '⛽ Gorivo (graf kretanja cijena)', o: 'Samo glavni graf „Kretanje cijena goriva“ (bez ostatka naslovnice).', u: B + 'InTime_PismoNamjere.html?otvori=gorivo' },
         { n: '🧮 Kalkulator cijena (opći)', o: 'Glavni kalkulator — klijent se prijavlja svojim korisničkim imenom i lozinkom.', u: B + 'InTime_KalkulatorCijena.html' },
         { n: '💔 Upitnik o prekidu suradnje', o: 'Samo za klijente koji odlaze.', u: B + 'InTime_RaskidSuradnje.html' }
       ] },

@@ -694,12 +694,14 @@
   /* DIREKTNI LINKOVI (11.10.2026.): ?otvori=upitnik | odbijenica | gorivo — otvara se SAMO taj dio, ne cijela naslovnica */
   #izravni-traka{display:none;position:sticky;top:0;z-index:9990;align-items:center;justify-content:space-between;gap:10px;padding:10px 14px;background:linear-gradient(120deg,#0d2230,#135450);color:#fff;font-weight:700;font-size:14px;}
   html.izravni-mod #izravni-traka{display:flex;}
-  html.izravni-mod #tess-sekcija, html.izravni-mod .hero-banner, html.izravni-mod section:not(#rucni-sekcija), html.izravni-mod footer,
+  html.izravni-mod #tess-sekcija, html.izravni-mod .hero-banner, html.izravni-mod section:not(#rucni-sekcija):not(#gorivo-sekcija), html.izravni-mod footer,
   html.izravni-mod #mainBtn, html.izravni-mod #mainMenu, html.izravni-mod #kontaktMenu, html.izravni-mod #shareMenu,
   html.izravni-mod .gorivo-fab, html.izravni-mod .cta-box, html.izravni-mod #anketa-embed-wrap, html.izravni-mod .panel-close-btn{display:none !important;}
   html.izravni-upitnik #panel-odbijenica, html.izravni-odbijenica #panel-interes{display:none !important;}
+  html.izravni-upitnik #gorivo-sekcija, html.izravni-odbijenica #gorivo-sekcija{display:none !important;}
   html.izravni-gorivo #rucni-sekcija{display:none !important;}
-  html.izravni-gorivo .gorivo-fab-panel{display:block !important;position:static;left:auto;bottom:auto;margin:34px auto;max-width:560px;width:calc(100% - 32px);box-shadow:0 4px 18px rgba(0,0,0,.14);}
+  html.izravni-gorivo #gorivo-galerija-toggle-btn{display:none !important;}
+  html.izravni-gorivo #gorivo-sekcija{padding-top:18px;}
   #ponuda-napomena{display:none;margin:0 0 14px;padding:12px 14px;border-left:4px solid #c0392b;background:#fdf1ef;border-radius:8px;font-size:14px;color:#5a1d16;}
   html.ponuda-mod #ponuda-napomena{display:block;}
   #ponuda-greska{display:none;max-width:720px;margin:30px auto;padding:22px;border:1px solid #e3e6e5;border-radius:12px;background:#fff;font-size:15px;text-align:center;}
@@ -1789,7 +1791,7 @@
        komponenta). Podaci dolaze s javne (bez tokena) rute
        gorivoJavniPodaci() u InTime_Code.gs. Graf se montira lijeno, tek pri
        prvom otvaranju kartice (vidi osiguirajGorivoGraf_() u JS-u niže). -->
-  <section>
+  <section id="gorivo-sekcija">
     <div class="wrap-galerija">
       <button type="button" id="gorivo-galerija-toggle-btn" class="galerija-toggle-btn tema-foto-gorivo" onclick="toggleGalerijaSadrzaj_('gorivo-galerija-sadrzaj','gorivo-galerija-toggle-btn'); osiguirajGorivoGraf_();">
         <span>Kretanje cijena goriva</span>
@@ -7531,17 +7533,18 @@
     try {
       var h = document.documentElement.classList;
       if (!h.contains('izravni-mod')) { return; }
-      var nas = { upitnik: 'Prodajni upitnik', odbijenica: 'Odgovor — trenutno nas ne zanima', gorivo: '⛽ Trendovi goriva' };
+      var nas = { upitnik: 'Prodajni upitnik', odbijenica: 'Odgovor — trenutno nas ne zanima', gorivo: '⛽ Kretanje cijena goriva' };
       var sto = h.contains('izravni-upitnik') ? 'upitnik' : (h.contains('izravni-odbijenica') ? 'odbijenica' : 'gorivo');
       document.getElementById('izravni-traka-naslov').textContent = nas[sto];
       if (sto === 'upitnik') { showPanel('interes'); }
       else if (sto === 'odbijenica') { showPanel('odbijenica'); }
+      else { var gs = document.getElementById('gorivo-galerija-sadrzaj'); if (gs) { gs.hidden = false; } try { osiguirajGorivoGraf_(); } catch (eG) {} }
       setTimeout(function(){ window.scrollTo(0, 0); }, 150);
     } catch (e0) {}
   })();
   </script>
   <!-- AI SAVJETNIK TESS (Jotform) — plutajući chat balončić -->
   <script>var TESS_BALONCIC_UKLJUCEN_ = true; /* 5.10.2026.: balončić ostaje uz ugrađeni okvir Tess; false ga isključuje */
-if(TESS_BALONCIC_UKLJUCEN_ && !document.documentElement.classList.contains('rucni-mod') && !document.documentElement.classList.contains('ponuda-mod')){var tessS_=document.createElement('script');tessS_.src='https://cdn.jotfor.ms/agent/embedjs/01a10344b1a070008b5b9101c3ddbf7f423b/embed.js';document.body.appendChild(tessS_);}</script>
+if(TESS_BALONCIC_UKLJUCEN_ && !document.documentElement.classList.contains('rucni-mod') && !document.documentElement.classList.contains('ponuda-mod') && !document.documentElement.classList.contains('izravni-mod')){var tessS_=document.createElement('script');tessS_.src='https://cdn.jotfor.ms/agent/embedjs/01a10344b1a070008b5b9101c3ddbf7f423b/embed.js';document.body.appendChild(tessS_);}</script>
 </body>
 </html>
