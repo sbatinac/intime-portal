@@ -37,6 +37,12 @@
   .korak b{display:block;font-size:16px;}
   .korak.nije b{color:#9aa7ab;}
   .korak .d{font-size:13.5px;color:var(--grey);}
+  .rjesenje{margin:8px 0 0;background:#e9f6ea;border:1px solid #b9dfbc;border-radius:10px;padding:10px 12px;font-size:14px;color:#1d3d20;white-space:pre-wrap;word-break:break-word;}
+  .rjesenje small{display:block;font-weight:800;color:var(--green);text-transform:uppercase;letter-spacing:.04em;font-size:11.5px;margin-bottom:2px;}
+  .poruke{margin-top:20px;border-top:1px solid var(--line);padding-top:14px;}
+  .poruke h2{font-size:15px;margin:0 0 8px;}
+  .poruka{background:#f4f7f8;border:1px solid var(--line);border-radius:10px;padding:9px 12px;margin-bottom:8px;font-size:14px;white-space:pre-wrap;word-break:break-word;}
+  .poruka small{display:block;color:var(--grey);font-size:12px;margin-bottom:2px;}
   .napomena{margin-top:18px;font-size:13.5px;color:#555;border-top:1px solid var(--line);padding-top:12px;}
   .greska{color:#c0392b;font-weight:700;}
   .brojevi{display:flex;gap:10px;flex-wrap:wrap;margin:8px 0 4px;}
@@ -71,9 +77,11 @@
       '<ul class="koraci">' + p.koraci.map(function(s, i){
         var cls = s.gotovo ? 'gotovo' : (i === tren + 1 ? 'tren' : 'nije');
         return '<li class="korak ' + cls + '"><div class="kruz">' + (s.gotovo ? '✓' : (i + 1)) + '</div><b>' + esc(s.naslov) + '</b>' +
-          '<div class="d">' + (s.gotovo ? esc(s.datum) + ' — ' + esc(s.opis) : (i === tren + 1 ? 'Na redu — ' + esc(s.opis).toLowerCase() : '')) + '</div></li>';
+          '<div class="d">' + (s.gotovo ? esc(s.datum) + ' — ' + esc(s.opis) : (i === tren + 1 ? 'Na redu — ' + esc(s.opis).toLowerCase() : '')) + '</div>' +
+          (i === p.koraci.length - 1 && s.gotovo && p.rjesenje ? '<div class="rjesenje"><small>Kako je riješeno</small>' + esc(p.rjesenje) + '</div>' : '') + '</li>';
       }).join('') + '</ul>' +
-      '<div class="napomena">' + (p.stanje === 'Riješeno' ? 'Problem je riješen. Ako smatrate da nije, odgovorite na naš e-mail pa ćemo ga ponovno otvoriti.' : 'Obavijest Vam šaljemo i e-mailom čim se status promijeni.') + '</div></div>';
+      ((p.komentari || []).length ? '<div class="poruke"><h2>💬 Poruke od IN TIME-a</h2>' + p.komentari.map(function(z){ return '<div class="poruka"><small>' + esc(z.t) + '</small>' + esc(z.tekst) + '</div>'; }).join('') + '</div>' : '') +
+      '<div class="napomena">' + (p.stanje === 'Riješeno' ? 'Problem je riješen. Ako smatrate da nije, odgovorite na naš e-mail pa ćemo ga ponovno otvoriti.' : 'Obavijest Vam šaljemo i e-mailom čim se status promijeni. Ovdje ćete vidjeti i poruke našeg tima o Vašem slučaju.') + '</div></div>';
   }
   var FORMA = '<div class="kartica"><h1 style="font-size:17px;">🔎 Pronađi prijavu</h1><div class="pod">Upišite broj slučaja (npr. P-2026-012) <b>ili</b> broj pošiljke (HR2000… ili HAWB broj za međunarodnu pošiljku) i e-mail s kojim ste prijavili problem.</div>' +
     '<label for="upit">Broj slučaja ili broj pošiljke</label><input id="upit" maxlength="60" autocomplete="off" placeholder="P-2026-012, HR200026507624 ili HAWB">' +
