@@ -7003,6 +7003,7 @@
       alert('Spremanje nije potvrđeno (nema odgovora poslužitelja ili je sesija istekla). Provjeri vezu i pokušaj ponovno — podaci u obrascu su sačuvani.');
       return false;
     }
+    try { if (which === 'interes' && window.upitnikNacrtObrisi_) { window.upitnikNacrtObrisi_(); } } catch (nacrtErr) {}
     document.getElementById('panel-interes').classList.remove('active');
     document.getElementById('panel-odbijenica').classList.remove('active');
 
@@ -7546,5 +7547,128 @@
   <!-- AI SAVJETNIK TESS (Jotform) — plutajući chat balončić -->
   <script>var TESS_BALONCIC_UKLJUCEN_ = true; /* 5.10.2026.: balončić ostaje uz ugrađeni okvir Tess; false ga isključuje */
 if(TESS_BALONCIC_UKLJUCEN_ && !document.documentElement.classList.contains('rucni-mod') && !document.documentElement.classList.contains('ponuda-mod') && !document.documentElement.classList.contains('izravni-mod')){var tessS_=document.createElement('script');tessS_.src='https://cdn.jotfor.ms/agent/embedjs/01a10344b1a070008b5b9101c3ddbf7f423b/embed.js';document.body.appendChild(tessS_);}</script>
+
+<script>
+/* AUTOMATSKO PAMĆENJE NEDOVRŠENOG UPITNIKA (12.10.2026.)
+   Dok klijent ispunjava prodajni upitnik, unos se sprema SAMO u njegov preglednik (localStorage na tom uređaju — ništa se ne šalje na poslužitelj).
+   Ako zatvori/osvježi stranicu, pri ponovnom otvaranju upitnika nudi se "Nastavi gdje sam stao" ili "Počni ispočetka". Nakon uspješnog slanja nacrt se briše; nacrt istječe nakon 14 dana. */
+(function(){
+  var KLJUC = 'intime_upitnik_nacrt_v1', ROK_MS = 14 * 24 * 3600 * 1000;
+  var form = document.getElementById('panel-interes');
+  if (!form) { return; }
+  var obnavlja = false, tmr = null, ponudjeno = false;
+  function st() { try { return window.localStorage; } catch (e) { return null; } }
+  function nacin_() { if (window.RUCNI_TOKEN_) { return 'rucni'; } return window.PONUDA_TOKEN_ ? ('ponuda:' + String(window.PONUDA_TOKEN_).slice(0, 24)) : 'javno'; }
+  function polja_() {
+    return Array.prototype.filter.call(form.querySelectorAll('input,select,textarea'), function(el) {
+      var t = (el.type || '').toLowerCase();
+      if (!el.name) { return false; }
+      if (t === 'hidden' || t === 'file' || t === 'password' || t === 'submit' || t === 'button' || t === 'reset') { return false; }
+      if (el.readOnly) { return false; }
+      return true;
+    });
+  }
+  function kljucPolja_(el, brojac) {
+    var t = (el.type || '').toLowerCase();
+    if (t === 'radio' || t === 'checkbox') { return el.name + '|' + t + '|' + el.value; }
+    brojac[el.name] = (brojac[el.name] || 0) + 1;
+    return el.name + '|' + t + '|' + (brojac[el.name] - 1);
+  }
+  function snimi_() {
+    var ls = st(); if (!ls || obnavlja) { return; }
+    var v = {}, brojac = {}, popunjeno = 0;
+    polja_().forEach(function(el) {
+      var t = (el.type || '').toLowerCase(), k = kljucPolja_(el, brojac);
+      if (t === 'radio' || t === 'checkbox') { v[k] = el.checked ? 1 : 0; }
+      else { v[k] = el.value; if (String(el.value).trim() && t !== 'range') { popunjeno++; } }
+    });
+    if (popunjeno < 3) { return; }
+    try { ls.setItem(KLJUC, JSON.stringify({ t: Date.now(), nacin: nacin_(), v: v })); pokaziSpremljeno_(); } catch (e) {}
+  }
+  function zakazi_() { if (obnavlja) { return; } clearTimeout(tmr); tmr = setTimeout(snimi_, 900); }
+  var ind = null;
+  function pokaziSpremljeno_() {
+    if (!ind) { return; }
+    ind.textContent = '💾 Unos se automatski sprema na ovom uređaju — možete nastaviti kasnije.';
+    ind.style.display = 'block';
+  }
+  function procitaj_() {
+    var ls = st(); if (!ls) { return null; }
+    try {
+      var o = JSON.parse(ls.getItem(KLJUC) || 'null');
+      if (!o || !o.v || !o.t) { return null; }
+      if (Date.now() - o.t > ROK_MS) { ls.removeItem(KLJUC); return null; }
+      if (o.nacin !== nacin_()) { return null; }
+      return o;
+    } catch (e) { return null; }
+  }
+  function obrisi_() { var ls = st(); try { if (ls) { ls.removeItem(KLJUC); } } catch (e) {} }
+  window.upitnikNacrtObrisi_ = obrisi_;
+  function vrati_(o) {
+    obnavlja = true;
+    try {
+      var brojac = {}, polja = polja_();
+      var tekstna = [];
+      polja.forEach(function(el) {
+        var t = (el.type || '').toLowerCase(), k = kljucPolja_(el, brojac);
+        if (!(k in o.v)) { return; }
+        if (t === 'radio' || t === 'checkbox') {
+          var treba = !!o.v[k];
+          if (el.checked !== treba && (treba || t === 'checkbox')) { el.click(); }
+        } else { tekstna.push([el, o.v[k]]); }
+      });
+      var upisi = function() {
+        tekstna.forEach(function(p) {
+          var el = p[0];
+          if (String(el.value) === String(p[1])) { return; }
+          el.value = p[1];
+          el.dispatchEvent(new Event('input', { bubbles: true }));
+          el.dispatchEvent(new Event('change', { bubbles: true }));
+        });
+      };
+      upisi();
+      // polja koja se pojave tek nakon odabira radio gumba/kvačica: ponovi kratko nakon toga
+      setTimeout(function() {
+        var b2 = {}, dodatna = [];
+        polja_().forEach(function(el) {
+          var t = (el.type || '').toLowerCase(), k = kljucPolja_(el, b2);
+          if (t === 'radio' || t === 'checkbox' || !(k in o.v)) { return; }
+          if (!String(el.value).trim() && String(o.v[k]).trim()) { dodatna.push([el, o.v[k]]); }
+        });
+        dodatna.forEach(function(p) { p[0].value = p[1]; p[0].dispatchEvent(new Event('input', { bubbles: true })); p[0].dispatchEvent(new Event('change', { bubbles: true })); });
+        obnavlja = false;
+      }, 600);
+    } catch (e) { obnavlja = false; }
+  }
+  function datum_(ms) { var d = new Date(ms), p = function(n) { return (n < 10 ? '0' : '') + n; }; return p(d.getDate()) + '.' + p(d.getMonth() + 1) + '. u ' + p(d.getHours()) + ':' + p(d.getMinutes()); }
+  function ponudi_() {
+    if (ponudjeno || window.RUCNI_TOKEN_) { return; }
+    var zaglavlje = form.querySelector('.panel-header-row'); if (!zaglavlje) { return; }
+    ponudjeno = true;
+    var traka = document.createElement('div');
+    traka.id = 'upitnik-nacrt-traka';
+    traka.style.cssText = 'margin:10px 0 14px;padding:12px 14px;border:2px solid #4d148c;border-radius:10px;background:#f6f0fc;font-size:14px;color:#2b0a4a;';
+    ind = document.createElement('div');
+    ind.id = 'upitnik-nacrt-info';
+    ind.style.cssText = 'display:none;margin:0 0 10px;font-size:12.5px;font-weight:700;color:#4d148c;';
+    var o = procitaj_();
+    if (o) {
+      traka.innerHTML = '<div style="font-weight:800;margin-bottom:8px;">📝 Pronašli smo Vaš nedovršeni upitnik (spremljen ' + datum_(o.t) + ').</div>' +
+        '<button type="button" id="upitnik-nacrt-nastavi" style="background:#4d148c;color:#fff;border:0;border-radius:8px;padding:9px 16px;font-weight:800;cursor:pointer;margin-right:8px;">Nastavi gdje sam stao</button>' +
+        '<button type="button" id="upitnik-nacrt-novo" style="background:#fff;color:#4d148c;border:2px solid #4d148c;border-radius:8px;padding:8px 16px;font-weight:800;cursor:pointer;">Počni ispočetka</button>';
+      zaglavlje.insertAdjacentElement('afterend', traka);
+      traka.querySelector('#upitnik-nacrt-nastavi').addEventListener('click', function() { vrati_(o); traka.remove(); form.insertBefore(ind, form.querySelector('.panel-header-row').nextSibling); pokaziSpremljeno_(); });
+      traka.querySelector('#upitnik-nacrt-novo').addEventListener('click', function() { obrisi_(); traka.remove(); form.insertBefore(ind, form.querySelector('.panel-header-row').nextSibling); });
+    } else {
+      zaglavlje.insertAdjacentElement('afterend', ind);
+    }
+  }
+  form.addEventListener('input', zakazi_);
+  form.addEventListener('change', zakazi_);
+  function provjeri_() { if (form.classList.contains('active')) { ponudi_(); } }
+  try { new MutationObserver(provjeri_).observe(form, { attributes: true, attributeFilter: ['class'] }); } catch (e) {}
+  setTimeout(provjeri_, 1200);
+})();
+</script>
 </body>
 </html>
