@@ -7007,7 +7007,7 @@
     document.getElementById('panel-interes').classList.remove('active');
     document.getElementById('panel-odbijenica').classList.remove('active');
 
-    var msg = _ponuda ? ('Hvala! Upitnik' + (_broj ? ' (broj ' + _broj + ')' : '') + ' je zaprimljen. Nakon provjere podataka i konačne verifikacije ponude u sjedištu društva IN TIME d.o.o. otvorit ćemo Vaš poslovni subjekt, a na e-mail adresu navedenu u obrascu poslat ćemo korisničko ime, lozinku i upute za pristup sustavu. U roku od 24 do 48 sati od zaprimanja ispravno popunjenog obrasca i konačne verifikacije ponude moći ćete započeti s unosom naloga te naručivanjem IN TIME prikupa pošiljaka.') : _rucni ? ('Klijent je spremljen (ručni unos) — broj ' + _broj + '. Nalazi se u kartici "Zainteresirani" u adminu.') : which === 'interes'
+    var msg = (_ponuda && window.PONUDA_STARI_) ? ('Hvala! Upitnik' + (_broj ? ' (broj ' + _broj + ')' : '') + ' je zaprimljen. Podatke ćemo uskladiti u našem sustavu. Za sva pitanja stojimo Vam na raspolaganju: sbatinac.intime@gmail.com.') : _ponuda ? ('Hvala! Upitnik' + (_broj ? ' (broj ' + _broj + ')' : '') + ' je zaprimljen. Nakon provjere podataka i konačne verifikacije ponude u sjedištu društva IN TIME d.o.o. otvorit ćemo Vaš poslovni subjekt, a na e-mail adresu navedenu u obrascu poslat ćemo korisničko ime, lozinku i upute za pristup sustavu. U roku od 24 do 48 sati od zaprimanja ispravno popunjenog obrasca i konačne verifikacije ponude moći ćete započeti s unosom naloga te naručivanjem IN TIME prikupa pošiljaka.') : _rucni ? ('Klijent je spremljen (ručni unos) — broj ' + _broj + '. Nalazi se u kartici "Zainteresirani" u adminu.') : which === 'interes'
       ? 'Predali ste prodajni upitnik' + (_broj ? ' — broj ' + _broj : '') + '. Hvala na interesu! Naš prodajni predstavnik javit će Vam se u najkraćem mogućem roku radi dogovora oko prezentacije.'
       : 'Predali ste odbijenicu' + (_broj ? ' — broj ' + _broj : '') + '. Hvala Vam na odvojenom vremenu i povratnoj informaciji.';
     document.getElementById('confirm-text').textContent = msg;
@@ -7503,8 +7503,10 @@
           else { greska((res && res.message) || 'Poveznica nije ispravna ili je istekla. Kontaktirajte nas na sbatinac.intime@gmail.com.'); }
           return;
         }
-        if (res.popunjen) { greska('Upitnik za ovu ponudu je već ispunjen — hvala! Nakon verifikacije ponude javit ćemo Vam se s pristupnim podacima. Pitanja: sbatinac.intime@gmail.com'); return; }
+        if (res.popunjen) { greska(res.porukaPopunjen || 'Upitnik za ovu ponudu je već ispunjen — hvala! Nakon verifikacije ponude javit ćemo Vam se s pristupnim podacima. Pitanja: sbatinac.intime@gmail.com'); return; }
         window.PONUDA_TOKEN_ = tok;
+        window.PONUDA_STARI_ = res.stari === true;
+        if (res.stari) { var _tr = document.querySelector('#ponuda-traka span'); if (_tr) { _tr.textContent = 'IN TIME d.o.o. — upitnik za ažuriranje podataka'; } }
         document.getElementById('ponuda-traka-broj').textContent = res.broj ? ('Ponuda br. ' + res.broj) : '';
         function postavi(name, vr, samoCitanje) {
           var el = document.querySelector('#panel-interes [name="' + name + '"]');
@@ -7516,6 +7518,7 @@
           postavi('oib', res.oib, true);
           postavi('naziv', res.naziv, false);
           postavi('kontakt_email', res.email, false);
+          if (res.predpopuna) { Object.keys(res.predpopuna).forEach(function(k) { if (k !== 'oib') { postavi(k, res.predpopuna[k], false); } }); }
           var oibEl = document.querySelector('#panel-interes [name="oib"]');
           if (oibEl) { try { oibEl.dispatchEvent(new Event('input', { bubbles: true })); } catch (e) {} }
           var gumb = document.querySelector('#panel-interes button[type="submit"]');
