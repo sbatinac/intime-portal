@@ -4978,7 +4978,94 @@ function ucitajTestniKalkulatorIzUrlaAkoPostoji_(){
   return true;
 }
 
-if(!ucitajTestniKalkulatorIzUrlaAkoPostoji_() && !ucitajAdminPrijavuIzUrlaAkoPostoji_() && !ucitajKolegaPrijavuIzUrlaAkoPostoji_()){
+// JEDNOKRATNI KALKULATOR (13.10.2026., Sašin zahtjev): ?kalk_jed=<sesijski token>&kalk_slot=<1|2> — stranica InTime_Jednokratni.html (prijava
+// primatelja) ugrađuje ovaj kalkulator u iframe. Cjenik i postavke (novi ili stari) dolaze s poslužitelja (jedPodaciKalkulatora), zaključani su;
+// svaki izračun bilježi se u evidenciju tog kalkulatora (IP, uneseno, rezultat). Server gasi pristup kad istekne / admin ugasi / firma dobije ponudu —
+// zato se stanje povremeno provjerava i kalkulator se tada sakrije. ?kalk_uloga=pratilac (drugi kalkulator) zaključava "Podaci o pošiljci"
+// (prepisuje ih roditeljska stranica iz prvog kalkulatora, isti most kao u KALKULACIJAMA).
+var jedToken_ = null;
+var jedSlot_ = '1';
+var jedTimer_ = null;
+var jedLogTimer_ = null;
+var jedZadnjiZapis_ = '';
+var jedIp_ = '';
+function jedIskljuci_(poruka){
+  if(jedTimer_){ clearInterval(jedTimer_); jedTimer_ = null; }
+  testniKalkIskljuci_(poruka || 'Kalkulator više nije dostupan.');
+}
+function jedProvjeri_(){
+  if(!jedToken_){ return; }
+  gorivoGasCall_({ action: 'jedToken', token: jedToken_ }).then(function(res){
+    if(!res || res.status !== 'ok'){ jedIskljuci_((res && res.message) ? res.message : 'Kalkulator više nije dostupan.'); }
+  }).catch(function(){ /* privremena greška mreže — ne isključuj */ });
+}
+function jedPlanirajZapis_(){
+  if(!jedToken_){ return; }
+  clearTimeout(jedLogTimer_);
+  jedLogTimer_ = setTimeout(function(){
+    try{
+      var breakdownEl = document.getElementById('breakdownTable');
+      if(!breakdownEl){ return; }
+      var cista = breakdownEl.cloneNode(true);
+      Array.prototype.forEach.call(cista.querySelectorAll('span.kalk-dev, span.kalk-isklj, tr.kalk-dev-row'), function(n){ n.remove(); });
+      var totalRow = cista.querySelector('tr.total-row');
+      var sazetak = totalRow ? totalRow.textContent.replace(/\s+/g, ' ').trim() : '';
+      if(!sazetak){ return; }
+      var ulazni = prikupiUlazneVrijednostiZaEvidenciju_();
+      var potpis = JSON.stringify(ulazni) + '|' + sazetak;
+      if(potpis === jedZadnjiZapis_){ return; }
+      jedZadnjiZapis_ = potpis;
+      var html = cista.innerHTML;
+      var ipPromise = jedIp_ ? Promise.resolve(jedIp_) : dohvatiIP_().then(function(ip){ if(ip){ jedIp_ = ip; } return ip; });
+      ipPromise.then(function(ip){
+        gorivoGasCall_({ action: 'jedZabiljeziIzracun', token: jedToken_, slot: jedSlot_, ulazniPodaci: JSON.stringify(ulazni), rezultatSazetak: sazetak, rezultatHtml: html, ipAdresa: ip }).catch(function(){ /* best-effort */ });
+      });
+    }catch(eJ){ /* best-effort */ }
+  }, 4000);
+}
+function ucitajJednokratniIzUrlaAkoPostoji_(){
+  var params;
+  try{ params = new URLSearchParams(window.location.search); }catch(eUrl){ return false; }
+  var tok = params.get('kalk_jed');
+  if(!tok){ return false; }
+  var card = document.getElementById('prijavaKlijentaCard');
+  if(card){ card.style.display = 'none'; }
+  jedSlot_ = params.get('kalk_slot') || '1';
+  gorivoGasCall_({ action: 'jedPodaciKalkulatora', token: tok, slot: jedSlot_ }).then(function(res){
+    if(!res || res.status !== 'ok'){ jedIskljuci_((res && res.message) ? res.message : 'Kalkulator nije dostupan.'); return; }
+    jedToken_ = tok;
+    korisnikUcitaoVlastitiCjenik_ = true;
+    if(Array.isArray(res.cjenik) && res.cjenik.length){
+      CURRENT_CJENIK = res.cjenik.slice();
+      renderCjenikTable(CURRENT_CJENIK);
+    }
+    primijeniKalkulatorPostavke_(res.postavke);
+    scheduleLiveIzracunaj();
+    var fileInput = document.getElementById('cjenikFile');
+    if(fileInput){ fileInput.disabled = true; }
+    var resetBtn = document.querySelector('button[onclick="resetCjenik()"]');
+    if(resetBtn){ resetBtn.disabled = true; resetBtn.title = 'Onemogućeno.'; }
+    var gate = document.getElementById('kalkSadrzajGate');
+    if(gate){ gate.style.display = ''; }
+    zakljucajPodaciOPosiljciZaPratioca_();
+    dohvatiIP_().then(function(ip){ if(ip){ jedIp_ = ip; } });
+    var izvorni = window.izracunaj;
+    if(typeof izvorni === 'function'){
+      window.izracunaj = function(){
+        var r = izvorni.apply(this, arguments);
+        jedPlanirajZapis_();
+        return r;
+      };
+    }
+    jedTimer_ = setInterval(jedProvjeri_, 60000);
+    document.addEventListener('visibilitychange', function(){ if(!document.hidden){ jedProvjeri_(); } });
+  }).catch(function(){
+    testniKalkBanner_('Greška u komunikaciji s poslužiteljem — osvježite stranicu i pokušajte ponovno.', true);
+  });
+  return true;
+}
+
+if(!ucitajTestniKalkulatorIzUrlaAkoPostoji_() && !ucitajJednokratniIzUrlaAkoPostoji_() && !ucitajAdminPrijavuIzUrlaAkoPostoji_() && !ucitajKolegaPrijavuIzUrlaAkoPostoji_()){
   ucitajPrijavuIzUrlaAkoPostoji_();
 }
 </script>

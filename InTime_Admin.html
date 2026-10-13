@@ -418,8 +418,9 @@
   .tab-btn.tab-btn-ljubicasti:hover,.tab-btn.tab-btn-ljubicasti.active{background:linear-gradient(160deg,#8f45e0 0%,#5f1fa6 100%);border-color:#d2b3f2;color:#fff;}
   .tab-btn.tab-btn-tirkizni{background:linear-gradient(160deg,#0f8b7e 0%,#016579 100%);border-color:#7fd1c7;color:#fff;box-shadow:0 2px 8px rgba(1,101,121,.45);}
   .tab-btn.tab-btn-tirkizni:hover,.tab-btn.tab-btn-tirkizni.active{background:linear-gradient(160deg,#16a595 0%,#0a7a8f 100%);border-color:#bdeee8;color:#fff;}
-  .tab-btn.tab-btn-smedji{background:linear-gradient(160deg,#8b5a2b 0%,#5c3a1a 100%);border-color:#d2a679;color:#fff;box-shadow:0 2px 8px rgba(92,58,26,.45);}
-  .tab-btn.tab-btn-smedji:hover,.tab-btn.tab-btn-smedji.active{background:linear-gradient(160deg,#a36a35 0%,#6e4520 100%);border-color:#ecd0ac;color:#fff;}
+:root{--sk-a:#5b5bd6;--sk-b:#312e81;--sk-h1:#7373e6;--sk-h2:#3f3c9e;--sk-rub:#b9b9f5;--sk-linija:#cfd0f1;--sk-meko:#f8f8ff;--sk-meko2:#eeeefb;--sk-sjena:49,46,129;}
+  .tab-btn.tab-btn-smedji{background:linear-gradient(160deg,var(--sk-a) 0%,var(--sk-b) 100%);border-color:var(--sk-rub);color:#fff;box-shadow:0 2px 8px rgba(var(--sk-sjena),.45);}
+  .tab-btn.tab-btn-smedji:hover,.tab-btn.tab-btn-smedji.active{background:linear-gradient(160deg,var(--sk-h1) 0%,var(--sk-h2) 100%);border-color:var(--sk-rub);color:#fff;}
   .tab-btn.tab-btn-crveni{background:linear-gradient(160deg,#ff2d2d 0%,#d10f14 100%);border-color:#ff8a8a;color:#fff;box-shadow:0 2px 8px rgba(228,22,27,.5);}
   .tab-btn.tab-btn-crveni:hover,.tab-btn.tab-btn-crveni.active{background:linear-gradient(160deg,#ff4a4a 0%,#e4161b 100%);border-color:#ffc2c2;color:#fff;}
   .tab-btn.tab-btn-narancasti{background:linear-gradient(160deg,#ff9800 0%,#e65100 100%);border-color:#ffcc80;color:#fff;box-shadow:0 2px 8px rgba(245,124,0,.5);}
@@ -1193,9 +1194,10 @@
   .af-dok-fiksno-naslov{font-size:11px;font-weight:800;letter-spacing:.01em;color:var(--purple-dark);display:flex;align-items:center;justify-content:space-between;gap:6px;margin-bottom:5px;}
   .af-dok-fiksno-tip{font-size:9px;font-weight:700;text-transform:uppercase;color:var(--grey);background:rgba(255,255,255,.7);border-radius:4px;padding:1px 5px;white-space:nowrap;}
   .af-dok-fiksno-prazno{font-size:10.5px;color:var(--grey);font-style:italic;text-align:center;padding:6px 3px;border:1.5px dashed rgba(0,0,0,.12);border-radius:8px;}
+  .af-prilog-zaklj{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:#7a1f1f;background:#fdecea;border:1px solid #e7b4b0;border-radius:20px;padding:3px 12px;}
   /* Prekidač "Priloži mailu" (12.10.2026.) — uz svaki dokument: uključeno = dokument se uz Google Drive šalje i kao prilog maila */
   .af-prilog{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;color:#6b6b6b;cursor:pointer;white-space:nowrap;padding:2px 8px;border:1px solid #d9d9d9;border-radius:12px;background:#fafafa;user-select:none;}
-  .af-prilog input{margin:0;cursor:pointer;accent-color:#0f8b7e;}
+  .af-prilog input{margin:0;cursor:pointer;accent-color:#0f8b7e;width:auto!important;flex:none;padding:0;}
   .af-prilog.on{color:#0b6b60;background:#e3f5f2;border-color:#0f8b7e;}
   .af-prilog-red{margin-top:5px;}
   .af-dok-fiksno-stavka{display:flex;align-items:center;gap:6px;padding:4px 7px;border:1px solid var(--purple);border-radius:6px;background:#fff;font-size:11.5px;}
@@ -1888,6 +1890,54 @@
   .modal-box p.warn{font-size:13px;color:var(--red);margin:0 0 12px;}
   .modal-box p.desc{font-size:13px;color:var(--graphite);margin:0 0 14px;}
 
+
+  /* ===== KOMANDNA PLOČA (12.10.2026.): pretraga, "Danas čeka tebe", ujednačene pločice, lijevak, grupirane kartice ===== */
+  .kp-trazi-wrap{position:relative;margin:0 0 14px;}
+  .kp-trazi{display:flex;align-items:center;gap:10px;background:#fff;border:1.5px solid #cfd8d6;border-radius:12px;padding:4px 14px;box-shadow:0 2px 8px rgba(0,0,0,.05);}
+  .kp-trazi:focus-within{border-color:#229891;box-shadow:0 0 0 3px rgba(34,152,145,.18);}
+  .kp-trazi input{flex:1;border:0;outline:0;background:transparent;font:inherit;font-size:14.5px;padding:9px 0;color:#0d2230;min-width:0;}
+  .kp-trazi kbd{background:#eef2f1;border-radius:6px;padding:2px 9px;font-size:12px;color:#5a6b68;}
+  .kp-trazi-rez{position:absolute;left:0;right:0;top:calc(100% + 6px);z-index:60;background:#fff;border:1px solid #cfd8d6;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.18);max-height:420px;overflow:auto;padding:6px;}
+  .kp-rez-red{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:9px;cursor:pointer;}
+  .kp-rez-red:hover,.kp-rez-red.fokus{background:#eef6f5;}
+  .kp-rez-naziv{font-weight:800;color:#0d2230;font-size:14px;}
+  .kp-rez-meta{font-size:12px;color:#5a6b68;}
+  .kp-rez-gdje{margin-left:auto;flex:none;font-size:11.5px;font-weight:800;color:#fff;background:#5b6b68;border-radius:20px;padding:2px 11px;}
+  .kp-rez-prazno{padding:12px;color:#6a7a77;font-size:13px;}
+  .kp-danas{background:#fff;border:1px solid #e3d6b6;border-left:6px solid #ff6200;border-radius:14px;padding:14px 18px 16px;margin-bottom:16px;box-shadow:0 4px 16px rgba(0,0,0,.06);}
+  .kp-danas h3{margin:0 0 10px;font-size:16px;color:#0d2230;}
+  .kp-danas h3 small{font-weight:500;color:#6a7a77;font-size:12.5px;margin-left:8px;}
+  .kp-danas-mreza{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;}
+  .kp-d{border:1px solid #ecece4;border-radius:10px;padding:10px 13px;background:#fffdf8;cursor:pointer;transition:transform .12s,box-shadow .12s;}
+  .kp-d:hover{transform:translateY(-2px);box-shadow:0 6px 16px rgba(0,0,0,.1);}
+  .kp-d .n{font-size:26px;font-weight:900;line-height:1.1;}
+  .kp-d .l{font-size:12.5px;color:#4a5a57;margin:3px 0 6px;min-height:32px;}
+  .kp-d .a{font-size:12px;font-weight:800;color:#0b6b60;}
+  .kp-d.crv .n{color:#c0392b;}.kp-d.nar .n{color:#e65100;}.kp-d.ind .n{color:#4f46e5;}.kp-d.zel .n{color:#0b7a4b;}
+  .kp-d.nula{opacity:.55;}.kp-d.nula .n{color:#8a9a97;}
+  .kp-danas-ok{font-size:13px;color:#0b7a4b;font-weight:700;margin-top:8px;}
+  .stat-row{grid-template-columns:repeat(4,minmax(0,1fr));}
+  .stat-card,.stat-card.stat-card-raskid,.stat-card.stat-card-problemi,.stat-card.stat-card-klijenti{background:#fff;border:1px solid #dfe7e5;border-top:5px solid var(--kp-c,#229891);border-left:1px solid #dfe7e5;border-radius:14px;padding:14px 16px;box-shadow:0 2px 8px rgba(0,0,0,.05);}
+  .stat-card.stat-card-klijenti{--kp-c:#1e9d57;}.stat-card.stat-card-raskid{--kp-c:#b83030;}.stat-card.stat-card-problemi{--kp-c:#e65100;}
+  .stat-card.stat-card-raskid:hover,.stat-card.stat-card-problemi:hover{background:#fff;transform:translateY(-2px);box-shadow:0 6px 16px rgba(0,0,0,.12);}
+  .stat-card.stat-card-klijenti .stat-value{color:#157a2b;font-weight:900;}.stat-card.stat-card-klijenti .stat-label{color:#4a5a57;font-weight:600;}
+  .stat-card.stat-card-raskid .stat-value{color:#b83030;}.stat-card.stat-card-raskid .stat-label{color:#4a5a57;font-weight:600;}
+  .stat-card.stat-card-problemi .stat-value{color:#e65100;}.stat-card.stat-card-problemi .stat-label{color:#4a5a57;font-weight:600;}
+  .stat-card .stat-value{font-size:30px;font-weight:900;}
+  .kp-trend{font-size:11.5px;font-weight:800;color:#0b7a4b;margin-top:5px;min-height:14px;}.kp-trend.n{color:#6a7a77;}
+  .kp-lijevak{display:flex;align-items:center;background:#fff;border:1px solid #dfe7e5;border-radius:14px;padding:12px 18px;margin:0 0 18px;box-shadow:0 2px 8px rgba(0,0,0,.04);}
+  .kp-l-st{flex:1;text-align:center;}.kp-l-st .n{font-size:22px;font-weight:900;color:#0d2230;}.kp-l-st .l{font-size:12px;color:#4a5a57;}
+  .kp-l-st.zadnji{border-left:1px dashed #cfd8d6;}
+  .kp-l-str{font-size:12px;font-weight:800;color:#0b7a4b;padding:0 6px;text-align:center;white-space:nowrap;}
+  .kp-brojaci{margin:0 0 16px;background:#fff;border:1px dashed #cfd8d6;border-radius:12px;padding:0 14px;}
+  .kp-brojaci>summary{cursor:pointer;font-size:12.5px;font-weight:800;color:#5a6b68;padding:10px 0;}
+  .kp-brojaci[open]>summary{border-bottom:1px solid #eef2f1;margin-bottom:10px;}
+  .tabs{display:block;}
+  .kp-grupa{margin-bottom:12px;}
+  .kp-grupa-naslov{font-size:11.5px;font-weight:900;letter-spacing:.08em;text-transform:uppercase;color:#5a6b68;margin:0 0 6px 4px;display:flex;align-items:center;gap:8px;}
+  .kp-grupa-naslov:after{content:"";flex:1;height:1px;background:#cfd8d6;}
+  .kp-grupa-red{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:10px;}
+  @media (max-width:900px){.stat-row{grid-template-columns:repeat(2,minmax(0,1fr));}.kp-danas-mreza{grid-template-columns:repeat(2,minmax(0,1fr));}.kp-grupa-red{grid-template-columns:repeat(auto-fill,minmax(130px,1fr));}.kp-lijevak{flex-wrap:wrap;gap:8px;}}
 </style>
 </head>
 <body>
@@ -1925,6 +1975,12 @@
       </div>
     </header>
 
+    <div class="kp-trazi-wrap">
+      <div class="kp-trazi"><span>🔎</span><input type="search" id="kp-trazi" placeholder="Traži klijenta, OIB, firmu, mail…" autocomplete="off"><kbd>/</kbd></div>
+      <div id="kp-trazi-rez" class="kp-trazi-rez" hidden></div>
+    </div>
+    <div id="kp-danas" class="kp-danas"></div>
+
     <div class="stat-row">
       <div class="stat-card">
         <div class="stat-value" id="stat-posjete-danas">—</div>
@@ -1936,21 +1992,24 @@
         <div class="stat-label">Posjeta stranici ukupno</div>
         <button type="button" class="stat-reset-btn" onclick="openResetModal('ukupno')" title="Resetiraj ukupni brojač">↺ Resetiraj</button>
       </div>
-      <div class="stat-card" style="border-left-color:var(--green);">
+      <div class="stat-card" style="--kp-c:#e6a800;">
         <div class="stat-value" id="stat-pozitivno" style="color:var(--green);">—</div>
         <div class="stat-label">Pozitivno odlučili (zainteresirani)</div>
+        <div class="kp-trend" id="trend-pozitivno"></div>
       </div>
-      <div class="stat-card" style="border-left-color:var(--red);">
+      <div class="stat-card" style="--kp-c:#d64545;">
         <div class="stat-value" id="stat-negativno" style="color:var(--red);">—</div>
         <div class="stat-label">Negativno odlučili (nisu zainteresirani)</div>
+        <div class="kp-trend" id="trend-negativno"></div>
       </div>
-      <div class="stat-card" style="border-left-color:#c9971f;">
+      <div class="stat-card" style="--kp-c:#8e44ad;">
         <div class="stat-value" id="stat-ankete" style="color:#8a6d00;">—</div>
         <div class="stat-label">Popunjenih anketa kvalitete</div>
       </div>
       <div class="stat-card stat-card-klijenti">
         <div class="stat-value" id="stat-klijenti-ukupno">—</div>
         <div class="stat-label">Ukupno klijenata u bazi</div>
+        <div class="kp-trend" id="trend-klijenti"></div>
       </div>
       <!-- NOVO (5.10.2026.): žarko crvena kućica — klijenti koji su raskinuli suradnju (popunjeni upitnici o prekidu suradnje); klik otvara tab Raskid suradnje -->
       <div class="stat-card stat-card-raskid" onclick="switchTab('Raskid'); window.scrollTo({top: document.getElementById('tab-btn-raskid').getBoundingClientRect().top + window.pageYOffset - 20, behavior: 'smooth'});" title="Otvori Raskid suradnje">
@@ -1964,6 +2023,9 @@
       </div>
     </div>
 
+    <div id="kp-lijevak" class="kp-lijevak"></div>
+
+    <details class="kp-brojaci"><summary>⚙ Brojači posjeta i numeracija (testni način)</summary>
     <p class="permanent-stat-note">Ukupan broj dolazaka na stranicu od početka rada stranice (trajna statistika): <strong id="stat-posjete-sveukupno">—</strong> <button type="button" class="stat-reset-btn" style="margin-top:0;margin-left:6px;vertical-align:middle;" onclick="pokreniResetSveukupnihPosjeta_()" title="Resetiraj trajni brojač — zahtijeva dvostruku potvrdu (riječ + admin lozinka)">↺ Resetiraj</button></p>
 
     <div class="broj-panel">
@@ -1991,6 +2053,7 @@
            U ⚙️ POSTAVKE — "Numeracija" kartica; tok zaštite nepromijenjen.) -->
       <span id="broj-panel-status" class="broj-toggle-label-test" hidden>Testni način uključen — novi unosi dobivaju fiksni testni broj, pravi brojač se ne diže.</span>
     </div>
+    </details>
 
     <div class="tabs">
       <button type="button" class="tab-btn active" id="tab-btn-interes" onclick="switchTab('Interes')">Zainteresirani (<span id="tab-count-interes">0</span>)</button>
@@ -2022,6 +2085,8 @@
            buildKalkulatorPanel_ niže) — struktura ostavljena spremna za
            buduće dodatne pod-kartice. -->
       <button type="button" class="tab-btn" id="tab-btn-kalkulator" onclick="switchTab('Kalkulator')">🧮 Kalkulator</button>
+      <!-- NOVO (13.10.2026.): "Jednokratni kalkulator" — privremeni kalkulator za neklijente (1 cjenik = novi klijent, 2 cjenika = revizija), bez slanja ponude. -->
+      <button type="button" class="tab-btn" id="tab-btn-jednokratni" onclick="switchTab('Jednokratni')">⏱ Jednokratni kalkulator <span id="tab-count-jednokratni"></span></button>
       <!-- NOVO (25.9.2026., Sašin izričit zahtjev, glasovna poruka) — modul
            "Gorivo": unos stvarnih mjesečnih postotaka dodatka na gorivo +
            mail podsjetnik za unos. Puni grafički prikaz (iz
@@ -2597,7 +2662,11 @@
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
       body: JSON.stringify(payload)
-    }).then(function(res) { return res.json(); }).catch(function(err) {
+    }).then(function(res) { return res.json(); }).then(function(j) {
+      // ZAŠTITA ANALITIČKOG CJENIKA: server javlja što je zaustavio (privitak/kopija u mapu za klijenta)
+      try { if (j && j.zaustavljeniPrivitci && j.zaustavljeniPrivitci.length) { setTimeout(function() { window.alert('⛔ ZAŠTITA ANALITIČKOG CJENIKA\n\n' + j.zaustavljeniPrivitci.join('\n') + '\n\nAnalitički cjenik je interni dokument i ne smije do klijenta.'); }, 50); } } catch (eZ) {}
+      return j;
+    }).catch(function(err) {
       if (pokusaj < 3) {
         return new Promise(function(resolve) { setTimeout(resolve, pokusaj * 700); })
           .then(function() { return gasCall(payload, pokusaj + 1); });
@@ -3765,7 +3834,7 @@
     if (res.raskidovi !== undefined) { postaviRaskidPlocicu_(res.raskidovi); }
     if (res.problemi !== undefined) { postaviProblemiBrojac_(res.problemi); }
   }
-  function postaviProblemiBrojac_(n) { var el = document.getElementById('tab-count-problemi'); if (el) { el.textContent = n > 0 ? '(' + n + ')' : ''; } var st = document.getElementById('stat-problemi'); if (st) { st.textContent = n; } }
+  function postaviProblemiBrojac_(n) { var el = document.getElementById('tab-count-problemi'); if (el) { el.textContent = n > 0 ? '(' + n + ')' : ''; } var st = document.getElementById('stat-problemi'); if (st) { st.textContent = n; } try { osvjeziKomandnuPlocu_(); } catch (eP) {} }
   function postaviRaskidPlocicu_(n) { var el = document.getElementById('stat-raskid'); if (el) { el.textContent = n; } var tb = document.getElementById('tab-count-raskid'); if (tb) { tb.textContent = n > 0 ? '(' + n + ')' : ''; } }
   // Broj na kartici "Podsjetnici": otvoreni podsjetnici; ako ima dospjelih (datum <= danas), ističe se "⚠ N dospjelo od M".
   function postaviPodsjetniciBrojac_(lista, danas) {
@@ -3874,7 +3943,7 @@
   function openMailPredlozakModal(predlozak, kategorija) {
     mpTrenutniRowIndex = predlozak ? predlozak.rowIndex : null;
     mpTrenutnaKategorija_ = predlozak ? (predlozak.kategorija || 'ponuda') : (kategorija || 'ponuda');
-    var oznakaKategorije_ = (mpTrenutnaKategorija_ === 'ob_zahtjev') ? ' (zahtjev za Online Booking)' : (mpTrenutnaKategorija_ === 'poslovnica_obavijest' ? ' (obavijest poslovnicama)' : (mpTrenutnaKategorija_ === 'sve_poslovnice_obavijest' ? ' (obavijest svim poslovnicama)' : (mpTrenutnaKategorija_ === 'klijent_pristup' ? ' (pristupni podaci klijentu)' : ' (ponuda)')));
+    var oznakaKategorije_ = (mpTrenutnaKategorija_ === 'ob_zahtjev') ? ' (zahtjev za Online Booking)' : (mpTrenutnaKategorija_ === 'poslovnica_obavijest' ? ' (obavijest poslovnicama)' : (mpTrenutnaKategorija_ === 'sve_poslovnice_obavijest' ? ' (obavijest svim poslovnicama)' : (mpTrenutnaKategorija_ === 'klijent_pristup' ? ' (pristupni podaci klijentu)' : (mpTrenutnaKategorija_ === 'jednokratni_novi' ? ' (jednokratni kalkulator — novi klijent)' : (mpTrenutnaKategorija_ === 'jednokratni_revizija' ? ' (jednokratni kalkulator — revizija)' : ' (ponuda)')))));
     document.getElementById('mail-predlozak-modal-naslov').textContent = (predlozak ? 'Uredi predložak' : 'Novi predložak') + oznakaKategorije_;
     document.getElementById('mp-naziv').value = predlozak ? predlozak.naziv : '';
     document.getElementById('mp-predmet').value = predlozak ? predlozak.predmet : '';
@@ -4620,6 +4689,7 @@
     // brojačima da Saša odmah vidi koliko je zapisa ukupno prebačeno).
     var stKlijenti = document.getElementById('stat-klijenti-ukupno');
     if (stKlijenti) { stKlijenti.textContent = noviKlijentiCount; }
+    osvjeziKomandnuPlocu_();
   }
 
   function switchTab(tab) {
@@ -4634,6 +4704,7 @@
     document.getElementById('tab-btn-faq').classList.toggle('active', tab === 'FAQ');
     document.getElementById('tab-btn-zone').classList.toggle('active', tab === 'Zone');
     document.getElementById('tab-btn-kalkulator').classList.toggle('active', tab === 'Kalkulator');
+    document.getElementById('tab-btn-jednokratni').classList.toggle('active', tab === 'Jednokratni');
     document.getElementById('tab-btn-gorivo').classList.toggle('active', tab === 'Gorivo');
     document.getElementById('tab-btn-logisticki-centri').classList.toggle('active', tab === 'LogistickiCentri');
     document.getElementById('tab-btn-imenik').classList.toggle('active', tab === 'Imenik');
@@ -4653,6 +4724,13 @@
     return String(s == null ? '' : s).replace(/[&<>"']/g, function(c) {
       return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c];
     });
+  }
+
+  // ZAŠTITA ANALITIČKOG CJENIKA — isti test kao na serveru (jeAnalitickiNaziv_ u .gs): naziv koji sadrži "analitič…"
+  function jeAnalitickiNaziv_(ime) {
+    var t = String(ime || '').toLowerCase();
+    try { t = t.normalize('NFD').replace(/[\u0300-\u036f]/g, ''); } catch (eN) {}
+    return t.replace(/č|ć/g, 'c').replace(/đ/g, 'd').replace(/š/g, 's').replace(/ž/g, 'z').indexOf('analiti') !== -1;
   }
 
   function fieldVal(entry, label) {
@@ -4828,6 +4906,11 @@
       renderKalkulatorCjenikStatus_();
       renderKalkulatorCjenikArhiva_();
       renderKalkulatorNapomene_();
+      return;
+    }
+
+    if (activeTab === 'Jednokratni') {
+      container.appendChild(buildJednokratniPanel_());
       return;
     }
 
@@ -11446,6 +11529,433 @@
       primijeniEntries_(res);
     });
   }
+  // ===== JEDNOKRATNI KALKULATOR (13.10.2026.) =====
+  // Privremeni kalkulator za neklijente, bez slanja ponude. 1 cjenik = novi klijent (jedan kalkulator); 2 cjenika (stari + novi) = revizija
+  // (dva kalkulatora s usporedbom). Korisničko ime = mail osobe, lozinka = dva superjunaka + datum. Vrijedi N dana; gasi se sam kad firmi (OIB)
+  // stigne ponuda. Server: adminJed* u .gs; stranica za primatelja: InTime_Jednokratni.html.
+  var JK_STATUS_ = {
+    aktivan: { t: '● Aktivan', k: 'ak' }, istekao: { t: 'Istekao', k: 'ist' }, ugasen: { t: 'Ugašen', k: 'ug' }, zamijenjen: { t: 'Zamijenjen ponudom', k: 'zam' }
+  };
+  function jkKopiraj_(tekst, gumb) {
+    var gotovo = function() { if (gumb) { var o = gumb.textContent; gumb.textContent = '✓ Kopirano'; setTimeout(function() { gumb.textContent = o; }, 1400); } };
+    if (navigator.clipboard && navigator.clipboard.writeText) { navigator.clipboard.writeText(tekst).then(gotovo).catch(function() { jkKopirajStari_(tekst); gotovo(); }); }
+    else { jkKopirajStari_(tekst); gotovo(); }
+  }
+  function jkKopirajStari_(tekst) {
+    var ta = document.createElement('textarea'); ta.value = tekst; ta.style.position = 'fixed'; ta.style.opacity = '0'; document.body.appendChild(ta); ta.select();
+    try { document.execCommand('copy'); } catch (e) {} ta.remove();
+  }
+  function jkCitajDatoteku_(file) {
+    return new Promise(function(res, rej) {
+      if (!/\.(xlsx|xls|xlsm|xltx)$/i.test(file.name)) { rej(new Error('Cjenik mora biti Excel datoteka (.xlsx).')); return; }
+      if (jeAnalitickiNaziv_(file.name)) { rej(new Error('Analitički cjenik se ne smije učitavati u kalkulator.')); return; }
+      if (file.size > 8 * 1024 * 1024) { rej(new Error('Datoteka je veća od 8 MB.')); return; }
+      var fr = new FileReader();
+      fr.onload = function() { var s = String(fr.result || ''); res({ naziv: file.name, base64: s.slice(s.indexOf(',') + 1) }); };
+      fr.onerror = function() { rej(new Error('Čitanje datoteke nije uspjelo.')); };
+      fr.readAsDataURL(file);
+    });
+  }
+  // Zona za povlačenje cjenika (drag & drop ili klik). Vraća { el, dohvati():Promise<{naziv,base64}|null>, ima():bool, ocisti() }.
+  function jkZona_(naslov, opis, onPromjena) {
+    var el = document.createElement('div');
+    el.className = 'jk-zona';
+    el.innerHTML = '<div class="jk-zona-n">' + naslov + '</div><div class="jk-zona-o">' + opis + '</div><div class="jk-zona-d"></div><input type="file" accept=".xlsx,.xls,.xlsm,.xltx" hidden><div class="jk-zona-g"></div>';
+    var inp = el.querySelector('input'), dat = el.querySelector('.jk-zona-d'), grj = el.querySelector('.jk-zona-g');
+    var file = null;
+    var prikaz = function() {
+      el.classList.toggle('puna', !!file);
+      dat.innerHTML = file ? '📄 <b>' + esc(file.name) + '</b> <a href="#" class="jk-x">ukloni</a>' : 'Povuci Excel cjenik ovamo ili <u>klikni za odabir</u>';
+      var x = dat.querySelector('.jk-x');
+      if (x) { x.addEventListener('click', function(ev) { ev.preventDefault(); ev.stopPropagation(); file = null; inp.value = ''; grj.textContent = ''; prikaz(); if (onPromjena) { onPromjena(); } }); }
+    };
+    var postavi = function(f) {
+      if (!f) { return; }
+      if (!/\.(xlsx|xls|xlsm|xltx)$/i.test(f.name)) { grj.textContent = 'Cjenik mora biti Excel datoteka (.xlsx).'; return; }
+      if (jeAnalitickiNaziv_(f.name)) { grj.textContent = 'Analitički cjenik se ne smije učitavati u kalkulator.'; return; }
+      if (f.size > 8 * 1024 * 1024) { grj.textContent = 'Datoteka je veća od 8 MB.'; return; }
+      grj.textContent = ''; file = f; prikaz(); if (onPromjena) { onPromjena(); }
+    };
+    el.addEventListener('click', function(ev) { if (ev.target.closest('.jk-x')) { return; } inp.click(); });
+    inp.addEventListener('change', function() { postavi(inp.files && inp.files[0]); });
+    ['dragenter', 'dragover'].forEach(function(n) { el.addEventListener(n, function(ev) { ev.preventDefault(); el.classList.add('nad'); }); });
+    ['dragleave', 'drop'].forEach(function(n) { el.addEventListener(n, function(ev) { ev.preventDefault(); el.classList.remove('nad'); }); });
+    el.addEventListener('drop', function(ev) { postavi(ev.dataTransfer && ev.dataTransfer.files && ev.dataTransfer.files[0]); });
+    prikaz();
+    return {
+      el: el,
+      ima: function() { return !!file; },
+      dohvati: function() { return file ? jkCitajDatoteku_(file) : Promise.resolve(null); },
+      ocisti: function() { file = null; inp.value = ''; grj.textContent = ''; prikaz(); }
+    };
+  }
+  function jkTagovi_(tekst, it, jeHtml) {
+    var v = { IME_FIRME: it.naziv, IME_OSOBE: ((it.ime || '') + ' ' + (it.prezime || '')).trim(), KALK_USERNAME: it.korisnickoIme, KALK_LOZINKA: it.lozinka,
+      LINK_KALKULATOR: it.link, ROK_VAZENJA: String(it.istek || '').split(' ')[0], BROJ_DANA: it.dana };
+    return String(tekst || '').replace(/\{\{([A-Z_]+)\}\}/g, function(m, k) {
+      if (!Object.prototype.hasOwnProperty.call(v, k)) { return m; }
+      var x = String(v[k] == null ? '' : v[k]);
+      return jeHtml ? esc(x) : x;
+    });
+  }
+
+  function buildJednokratniPanel_() {
+    var wrap = document.createElement('div');
+    wrap.className = 'jk-wrap';
+    var stavke = [], zadanoDana = 14, ucitano = false;
+    var filtar = { st: 'sve', q: '' };
+    var otvoreno = {};          // id -> naziv otvorenog pod-panela
+    var posljednjiRez = null;   // podaci upravo napravljenog kalkulatora
+    wrap.innerHTML =
+      '<style>' +
+      '.jk-wrap{--jk-a:#0e7490;--jk-b:#164e63;--jk-meko:#f3fafc;--jk-linija:#c7e3ea;}' +
+      '.jk-wrap .jk-kartica{background:#fff;border:1px solid var(--jk-linija);border-radius:16px;margin-bottom:18px;overflow:hidden;box-shadow:0 6px 22px rgba(14,116,144,.13);}' +
+      '.jk-wrap .jk-glava{background:linear-gradient(135deg,var(--jk-a) 0%,var(--jk-b) 100%);color:#fff;padding:16px 22px;font-size:18px;font-weight:800;display:flex;align-items:center;gap:14px;}' +
+      '.jk-wrap .jk-glava .jk-znak{flex:none;width:42px;height:42px;border-radius:12px;background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.35);display:flex;align-items:center;justify-content:center;font-size:22px;}' +
+      '.jk-wrap .jk-glava small{display:block;font-size:12.5px;font-weight:500;opacity:.88;margin-top:2px;}' +
+      '.jk-wrap .jk-tijelo{padding:18px 22px 20px;}' +
+      '.jk-wrap .jk-hint{font-size:13px;color:#33505a;margin:0 0 12px;line-height:1.55;background:var(--jk-meko);border-left:4px solid var(--jk-a);border-radius:8px;padding:10px 14px;}' +
+      '.jk-wrap .jk-mreza{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px;margin-bottom:10px;}' +
+      '.jk-wrap label.jk-polje{display:flex;flex-direction:column;gap:3px;font-size:12px;font-weight:700;color:#33505a;}' +
+      '.jk-wrap .jk-polje input,.jk-wrap .jk-polje select,.jk-wrap .jk-polje textarea,.jk-wrap input.jk-in,.jk-wrap select.jk-in{padding:9px 11px;border:1px solid #c3d6dc;border-radius:9px;background:#fcfeff;font:inherit;font-size:13.5px;font-weight:400;color:#12303a;width:100%;box-sizing:border-box;}' +
+      '.jk-wrap .jk-polje input:focus,.jk-wrap input.jk-in:focus{outline:none;border-color:var(--jk-a);box-shadow:0 0 0 3px rgba(14,116,144,.16);background:#fff;}' +
+      '.jk-wrap .jk-gumb{background:var(--jk-a);color:#fff;border:0;border-radius:10px;padding:8px 14px;font-weight:700;font-size:13px;cursor:pointer;margin:2px 4px 2px 0;}' +
+      '.jk-wrap .jk-gumb.sek{background:#fff;color:var(--jk-b);border:1px solid var(--jk-a);}' +
+      '.jk-wrap .jk-gumb.opasan{background:#fff;color:#b71216;border:1px solid #b71216;}' +
+      '.jk-wrap .jk-gumb.veliki{padding:12px 22px;font-size:15px;}' +
+      '.jk-wrap .jk-gumb:disabled{opacity:.5;cursor:default;}' +
+      '.jk-wrap .jk-status{font-size:12.5px;margin-left:6px;} .jk-wrap .jk-status.greska{color:#b71216;font-weight:700;} .jk-wrap .jk-status.ok{color:#0b7a4b;font-weight:700;}' +
+      '.jk-wrap .jk-zone{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px;margin:6px 0 12px;}' +
+      '.jk-wrap .jk-zona{border:2px dashed #8fc3d0;border-radius:14px;padding:14px;background:var(--jk-meko);cursor:pointer;text-align:center;transition:.15s;}' +
+      '.jk-wrap .jk-zona.nad{background:#dff3f8;border-color:var(--jk-a);}' +
+      '.jk-wrap .jk-zona.puna{border-style:solid;background:#e6f6ee;border-color:#2e9e4f;}' +
+      '.jk-wrap .jk-zona-n{font-weight:800;color:var(--jk-b);font-size:14px;} .jk-wrap .jk-zona-o{font-size:12px;color:#4d6870;margin:2px 0 8px;} .jk-wrap .jk-zona-d{font-size:13px;color:#12303a;} .jk-wrap .jk-zona-g{font-size:12px;color:#b71216;font-weight:700;margin-top:4px;}' +
+      '.jk-wrap .jk-x{color:#b71216;margin-left:6px;font-size:12px;}' +
+      '.jk-wrap .jk-tip{font-size:13px;font-weight:700;color:var(--jk-b);margin:0 0 8px;} .jk-wrap .jk-tip b{background:#fff;border:1px solid var(--jk-a);border-radius:20px;padding:2px 11px;}' +
+      '.jk-wrap .jk-oib-rez{margin:2px 0 10px;border-radius:10px;padding:9px 12px;font-size:13px;line-height:1.45;}' +
+      '.jk-wrap .jk-oib-rez.nema{background:#e3f6ec;border:1px solid #9ad7b8;color:#0b5a38;} .jk-wrap .jk-oib-rez.ima{background:#fff4e0;border:1px solid #f0c27a;color:#6b4300;} .jk-wrap .jk-oib-rez.info{background:#eef5f7;border:1px solid #c3d6dc;color:#33505a;}' +
+      '.jk-wrap .jk-rez{background:#e6f6ee;border:2px solid #2e9e4f;border-radius:12px;padding:12px 14px;margin:10px 0;}' +
+      '.jk-wrap .jk-cred{display:grid;gap:5px;margin:8px 0;} .jk-wrap .jk-cred-r{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:13px;} .jk-wrap .jk-cred-r span.l{width:112px;color:#4d6870;font-weight:700;font-size:12px;} .jk-wrap .jk-cred-r code{background:#fff;border:1px solid var(--jk-linija);border-radius:7px;padding:3px 8px;font-size:13px;user-select:all;word-break:break-all;}' +
+      '.jk-wrap .jk-trake{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px;}' +
+      '.jk-wrap .jk-cip{display:inline-block;font-size:11.5px;font-weight:800;border-radius:20px;padding:2px 10px;margin-left:6px;vertical-align:middle;}' +
+      '.jk-wrap .jk-cip.ak{background:#e3f6ec;color:#0b7a4b;} .jk-wrap .jk-cip.ist{background:#eceff1;color:#5d6b70;} .jk-wrap .jk-cip.ug{background:#fff1dd;color:#9a5a00;} .jk-wrap .jk-cip.zam{background:#e3edfb;color:#1f4fa0;} .jk-wrap .jk-cip.rev{background:#efe6fb;color:#5b2d9a;} .jk-wrap .jk-cip.nov{background:#dff3f8;color:#0e5a70;}' +
+      '.jk-wrap .jk-filtri button{border:1px solid var(--jk-linija);background:#fff;border-radius:20px;padding:5px 13px;font-size:12.5px;font-weight:700;color:var(--jk-b);cursor:pointer;margin:0 4px 4px 0;} .jk-wrap .jk-filtri button.akt{background:var(--jk-a);color:#fff;border-color:var(--jk-a);}' +
+      '.jk-wrap .jk-red{border:1px solid var(--jk-linija);border-left:5px solid var(--jk-a);border-radius:12px;padding:12px 15px;margin-bottom:11px;background:var(--jk-meko);}' +
+      '.jk-wrap .jk-red.ist,.jk-wrap .jk-red.ug{border-left-color:#9aa8ad;background:#f6f8f9;} .jk-wrap .jk-red.zam{border-left-color:#3a6fd0;}' +
+      '.jk-wrap .jk-naziv{font-weight:800;color:#0d2a35;font-size:15px;} .jk-wrap .jk-meta{font-size:12.5px;color:#4d6870;margin:3px 0 4px;line-height:1.5;}' +
+      '.jk-wrap .jk-pod{margin-top:9px;padding:11px 13px;background:#fff;border:1px solid var(--jk-linija);border-radius:10px;}' +
+      '.jk-wrap .jk-pod h4{margin:0 0 6px;font-size:13.5px;color:var(--jk-b);}' +
+      '.jk-wrap table.jk-ev{width:100%;border-collapse:collapse;font-size:12.5px;} .jk-wrap table.jk-ev td,.jk-wrap table.jk-ev th{border-bottom:1px solid #e1edf0;padding:5px 7px;text-align:left;vertical-align:top;}' +
+      '.jk-wrap iframe.jk-prev{width:100%;height:360px;border:1px solid var(--jk-linija);border-radius:8px;background:#fff;}' +
+      '.jk-wrap .jk-prazno{font-size:13px;color:#5d7780;padding:12px 4px;}' +
+      '</style>' +
+      '<div class="jk-kartica"><div class="jk-glava"><span class="jk-znak">⏱</span><div>Novi jednokratni kalkulator<small>Privremeni kalkulator za neklijente — bez slanja ponude</small></div></div><div class="jk-tijelo">' +
+        '<div class="jk-hint"><b>1 cjenik = novi klijent</b> (primatelj vidi jedan kalkulator i provjerava koliko su naši uvjeti povoljni). <b>2 cjenika = revizija</b> (primatelj vidi stari i novi kalkulator, podaci o pošiljci prenose se iz prvog u drugi i vidi koliko su novi uvjeti bolji ili lošiji). Čim toj firmi (OIB) ili toj adresi pošalješ ponudu, kalkulator se sam gasi.</div>' +
+        '<div class="jk-mreza"><label class="jk-polje">OIB<input id="jk-oib" inputmode="numeric" maxlength="11" placeholder="11 znamenki (neobavezno)"></label>' +
+        '<label class="jk-polje">Naziv poslovnog subjekta *<input id="jk-naziv"></label>' +
+        '<label class="jk-polje">Ime osobe<input id="jk-ime"></label><label class="jk-polje">Prezime osobe<input id="jk-prezime"></label>' +
+        '<label class="jk-polje">E-mail osobe * (= korisničko ime)<input id="jk-email" type="email"></label><label class="jk-polje">Kontakt broj<input id="jk-tel"></label>' +
+        '<label class="jk-polje">Vrijedi (dana)<input id="jk-dana" type="number" min="1" max="365" value="14"></label></div>' +
+        '<div id="jk-oib-rez" class="jk-oib-rez info" hidden></div>' +
+        '<div class="jk-zone" id="jk-zone"></div>' +
+        '<div class="jk-tip" id="jk-tip"></div>' +
+        '<details style="margin:0 0 10px;"><summary style="cursor:pointer;font-size:12.5px;font-weight:700;color:var(--jk-b);">Ručno korisničko ime / lozinka (neobavezno)</summary>' +
+        '<div class="jk-mreza" style="margin-top:8px;"><label class="jk-polje">Korisničko ime<input id="jk-user" placeholder="zadano: e-mail osobe"></label><label class="jk-polje">Lozinka<input id="jk-loz" placeholder="zadano: dva superjunaka + datum"></label></div></details>' +
+        '<button type="button" class="jk-gumb veliki" id="jk-napravi">Napravi kalkulator</button><span class="jk-status" id="jk-status"></span>' +
+        '<div id="jk-rez"></div>' +
+      '</div></div>' +
+      '<div class="jk-kartica"><div class="jk-glava"><span class="jk-znak">📋</span><div>Svi jednokratni kalkulatori<small>Status, produljenje, lozinka, cjenici, praćenje i slanje maila</small></div></div><div class="jk-tijelo">' +
+        '<div class="jk-trake"><div class="jk-filtri" id="jk-filtri"></div><input class="jk-in" id="jk-trazi" placeholder="Traži po nazivu, OIB-u, osobi, mailu…" style="max-width:320px;margin-left:auto;"></div>' +
+        '<div id="jk-lista"><div class="jk-prazno">Učitavam…</div></div>' +
+      '</div></div>';
+    var $j = function(id) { return wrap.querySelector('#' + id); };
+    var status = function(t, v) { var el = $j('jk-status'); el.textContent = t || ''; el.className = 'jk-status' + (v ? ' ' + v : ''); };
+
+    // --- cjenik zone u formi ---
+    var zNovi = jkZona_('Novi cjenik <span style="color:#b71216;">*</span>', 'Obavezno — naši novi uvjeti', osvjeziTip);
+    var zStari = jkZona_('Stari cjenik', 'Neobavezno — ako ga učitaš, ovo je revizija (usporedba starih i novih uvjeta)', osvjeziTip);
+    $j('jk-zone').appendChild(zNovi.el); $j('jk-zone').appendChild(zStari.el);
+    function osvjeziTip() {
+      var t = $j('jk-tip');
+      if (!zNovi.ima() && !zStari.ima()) { t.innerHTML = ''; return; }
+      t.innerHTML = zStari.ima() ? 'Vrsta: <b>REVIZIJA</b> — dva kalkulatora (stari i novi uvjeti)' + (zNovi.ima() ? '' : ' <span style="color:#b71216;">· nedostaje novi cjenik</span>') : 'Vrsta: <b>NOVI KLIJENT</b> — jedan kalkulator';
+    }
+
+    // --- OIB: provjera postoji li već u sustavu + sudski registar (popuni samo prazna polja) ---
+    var oibEl = $j('jk-oib'), sudZadnji = '';
+    oibEl.addEventListener('input', function() {
+      this.value = this.value.replace(/\D/g, '').slice(0, 11);
+      var box = $j('jk-oib-rez'), q = this.value;
+      if (q.length < 6) { box.hidden = true; box.innerHTML = ''; sudZadnji = ''; return; }
+      var nasao = [];
+      (allEntries || []).forEach(function(e) {
+        var o = String(fieldVal(e, 'OIB') || fieldVal(e, 'OIB poslovnog subjekta') || '').replace(/\D/g, '');
+        if (!o || o.indexOf(q) !== 0) { return; }
+        var gdje = e.status === 'Otvorena' ? 'Otvorene ponude' : (e.status === 'Odbijenica' ? 'Nisu zainteresirani' : (jeOtvorenKlijent(e) ? 'Klijenti' : (jeArhiva(e) ? 'Arhiva' : (jePonuda(e) ? 'Ponude' : 'Zainteresirani'))));
+        nasao.push((fieldVal(e, 'Naziv tvrtke') || '(bez naziva)') + ' — ' + gdje);
+      });
+      (stavke || []).forEach(function(s) { if (s.oib && s.oib.indexOf(q) === 0) { nasao.push(s.naziv + ' — jednokratni kalkulator (' + (JK_STATUS_[s.status] || {}).t + ')'); } });
+      box.hidden = false;
+      if (nasao.length) { box.className = 'jk-oib-rez ima'; box.innerHTML = '<b>⚠ Za ovaj OIB već imamo zapis:</b><br>' + nasao.slice(0, 6).map(esc).join('<br>') + (q.length === 11 ? '<br>Provjeri treba li ti jednokratni kalkulator ako je već ponuda/klijent.' : ''); }
+      else { box.className = 'jk-oib-rez ' + (q.length === 11 ? 'nema' : 'info'); box.innerHTML = q.length === 11 ? '✓ <b>Ovaj OIB još nemamo nigdje u sustavu.</b>' : 'Nema podudaranja za „' + esc(q) + '…" — upiši cijeli OIB.'; }
+      if (q.length === 11 && q !== sudZadnji && typeof otvOibOk_ === 'function' && otvOibOk_(q)) {
+        sudZadnji = q;
+        gasCall({ action: 'adminOibPodaci', token: adminToken, oib: q }).then(function(res) {
+          if (handleAuthError(res) || oibEl.value !== q || !res || res.status !== 'ok' || !res.pronadjen) { return; }
+          var n = $j('jk-naziv');
+          if (n && !n.value.trim() && res.naziv) { n.value = res.naziv; box.innerHTML += '<br>✓ Sudski registar: ' + esc(res.naziv) + ' (naziv popunjen).'; }
+        }).catch(function() {});
+      }
+    });
+
+    // --- izrada ---
+    $j('jk-napravi').addEventListener('click', function() {
+      var gumb = this;
+      var naziv = $j('jk-naziv').value.trim(), email = $j('jk-email').value.trim();
+      if (!naziv) { status('Upiši naziv poslovnog subjekta.', 'greska'); return; }
+      if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { status('E-mail osobe nije ispravan.', 'greska'); return; }
+      if (!zNovi.ima()) { status('Povuci barem NOVI cjenik.', 'greska'); return; }
+      gumb.disabled = true; status('Obrađujem cjenik(e)… (nekoliko sekundi)');
+      Promise.all([zNovi.dohvati(), zStari.dohvati()]).then(function(f) {
+        var podaci = { oib: oibEl.value.trim(), naziv: naziv, ime: $j('jk-ime').value.trim(), prezime: $j('jk-prezime').value.trim(), email: email, telefon: $j('jk-tel').value.trim(),
+          dana: parseInt($j('jk-dana').value, 10) || zadanoDana, korisnickoIme: $j('jk-user').value.trim(), lozinka: $j('jk-loz').value.trim(), noviCjenik: f[0], stariCjenik: f[1] };
+        return gasCall({ action: 'adminJedKreiraj', token: adminToken, podaci: podaci });
+      }).then(function(res) {
+        gumb.disabled = false;
+        if (handleAuthError(res)) { return; }
+        if (res.status !== 'ok') { status(res.message || 'Spremanje nije uspjelo.', 'greska'); return; }
+        status('✓ Kalkulator je napravljen.', 'ok');
+        posljednjiRez = res.stavka;
+        stavke.unshift(res.stavka); otvoreno[res.stavka.id] = 'mail';
+        ['jk-oib', 'jk-naziv', 'jk-ime', 'jk-prezime', 'jk-email', 'jk-tel', 'jk-user', 'jk-loz'].forEach(function(i) { $j(i).value = ''; });
+        $j('jk-oib-rez').hidden = true; $j('jk-dana').value = zadanoDana; zNovi.ocisti(); zStari.ocisti(); osvjeziTip();
+        crtajRezultat(); crtajFiltre(); crtajListu(); osvjeziBrojac_();
+      }).catch(function(err) { gumb.disabled = false; status((err && err.message) || 'Greška u komunikaciji s poslužiteljem.', 'greska'); });
+    });
+    function credHtml(it) {
+      return '<div class="jk-cred">' +
+        '<div class="jk-cred-r"><span class="l">Link</span><code>' + esc(it.link) + '</code><button type="button" class="jk-gumb sek jk-kop" data-v="' + esc(it.link) + '">Kopiraj</button></div>' +
+        '<div class="jk-cred-r"><span class="l">Korisničko ime</span><code>' + esc(it.korisnickoIme) + '</code><button type="button" class="jk-gumb sek jk-kop" data-v="' + esc(it.korisnickoIme) + '">Kopiraj</button></div>' +
+        '<div class="jk-cred-r"><span class="l">Lozinka</span><code>' + esc(it.lozinka) + '</code><button type="button" class="jk-gumb sek jk-kop" data-v="' + esc(it.lozinka) + '">Kopiraj</button></div></div>';
+    }
+    function vezeKopiraj(root) {
+      Array.prototype.forEach.call(root.querySelectorAll('.jk-kop'), function(b) { b.addEventListener('click', function(ev) { ev.stopPropagation(); jkKopiraj_(b.getAttribute('data-v'), b); }); });
+    }
+    function crtajRezultat() {
+      var box = $j('jk-rez');
+      if (!posljednjiRez) { box.innerHTML = ''; return; }
+      var it = posljednjiRez;
+      box.innerHTML = '<div class="jk-rez"><b>✓ Napravljen: ' + esc(it.naziv) + '</b> — ' + (it.imaStari ? 'revizija (2 kalkulatora)' : 'novi klijent (1 kalkulator)') + ', vrijedi do ' + esc(it.istek) + '. Mail NIJE poslan — pošalji ga niže u popisu (otvoren je panel „Pošalji mail").' + credHtml(it) + '</div>';
+      vezeKopiraj(box);
+    }
+
+    // --- popis ---
+    function crtajFiltre() {
+      var br = { sve: stavke.length, aktivan: 0, istekao: 0, ugasen: 0, zamijenjen: 0 };
+      stavke.forEach(function(s) { br[s.status] = (br[s.status] || 0) + 1; });
+      var def = [['sve', 'Svi'], ['aktivan', 'Aktivni'], ['istekao', 'Istekli'], ['ugasen', 'Ugašeni'], ['zamijenjen', 'Zamijenjeni ponudom']];
+      $j('jk-filtri').innerHTML = def.map(function(d) { return '<button type="button" data-f="' + d[0] + '" class="' + (filtar.st === d[0] ? 'akt' : '') + '">' + d[1] + ' (' + (br[d[0]] || 0) + ')</button>'; }).join('');
+      Array.prototype.forEach.call($j('jk-filtri').querySelectorAll('button'), function(b) { b.addEventListener('click', function() { filtar.st = b.getAttribute('data-f'); crtajFiltre(); crtajListu(); }); });
+    }
+    $j('jk-trazi').addEventListener('input', function() { filtar.q = this.value.trim().toLowerCase(); crtajListu(); });
+    function osvjeziBrojac_() {
+      var el = document.getElementById('tab-count-jednokratni');
+      var n = stavke.filter(function(s) { return s.status === 'aktivan'; }).length;
+      if (el) { el.textContent = n > 0 ? '(' + n + ')' : ''; }
+    }
+    function zamijeni(nova) {
+      for (var i = 0; i < stavke.length; i++) { if (stavke[i].id === nova.id) { stavke[i] = nova; break; } }
+      crtajFiltre(); crtajListu(); osvjeziBrojac_();
+    }
+    function crtajListu() {
+      var lista = $j('jk-lista');
+      if (!ucitano) { return; }
+      var vidljivi = stavke.filter(function(s) {
+        if (filtar.st !== 'sve' && s.status !== filtar.st) { return false; }
+        if (!filtar.q) { return true; }
+        return [s.naziv, s.oib, s.ime, s.prezime, s.email, s.telefon].join(' ').toLowerCase().indexOf(filtar.q) !== -1;
+      });
+      lista.innerHTML = '';
+      if (!vidljivi.length) { lista.innerHTML = '<div class="jk-prazno">' + (stavke.length ? 'Nema rezultata za odabrani filtar.' : 'Još nema jednokratnih kalkulatora — napravi prvi gore.') + '</div>'; return; }
+      vidljivi.forEach(function(it) { lista.appendChild(kartica(it)); });
+    }
+    function kartica(it) {
+      var st = JK_STATUS_[it.status] || { t: it.status, k: '' };
+      var red = document.createElement('div');
+      red.className = 'jk-red ' + (it.status === 'aktivan' ? '' : (it.status === 'zamijenjen' ? 'zam' : 'ist'));
+      var aktivan = it.status === 'aktivan';
+      red.innerHTML =
+        '<div><span class="jk-naziv">' + esc(it.naziv) + '</span><span class="jk-cip ' + st.k + '">' + st.t + '</span><span class="jk-cip ' + (it.imaStari ? 'rev' : 'nov') + '">' + (it.imaStari ? 'REVIZIJA · 2 cjenika' : 'NOVI KLIJENT · 1 cjenik') + '</span></div>' +
+        '<div class="jk-meta">' + (it.oib ? 'OIB ' + esc(it.oib) + ' · ' : '') + esc(((it.ime || '') + ' ' + (it.prezime || '')).trim() || '—') + ' · ' + esc(it.email) + (it.telefon ? ' · ' + esc(it.telefon) : '') + '</div>' +
+        '<div class="jk-meta">Napravljen ' + esc(it.kreirano) + ' · vrijedi do <b>' + esc(it.istek) + '</b> (' + it.dana + ' d)' +
+          (it.status === 'ugasen' ? ' · ugašen ' + esc(it.ugasen) : '') + (it.status === 'zamijenjen' ? ' · <b>' + esc(it.zamijenjenOpis || 'zamijenjen ponudom') + '</b> (' + esc(it.zamijenjen) + ')' : '') + '</div>' +
+        '<div class="jk-meta">Novi cjenik: ' + esc(it.noviNaziv || '—') + (it.imaStari ? ' · Stari cjenik: ' + esc(it.stariNaziv) : '') + '</div>' +
+        '<div class="jk-meta">Prijava: ' + it.brojPrijava + '× (zadnja ' + esc(it.zadnjaPrijava || '—') + ') · izračuna: ' + it.brojIzracuna + ' · zadnja aktivnost ' + esc(it.zadnjaAktivnost || '—') + (it.zadnjiIp ? ' · IP ' + esc(it.zadnjiIp) : '') +
+          ' · mail: ' + (it.mailBroj ? it.mailBroj + '× (zadnji ' + esc(it.mailDatum) + ' na ' + esc(it.mailNa) + ')' : '<b>nije poslan</b>') + '</div>' +
+        credHtml(it) +
+        '<div>' +
+          '<button type="button" class="jk-gumb" data-p="mail">✉ Pošalji mail</button>' +
+          '<button type="button" class="jk-gumb sek" data-p="produzi">⏱ Produži</button>' +
+          '<button type="button" class="jk-gumb sek" data-a="ugasi">' + (it.status === 'ugasen' ? '↺ Ponovno aktiviraj' : (aktivan ? '⏻ Ugasi' : '⏻ Aktiviraj ponovno')) + '</button>' +
+          '<button type="button" class="jk-gumb sek" data-p="loz">🔑 Nova lozinka</button>' +
+          '<button type="button" class="jk-gumb sek" data-p="cjenici">📂 Cjenici</button>' +
+          '<button type="button" class="jk-gumb sek" data-p="prac">📈 Praćenje</button>' +
+        '</div><div class="jk-podmjesto"></div>';
+      vezeKopiraj(red);
+      var mjesto = red.querySelector('.jk-podmjesto');
+      Array.prototype.forEach.call(red.querySelectorAll('[data-p]'), function(b) {
+        b.addEventListener('click', function() { var p = b.getAttribute('data-p'); otvoreno[it.id] = (otvoreno[it.id] === p) ? '' : p; crtajPod(it, mjesto); });
+      });
+      red.querySelector('[data-a="ugasi"]').addEventListener('click', function() {
+        var ugasi = (it.status === 'aktivan');
+        var poziv = ugasi ? gasCall({ action: 'adminJedUgasi', token: adminToken, id: it.id, ugasi: true })
+          : (it.status === 'ugasen' ? gasCall({ action: 'adminJedUgasi', token: adminToken, id: it.id, ugasi: false }) : gasCall({ action: 'adminJedProduzi', token: adminToken, id: it.id, dana: zadanoDana }));
+        poziv.then(function(res) { if (handleAuthError(res)) { return; } if (res.status === 'ok') { zamijeni(res.stavka); } else { alert(res.message || 'Nije uspjelo.'); } });
+      });
+      crtajPod(it, mjesto);
+      return red;
+    }
+    function crtajPod(it, mjesto) {
+      var p = otvoreno[it.id] || '';
+      mjesto.innerHTML = '';
+      if (!p) { return; }
+      var box = document.createElement('div'); box.className = 'jk-pod'; mjesto.appendChild(box);
+      var poruka = function(t, v) { var s = box.querySelector('.jk-status'); if (s) { s.textContent = t || ''; s.className = 'jk-status' + (v ? ' ' + v : ''); } };
+      if (p === 'produzi') {
+        box.innerHTML = '<h4>Produži / ponovno aktiviraj</h4><div class="jk-meta">Dodaje dane na sadašnji istek (ili od danas ako je istekao) i ponovno aktivira kalkulator.</div>' +
+          '<input class="jk-in" type="number" min="1" max="365" value="' + zadanoDana + '" style="width:90px;display:inline-block;"> dana <button type="button" class="jk-gumb">Produži</button><span class="jk-status"></span>';
+        box.querySelector('button').addEventListener('click', function() {
+          var d = parseInt(box.querySelector('input').value, 10);
+          gasCall({ action: 'adminJedProduzi', token: adminToken, id: it.id, dana: d }).then(function(res) { if (handleAuthError(res)) { return; } if (res.status === 'ok') { otvoreno[it.id] = ''; zamijeni(res.stavka); } else { poruka(res.message, 'greska'); } });
+        });
+      } else if (p === 'loz') {
+        box.innerHTML = '<h4>Nova lozinka</h4><div class="jk-meta">Prazno = automatska (dva superjunaka + današnji datum). Stara lozinka odmah prestaje vrijediti.</div>' +
+          '<input class="jk-in" placeholder="automatski" style="max-width:260px;display:inline-block;"> <button type="button" class="jk-gumb">Promijeni lozinku</button><span class="jk-status"></span>';
+        box.querySelector('button').addEventListener('click', function() {
+          gasCall({ action: 'adminJedLozinka', token: adminToken, id: it.id, lozinka: box.querySelector('input').value.trim() }).then(function(res) { if (handleAuthError(res)) { return; } if (res.status === 'ok') { otvoreno[it.id] = ''; zamijeni(res.stavka); } else { poruka(res.message, 'greska'); } });
+        });
+      } else if (p === 'cjenici') {
+        box.innerHTML = '<h4>Zamjena cjenika</h4><div class="jk-meta">Trenutni se automatski arhivira. Novi cjenik se može samo zamijeniti; stari se može dodati, zamijeniti ili ukloniti (tada kalkulator postaje „novi klijent" s 1 kalkulatorom).</div><div class="jk-zone"></div><div></div><span class="jk-status"></span>';
+        var zn = jkZona_('Novi cjenik', 'Trenutno: ' + esc(it.noviNaziv || '—'), null), zs = jkZona_('Stari cjenik', 'Trenutno: ' + esc(it.imaStari ? it.stariNaziv : 'nema'), null);
+        box.querySelector('.jk-zone').appendChild(zn.el); box.querySelector('.jk-zone').appendChild(zs.el);
+        var akc = box.querySelector('div:nth-of-type(3)');
+        akc.innerHTML = '<button type="button" class="jk-gumb">Spremi odabrane cjenike</button>' + (it.imaStari ? '<button type="button" class="jk-gumb opasan">Ukloni stari cjenik</button>' : '');
+        var posalji = function(vrsta, zona, ukloni) {
+          return zona.dohvati().then(function(c) {
+            if (!ukloni && !c) { return null; }
+            return gasCall({ action: 'adminJedCjenik', token: adminToken, id: it.id, vrsta: vrsta, cjenik: c, ukloni: !!ukloni });
+          });
+        };
+        akc.querySelector('.jk-gumb').addEventListener('click', function() {
+          if (!zn.ima() && !zs.ima()) { poruka('Povuci barem jedan cjenik.', 'greska'); return; }
+          poruka('Obrađujem…');
+          posalji('novi', zn, false).then(function(r1) {
+            if (r1 && r1.status !== 'ok') { throw new Error(r1.message); }
+            return posalji('stari', zs, false).then(function(r2) { if (r2 && r2.status !== 'ok') { throw new Error(r2.message); } return r2 || r1; });
+          }).then(function(res) { if (res && res.stavka) { otvoreno[it.id] = ''; zamijeni(res.stavka); } }).catch(function(e) { poruka(e.message || 'Nije uspjelo.', 'greska'); });
+        });
+        var ukl = akc.querySelector('.opasan');
+        if (ukl) { ukl.addEventListener('click', function() {
+          gasCall({ action: 'adminJedCjenik', token: adminToken, id: it.id, vrsta: 'stari', ukloni: true }).then(function(res) { if (handleAuthError(res)) { return; } if (res.status === 'ok') { otvoreno[it.id] = ''; zamijeni(res.stavka); } else { poruka(res.message, 'greska'); } });
+        }); }
+      } else if (p === 'prac') {
+        box.innerHTML = '<h4>Praćenje korištenja</h4><div class="jk-prazno">Učitavam…</div>';
+        gasCall({ action: 'adminJedEvidencija', token: adminToken, id: it.id, limit: 200 }).then(function(res) {
+          if (handleAuthError(res)) { return; }
+          if (res.status !== 'ok') { box.innerHTML = '<h4>Praćenje</h4><div class="jk-status greska">' + esc(res.message || 'Greška') + '</div>'; return; }
+          if (!res.zapisi.length) { box.innerHTML = '<h4>Praćenje korištenja</h4><div class="jk-prazno">Još nema aktivnosti (nitko se nije prijavio).</div>'; return; }
+          box.innerHTML = '<h4>Praćenje korištenja (' + res.zapisi.length + ')</h4><table class="jk-ev"><tr><th>Vrijeme</th><th>Radnja</th><th>IP</th><th>Što je radio</th></tr>' + res.zapisi.map(function(z, i) {
+            var det = '';
+            if (z.vrsta === 'Izračun') {
+              var ul = ''; try { var o = JSON.parse(z.ulazni || '{}'); ul = Object.keys(o).filter(function(k) { return o[k] !== false && o[k] !== ''; }).map(function(k) { return esc(k) + ': <b>' + esc(o[k]) + '</b>'; }).join(' · '); } catch (e) { ul = esc(z.ulazni); }
+              det = '<details><summary style="cursor:pointer;color:var(--jk-a);">detalji unosa i rezultata</summary><div style="font-size:12px;margin:4px 0;">' + ul + '</div><table style="font-size:12px;">' + z.html + '</table></details>';
+            }
+            return '<tr><td>' + esc(z.datum) + '</td><td>' + esc(z.vrsta) + '</td><td>' + esc(z.ip) + '</td><td>' + esc(z.sazetak) + det + '</td></tr>';
+          }).join('') + '</table>';
+        }).catch(function() { box.innerHTML = '<div class="jk-status greska">Greška u komunikaciji s poslužiteljem.</div>'; });
+      } else if (p === 'mail') {
+        crtajMail(it, box);
+      }
+    }
+
+    // --- slanje maila (predlošci kategorija jednokratni_novi / jednokratni_revizija, odabir prema broju cjenika) ---
+    function crtajMail(it, box) {
+      var jeRev = !!it.imaStari;
+      box.innerHTML = '<h4>Pošalji mail — ' + (jeRev ? 'predložak za REVIZIJU (stari + novi cjenik)' : 'predložak za NOVOG KLIJENTA (1 cjenik)') + '</h4>' +
+        (it.status !== 'aktivan' ? '<div class="jk-oib-rez ima">Kalkulator nije aktivan — mail se šalje samo dok je aktivan. Produži ga ili ga ponovno aktiviraj.</div>' : '') +
+        '<div class="jk-mreza"><label class="jk-polje">Predložak<select class="jk-tpl"><option>Učitavam…</option></select></label>' +
+        '<label class="jk-polje">Primatelj(i) (zarez)<input class="jk-prim" value="' + esc(it.email) + '"></label>' +
+        '<label class="jk-polje">Predmet<input class="jk-pred"></label></div>' +
+        '<div style="margin-bottom:6px;"><button type="button" class="jk-gumb sek jk-uredi">✎ Uredi predložak</button><button type="button" class="jk-gumb sek jk-novi">+ Novi predložak</button></div>' +
+        '<iframe class="jk-prev" sandbox="" title="Pregled maila"></iframe><div class="jk-meta jk-upoz"></div>' +
+        '<div style="margin-top:8px;"><label style="font-size:13px;"><input type="checkbox" class="jk-kop-sebi"> Pošalji kopiju meni (BCC)</label></div>' +
+        '<div style="margin-top:6px;"><input class="jk-in jk-test" placeholder="test adresa" style="max-width:240px;display:inline-block;"> <button type="button" class="jk-gumb sek jk-test-gumb">Pošalji probni mail</button> ' +
+        '<button type="button" class="jk-gumb jk-posalji">✉ Pošalji mail primatelju</button><span class="jk-status"></span></div>';
+      var sel = box.querySelector('.jk-tpl'), pred = box.querySelector('.jk-pred'), prev = box.querySelector('.jk-prev'), upoz = box.querySelector('.jk-upoz');
+      var tpls = [], trenutni = null;
+      var poruka = function(t, v) { var s = box.querySelector('.jk-status'); s.textContent = t || ''; s.className = 'jk-status' + (v ? ' ' + v : ''); };
+      var render = function() {
+        trenutni = tpls.filter(function(p) { return String(p.rowIndex) === sel.value; })[0] || null;
+        if (!trenutni) { prev.srcdoc = ''; upoz.textContent = 'Nema predloška.'; return null; }
+        pred.value = jkTagovi_(trenutni.predmet, it, false);
+        var tijelo = jkTagovi_(trenutni.sadrzaj, it, !!trenutni.html);
+        prev.srcdoc = trenutni.html ? tijelo : '<pre style="font-family:Arial;white-space:pre-wrap;font-size:14px;">' + esc(tijelo) + '</pre>';
+        var ostalo = tijelo.match(/\{\{[A-Z_]+\}\}/g);
+        var krivi = (trenutni.kategorija === 'jednokratni_revizija') !== jeRev;
+        upoz.innerHTML = (ostalo ? '<span style="color:#b71216;font-weight:700;">⚠ Neriješeni tagovi: ' + esc(ostalo.join(', ')) + ' — mail se neće moći poslati.</span> ' : '') +
+          (krivi ? '<span style="color:#9a5a00;font-weight:700;">⚠ Odabran je predložak za ' + (jeRev ? 'novog klijenta, a ovaj kalkulator ima 2 cjenika (revizija).' : 'reviziju, a ovaj kalkulator ima samo 1 cjenik.') + '</span>' : '');
+        return { predmet: pred.value, tijelo: tijelo, html: !!trenutni.html, naziv: trenutni.naziv, ostalo: !!ostalo };
+      };
+      ucitajMailPredloske_(false).then(function(svi) {
+        tpls = (svi || []).filter(function(p) { return p.kategorija === 'jednokratni_novi' || p.kategorija === 'jednokratni_revizija'; });
+        var zeljena = jeRev ? 'jednokratni_revizija' : 'jednokratni_novi';
+        tpls.sort(function(a, b) { return (a.kategorija === zeljena ? 0 : 1) - (b.kategorija === zeljena ? 0 : 1); });
+        if (!tpls.length) { sel.innerHTML = '<option value="">— nema predložaka —</option>'; return; }
+        var pocetni = tpls.filter(function(p) { return p.kategorija === zeljena && p.zadani; })[0] || tpls[0];
+        sel.innerHTML = tpls.map(function(p) { return '<option value="' + p.rowIndex + '"' + (p.rowIndex === pocetni.rowIndex ? ' selected' : '') + '>' + esc(p.naziv) + (p.kategorija === zeljena ? '' : ' (drugi tip)') + '</option>'; }).join('');
+        render();
+      }).catch(function(e) { sel.innerHTML = '<option value="">Greška: ' + esc((e && e.message) || '') + '</option>'; });
+      sel.addEventListener('change', render);
+      box.querySelector('.jk-uredi').addEventListener('click', function() { if (trenutni) { openMailPredlozakModal(trenutni); } });
+      box.querySelector('.jk-novi').addEventListener('click', function() { openMailPredlozakModal(null, jeRev ? 'jednokratni_revizija' : 'jednokratni_novi'); });
+      ucitajTestMail_().then(function(t) { if (t) { box.querySelector('.jk-test').value = t; } }).catch(function() {});
+      box.querySelector('.jk-test-gumb').addEventListener('click', function() {
+        var r = render(); if (!r) { return; }
+        poruka('Šaljem probni mail…');
+        gasCall({ action: 'adminJedPosaljiTest', token: adminToken, testMail: box.querySelector('.jk-test').value.trim(), predmet: pred.value, tijelo: r.tijelo, jeHtml: r.html }).then(function(res) {
+          if (handleAuthError(res)) { return; }
+          poruka(res.status === 'ok' ? '✓ Probni mail poslan.' : (res.message || 'Nije uspjelo.'), res.status === 'ok' ? 'ok' : 'greska');
+        }).catch(function() { poruka('Greška u komunikaciji s poslužiteljem.', 'greska'); });
+      });
+      box.querySelector('.jk-posalji').addEventListener('click', function() {
+        var gumb = this, r = render(); if (!r) { return; }
+        if (r.ostalo) { poruka('U predlošku ima neriješenih tagova.', 'greska'); return; }
+        gumb.disabled = true; poruka('Šaljem…');
+        gasCall({ action: 'adminJedPosaljiMail', token: adminToken, id: it.id, primatelji: box.querySelector('.jk-prim').value.trim(), predmet: pred.value, tijelo: r.tijelo,
+          kopijaSebi: box.querySelector('.jk-kop-sebi').checked, jeHtml: r.html, nazivPredloska: r.naziv }).then(function(res) {
+          gumb.disabled = false;
+          if (handleAuthError(res)) { return; }
+          if (res.status === 'ok') { poruka('✓ Mail poslan na ' + res.poslanoNa.join(', '), 'ok'); zamijeniBezPod(res.stavka); } else { poruka(res.message || 'Slanje nije uspjelo.', 'greska'); }
+        }).catch(function() { gumb.disabled = false; poruka('Greška u komunikaciji s poslužiteljem.', 'greska'); });
+      });
+    }
+    // nakon slanja osvježi podatke u memoriji, ali ne zatvaraj otvoreni panel s porukom
+    function zamijeniBezPod(nova) {
+      for (var i = 0; i < stavke.length; i++) { if (stavke[i].id === nova.id) { stavke[i] = nova; break; } }
+      osvjeziBrojac_();
+    }
+
+    // --- početno učitavanje ---
+    gasCall({ action: 'adminJedList', token: adminToken }).then(function(res) {
+      if (handleAuthError(res)) { return; }
+      if (res.status !== 'ok') { $j('jk-lista').innerHTML = '<div class="jk-status greska">' + esc(res.message || 'Dohvat nije uspio.') + '</div>'; return; }
+      stavke = res.stavke || []; zadanoDana = res.zadanoDana || 14; $j('jk-dana').value = zadanoDana; ucitano = true;
+      crtajFiltre(); crtajListu(); osvjeziBrojac_();
+    }).catch(function() { $j('jk-lista').innerHTML = '<div class="jk-status greska">Greška u komunikaciji s poslužiteljem.</div>'; });
+    crtajFiltre();
+    return wrap;
+  }
+
   function buildStariKlijentiPanel_() {
     var wrap = document.createElement('div');
     wrap.className = 'sk-wrap';
@@ -11455,27 +11965,41 @@
       POSLOVNICE_OSTALE.map(function(p) { return '<label><input type="checkbox" class="sk-posl-cb" value="' + esc(p) + '"> ' + esc(p) + '</label>'; }).join('') + '</div>';
     wrap.innerHTML =
       '<style>' +
-      '.sk-wrap .sk-kartica{background:#fff;border:1px solid #dcc3a4;border-radius:12px;margin-bottom:16px;overflow:hidden;box-shadow:0 2px 8px rgba(92,58,26,.12);}' +
-      '.sk-wrap .sk-glava{background:linear-gradient(135deg,#8b5a2b 0%,#5c3a1a 100%);color:#fff;padding:13px 18px;font-size:16px;font-weight:800;}' +
-      '.sk-wrap .sk-tijelo{padding:14px 18px 16px;}' +
-      '.sk-wrap .sk-hint{font-size:12.5px;color:#4a5a57;margin:0 0 12px;line-height:1.5;}' +
+      '.sk-wrap .sk-kartica{background:#fff;border:1px solid var(--sk-linija);border-radius:16px;margin-bottom:18px;overflow:hidden;box-shadow:0 6px 22px rgba(var(--sk-sjena),.14);}' +
+      '.sk-wrap .sk-glava{background:linear-gradient(135deg,var(--sk-a) 0%,var(--sk-b) 100%);color:#fff;padding:16px 22px;font-size:18px;font-weight:800;display:flex;align-items:center;gap:14px;}' +
+      '.sk-wrap .sk-glava .sk-znak{flex:none;width:42px;height:42px;border-radius:12px;background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.35);display:flex;align-items:center;justify-content:center;font-size:22px;}' +
+      '.sk-wrap .sk-glava small{display:block;font-size:12.5px;font-weight:500;opacity:.85;margin-top:2px;}' +
+      '.sk-wrap .sk-tijelo{padding:18px 22px 20px;}' +
+      '.sk-wrap .sk-odjeljak{display:flex;align-items:center;gap:10px;margin:16px 0 10px;font-size:13.5px;font-weight:800;color:var(--sk-b);}' +
+      '.sk-wrap .sk-odjeljak i{font-style:normal;flex:none;width:24px;height:24px;border-radius:50%;background:var(--sk-a);color:#fff;display:flex;align-items:center;justify-content:center;font-size:12.5px;}' +
+      '.sk-wrap .sk-odjeljak:after{content:"";flex:1;height:1px;background:var(--sk-linija);}' +
+      '.sk-wrap .sk-hint{font-size:13px;color:#4a5a57;margin:0 0 6px;line-height:1.55;background:var(--sk-meko2);border-left:4px solid var(--sk-a);border-radius:8px;padding:10px 14px;}' +
       '.sk-wrap .sk-mreza{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin-bottom:10px;}' +
       '.sk-wrap label.sk-polje{display:flex;flex-direction:column;gap:3px;font-size:12px;font-weight:700;color:#3c4d4a;}' +
-      '.sk-wrap .sk-polje input,.sk-wrap .sk-polje textarea{padding:8px 10px;border:1px solid #c9d6d3;border-radius:8px;font:inherit;font-size:13.5px;font-weight:400;color:#1a2b2a;width:100%;box-sizing:border-box;}' +
-      '.sk-wrap .sk-gumb{background:#7a4c22;color:#fff;border:0;border-radius:8px;padding:8px 14px;font-weight:700;font-size:13px;cursor:pointer;margin:2px 4px 2px 0;}' +
-      '.sk-wrap .sk-gumb.sek{background:#fff;color:#7a4c22;border:1px solid #7a4c22;}' +
+      '.sk-wrap .sk-polje input,.sk-wrap .sk-polje textarea{padding:9px 11px;border:1px solid #cfd8d6;border-radius:9px;background:#fcfdfd;font:inherit;font-size:13.5px;font-weight:400;color:#1a2b2a;width:100%;box-sizing:border-box;}' +
+      '.sk-wrap .sk-polje input:focus{outline:none;border-color:var(--sk-a);box-shadow:0 0 0 3px rgba(var(--sk-sjena),.16);background:#fff;}' +
+      '.sk-wrap .sk-gumb{background:var(--sk-a);color:#fff;border:0;border-radius:10px;padding:9px 16px;font-weight:700;font-size:13px;cursor:pointer;margin:2px 4px 2px 0;}' +
+      '.sk-wrap .sk-gumb.sek{background:#fff;color:var(--sk-b);border:1px solid var(--sk-a);}' +
       '.sk-wrap .sk-gumb.opasan{background:#fff;color:#b71216;border:1px solid #b71216;}' +
       '.sk-wrap .sk-gumb:disabled{opacity:.5;cursor:default;}' +
       '.sk-wrap .sk-status{font-size:12.5px;margin-left:6px;} .sk-wrap .sk-status.greska{color:#b71216;font-weight:700;} .sk-wrap .sk-status.ok{color:#0b7a4b;font-weight:700;}' +
       '.sk-wrap .sk-posl{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:2px 10px;max-height:170px;overflow:auto;border:1px solid #c9d6d3;border-radius:8px;padding:8px;font-size:12.5px;font-weight:400;}' +
-      '.sk-wrap .sk-red{border:1px solid #e6d5bf;border-radius:10px;padding:10px 12px;margin-bottom:8px;background:#fdfaf6;}' +
+      '.sk-wrap .sk-red{border:1px solid var(--sk-linija);border-left:5px solid var(--sk-a);border-radius:10px;padding:11px 14px;margin-bottom:9px;background:var(--sk-meko);}' +
       '.sk-wrap .sk-naziv{font-weight:800;color:#0d2230;} .sk-wrap .sk-meta{font-size:12.5px;color:#4a5a57;margin:3px 0 6px;}' +
       '.sk-wrap .sk-cip{display:inline-block;font-size:11.5px;font-weight:700;border-radius:20px;padding:2px 10px;margin-left:6px;}' +
       '.sk-wrap .sk-cip.z{background:#e3f6ec;color:#0b7a4b;} .sk-wrap .sk-cip.n{background:#fff1dd;color:#9a5a00;} .sk-wrap .sk-cip.s{background:#eef2f1;color:#4a5a57;}' +
-      '.sk-wrap .sk-umetak{margin-top:8px;padding:10px;background:#f7efe5;border-radius:8px;}' +
+      '.sk-wrap .sk-umetak{margin-top:8px;padding:10px;background:var(--sk-meko2);border-radius:8px;}' +
+      '.sk-wrap .sk-oib-rez{margin:2px 0 12px;border-radius:10px;padding:10px 12px;font-size:13px;line-height:1.45;}' +
+      '.sk-wrap .sk-oib-rez.nema{background:#e3f6ec;border:1px solid #9ad7b8;color:#0b5a38;}' +
+      '.sk-wrap .sk-oib-rez.ima{background:#fff4e0;border:1px solid #f0c27a;color:#6b4300;}' +
+      '.sk-wrap .sk-oib-rez.info{background:#eef2f1;border:1px solid #c9d6d3;color:#3c4d4a;}' +
+      '.sk-wrap .sk-oib-stavka{background:#fff;border:1px solid var(--sk-linija);border-radius:8px;padding:8px 10px;margin-top:6px;}' +
+      '.sk-wrap .sk-oib-gdje{display:inline-block;font-size:11.5px;font-weight:800;border-radius:20px;padding:1px 10px;margin-left:6px;background:var(--sk-a);color:#fff;}' +
+      '.sk-wrap .sk-oib-gdje.kl{background:#1f9d57;} .sk-wrap .sk-oib-gdje.odb{background:#c0392b;} .sk-wrap .sk-oib-gdje.im{background:#5b6b68;}' +
       '</style>' +
-      '<div class="sk-kartica"><div class="sk-glava" id="sk-naslov-forme">📇 Unos starog klijenta</div><div class="sk-tijelo">' +
+      '<div class="sk-kartica"><div class="sk-glava"><span class="sk-znak">📇</span><div><span id="sk-naslov-forme">Unos starog klijenta</span><small>Klijenti koji su s nama radili prije ovog sustava</small></div></div><div class="sk-tijelo">' +
         '<p class="sk-hint">Za klijente koji su počeli raditi s nama prije ovog sustava. Upisuješ osnovne podatke — klijent se odmah pojavi u kartici <b>Klijenti</b> kao i svaki drugi (isti redak, ista polja). Ostale podatke klijent dopunjava našim upitnikom, kojeg mu šalješ odavde (i podsjetnike, koliko god puta treba). Trenutni cjenik, dokumenti i pristup kalkulatoru dodaju se poslije u kartici klijenta.</p>' +
+        '<div class="sk-odjeljak"><i>1</i>Osnovni podaci tvrtke</div>' +
         '<div class="sk-mreza">' +
           '<label class="sk-polje">Naziv klijenta *<input type="text" id="sk-naziv"></label>' +
           '<label class="sk-polje">OIB *<input type="text" id="sk-oib" maxlength="11" inputmode="numeric"></label>' +
@@ -11483,25 +12007,123 @@
           '<label class="sk-polje">Poštanski broj<input type="text" id="sk-posta" maxlength="10"></label>' +
           '<label class="sk-polje">Grad *<input type="text" id="sk-grad"></label>' +
           '<label class="sk-polje">Datum početka suradnje<input type="date" id="sk-datum"></label>' +
+        '</div>' +
+        '<div class="sk-odjeljak"><i>2</i>Kontakt osoba</div>' +
+        '<div class="sk-mreza">' +
           '<label class="sk-polje">Kontakt osoba<input type="text" id="sk-kontakt"></label>' +
           '<label class="sk-polje">Funkcija kontakt osobe<input type="text" id="sk-funkcija"></label>' +
           '<label class="sk-polje">Mobitel<input type="text" id="sk-telefon"></label>' +
           '<label class="sk-polje">E-mail adresa (na nju ide upitnik)<input type="email" id="sk-email"></label>' +
+          '</div>' +
+        '<div class="sk-odjeljak"><i>3</i>Pristupni podaci i napomena</div>' +
+        '<div class="sk-mreza">' +
           '<label class="sk-polje">TM broj<input type="text" id="sk-tm"></label>' +
           '<label class="sk-polje">OB korisničko ime<input type="text" id="sk-obuser" autocomplete="off"></label>' +
           '<label class="sk-polje">OB lozinka<input type="text" id="sk-obpass" autocomplete="off"></label>' +
           '<label class="sk-polje">Interna napomena<input type="text" id="sk-napomena"></label>' +
         '</div>' +
-        '<div style="font-size:12px;font-weight:700;color:#3c4d4a;margin-bottom:4px;">Nadležna poslovnica (može više njih)</div>' + poslHtml +
+        '<div id="sk-oib-sud" class="sk-oib-rez info" hidden></div>' +
+        '<div id="sk-oib-rez" class="sk-oib-rez" hidden></div>' +
+        '<div class="sk-odjeljak"><i>4</i>Nadležna poslovnica (može više njih)</div>' + poslHtml +
         '<div style="margin-top:12px;"><button type="button" class="sk-gumb" id="sk-spremi">💾 Spremi klijenta</button><button type="button" class="sk-gumb sek" id="sk-spremi-posalji">💾 Spremi i pošalji upitnik</button><button type="button" class="sk-gumb sek" id="sk-ocisti" hidden>✖ Odustani od uređivanja</button><span class="sk-status" id="sk-status"></span></div>' +
       '</div></div>' +
-      '<div class="sk-kartica"><div class="sk-glava">📋 Uneseni stari klijenti</div><div class="sk-tijelo"><div id="sk-lista"></div></div></div>';
+      '<div class="sk-kartica"><div class="sk-glava"><span class="sk-znak">📋</span><div>Uneseni stari klijenti<small>Slanje upitnika, podsjetnici i uređivanje</small></div></div><div class="sk-tijelo"><div id="sk-lista"></div></div></div>';
 
     var $s = function(id) { return wrap.querySelector('#' + id); };
     var status = function(t, v) { var el = $s('sk-status'); el.textContent = t || ''; el.className = 'sk-status' + (v ? ' ' + v : ''); };
     var urediRow = 0;
     var oibEl = $s('sk-oib');
-    oibEl.addEventListener('input', function() { this.value = this.value.replace(/\D/g, '').slice(0, 11); });
+    oibEl.addEventListener('input', function() { this.value = this.value.replace(/\D/g, '').slice(0, 11); oibPretrazi_(); oibSudreg_(); });
+
+    // OIB → sudski registar (isti dohvat kao u Otvorenim ponudama i Pismima): kad je OIB potpun i ispravan,
+    // naziv, adresa, poštanski broj i grad popune se sami — samo u prazna polja, ništa upisano se ne prepisuje.
+    var sudOibZadnji = '';
+    function oibSudreg_() {
+      var box = $s('sk-oib-sud'); if (!box) { return; }
+      var oib = oibEl.value;
+      var pokazi = function(t, klasa) { box.hidden = !t; box.className = 'sk-oib-rez ' + (klasa || 'info'); box.innerHTML = t; };
+      if (oib.length !== 11) { sudOibZadnji = ''; pokazi(''); return; }
+      if (!otvOibOk_(oib)) { pokazi('OIB nije ispravan (kontrolna znamenka) — provjeri znamenke.', 'ima'); return; }
+      if (oib === sudOibZadnji) { return; }
+      sudOibZadnji = oib; pokazi('Tražim u sudskom registru…');
+      gasCall({ action: 'adminOibPodaci', token: adminToken, oib: oib }).then(function(res) {
+        if (handleAuthError(res)) { return; }
+        if (oibEl.value !== oib) { return; }
+        if (res.status !== 'ok') { pokazi((res.code === 'nepodeseno' ? 'Sudski registar nije podešen (⚙ Postavke)' : esc(res.message || 'Pretraga nije uspjela')) + ' — upiši podatke ručno.', 'ima'); if (res.code === 'limit') { sudOibZadnji = ''; } return; }
+        if (!res.pronadjen) { pokazi('Nije u sudskom registru (obrt/OPG?) — upiši podatke ručno.'); return; }
+        var m = { naziv: 'sk-naziv', adresa: 'sk-adresa', pbr: 'sk-posta', grad: 'sk-grad' }, n = 0;
+        Object.keys(m).forEach(function(k) { var el = $s(m[k]); if (el && res[k] && !el.value.trim()) { el.value = res[k]; n++; } });
+        pokazi('✓ <b>Sudski registar:</b> ' + esc(res.naziv || '') + (res.adresa ? ', ' + esc(res.adresa) : '') + (res.pbr || res.grad ? ', ' + esc(res.pbr || '') + ' ' + esc(res.grad || '') : '') +
+          (res.aktivan === false ? ' <b>(⚠ nije aktivan)</b>' : '') + (n ? ' — popunjeno ' + n + ' praznih polja.' : ' — polja su već popunjena, ništa nije prepisano.'), 'nema');
+      }).catch(function() { sudOibZadnji = ''; pokazi('Nema veze s poslužiteljem — upiši podatke ručno.', 'ima'); });
+    }
+
+    // Pretraga po OIB-u (Sašin zahtjev 12.10.2026.): čim se upiše OIB (ili njegov
+    // početak, 6+ znamenki) odmah se pokaže što već imamo — u svim karticama
+    // (Zainteresirani, Ponude, Arhiva, Nisu zainteresirani, Klijenti, Otvorene ponude)
+    // i u Imeniku. Samo čitanje iz već učitanih podataka; ništa se ne mijenja.
+    function oibGdje_(e) {
+      var st = e.status;
+      if (st === 'Otvorena') { return { t: 'Otvorene ponude', k: '' }; }
+      if (st === 'Odbijenica') { return { t: 'Nisu zainteresirani', k: 'odb' }; }
+      if (jeOtvorenKlijent(e)) { return { t: fieldVal(e, STARI_TOKEN_) ? 'Klijenti (stari klijent)' : 'Klijenti', k: 'kl' }; }
+      if (jeArhiva(e)) { return { t: 'Arhiva', k: '' }; }
+      if (jePonuda(e)) { return { t: 'Ponude', k: '' }; }
+      return { t: 'Zainteresirani', k: '' };
+    }
+    function oibPronadji_(q) {
+      var rez = [];
+      (allEntries || []).forEach(function(e) {
+        if (urediRow && e.rowIndex === urediRow) { return; }
+        var o = String(fieldVal(e, 'OIB') || fieldVal(e, 'OIB poslovnog subjekta') || '').replace(/\D/g, '');
+        if (!o || o.indexOf(q) !== 0) { return; }
+        var g = oibGdje_(e);
+        rez.push({ oib: o, naziv: fieldVal(e, 'Naziv tvrtke') || fieldVal(e, 'Naziv poslovnog subjekta') || '(bez naziva)', gdje: g.t, klasa: g.k,
+          grad: fieldVal(e, 'Mjesto'), mail: fieldVal(e, 'Email kontakt osobe') || fieldVal(e, 'Stari klijent - mail za upitnik (admin)'), kontakt: fieldVal(e, 'Kontakt osoba'), tel: fieldVal(e, 'Mobitel'),
+          podaci: { naziv: fieldVal(e, 'Naziv tvrtke'), adresa: fieldVal(e, 'Adresa sjedišta'), posta: fieldVal(e, 'Poštanski broj'), grad: fieldVal(e, 'Mjesto'), kontakt: fieldVal(e, 'Kontakt osoba'),
+            funkcija: fieldVal(e, 'Funkcija kontakt osobe'), telefon: fieldVal(e, 'Mobitel'), email: fieldVal(e, 'Email kontakt osobe') } });
+      });
+      (allImenikEntries || []).forEach(function(e) {
+        var o = String(e.oib || '').replace(/\D/g, '');
+        if (!o || o.indexOf(q) !== 0) { return; }
+        var ime = ((e.ime || '') + ' ' + (e.prezime || '')).trim();
+        rez.push({ oib: o, naziv: ime || '(bez imena)', gdje: 'Imenik', klasa: 'im', grad: e.grad || '', mail: e.emailovi || '', kontakt: ime, tel: e.telefoni || '',
+          podaci: { grad: e.grad || '', kontakt: ime, funkcija: e.funkcije || '', telefon: e.telefoni || '', email: String(e.emailovi || '').split(/[,;\s]+/)[0] || '' } });
+      });
+      return rez;
+    }
+    function oibPretrazi_() {
+      var box = $s('sk-oib-rez'); if (!box) { return; }
+      var q = oibEl.value;
+      if (q.length < 6) { box.hidden = true; box.innerHTML = ''; return; }
+      var rez = oibPronadji_(q);
+      box.hidden = false;
+      if (!rez.length) {
+        box.className = 'sk-oib-rez ' + (q.length === 11 ? 'nema' : 'info');
+        box.innerHTML = q.length === 11 ? '✓ <b>Ovaj OIB još nemamo nigdje u sustavu</b> — slobodno nastavi s unosom.' : 'Nema podudaranja za „' + esc(q) + '…" — upiši cijeli OIB.';
+        return;
+      }
+      box.className = 'sk-oib-rez ima';
+      var tocni = q.length === 11;
+      var jeKlijent = rez.some(function(r) { return r.klasa === 'kl'; });
+      box.innerHTML = '<b>' + (tocni ? '⚠ Ovaj OIB već imamo (' + rez.length + (rez.length === 1 ? ' zapis' : ' zapisa') + ')' : 'Pronađeno ' + rez.length + (rez.length === 1 ? ' zapis' : ' zapisa') + ' koji počinju s ' + esc(q)) + '</b>' +
+        (tocni && jeKlijent ? '<div style="margin-top:2px;">Već je među klijentima — provjeri prije spremanja da ne napraviš duplikat.</div>' : '');
+      rez.slice(0, 8).forEach(function(r, i) {
+        var st = document.createElement('div'); st.className = 'sk-oib-stavka';
+        st.innerHTML = '<span class="sk-naziv">' + esc(r.naziv) + '</span><span class="sk-oib-gdje ' + r.klasa + '">' + esc(r.gdje) + '</span>' +
+          '<div class="sk-meta" style="margin-bottom:' + (tocni ? '6' : '0') + 'px;">OIB ' + esc(r.oib) + (r.grad ? ' · ' + esc(r.grad) : '') + (r.kontakt && r.kontakt !== r.naziv ? ' · ' + esc(r.kontakt) : '') + (r.tel ? ' · ' + esc(r.tel) : '') + (r.mail ? ' · ' + esc(r.mail) : '') + '</div>' +
+          (tocni ? '<button type="button" class="sk-gumb sek" data-pre="1">⤓ Preuzmi podatke u formu</button>' : '');
+        box.appendChild(st);
+        var gb = st.querySelector('[data-pre]');
+        if (gb) { gb.addEventListener('click', function() {
+          var m = { naziv: 'sk-naziv', adresa: 'sk-adresa', posta: 'sk-posta', grad: 'sk-grad', kontakt: 'sk-kontakt', funkcija: 'sk-funkcija', telefon: 'sk-telefon', email: 'sk-email' };
+          var n = 0;
+          Object.keys(m).forEach(function(k) { var el = $s(m[k]); if (el && !el.value.trim() && r.podaci[k]) { el.value = r.podaci[k]; n++; } });
+          status(n ? '✓ Preuzeto ' + n + ' polja (postojeći upisi nisu prepisani).' : 'Nema praznih polja za popuniti.', 'ok');
+        }); }
+      });
+      if (rez.length > 8) { var vise = document.createElement('div'); vise.className = 'sk-meta'; vise.textContent = '… i još ' + (rez.length - 8) + ' — upiši cijeli OIB za točan rezultat.'; box.appendChild(vise); }
+    }
 
     function citajFormu() {
       var posl = Array.prototype.filter.call(wrap.querySelectorAll('.sk-posl-cb'), function(c) { return c.checked; }).map(function(c) { return c.value; }).join(',');
@@ -11513,7 +12135,9 @@
       urediRow = 0;
       Array.prototype.forEach.call(wrap.querySelectorAll('.sk-tijelo input[type=text],.sk-tijelo input[type=email],.sk-tijelo input[type=date]'), function(i) { i.value = ''; });
       Array.prototype.forEach.call(wrap.querySelectorAll('.sk-posl-cb'), function(c) { c.checked = false; });
-      $s('sk-ocisti').hidden = true; $s('sk-naslov-forme').textContent = '📇 Unos starog klijenta'; $s('sk-spremi').textContent = '💾 Spremi klijenta';
+      $s('sk-ocisti').hidden = true; $s('sk-naslov-forme').textContent = 'Unos starog klijenta'; $s('sk-spremi').textContent = '💾 Spremi klijenta';
+      var rb = $s('sk-oib-rez'); if (rb) { rb.hidden = true; rb.innerHTML = ''; }
+      var sb = $s('sk-oib-sud'); if (sb) { sb.hidden = true; sb.innerHTML = ''; } sudOibZadnji = '';
     }
     $s('sk-ocisti').addEventListener('click', function() { ocistiFormu(); status(''); });
 
@@ -11560,7 +12184,7 @@
       var odabrane = String(f('Nadležna poslovnica (admin)') || '').split(',').map(function(x) { return x.trim(); });
       Array.prototype.forEach.call(wrap.querySelectorAll('.sk-posl-cb'), function(c) { c.checked = odabrane.indexOf(c.value) !== -1; });
       $s('sk-ocisti').hidden = false; $s('sk-naslov-forme').textContent = '✎ Uređivanje: ' + f('Naziv tvrtke'); $s('sk-spremi').textContent = '💾 Spremi izmjene';
-      status(''); wrap.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      status(''); oibPretrazi_(); wrap.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
 
     function crtajListu() {
@@ -17527,7 +18151,11 @@
       var dokCiljOkvir = wrap.querySelector('.af-dok-cilj');
 
       // Prekidač "Priloži mailu" (12.10.2026., Sašin zahtjev): sve ostaje na Google Driveu kao do sada; uključeni dokumenti dodatno idu kao PRILOG maila ponude.
-      var prilogHtml_ = function(d, atr) {
+      var prilogHtml_ = function(d, atr, zakljucano) {
+        if (zakljucano || (d && jeAnalitickiNaziv_(d.name))) {
+          if (d && d.prilog) { delete d.prilog; }
+          return '<span class="af-prilog-zaklj" title="Analitički cjenik je interni dokument — nikad se ne šalje klijentu (ni kao prilog, ni u mapi koju dijeliš).">🔒 Samo interno — ne ide klijentu</span>';
+        }
         var on = !!(d && d.prilog);
         return '<label class="af-prilog' + (on ? ' on' : '') + '" title="Uključeno: ovaj dokument se, osim na Google Driveu (link), šalje i kao PRILOG maila ponude."><input type="checkbox" class="af-prilog-ck" ' + (atr || '') + (on ? ' checked' : '') + '><span>📧 Priloži mailu</span></label>';
       };
@@ -18168,11 +18796,12 @@
           slotSadrzaj.innerHTML = '<div class="af-dok-fiksno-stavka" data-otvori="' + esc(dokUrlOtvori_(stavka)) + '">' +
             '<span class="af-dok-naziv" title="' + esc(stavka.name) + '">' + esc(stavka.name) + '</span>' +
             '<button type="button" class="af-dok-ukloni" title="Ukloni">✕</button>' +
-          '</div><div class="af-prilog-red">' + prilogHtml_(stavka, '') + '</div>';
-          slotSadrzaj.querySelector('.af-prilog-ck').addEventListener('change', function() {
+          '</div><div class="af-prilog-red">' + prilogHtml_(stavka, '', slotKljuc === 'analiticki') + '</div>';
+          var prilogCk_ = slotSadrzaj.querySelector('.af-prilog-ck');
+          if (prilogCk_) { prilogCk_.addEventListener('change', function() {
             prilogPrimijeni_(stavka, this);
             spremiFiksnoBezPripreme_();
-          });
+          }); }
           slotSadrzaj.querySelector('.af-dok-ukloni').addEventListener('click', function(ev) {
             ev.stopPropagation();
             dokFiksniPolja[slotKljuc] = null;
@@ -19337,9 +19966,9 @@
         // Dokumenti kojima je uključen prekidač "Priloži mailu" (12.10.2026.) — za potvrdu prije slanja i za poruke nakon slanja.
         var prilogNazivi_ = function() {
           var n = [];
-          ['ponudasuradnja', 'cjenikhr', 'analiticki'].forEach(function(k) { var d = dokFiksniPolja[k]; if (d && d.id && d.prilog) { n.push(d.name || k); } });
-          (dokumentiPonude || []).forEach(function(d) { if (d && d.prilog) { n.push(d.name); } });
-          (typeof dokumentiGotovi !== 'undefined' && dokumentiGotovi || []).forEach(function(d) { if (d && d.prilog && d.cilj !== 'interno') { n.push(d.name); } });
+          ['ponudasuradnja', 'cjenikhr'].forEach(function(k) { var d = dokFiksniPolja[k]; if (d && d.id && d.prilog && !jeAnalitickiNaziv_(d.name)) { n.push(d.name || k); } });
+          (dokumentiPonude || []).forEach(function(d) { if (d && d.prilog && !jeAnalitickiNaziv_(d.name)) { n.push(d.name); } });
+          (typeof dokumentiGotovi !== 'undefined' && dokumentiGotovi || []).forEach(function(d) { if (d && d.prilog && d.cilj !== 'interno' && !jeAnalitickiNaziv_(d.name)) { n.push(d.name); } });
           return n;
         };
         slanjeTestBtn.addEventListener('click', function(ev) {
@@ -22771,6 +23400,181 @@
       errEl.hidden = false;
     });
   }
+
+
+  // ===== KOMANDNA PLOČA (12.10.2026.) =====
+  // Kartice po grupama: postojeći gumbi (isti ID-evi i onclick) samo se premještaju u 4 grupe s naslovima.
+  function grupirajKartice_() {
+    var t = document.querySelector('#dashboard .tabs');
+    if (!t || t.getAttribute('data-grupirano')) { return; }
+    var G = [
+      ['Klijenti i ponude', ['interes', 'ponude', 'arhiva', 'odbijenica', 'ankete', 'novi-klijenti', 'stari']],
+      ['Komunikacija', ['pisma', 'otvorene', 'podsjetnici', 'imenik', 'faq']],
+      ['Logistika i alati', ['log-podaci', 'zone', 'kalkulator', 'jednokratni', 'gorivo', 'logisticki-centri']],
+      ['Problemi i raskidi', ['problemi', 'raskid', 'pogodci']]
+    ];
+    var frag = document.createDocumentFragment(), zadnjiRed = null, uGrupi = {};
+    G.forEach(function(g) {
+      var box = document.createElement('div'); box.className = 'kp-grupa';
+      var nas = document.createElement('div'); nas.className = 'kp-grupa-naslov'; nas.textContent = g[0];
+      var red = document.createElement('div'); red.className = 'kp-grupa-red';
+      g[1].forEach(function(id) { var b = document.getElementById('tab-btn-' + id); if (b) { red.appendChild(b); uGrupi[id] = true; } });
+      box.appendChild(nas); box.appendChild(red); frag.appendChild(box); zadnjiRed = red;
+    });
+    // sve što nije svrstano (npr. buduće kartice) ide u zadnju grupu — ništa ne smije nestati
+    Array.prototype.slice.call(t.querySelectorAll('.tab-btn')).forEach(function(b) { if (zadnjiRed) { zadnjiRed.appendChild(b); } });
+    while (t.firstChild) { t.removeChild(t.firstChild); }
+    t.appendChild(frag);
+    t.setAttribute('data-grupirano', '1');
+  }
+
+  function kpTjedanOd_(dana) { return Date.now() - dana * 86400000; }
+  function kpBroji_(lista, polje, dana) {
+    var od = kpTjedanOd_(dana), n = 0;
+    lista.forEach(function(e) { var d = parsirajDatumUnosa_(fieldVal(e, polje)); if (d && d.getTime() >= od) { n++; } });
+    return n;
+  }
+  function kpTrend_(id, n, rijec) {
+    var el = document.getElementById(id); if (!el) { return; }
+    if (n > 0) { el.textContent = '▲ +' + n + ' ' + rijec; el.className = 'kp-trend'; }
+    else { el.textContent = '= bez novih ' + rijec; el.className = 'kp-trend n'; }
+  }
+  function kpIdiNaKarticu_(tab) {
+    switchTab(tab);
+    var b = document.querySelector('#dashboard .tabs .tab-btn.active');
+    if (b) { window.scrollTo({ top: b.getBoundingClientRect().top + window.pageYOffset - 20, behavior: 'smooth' }); }
+  }
+  var kpStari_ = function(e) { return !!fieldVal(e, 'Stari klijent - token upitnika (admin)'); };
+
+  function osvjeziKomandnuPlocu_() {
+    try {
+      var sve = allEntries || [];
+      var interes = sve.filter(function(e) { return e.status === 'Interes'; });
+      var odbijenice = sve.filter(function(e) { return e.status === 'Odbijenica'; });
+      // --- trendovi na pločicama
+      kpTrend_('trend-pozitivno', kpBroji_(interes.filter(function(e) { return !kpStari_(e); }), 'Timestamp', 7), 'ovaj tjedan');
+      kpTrend_('trend-negativno', kpBroji_(odbijenice, 'Timestamp', 7), 'ovaj tjedan');
+      var klijenti = interes.filter(function(e) { return jeOtvorenKlijent(e); });
+      kpTrend_('trend-klijenti', kpBroji_(klijenti.filter(function(e) { return !kpStari_(e); }), 'Datum otvaranja klijenta u sustavu (admin)', 30), 'ovaj mjesec');
+
+      // --- "Danas čeka tebe"
+      var sada = Date.now(), istice = 0, isteklo = 0;
+      interes.forEach(function(e) {
+        if (jeOtvorenKlijent(e) || jeArhiva(e)) { return; }
+        if (ponudaStatusSazetak_(e) === 'na_cekanju') {
+          var ist = parsirajHrvatskiDatumSazetak_(fieldVal(e, 'Datum isteka ponude (admin)'));
+          if (ist && ist.getTime() - sada <= 48 * 3600000) { istice++; }
+        } else if (ponudaStatusSazetak_(e) === 'istekla') { isteklo++; }
+      });
+      var otvBez = sve.filter(function(e) { return e.status === 'Otvorena' && ponudaStatusSazetak_(e) === 'potvrdjena' && !fieldVal(e, 'Otvorena ponuda - datum popunjenog upitnika (admin)'); }).length;
+      var stariCeka = interes.filter(function(e) { return kpStari_(e) && !fieldVal(e, 'Stari klijent - datum popunjenog upitnika (admin)'); });
+      var stariNijePos = stariCeka.filter(function(e) { return !(parseInt(fieldVal(e, 'Stari klijent - broj slanja upitnika (admin)'), 10) > 0); }).length;
+      var stProb = document.getElementById('stat-problemi');
+      var probl = stProb ? (parseInt(stProb.textContent, 10) || 0) : 0;
+      var kar = [
+        { n: istice, kl: 'crv', l: 'ponude kojima rok ističe u 48 h' + (isteklo ? ' (+ ' + isteklo + ' već isteklo)' : ''), a: 'Otvori Ponude →', tab: 'Ponude' },
+        { n: otvBez, kl: 'nar', l: 'otvorene ponude prihvaćene, a podaci (upitnik) nisu stigli', a: 'Otvorene ponude →', tab: 'Otvorene' },
+        { n: stariCeka.length, kl: 'ind', l: 'stari klijenti čekaju upitnik' + (stariNijePos ? ' (' + stariNijePos + ' još nije poslano)' : ''), a: 'Unos starih klijenata →', tab: 'Stari' },
+        { n: probl, kl: 'zel', l: 'otvoreni problemi klijenata', a: 'Servis klijenata →', tab: 'Problemi' }
+      ];
+      var box = document.getElementById('kp-danas');
+      if (box) {
+        var ukupno = kar.reduce(function(z, k) { return z + k.n; }, 0);
+        box.innerHTML = '<h3>📌 Danas čeka tebe<small>klik na kućicu vodi na pravu karticu</small></h3><div class="kp-danas-mreza">' +
+          kar.map(function(k, i) { return '<div class="kp-d ' + k.kl + (k.n ? '' : ' nula') + '" data-i="' + i + '"><div class="n">' + k.n + '</div><div class="l">' + esc(k.l) + '</div><div class="a">' + esc(k.a) + '</div></div>'; }).join('') +
+          '</div>' + (ukupno === 0 ? '<div class="kp-danas-ok">✓ Sve je čisto — ništa ne čeka.</div>' : '');
+        Array.prototype.forEach.call(box.querySelectorAll('.kp-d'), function(el) { el.addEventListener('click', function() { kpIdiNaKarticu_(kar[parseInt(el.getAttribute('data-i'), 10)].tab); }); });
+      }
+
+      // --- lijevak: upit → ponuda → klijent (ručno uneseni stari klijenti se ne računaju — nisu prošli kroz lijevak)
+      var lj = document.getElementById('kp-lijevak');
+      if (lj) {
+        var upiti = interes.filter(function(e) { return !kpStari_(e); });
+        var uPonudi = upiti.filter(function(e) { return !!fieldVal(e, 'Datum prebacivanja u ponude (admin)'); });
+        var kl = uPonudi.filter(function(e) { return jeOtvorenKlijent(e); });
+        var p1 = upiti.length ? Math.round(uPonudi.length * 100 / upiti.length) : 0;
+        var p2 = uPonudi.length ? Math.round(kl.length * 100 / uPonudi.length) : 0;
+        var noviMj = kpBroji_(kl, 'Datum otvaranja klijenta u sustavu (admin)', 30);
+        lj.innerHTML = '<div class="kp-l-st"><div class="n">' + upiti.length + '</div><div class="l">Zainteresirani (svi upiti)</div></div><div class="kp-l-str">→ ' + p1 + '%</div>' +
+          '<div class="kp-l-st"><div class="n">' + uPonudi.length + '</div><div class="l">došlo do ponude</div></div><div class="kp-l-str">→ ' + p2 + '%</div>' +
+          '<div class="kp-l-st"><div class="n">' + kl.length + '</div><div class="l">postali klijenti</div></div>' +
+          '<div class="kp-l-st zadnji"><div class="n">' + noviMj + '</div><div class="l">novih klijenata (30 dana)</div></div>';
+      }
+    } catch (eKp) { /* komandna ploča je pomoćni prikaz — greška ne smije srušiti admin */ }
+  }
+
+  // Zajednička pretraga (naziv, OIB, mail, kontakt, grad…) preko svih kartica + Imenika; klik vodi na karticu.
+  function kpGdje_(e) {
+    if (e.status === 'Otvorena') { return { t: 'Otvorene ponude', tab: 'Otvorene', boja: '#0b7a7a' }; }
+    if (e.status === 'Odbijenica') { return { t: 'Nisu zainteresirani', tab: 'Odbijenica', boja: '#c0392b' }; }
+    if (jeOtvorenKlijent(e)) { return { t: kpStari_(e) ? 'Klijenti (stari)' : 'Klijenti', tab: 'NoviKlijenti', boja: '#1e9d57' }; }
+    if (jeArhiva(e)) { return { t: 'Arhiva', tab: 'Arhiva', boja: '#5b6b68' }; }
+    if (jePonuda(e)) { return { t: 'Ponude', tab: 'Ponude', boja: '#8e44ad' }; }
+    return { t: 'Zainteresirani', tab: 'Interes', boja: '#c99a00' };
+  }
+  function kpPretrazi_(q) {
+    q = String(q || '').trim().toLowerCase();
+    if (q.length < 2) { return []; }
+    var rez = [];
+    (allEntries || []).forEach(function(e) {
+      var naziv = fieldVal(e, 'Naziv tvrtke') || fieldVal(e, 'Naziv poslovnog subjekta');
+      var oib = fieldVal(e, 'OIB') || fieldVal(e, 'OIB poslovnog subjekta');
+      var polja = [naziv, oib, fieldVal(e, 'Email kontakt osobe'), fieldVal(e, 'Kontakt osoba'), fieldVal(e, 'Mjesto'), fieldVal(e, 'Broj'), fieldVal(e, 'Šifra ponude (admin)')];
+      if (polja.join(' | ').toLowerCase().indexOf(q) === -1) { return; }
+      var g = kpGdje_(e);
+      rez.push({ naziv: naziv || '(bez naziva)', meta: [oib, fieldVal(e, 'Mjesto'), fieldVal(e, 'Email kontakt osobe')].filter(Boolean).join(' · '), gdje: g.t, tab: g.tab, boja: g.boja, trazi: oib || naziv });
+    });
+    (allImenikEntries || []).forEach(function(e) {
+      var ime = ((e.ime || '') + ' ' + (e.prezime || '')).trim();
+      if ([ime, e.oib, e.grad, e.telefoni, e.emailovi].join(' | ').toLowerCase().indexOf(q) === -1) { return; }
+      rez.push({ naziv: ime || '(bez imena)', meta: [e.oib, e.grad, e.emailovi].filter(Boolean).join(' · '), gdje: 'Imenik', tab: 'Imenik', boja: '#5b6b68', trazi: ime });
+    });
+    return rez;
+  }
+  (function kpPokreniPretragu_() {
+    var inp = document.getElementById('kp-trazi'), box = document.getElementById('kp-trazi-rez');
+    if (!inp || !box) { return; }
+    var fokus = -1, rez = [];
+    var zatvori = function() { box.hidden = true; fokus = -1; };
+    var idi = function(r) {
+      zatvori(); inp.value = '';
+      if (searchFilterState[r.tab]) { searchFilterState[r.tab].q = r.trazi || ''; }
+      kpIdiNaKarticu_(r.tab);
+    };
+    var crtaj = function() {
+      var q = inp.value;
+      if (q.trim().length < 2) { zatvori(); return; }
+      rez = kpPretrazi_(q); fokus = -1; box.hidden = false;
+      if (!rez.length) { box.innerHTML = '<div class="kp-rez-prazno">Ništa nije pronađeno za „' + esc(q) + '“.</div>'; return; }
+      box.innerHTML = rez.slice(0, 12).map(function(r, i) {
+        return '<div class="kp-rez-red" data-i="' + i + '"><div><div class="kp-rez-naziv">' + esc(r.naziv) + '</div><div class="kp-rez-meta">' + esc(r.meta) + '</div></div><span class="kp-rez-gdje" style="background:' + r.boja + ';">' + esc(r.gdje) + '</span></div>';
+      }).join('') + (rez.length > 12 ? '<div class="kp-rez-prazno">… i još ' + (rez.length - 12) + ' — dopuni upit za točniji rezultat.</div>' : '');
+      Array.prototype.forEach.call(box.querySelectorAll('.kp-rez-red'), function(el) { el.addEventListener('click', function() { idi(rez[parseInt(el.getAttribute('data-i'), 10)]); }); });
+    };
+    var t = null;
+    inp.addEventListener('input', function() { clearTimeout(t); t = setTimeout(crtaj, 120); });
+    inp.addEventListener('keydown', function(ev) {
+      var redovi = box.querySelectorAll('.kp-rez-red');
+      if (ev.key === 'Escape') { zatvori(); inp.blur(); return; }
+      if (ev.key === 'ArrowDown' || ev.key === 'ArrowUp') {
+        if (!redovi.length) { return; }
+        ev.preventDefault(); fokus = (fokus + (ev.key === 'ArrowDown' ? 1 : -1) + redovi.length) % redovi.length;
+        Array.prototype.forEach.call(redovi, function(r, i) { r.classList.toggle('fokus', i === fokus); });
+      } else if (ev.key === 'Enter') {
+        var r0 = rez[fokus >= 0 ? fokus : 0]; if (r0) { ev.preventDefault(); idi(r0); }
+      }
+    });
+    document.addEventListener('click', function(ev) { if (!box.contains(ev.target) && ev.target !== inp) { zatvori(); } });
+    document.addEventListener('keydown', function(ev) {
+      if (ev.key !== '/' || ev.ctrlKey || ev.metaKey || ev.altKey) { return; }
+      var a = document.activeElement, tag = a && a.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || (a && a.isContentEditable)) { return; }
+      if (document.getElementById('dashboard').hidden) { return; }
+      ev.preventDefault(); inp.focus(); inp.select();
+    });
+  })();
+
+  try { grupirajKartice_(); } catch (eGr) {}
 
   // Ako je token već spremljen iz ranije sesije (sessionStorage), preskoči
   // login ekran i probaj izravno učitati podatke — ako je token u
