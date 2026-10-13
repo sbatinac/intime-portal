@@ -126,6 +126,7 @@
     <h1>In Time — Kalkulator cijena</h1>
     <div class="app-korisnik"><span id="appKorisnik"></span> <button type="button" class="btn btn-outline btn-small" id="odjavaGumb">Odjava</button></div>
   </div>
+  <div id="probniTraka" style="display:none;background:#ff8a00;color:#fff;font-weight:700;text-align:center;padding:9px 14px;font-size:14px;">🧪 PROBNI NAČIN — ovako kalkulator vidi primatelj. Ništa se ne bilježi i ne računa u praćenje.</div>
   <div id="panelMjesto"></div>
 </div>
 
@@ -175,6 +176,8 @@ function prikaziApp_() {
   document.getElementById('appView').style.display = 'block';
   if (!ipCache_) { osvjeziIp_(); }
   document.getElementById('appKorisnik').textContent = jedSesija_.naziv || '';
+  var pb = document.getElementById('probniTraka');
+  if (pb) { pb.style.display = jedSesija_.probni ? 'block' : 'none'; }
   var mjesto = document.getElementById('panelMjesto');
   mjesto.innerHTML = '';
   mjesto.appendChild(buildJedPanel_());
@@ -555,10 +558,23 @@ document.getElementById('odjavaGumb').addEventListener('click', function() {
 
 // ---------- Pokretanje: nastavi postojeću sesiju (isti tab) ako je još važeća ----------
 (function() {
+  // PROBNI NAČIN: admin otvara kalkulator iz kartice (#probni=<token>) — bez prijave, ništa se ne bilježi.
+  var m = /[#&]probni=([A-Za-z0-9]+)/.exec(location.hash || '');
+  if (m) {
+    try { history.replaceState(null, '', location.pathname + location.search); } catch (e) { /* nije kritično */ }
+    var pt = m[1];
+    gasCall({ action: 'jedToken', token: pt }).then(function(res) {
+      if (res && res.status === 'ok') {
+        jedSesija_ = { token: pt, probni: true, naziv: res.naziv, ime: res.ime, prezime: res.prezime, istek: res.istek, kalkulatori: res.kalkulatori || [] };
+        spremiSesiju_(jedSesija_); prikaziApp_();
+      } else { prikaziPrijavu_((res && res.message) || 'Probni pristup je istekao — pokreni ga ponovno iz admina.'); }
+    }).catch(function() { prikaziPrijavu_('Greška u komunikaciji s poslužiteljem.'); });
+    return;
+  }
   var s = ucitajSesiju_();
   if (!s || !s.token) { return; }
   gasCall({ action: 'jedToken', token: s.token }).then(function(res) {
-    if (res && res.status === 'ok') { s.kalkulatori = res.kalkulatori || s.kalkulatori; s.istek = res.istek || s.istek; jedSesija_ = s; prikaziApp_(); }
+    if (res && res.status === 'ok') { s.kalkulatori = res.kalkulatori || s.kalkulatori; s.istek = res.istek || s.istek; s.probni = !!res.probni; jedSesija_ = s; prikaziApp_(); }
     else { obrisiSesiju_(); }
   }).catch(function() { /* ostaje prijava */ });
 })();
