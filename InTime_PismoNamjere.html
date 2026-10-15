@@ -6966,6 +6966,8 @@
     }
     var _ponuda = !!window.PONUDA_TOKEN_;
     if (_ponuda) { payload.otvorena_token = window.PONUDA_TOKEN_; }
+    // admin popunjava umjesto klijenta (gumb "Popuni ja umjesto klijenta"): klijentu ne ide potvrdni mail
+    try { if (/[?&]bez_maila=1(&|$)/.test(location.search)) { payload.bez_potvrde_klijentu = 'Da'; } } catch (eBm) { /* nebitno */ }
     var _submitBtnFinal = form.querySelector('button[type="submit"]');
     if (_submitBtnFinal) { _submitBtnFinal.disabled = true; _submitBtnFinal.textContent = 'Šaljem...'; }
     var _broj = '';

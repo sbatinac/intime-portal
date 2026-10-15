@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="hr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>In Time d.o.o. — Potvrda primitka obavijesti</title>
+<style>
+
+  /* Stranica za potvrdu primitka maila o reviziji uvjeta (v237). Isti izgled kao InTime_PotvrdaPonude.html. */
+
+  :root{
+    --purple:#229891;
+    --purple-dark:#135450;
+    --graphite:#131313;
+    --grey:#6b6b6b;
+    --line:#e2e6ea;
+    --bg:#f7fafb;
+    --red:#c0392b;
+    --green:#1e8449;
+    --amber:#8a6d00;
+    --yellow:#e0b400;
+  }
+
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:'Segoe UI', Arial, sans-serif;
+    color:var(--graphite);
+    background:var(--bg);
+    line-height:1.5;
+  }
+  [hidden]{display:none !important;}
+
+  .screen{
+    min-height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:24px;
+  }
+  .card{
+    max-width:460px;
+    width:100%;
+    background:#fff;
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:32px;
+    box-shadow:0 8px 24px rgba(0,0,0,.06);
+  }
+  .card h1{font-size:21px;margin:0 0 6px;color:var(--purple-dark);}
+  .card p.hint{font-size:13.5px;color:var(--grey);margin:6px 0 18px;line-height:1.55;}
+  .card p.hint strong{color:var(--graphite);}
+
+  label{
+    display:block;
+    font-size:13px;
+    font-weight:700;
+    color:var(--graphite);
+    margin:14px 0 5px;
+  }
+  input[type=text]{
+    width:100%;
+    padding:11px 12px;
+    border:1px solid var(--line);
+    border-radius:6px;
+    font-size:14px;
+    font-family:inherit;
+    color:var(--graphite);
+  }
+  .checkbox-row{
+    display:flex;
+    align-items:flex-start;
+    gap:9px;
+    margin:16px 0 4px;
+    font-size:13px;
+    color:var(--graphite);
+    line-height:1.5;
+  }
+  .checkbox-row input[type=checkbox]{margin-top:3px;flex-shrink:0;}
+
+  button{font-family:inherit;cursor:pointer;}
+  .btn{
+    width:100%;
+    padding:12px 22px;
+    border-radius:6px;
+    border:1px solid var(--purple);
+    background:var(--purple);
+    color:#fff;
+    font-size:14.5px;
+    font-weight:700;
+    margin-top:18px;
+  }
+  .btn:hover{background:var(--purple-dark);border-color:var(--purple-dark);}
+  .btn:disabled{background:#a9c9c7;border-color:#a9c9c7;cursor:not-allowed;}
+
+  .form-error{color:var(--red);font-size:13px;margin:10px 0 0;}
+  .form-ok{color:var(--green);font-size:13px;margin:10px 0 0;}
+
+  .status-icon{font-size:34px;line-height:1;margin-bottom:10px;}
+  .status-icon.ok{color:var(--green);}
+  .status-icon.info{color:var(--purple);}
+  .status-icon.err{color:var(--red);}
+
+  .company-box{
+    background:#eef7f6;
+    border:1px solid #bfe3e0;
+    border-left:4px solid var(--purple);
+    border-radius:8px;
+    padding:12px 14px;
+    font-size:14px;
+    color:#0f4d49;
+    margin:0 0 6px;
+  }
+  .company-box strong{display:block;font-size:15.5px;margin-bottom:2px;}
+
+  /* Banner slika na vrhu kartice — Sašin izričit zahtjev (20.9.2026.,
+     dvadeset i treći krug: "ugraditi sliku gore"), poslana slika
+     "VERIFIKACIJA PONUDE" (In Time Express branding). Negativna margina
+     razvlači sliku preko cijele širine kartice (koja inače ima padding
+     32px), pa slika izlazi "do ruba" s istim zaobljenim gornjim uglovima
+     kao kartica sama. */
+  .card-banner{
+    display:block;
+    width:calc(100% + 64px);
+    margin:-32px -32px 20px -32px;
+    border-radius:12px 12px 0 0;
+  }
+
+  /* Odbijanje ponude — Sašin izričit zahtjev (20.9.2026., dvadeset i treći
+     krug: "možemo li staviti dugme za odbijanje ponude"). Gumb je namjerno
+     manje upadljiv od "Potvrđujem ponudu" (tekstualna poveznica, ne puni
+     gumb) dok se ne otvori — odbijanje treba biti moguće, ali ne jednako
+     "ponuđeno" kao prihvaćanje. */
+  .reject-row{margin-top:16px;text-align:center;}
+  .link-btn{
+    background:none;
+    border:none;
+    color:var(--grey);
+    font-size:13px;
+    text-decoration:underline;
+    padding:6px 4px;
+  }
+  .link-btn:hover{color:var(--red);}
+  textarea{
+    width:100%;
+    padding:11px 12px;
+    border:1px solid var(--line);
+    border-radius:6px;
+    font-size:14px;
+    font-family:inherit;
+    color:var(--graphite);
+    resize:vertical;
+  }
+  .reject-actions{display:flex;gap:10px;margin-top:14px;}
+  .btn-outline-red{
+    flex:1;
+    padding:11px 14px;
+    border-radius:6px;
+    border:1px solid var(--red);
+    background:#fff;
+    color:var(--red);
+    font-size:13.5px;
+    font-weight:700;
+  }
+  .btn-outline-red:hover{background:var(--red);color:#fff;}
+  .btn-outline-red:disabled{opacity:.5;cursor:not-allowed;}
+  .btn-text{
+    background:none;
+    border:none;
+    color:var(--grey);
+    font-size:13px;
+    text-decoration:underline;
+    padding:11px 8px;
+  }
+
+  /* Jedinstveni obrazac prihvaćanja/odbijanja (23.9.2026., Sašin izričit
+     zahtjev: "prekompliciran je... lijevo Prihvati ponudu, desno crveno
+     Odbij ponudu... dolje gumb Potvrdi svoju odluku... i ona da ga još
+     jednom pita da li ste sigurni"). Dva velika gumba biraju NAMJERU
+     (ne šalju ništa sami) — vizualno se "uključi" (.selected) onaj koji je
+     klijent odabrao, kao velike kartice-prekidači, ugodnije za dodir na
+     mobitelu od malih radio-kružića. */
+  .decision-row{display:flex;gap:10px;margin:20px 0 6px;}
+  .decision-btn{
+    flex:1;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:5px;
+    padding:16px 10px;
+    border-radius:9px;
+    border:2px solid var(--line);
+    background:#fff;
+    font-size:13.5px;
+    font-weight:700;
+    color:var(--graphite);
+    transition:border-color .15s, background-color .15s, box-shadow .15s;
+  }
+  .decision-icon{font-size:23px;line-height:1;}
+  .decision-accept .decision-icon{color:var(--green);}
+  .decision-accept:hover{border-color:var(--green);background:#eef8f0;}
+  .decision-accept.selected{border-color:var(--green);background:#e3f5e7;box-shadow:0 0 0 1px var(--green) inset;color:var(--green);}
+  .decision-reject .decision-icon{color:var(--red);}
+  .decision-reject:hover{border-color:var(--red);background:#fdecea;}
+  .decision-reject.selected{border-color:var(--red);background:#fbe1de;box-shadow:0 0 0 1px var(--red) inset;color:var(--red);}
+
+  .btn-green{background:var(--green);border-color:var(--green);}
+  .btn-green:hover{background:#166638;border-color:#166638;}
+  .btn-red{background:var(--red);border-color:var(--red);}
+  .btn-red:hover{background:#9c3023;border-color:#9c3023;}
+  .btn-back-text{
+    display:block;
+    width:100%;
+    text-align:center;
+    background:none;
+    border:none;
+    color:var(--grey);
+    font-size:13px;
+    text-decoration:underline;
+    padding:12px 8px 0;
+  }
+  #confirm-step{text-align:center;}
+  #confirm-step .hint{text-align:left;}
+
+  #razlog-block{margin-top:6px;}
+  #razlog-block > label{margin:16px 0 6px;}
+  #razlog-checkbox-list .checkbox-row{margin:0 0 8px;}
+  #razlog-ostalo-tekst{
+    width:100%;
+    padding:9px 11px;
+    border:1px solid var(--line);
+    border-radius:6px;
+    font-size:13.5px;
+    font-family:inherit;
+    color:var(--graphite);
+    margin:2px 0 4px 27px;
+    width:calc(100% - 27px);
+  }
+
+  /* Ocjena voditelja ključnih kupaca kod prihvaćanja ponude (23.9.2026.,
+     Sašin izričit zahtjev: "precrtano" iz InTime_Anketa.html — isti klizač
+     0-10, isti vizualni obrazac, ali BEZ slobodnog komentara, samo skala. */
+  #ocjena-blok{margin-top:6px;}
+  #ocjena-blok > label{margin:16px 0 2px;}
+  .ocjena-pitanje{margin-top:16px;padding-top:14px;border-top:1px solid var(--line);}
+  .ocjena-pitanje:first-of-type{margin-top:10px;padding-top:0;border-top:none;}
+  .ocjena-pitanje-tekst{font-size:13.5px;font-weight:700;color:var(--graphite);}
+  .impact-slider-wrap{margin-top:10px;}
+  input[type=range].impact-slider-input{
+    -webkit-appearance:none;
+    appearance:none;
+    width:100%;
+    height:6px;
+    border-radius:3px;
+    background:linear-gradient(to right, var(--red) 0%, var(--yellow) 50%, var(--green) 100%);
+    outline:none;
+    cursor:pointer;
+    margin:0;
+  }
+  input[type=range].impact-slider-input::-webkit-slider-thumb{
+    -webkit-appearance:none;
+    width:18px;
+    height:18px;
+    border-radius:50%;
+    background:var(--purple-dark);
+    border:2px solid #fff;
+    box-shadow:0 0 0 1px var(--purple-dark);
+    cursor:pointer;
+  }
+  input[type=range].impact-slider-input::-moz-range-thumb{
+    width:18px;
+    height:18px;
+    border-radius:50%;
+    background:var(--purple-dark);
+    border:2px solid #fff;
+    box-shadow:0 0 0 1px var(--purple-dark);
+    cursor:pointer;
+  }
+  input[type=range].impact-slider-input::-moz-range-track{
+    height:6px;
+    border-radius:3px;
+    background:linear-gradient(to right, var(--red) 0%, var(--yellow) 50%, var(--green) 100%);
+  }
+  .ocjena-slider-untouched{opacity:.5;}
+  .impact-slider-labels{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-top:8px;
+    gap:8px;
+  }
+  .impact-slider-labels .scale-end{font-size:11.5px;color:var(--grey);max-width:120px;}
+  .impact-slider-value{font-size:11.5px;color:var(--grey);font-weight:400;white-space:nowrap;}
+
+  .site-footer{
+    max-width:900px;
+    margin:0 auto;
+    padding:0 24px 30px;
+    text-align:center;
+    font-size:12px;
+    color:var(--grey);
+    line-height:1.6;
+  }
+
+</style>
+</head>
+<body>
+
+<!-- NAPOMENA ZA SAŠU: stavi ovu datoteku na GitHub Pages u isti folder kao InTime_PotvrdaPonude.html
+     (adresa mora odgovarati REV_POTVRDA_STRANICA_URL_ u Apps Scriptu). Poveznica u mailu: ?token=… .
+     Klijent upisuje OIB tvrtke + ime i prezime + funkciju → "Potvrdi primitak". To je potvrda PRIMITKA obavijesti, ne prihvaćanje. -->
+
+<div id="loading-screen" class="screen">
+  <div class="card" style="text-align:center;"><p class="hint" style="margin:0;">Učitavanje…</p></div>
+</div>
+
+<div id="error-screen" class="screen" hidden>
+  <div class="card">
+    <div class="status-icon err">⚠</div>
+    <h1>Poveznica nije ispravna</h1>
+    <p class="hint" id="error-message">Ova poveznica nije ispravna ili je nepotpuna. Kontaktirajte nas na <a href="mailto:sbatinac.intime@gmail.com">sbatinac.intime@gmail.com</a>.</p>
+  </div>
+</div>
+
+<div id="already-screen" class="screen" hidden>
+  <div class="card">
+    <img class="card-banner rev-banner" src="" alt="In Time Express" hidden>
+    <div class="status-icon ok">✓</div>
+    <h1>Primitak je već potvrđen</h1>
+    <p class="hint">Primitak obavijesti o reviziji uvjeta za <strong id="already-naziv"></strong> potvrđen je <strong id="already-datum"></strong>. Nije potrebno ništa dodatno učiniti.</p>
+  </div>
+</div>
+
+<div id="form-screen" class="screen" hidden>
+  <div class="card">
+    <img class="card-banner rev-banner" src="" alt="In Time Express" hidden>
+    <h1>Potvrda primitka obavijesti</h1>
+    <div class="company-box">
+      <strong id="form-naziv"></strong>
+      Obavijest o reviziji uvjeta suradnje br. <span id="form-sifra"></span> — novi uvjeti primjenjuju se od <span id="form-datum"></span>
+    </div>
+    <p class="hint">OIB tvrtke potvrđuje da je BAŠ ova tvrtka primila obavijest; ime, prezime i funkcija bilježe se kao trag o tome tko je konkretno potvrdio primitak.</p>
+    <form id="potvrda-form" onsubmit="return false;">
+      <label for="pr-oib">OIB tvrtke</label>
+      <input type="text" id="pr-oib" inputmode="numeric" maxlength="11" placeholder="11 znamenki" autocomplete="off" required>
+      <label for="pr-ime">Ime i prezime</label>
+      <input type="text" id="pr-ime" placeholder="npr. Ivan Ivić" autocomplete="off" required>
+      <label for="pr-funkcija">Funkcija / pozicija</label>
+      <input type="text" id="pr-funkcija" placeholder="npr. direktor, opunomoćenik" autocomplete="off" required>
+      <label class="checkbox-row" for="pr-ovlasten">
+        <input type="checkbox" id="pr-ovlasten" required>
+        <span>Potvrđujem da sam ovlašten/a potvrditi primitak u ime gore navedene tvrtke.</span>
+      </label>
+      <p class="form-error" id="pr-greska" hidden></p>
+      <button type="submit" class="btn btn-green" id="pr-gumb">Potvrdi primitak</button>
+    </form>
+  </div>
+</div>
+
+<div id="success-screen" class="screen" hidden>
+  <div class="card">
+    <img class="card-banner rev-banner" src="" alt="In Time Express" hidden>
+    <div class="status-icon ok">✓</div>
+    <h1>Hvala, primitak je potvrđen</h1>
+    <p class="hint">Potvrda primitka obavijesti o reviziji uvjeta za <strong id="ok-naziv"></strong> zabilježena je <strong id="ok-datum"></strong>.</p>
+    <p class="hint" style="margin-top:14px;">Za sva pitanja javite nam se na <a href="mailto:sbatinac.intime@gmail.com">sbatinac.intime@gmail.com</a>.</p>
+  </div>
+</div>
+
+<footer class="site-footer">
+  <div>Izradio Saša Batinac. Sva prava pridržana.</div>
+  <div>Saša Batinac univ. spec. oec. — voditelj ključnih klijenata — In Time d.o.o. — regija istok</div>
+</footer>
+
+<script>
+  var GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbz73zkx72GhrDZ-t3CamF5wuz-9V7Uxe5z9IkFxHA8F5FBlrIlc7zMUd4_EHTILD9FTAw/exec";
+  function gasCall(payload) {
+    return fetch(GAS_WEB_APP_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(payload) }).then(function(res) { return res.json(); });
+  }
+  // IP adresa je samo dodatni trag — ako dohvat ne uspije, potvrda se svejedno šalje.
+  function dohvatiIP_() {
+    var kontroler = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+    var timeoutId = kontroler ? setTimeout(function() { kontroler.abort(); }, 3000) : null;
+    return fetch('https://api.ipify.org?format=json', kontroler ? { signal: kontroler.signal } : {})
+      .then(function(res) { return res.json(); })
+      .then(function(data) { return (data && data.ip) ? String(data.ip) : ''; })
+      .catch(function() { return ''; })
+      .finally(function() { if (timeoutId) { clearTimeout(timeoutId); } });
+  }
+  function showScreen(id) {
+    ['loading-screen', 'error-screen', 'already-screen', 'form-screen', 'success-screen'].forEach(function(s) { document.getElementById(s).hidden = (s !== id); });
+  }
+  function postaviBanner_(url) {
+    Array.prototype.forEach.call(document.querySelectorAll('.rev-banner'), function(img) { if (url) { img.src = url; img.hidden = false; } });
+  }
+  var trenutniToken = null, nazivTvrtke = '';
+  (function init() {
+    var token = new URLSearchParams(window.location.search).get('token');
+    if (!token) { showScreen('error-screen'); return; }
+    trenutniToken = token;
+    gasCall({ action: 'revizijaPotvrdaInfo', token: token }).then(function(res) {
+      if (res.status !== 'ok') { document.getElementById('error-message').textContent = res.message || 'Ova poveznica nije ispravna ili je istekla.'; showScreen('error-screen'); return; }
+      nazivTvrtke = res.naziv || '';
+      postaviBanner_(res.banner);
+      if (res.vecPotvrdjeno) {
+        document.getElementById('already-naziv').textContent = nazivTvrtke;
+        document.getElementById('already-datum').textContent = res.datumPotvrde || '';
+        showScreen('already-screen'); return;
+      }
+      document.getElementById('form-naziv').textContent = nazivTvrtke;
+      document.getElementById('form-sifra').textContent = res.sifra || '';
+      document.getElementById('form-datum').textContent = res.vrijediOd || '';
+      showScreen('form-screen');
+    }).catch(function() {
+      document.getElementById('error-message').textContent = 'Provjera poveznice nije uspjela. Provjerite internetsku vezu i pokušajte ponovno.';
+      showScreen('error-screen');
+    });
+  })();
+  document.getElementById('potvrda-form').addEventListener('submit', function() {
+    var g = document.getElementById('pr-greska'), btn = document.getElementById('pr-gumb');
+    g.hidden = true;
+    var oib = document.getElementById('pr-oib').value.trim(), ime = document.getElementById('pr-ime').value.trim(), fun = document.getElementById('pr-funkcija').value.trim();
+    if (!/^\d{11}$/.test(oib)) { g.textContent = 'OIB mora imati točno 11 znamenki.'; g.hidden = false; return; }
+    if (!ime || !fun) { g.textContent = 'Ime i prezime te funkcija su obavezni.'; g.hidden = false; return; }
+    if (!document.getElementById('pr-ovlasten').checked) { g.textContent = 'Potrebno je potvrditi da ste ovlašteni.'; g.hidden = false; return; }
+    btn.disabled = true; btn.textContent = 'Šaljem…';
+    dohvatiIP_().then(function(ip) {
+      return gasCall({ action: 'revizijaPotvrdiPrimitak', token: trenutniToken, oib: oib, imeOsobe: ime, funkcijaOsobe: fun, ipAdresa: ip });
+    }).then(function(res) {
+      btn.disabled = false; btn.textContent = 'Potvrdi primitak';
+      if (res.status === 'ok') { document.getElementById('ok-naziv').textContent = nazivTvrtke; document.getElementById('ok-datum').textContent = res.datumPotvrde || ''; showScreen('success-screen'); return; }
+      if (res.vecPotvrdjeno) { document.getElementById('already-naziv').textContent = nazivTvrtke; document.getElementById('already-datum').textContent = res.datumPotvrde || ''; showScreen('already-screen'); return; }
+      g.textContent = res.message || 'Potvrda nije uspjela. Pokušajte ponovno.'; g.hidden = false;
+    }).catch(function() { btn.disabled = false; btn.textContent = 'Potvrdi primitak'; g.textContent = 'Slanje nije uspjelo. Provjerite internetsku vezu i pokušajte ponovno.'; g.hidden = false; });
+  });
+</script>
+</body>
+</html>

@@ -5068,6 +5068,19 @@ function ucitajJednokratniIzUrlaAkoPostoji_(){
 if(!ucitajTestniKalkulatorIzUrlaAkoPostoji_() && !ucitajJednokratniIzUrlaAkoPostoji_() && !ucitajAdminPrijavuIzUrlaAkoPostoji_() && !ucitajKolegaPrijavuIzUrlaAkoPostoji_()){
   ucitajPrijavuIzUrlaAkoPostoji_();
 }
+
+// v242: Admin (tab „Cjenici“, isti origin, ugrađeno u iframe) učitava cjenik odabranog klijenta u ovaj kalkulator — isto kao kad se klijent prijavi.
+window.adminUcitajCjenikKlijenta = function(cjenik, postavke, naziv, nazivDatoteke){
+  if(!Array.isArray(cjenik) || !cjenik.length){ return false; }
+  korisnikUcitaoVlastitiCjenik_ = true;
+  CURRENT_CJENIK = cjenik.slice();
+  renderCjenikTable(CURRENT_CJENIK);
+  primijeniKalkulatorPostavke_(postavke || {});
+  scheduleLiveIzracunaj();
+  var st = document.getElementById('cjenikStatus');
+  if(st){ st.textContent = 'Učitan cjenik klijenta: ' + (naziv || '') + (nazivDatoteke ? ' (' + nazivDatoteke + ')' : '') + ' — ' + CURRENT_CJENIK.length + ' kategorija težine × 3 zone.'; }
+  return true;
+};
 </script>
 
 </body>
