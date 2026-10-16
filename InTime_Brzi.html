@@ -278,6 +278,7 @@
         <label for="pnNaziv">Naziv firme *</label><input id="pnNaziv" type="text" autocomplete="off">
         <label for="pnEmail">E-mail * (kamo ide pismo)</label><input id="pnEmail" type="email" inputmode="email" autocomplete="off" autocapitalize="off">
         <label for="pnOsoba">Ime i prezime primatelja</label><input id="pnOsoba" type="text" autocomplete="off">
+        <label for="pnIzvor">📍 Izvor — kako si došao do firme</label><select id="pnIzvor"><option value="">— nije upisano —</option></select>
         <label for="pnAdresa">Adresa (ulica i kućni broj)</label><input id="pnAdresa" type="text" maxlength="200" autocomplete="off">
         <div class="redak2"><div><label for="pnPosta">Poštanski broj</label><input id="pnPosta" type="text" inputmode="numeric" maxlength="5" autocomplete="off"></div>
         <div><label for="pnGrad">Grad</label><input id="pnGrad" type="text" autocomplete="off"></div></div>
@@ -527,7 +528,17 @@
 
   // ---------- PISMO NAMJERE (pojedinačno, predložak potvrđen u adminu) ----------
   var pnSlanje = false, pnSpremno = false;
+  // Izvor kontakta (16.10.2026.): popis dolazi s poslužitelja (isti kao u adminu)
+  function pnIzvoriUcitaj(){
+    api({ action:'brziIzvoriKontakta', token: token }).then(function(res){
+      if (!res || res.status !== 'ok' || !res.izvori) { return; }
+      var sel = $('pnIzvor'), v = sel.value;
+      sel.innerHTML = '<option value="">— nije upisano —</option>' + res.izvori.map(function(x){ return '<option value="' + String(x).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;') + '">' + String(x).replace(/&/g,'&amp;').replace(/</g,'&lt;') + '</option>'; }).join('');
+      sel.value = v;
+    }).catch(function(){});
+  }
   function ucitajPismoStanje(){
+    pnIzvoriUcitaj();
     api({ action:'brziPismoStanje', token: token }).then(function(res){
       if (res.status !== 'ok') { $('pnStanje').textContent = res.message || 'Stanje nije učitano.'; return; }
       pnSpremno = !!res.spremno;
@@ -562,17 +573,17 @@
   $('pnOib').addEventListener('input', pnOibTrazi);
   function posaljiPismo(potvrdiDup){
     if (pnSlanje) { return; }
-    var p = { oib: $('pnOib').value.replace(/\s+/g, ''), naziv: $('pnNaziv').value.trim(), email: $('pnEmail').value.trim(), osoba: $('pnOsoba').value.trim(), adresa: $('pnAdresa').value.trim(), posta: $('pnPosta').value.trim(), grad: $('pnGrad').value.trim() };
+    var p = { oib: $('pnOib').value.replace(/\s+/g, ''), naziv: $('pnNaziv').value.trim(), email: $('pnEmail').value.trim(), osoba: $('pnOsoba').value.trim(), adresa: $('pnAdresa').value.trim(), posta: $('pnPosta').value.trim(), grad: $('pnGrad').value.trim(), izvorKontakta: $('pnIzvor').value };
     if (!/^\d{11}$/.test(p.oib)) { $('pnPoruka').textContent = 'OIB je obavezan i mora imati 11 znamenki.'; return; }
     if (!p.naziv) { $('pnPoruka').textContent = 'Upiši naziv firme.'; return; }
     if (!/^[^\s@,;]+@[^\s@,;]+\.[^\s@,;]{2,}$/.test(p.email)) { $('pnPoruka').textContent = 'Upiši ispravnu e-mail adresu.'; return; }
     if (potvrdiDup !== true && !confirm('Poslati pismo namjere na ' + p.email + '?')) { return; }
     pnSlanje = true; $('gumbPismoSalji').disabled = true; $('pnPoruka').textContent = 'Šaljem…';
-    api({ action:'brziPismoPosalji', token: token, oib: p.oib, naziv: p.naziv, email: p.email, grad: p.grad, osoba: p.osoba, posta: p.posta, adresa: p.adresa, potvrdiDuplikat: potvrdiDup === true }).then(function(res){
+    api({ action:'brziPismoPosalji', token: token, oib: p.oib, naziv: p.naziv, email: p.email, grad: p.grad, osoba: p.osoba, posta: p.posta, adresa: p.adresa, izvorKontakta: p.izvorKontakta, potvrdiDuplikat: potvrdiDup === true }).then(function(res){
       pnSlanje = false; $('gumbPismoSalji').disabled = !pnSpremno;
       if (res.status === 'ok') {
         $('pnPoruka').textContent = '✅ Poslano na ' + p.email + '.';
-        ['pnOib','pnNaziv','pnEmail','pnOsoba','pnAdresa','pnPosta','pnGrad'].forEach(function(id){ $(id).value = ''; }); $('pnOibStatus').textContent = ''; pnOibZadnji = '';
+        ['pnOib','pnNaziv','pnEmail','pnOsoba','pnAdresa','pnPosta','pnGrad','pnIzvor'].forEach(function(id){ $(id).value = ''; }); $('pnOibStatus').textContent = ''; pnOibZadnji = '';
         ucitajPismoStanje();
       } else if (res.status === 'duplikat') {
         $('pnPoruka').textContent = '';

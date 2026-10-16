@@ -2651,7 +2651,6 @@
               <div class="ostalo-line ostalo-hidden"><input type="text" name="sadrzaj_posiljki_ostalo" placeholder="Upišite ako ste odabrali Ostalo"></div>
             </div>
           </div>
-          <p class="sec-hint mikro-hint" id="sadrzaj-posiljki-msdrop-mikro-hint" style="display:none;">Za mikro poduzeća ovo pitanje nije obavezno — no preporučujemo da ga ipak popunite ako imate informaciju, pomaže nam pripremiti precizniju ponudu.</p>
 
           <label>Ukratko definirajte i opišite proizvode i/ili pošiljke koje želite slati/distribuirati putem In Time d.o.o. logističke mreže *</label>
           <textarea name="opis_proizvoda" required placeholder="Npr. odjeća, obuća, elektronika, knjige, kozmetika, parfemi, igračke, prehrambeni proizvodi, alati, autodijelovi, uredski materijal..."></textarea>
@@ -2674,7 +2673,6 @@
             <label><input type="checkbox" name="karakteristika" value="Ostalo" onchange="toggleChoiceOstalo(this)"> Ostalo</label>
             <div class="ostalo-line ostalo-hidden"><input type="text" name="karakteristika_ostalo" placeholder="Upišite ako ste odabrali Ostalo"></div>
           </div>
-          <p class="sec-hint mikro-hint" id="karakteristika-group-mikro-hint" style="display:none;">Za mikro poduzeća ovo pitanje nije obavezno — no preporučujemo da ga ipak popunite ako imate informaciju, pomaže nam pripremiti precizniju ponudu.</p>
 
           <label>Definirajte prosječnu težinu Vaših pošiljaka *</label>
           <div class="choice-group" data-required-group="Definicija težine pošiljaka">
@@ -5667,9 +5665,9 @@
   // ovdje samo dodavati/uklanjati taj atribut — ne treba dirati logiku
   // provjere.
   var MIKRO_RELAX_GROUPS = [
-    {id: 'dodatne-usluge-group', label: 'Dodatne usluge'},
-    {id: 'sadrzaj-posiljki-msdrop', label: 'Sadržaj pošiljki'},
-    {id: 'karakteristika-group', label: 'Karakteristike pošiljaka'}
+    {id: 'dodatne-usluge-group', label: 'Dodatne usluge'}
+    // 15.10.2026. (Sašin zahtjev): "Sadržaj pošiljki" (kategorija proizvoda) i "Karakteristike pošiljaka"
+    // više NISU izuzetak za mikro poduzeća — obavezni su za SVE veličine poduzeća.
   ];
   var MIKRO_VRIJEDNOST = 'Mikro poduzeća (manje od 10 zaposlenih)';
   function updateMikroRequiredState(){
