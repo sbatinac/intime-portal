@@ -10627,6 +10627,15 @@
     } catch (e) { diskStatus_(wrap, '⚠ Kopiranje na disk nije uspjelo: ' + (e && e.message ? e.message : e), 'error'); }
   }
   function diskNakonSlanja_(wrap, slotovi, mapeRes) { diskPokreni_(wrap, slotovi, mapeRes); }
+  // v294: opcije kartice ponude s poslužitelja ({šifra: {arhiva,disk1,disk2}}) — učitavaju se jednom
+  var PONUDA_OPCIJE_ = {}, PONUDA_OPCIJE_UCITANE_ = false, PONUDA_OPCIJE_OBEC_ = null;
+  function ponudaOpcijeUcitaj_() {
+    if (PONUDA_OPCIJE_OBEC_) { return PONUDA_OPCIJE_OBEC_; }
+    PONUDA_OPCIJE_OBEC_ = gasCall({ action: 'adminPonudaOpcijeLista', token: adminToken }).then(function(res) {
+      if (res && res.status === 'ok') { PONUDA_OPCIJE_ = res.opcije || {}; PONUDA_OPCIJE_UCITANE_ = true; } else { PONUDA_OPCIJE_OBEC_ = null; }
+    }).catch(function() { PONUDA_OPCIJE_OBEC_ = null; });
+    return PONUDA_OPCIJE_OBEC_;
+  }
   function diskWireKartica_(wrap, entry) {
     var blok = wrap.querySelector('.af-disk-blok'); if (!blok) { return; }
     var hint = blok.querySelector('.af-disk-hint');
@@ -16285,7 +16294,7 @@
           var provjeri = function(n) {
             var kartica = document.querySelector('.ov-karte .entry-card[data-row-index="' + nova + '"]');
             if (kartica) { return; }
-            if (n > 0) { setTimeout(function() { provjeri(n - 1); }, 1500); return; }
+            if (n > 0) { if (n === 4 || n === 2) { loadEntries(); } setTimeout(function() { provjeri(n - 1); }, 1500); return; }
             if (!document.getElementById('ov-slanje-status')) { return; }
             var st2 = document.getElementById('ov-slanje-status');
             st2.textContent = 'Ponuda je spremljena u tablicu (redak ' + nova + '), ali popis je nije vratio. Osvježi stranicu (F5) pa otvori Otvorene ponude — ako je i tada nema, javi mi.';
@@ -16373,11 +16382,15 @@
           box.appendChild(traka);
         }
         box.appendChild(kartica);
-        if (otvStanje_.otvoriRow && e.rowIndex === otvStanje_.otvoriRow) { zaOtvoriti = kartica; }
+        // v292: otvorene kartice pamte se po retku — svako ponovno crtanje popisa (osvježavanje, drugi poziv) više ih ne zatvara
+        if (otvStanje_.otvoriRow && e.rowIndex === otvStanje_.otvoriRow) { zaOtvoriti = kartica; otvStanje_.otvorenaKartica[e.rowIndex] = true; }
+        var glK = kartica.querySelector('.entry-card-head');
+        // tijelo kartice gradi se tek klikom na zaglavlje — zato se „otvaranje” radi klikom, ne samo klasom
+        if (glK && otvStanje_.otvorenaKartica[e.rowIndex]) { glK.click(); }
+        if (glK) { glK.addEventListener('click', function() { otvStanje_.otvorenaKartica[e.rowIndex] = kartica.classList.contains('expanded'); }); }
       });
       if (zaOtvoriti) {
         otvStanje_.otvoriRow = null;
-        var gl = zaOtvoriti.querySelector('.entry-card-head'); if (gl) { gl.click(); }
         try { zaOtvoriti.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch (eS) { /* nije kritično */ }
       }
     }
@@ -23862,6 +23875,31 @@
       var slanjeKopijaCb = wrap.querySelector('.af-slanje-kopija-cb');
       var slanjeArhivaCb = wrap.querySelector('.af-slanje-arhiva-cb');
       diskWireKartica_(wrap, entry);   // v277
+      // v294: kvačice „premjesti u ARHIVU nakon slanja” i „Disk 1/2” pamte se NA POSLUŽITELJU uz šifru ponude (vrijede na svakom računalu); localStorage samo kao pričuva
+      (function() {
+        var sifraP = fieldVal(entry, 'Šifra ponude (admin)') || '';
+        var kljuc = 'intime_ponuda_opcije_' + (sifraP || ('r' + entry.rowIndex));
+        var citajLok = function() { try { return JSON.parse(localStorage.getItem(kljuc) || '{}') || {}; } catch (eL) { return {}; } };
+        var stanje = function() { var o = {}; if (slanjeArhivaCb && slanjeArhivaCb.checked) { o.arhiva = 1; } Array.prototype.slice.call(wrap.querySelectorAll('.af-disk-cb')).forEach(function(cb) { if (cb.checked) { o['disk' + cb.getAttribute('data-slot')] = 1; } }); return o; };
+        var spremi = function() {
+          var o = stanje();
+          try { localStorage.setItem(kljuc, JSON.stringify(o)); } catch (eS) { /* pričuva nije kritična */ }
+          if (!sifraP) { return; }
+          PONUDA_OPCIJE_[sifraP] = o;
+          gasCall({ action: 'adminPonudaOpcijeSpremi', token: adminToken, sifra: sifraP, opcije: o }).then(function(res) { handleAuthError(res); }).catch(function() { /* ostaje lokalno */ });
+        };
+        var primijeni = function(sp) {
+          if (slanjeArhivaCb) { slanjeArhivaCb.checked = !!sp.arhiva; }
+          Array.prototype.slice.call(wrap.querySelectorAll('.af-disk-cb')).forEach(function(cb) {
+            // dozvola za pisanje na disk traži se pri uključivanju/slanju; vraćena kvačica je samo kad je disk postavljen
+            if (sp['disk' + cb.getAttribute('data-slot')]) { [0, 1200, 3000].forEach(function(ms) { setTimeout(function() { if (!cb.disabled && wrap.isConnected) { cb.checked = true; } }, ms); }); }
+          });
+        };
+        primijeni(sifraP && PONUDA_OPCIJE_[sifraP] ? PONUDA_OPCIJE_[sifraP] : citajLok());
+        if (sifraP && !PONUDA_OPCIJE_UCITANE_) { ponudaOpcijeUcitaj_().then(function() { if (wrap.isConnected && PONUDA_OPCIJE_[sifraP]) { primijeni(PONUDA_OPCIJE_[sifraP]); } }); }
+        if (slanjeArhivaCb) { slanjeArhivaCb.addEventListener('change', spremi); }
+        Array.prototype.slice.call(wrap.querySelectorAll('.af-disk-cb')).forEach(function(cb) { cb.addEventListener('change', function() { setTimeout(spremi, 400); }); });
+      })();
       var slanjePosaljiBtn = wrap.querySelector('.af-slanje-posalji-btn');
       var slanjeStatus = wrap.querySelector('.af-slanje-status');
       // Traka napretka slanja — vidi CSS napomenu uz .af-slanje-progress-wrap
