@@ -2202,6 +2202,11 @@
     /* 10.10.2026.: dugi prozori (npr. Postavke) mogu se skrolati */
     max-height:calc(100vh - 40px);max-height:calc(100dvh - 40px);overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;
   }
+  /* v303: Postavke — široki prozor (ne do ruba ekrana) s blokovima u kolonama, pa je manje visok */
+  #settings-modal{padding:3vh 3vw;}
+  #settings-modal .modal-box.settings-siroki{max-width:min(1240px,100%);width:100%;max-height:94vh;max-height:94dvh;padding:18px 22px;}
+  #settings-modal .settings-kolone{column-width:360px;column-gap:16px;}
+  #settings-modal .settings-kolone > div{break-inside:avoid;-webkit-column-break-inside:avoid;margin-bottom:14px !important;}
   .modal-box h2{margin-bottom:14px;}
   .modal-box input[type=password], .modal-box input[type=text]{
     width:100%;padding:10px 12px;border:1px solid var(--line);
@@ -2515,8 +2520,9 @@
 
 <!-- Modal: Postavke (zupčanik u donjem desnom kutu, 27.9.2026.) -->
 <div class="modal-overlay" id="settings-modal" hidden>
-  <div class="modal-box">
+  <div class="modal-box settings-siroki">
     <h2>Postavke</h2>
+    <div class="settings-kolone">
     <div style="border:2px solid #1e8449;background:#f1faf4;border-radius:10px;padding:10px 12px;margin-bottom:14px;">
       <label style="display:block;font-weight:700;margin-bottom:4px;color:#1e8449;">🔗 Direktni linkovi — što sve možeš poslati klijentu</label>
       <p class="settings-hint" style="margin:0 0 8px;">Klikni „Kopiraj“ i zalijepi u mail ili poruku. Svaki link otvara baš taj dio, bez traženja po stranici.</p>
@@ -2629,6 +2635,7 @@
       <button type="button" class="btn btn-danger btn-small" onclick="closeSettingsModal();openProdModal();">🧹 Očisti cijeli sustav…</button>
     </div>
     <label style="display:block;font-weight:600;margin-bottom:4px;">Administratorski mail za skrivenu kopiju (BCC)</label>
+    </div><!-- /settings-kolone -->
     <p class="settings-hint">Ovo je adresa „administratorskog maila“. Na nju ide skrivena kopija (BCC) svakog maila koji sustav pošalje — ako je dolje uključeno automatsko slanje — a ujedno i svaki put kad kod slanja označite kućicu <b>„Pošalji kopiju na administratorski mail“</b> (ta kućica radi i kad je automatsko slanje isključeno). Ako je adresa prazna, koristi se zadana (sbatinac.intime@gmail.com).</p>
     <input type="email" id="settings-bcc-email" placeholder="npr. arhiva@in-time.hr">
     <label style="display:flex;gap:8px;align-items:flex-start;margin:10px 0 4px;font-size:13.5px;cursor:pointer;"><input type="checkbox" id="settings-bcc-ukljucen" checked style="width:auto;margin-top:3px;"> <span><b>Automatski šalji skrivenu kopiju SVAKOG maila</b> na ovu adresu<br><span style="color:var(--grey);font-size:12px;">Isključeno = kopija ide samo kad ručno označite kućicu uz pojedino slanje.</span></span></label>
