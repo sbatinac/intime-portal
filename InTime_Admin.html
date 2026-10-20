@@ -5550,8 +5550,8 @@
     if (bP) {
       chips.push('<span class="otv-prac da" title="Klijent je otvorio stranicu ponude ' + bP + '× · prvi put ' + esc(fieldVal(entry, 'Pregled ponude - prvo otvaranje (admin)')) + ' · zadnji put ' + esc(fieldVal(entry, 'Pregled ponude - zadnje otvaranje (admin)')) + '">✓ Ponuda otvorena ' + esc(otvKratko_(fieldVal(entry, 'Pregled ponude - prvo otvaranje (admin)'))) + (bP > 1 ? ' · ' + bP + '×' : '') + '</span>');
     } else {
-      var sl = sortDatumMs_(fieldVal(entry, 'Datum slanja aktivne ponude (admin)'));
-      if (!bD && sl !== null && sl >= OTVARANJE_PRACENJE_OD_MS_) { chips.push('<span class="otv-prac nije" title="Klijent još nije kliknuo poveznicu u mailu">○ Ponuda nije otvorena</span>'); }
+      // v338: „Ponuda nije otvorena” se prikazuje za SVAKU poslanu ponudu (bez datumskog praga) — Sašin zahtjev 20.10.2026.
+      if (!bD) { chips.push('<span class="otv-prac nije" title="Klijent još nije kliknuo poveznicu u mailu">○ Ponuda nije otvorena</span>'); }
     }
     if (bD) {
       chips.push('<span class="otv-prac da" title="Poveznica na dokumente otvorena ' + bD + '× · zadnji put ' + esc(fieldVal(entry, 'Dokumenti ponude - zadnje otvaranje (admin)')) + '">✓ 📁 Dokumenti otvoreni ' + esc(otvKratko_(fieldVal(entry, 'Dokumenti ponude - prvo otvaranje (admin)'))) + (bD > 1 ? ' · ' + bD + '×' : '') + '</span>');
@@ -23870,6 +23870,7 @@
         ponudasuradnja: { polje: 'dokument_ponuda_suradnja', stupac: 'Ponuda za suradnju (admin, JSON)', naziv: 'Ponuda za suradnju - In Time d.o.o.', tipovi: ['pdf'], opisTipa: 'PDF dokument (.pdf)' }
       };
       var autoPripremaUTijeku_ = false;
+      var autoPripremaPonovi_ = false;
       var dokProvjeriTip_ = function(imeDatoteke, tipovi) {
         var ext = String(imeDatoteke || '').split('.').pop().toLowerCase();
         return tipovi.indexOf(ext) !== -1;
@@ -23947,23 +23948,34 @@
                 pripremaStatusEl.classList.remove('error');
               }
               autoKalkOtv_();
-            } else             if (!autoPripremaUTijeku_ && typeof pripremiDirektorij_ === 'function' && typeof pripremaStatusEl !== 'undefined' && pripremaStatusEl) {
-              autoPripremaUTijeku_ = true;   // v302: kad se više mjesta popuni odjednom, priprema se pokrene samo jednom
-              pripremaStatusEl.textContent = 'Automatska priprema direktorija…';
-              pripremaStatusEl.classList.remove('error');
-              pripremiDirektorij_().then(function(pripRes) {
-                autoPripremaUTijeku_ = false;
-                if (pripRes.status === 'ok') {
-                  pripremaStatusEl.textContent = 'Spremno — ' + pripRes.broj + ' dokument(a) u direktoriju.';
-                  pripremaStatusEl.classList.remove('error');
-                  if (typeof prikaziPostojeciLinkDokumenata_ === 'function') { prikaziPostojeciLinkDokumenata_(); }
-                  if (typeof renderPregled_ === 'function') { renderPregled_(); }
-                } else {
-                  pripremaStatusEl.textContent = pripRes.message || 'Greška pri automatskoj pripremi direktorija.';
-                  pripremaStatusEl.classList.add('error');
-                }
-                autoKalkOtv_();
-              }).catch(function() { autoPripremaUTijeku_ = false; autoKalkOtv_(); });
+            } else             if (typeof pripremiDirektorij_ === 'function' && typeof pripremaStatusEl !== 'undefined' && pripremaStatusEl) {
+              // v336: ako se u tijeku pripreme promijeni još jedno mjesto (npr. Ponuda za suradnju nakon Cjenika Hrvatska), priprema se
+              // NE preskače nego se zapamti i ponovi čim prva završi — inače taj dokument ostane izvan Drivea.
+              if (autoPripremaUTijeku_) { autoPripremaPonovi_ = true; autoKalkOtv_(); return; }
+              var pokreniAutoPripremu_ = function() {
+                autoPripremaUTijeku_ = true;
+                autoPripremaPonovi_ = false;
+                pripremaStatusEl.textContent = 'Automatska priprema direktorija…';
+                pripremaStatusEl.classList.remove('error');
+                var kraj_ = function() {
+                  autoPripremaUTijeku_ = false;
+                  if (autoPripremaPonovi_) { pokreniAutoPripremu_(); }
+                };
+                pripremiDirektorij_().then(function(pripRes) {
+                  if (pripRes.status === 'ok') {
+                    pripremaStatusEl.textContent = 'Spremno — ' + pripRes.broj + ' dokument(a) u direktoriju.';
+                    pripremaStatusEl.classList.remove('error');
+                    if (typeof prikaziPostojeciLinkDokumenata_ === 'function') { prikaziPostojeciLinkDokumenata_(); }
+                    if (typeof renderPregled_ === 'function') { renderPregled_(); }
+                  } else {
+                    pripremaStatusEl.textContent = pripRes.message || 'Greška pri automatskoj pripremi direktorija.';
+                    pripremaStatusEl.classList.add('error');
+                  }
+                  kraj_();
+                  autoKalkOtv_();
+                }).catch(function() { kraj_(); autoKalkOtv_(); });
+              };
+              pokreniAutoPripremu_();
             } else { autoKalkOtv_(); }
           });
         };
@@ -25010,7 +25022,7 @@
         if (omotK_) {
           var kutijaK_ = document.createElement('div'); kutijaK_.className = 'af-kopiraj-naziv'; kutijaK_.style.cssText = 'margin-top:8px;';
           slanjeKopirajNazivBtn = document.createElement('button');
-          slanjeKopirajNazivBtn.type = 'button'; slanjeKopirajNazivBtn.className = 'af-slanje-btn af-kopiraj-naziv-btn'; slanjeKopirajNazivBtn.disabled = true;
+          slanjeKopirajNazivBtn.type = 'button'; slanjeKopirajNazivBtn.className = 'af-slanje-btn af-kopiraj-naziv-btn'; slanjeKopirajNazivBtn.disabled = false;
           slanjeKopirajNazivBtn.style.cssText = 'display:block;width:100%;background:#fff;border:2px solid #5b6664;color:#3c4d4a;';
           slanjeKopirajNazivBtn.textContent = '📋 Kopiraj naziv ponude';
           var tekstK_ = document.createElement('div'); tekstK_.className = 'af-kopiraj-naziv-tekst'; tekstK_.style.cssText = 'font-size:12px;color:#5b6664;margin-top:3px;word-break:break-word;';
@@ -25182,10 +25194,10 @@
         if (slanjePosaljiBtn) { slanjePosaljiBtn.disabled = !sveOk; }
         if (slanjePonoviBtn) { slanjePonoviBtn.hidden = (trenutniStatus_ !== 'na_cekanju'); }
         if (slanjeKopirajNazivBtn) {
-          var poslanaK_ = trenutniStatus_ !== 'nije_poslano';
-          slanjeKopirajNazivBtn.disabled = !poslanaK_;
-          slanjeKopirajNazivBtn.title = poslanaK_ ? 'Kopira naziv ponude u međuspremnik' : 'Postane aktivno kad ponuda ode';
-          var tk_ = wrap.querySelector('.af-kopiraj-naziv-tekst'); if (tk_) { tk_.textContent = poslanaK_ ? nazivPonudeZaKopiranje_() : 'Aktivno tek kad ponuda ode.'; }
+          // v337: „Kopiraj naziv ponude” je UVIJEK aktivan (prije je bio zaključan dok status nije „poslano”, pa nakon slanja nije radio)
+          slanjeKopirajNazivBtn.disabled = false;
+          slanjeKopirajNazivBtn.title = 'Kopira naziv ponude u međuspremnik';
+          var tk_ = wrap.querySelector('.af-kopiraj-naziv-tekst'); if (tk_) { tk_.textContent = nazivPonudeZaKopiranje_(); }
         }
         var slanjeTipEl_ = wrap.querySelector('.af-slanje-tip');
         if (slanjeTipEl_) {
