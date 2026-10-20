@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="hr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<title>In Time d.o.o. — Učitavamo ponudu</title>
+<style>
+  /* ============================================================
+     NAPOMENA ZA SAŠU:
+     Ova stranica je „međukorak" za poveznicu na dokumente ponude u mailu. Klijent klikne poveznicu u mailu →
+     ova stranica zove poslužitelj (akcija ponudaDokumentiOtvori) koji zabilježi otvaranje i vrati pravu Google poveznicu →
+     stranica klijenta odmah prosljeđuje na dokumente. Traje 1–3 s.
+     HOSTING: postaviti u ISTI folder kao InTime_PotvrdaPonude.html (koristi sliku InTime_Otvori_banner.jpg (mora biti u istom folderu)).
+     GAS_WEB_APP_URL mora biti isti .../exec kao u ostalim stranicama.
+     ============================================================ */
+  :root{ --teal:#229891; --teal-dark:#135450; --graphite:#131313; --grey:#6b6b6b; --line:#e2e6ea; --bg:#f2f8f8; }
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; min-height:100%; }
+  body{
+    font-family:'Segoe UI', Arial, sans-serif; color:var(--graphite);
+    background:radial-gradient(1200px 600px at 50% -10%, #d9f0ee 0%, var(--bg) 55%, #ffffff 100%);
+    display:flex; align-items:center; justify-content:center; min-height:100vh; padding:20px;
+  }
+  [hidden]{ display:none !important; }
+  .kartica{
+    width:100%; max-width:480px; background:#fff; border:1px solid var(--line); border-radius:18px;
+    box-shadow:0 14px 40px rgba(19,84,80,.14); overflow:hidden; text-align:center;
+    animation:ulaz .5s ease both;
+  }
+  @keyframes ulaz{ from{ opacity:0; transform:translateY(14px); } to{ opacity:1; transform:none; } }
+  .banner{ display:block; width:100%; height:auto; }
+  .sadrzaj{ padding:26px 28px 30px; }
+  h1{ font-size:22px; margin:0 0 6px; color:var(--teal-dark); letter-spacing:.2px; }
+  p{ margin:0; color:var(--grey); font-size:14.5px; line-height:1.55; }
+  p strong{ color:var(--graphite); }
+
+  /* cesta + kombi */
+  .cesta{ position:relative; height:74px; margin:22px 0 14px; overflow:hidden; border-radius:10px; background:linear-gradient(#eaf5f4,#f6fbfb); }
+  .cesta svg{ position:absolute; left:0; bottom:0; width:100%; height:100%; }
+  .pruge{ animation:cesta 0.9s linear infinite; }
+  @keyframes cesta{ from{ transform:translateX(0); } to{ transform:translateX(-48px); } }
+  .kombi{ position:absolute; bottom:12px; left:-90px; width:84px; animation:vozi 3.2s cubic-bezier(.45,.05,.3,1) infinite; filter:drop-shadow(0 3px 2px rgba(0,0,0,.18)); }
+  @keyframes vozi{ 0%{ left:-90px; } 55%{ left:calc(50% - 42px); } 62%{ left:calc(50% - 42px); } 100%{ left:calc(100% + 20px); } }
+  .kotac{ transform-origin:center; animation:vrti .5s linear infinite; }
+  @keyframes vrti{ to{ transform:rotate(360deg); } }
+  .vjetar{ position:absolute; height:3px; border-radius:3px; background:#cfe6e4; opacity:.9; animation:vjetar 1.4s linear infinite; }
+  .vjetar.a{ top:14px; width:40px; left:10%; } .vjetar.b{ top:30px; width:26px; left:62%; animation-delay:.5s; } .vjetar.c{ top:22px; width:32px; left:36%; animation-delay:.9s; }
+  @keyframes vjetar{ from{ transform:translateX(30px); opacity:0; } 30%{ opacity:.9; } to{ transform:translateX(-60px); opacity:0; } }
+
+  /* traka napretka */
+  .traka{ height:6px; background:#e6efee; border-radius:6px; overflow:hidden; margin:0 auto 14px; max-width:300px; }
+  .traka i{ display:block; height:100%; width:30%; border-radius:6px; background:linear-gradient(90deg,var(--teal),#3cc4bb); animation:traka 1.4s ease-in-out infinite; }
+  @keyframes traka{ 0%{ margin-left:-30%; } 100%{ margin-left:100%; } }
+
+  .tocke span{ display:inline-block; animation:tocka 1.2s infinite; }
+  .tocke span:nth-child(2){ animation-delay:.2s; } .tocke span:nth-child(3){ animation-delay:.4s; }
+  @keyframes tocka{ 0%,60%,100%{ opacity:.2; } 30%{ opacity:1; } }
+
+  .gumb{
+    display:inline-block; margin-top:16px; padding:12px 22px; border:0; border-radius:10px; cursor:pointer;
+    background:var(--teal); color:#fff; font:700 15px 'Segoe UI', Arial, sans-serif; text-decoration:none;
+  }
+  .gumb:hover{ background:var(--teal-dark); }
+  .greska h1{ color:#c0392b; }
+  .sitno{ margin-top:18px; font-size:12px; color:#9aa5a4; }
+  @media (prefers-reduced-motion: reduce){ .pruge,.kombi,.kotac,.vjetar,.traka i,.tocke span{ animation:none; } .kombi{ left:calc(50% - 42px); } }
+</style>
+</head>
+<body>
+
+<div class="kartica" id="ucitavanje">
+  <img class="banner" src="InTime_Otvori_banner.jpg" alt="Otvaranje vaše ponude – In Time Express">
+  <div class="sadrzaj">
+    <h1>Učitavamo vašu ponudu<span class="tocke"><span>.</span><span>.</span><span>.</span></span></h1>
+    <p>Dokumenti se otvaraju za nekoliko trenutaka.</p>
+
+    <div class="cesta" aria-hidden="true">
+      <span class="vjetar a"></span><span class="vjetar b"></span><span class="vjetar c"></span>
+      <svg viewBox="0 0 400 74" preserveAspectRatio="none">
+        <rect x="0" y="52" width="400" height="22" fill="#9db3b1"/>
+        <rect x="0" y="52" width="400" height="3" fill="#7f9694"/>
+        <g class="pruge"><path d="M0 64 H600" stroke="#fff" stroke-width="3" stroke-dasharray="24 24" fill="none"/></g>
+      </svg>
+      <svg class="kombi" viewBox="0 0 84 46" aria-hidden="true">
+        <rect x="2" y="6" width="52" height="28" rx="4" fill="#fff" stroke="#c9d4d3"/>
+        <path d="M54 12 H70 Q76 12 79 20 L82 28 V34 H54 Z" fill="#fff" stroke="#c9d4d3"/>
+        <path d="M58 16 H69 Q72 16 74 21 L76 27 H58 Z" fill="#9fd6d2"/>
+        <path d="M6 22 L30 10 L40 10 L18 24 Z" fill="#229891"/>
+        <path d="M22 28 L48 12 L52 12 L26 30 Z" fill="#135450" opacity=".85"/>
+        <rect x="2" y="30" width="80" height="5" rx="2" fill="#135450"/>
+        <g class="kotac" style="transform-box:fill-box"><circle cx="20" cy="37" r="7" fill="#262626"/><circle cx="20" cy="37" r="3" fill="#bbb"/><path d="M20 31 V43 M14 37 H26" stroke="#777" stroke-width="1.2"/></g>
+        <g class="kotac" style="transform-box:fill-box"><circle cx="64" cy="37" r="7" fill="#262626"/><circle cx="64" cy="37" r="3" fill="#bbb"/><path d="M64 31 V43 M58 37 H70" stroke="#777" stroke-width="1.2"/></g>
+      </svg>
+    </div>
+
+    <div class="traka" aria-hidden="true"><i></i></div>
+    <p id="podsjetnik" hidden>Traje malo dulje nego inače…<br><button class="gumb" type="button" id="ponovi">Otvori dokumente</button></p>
+    <p class="sitno">In Time d.o.o. — vaš pouzdan partner u dostavi</p>
+  </div>
+</div>
+
+<div class="kartica greska" id="greska" hidden>
+  <img class="banner" src="InTime_Otvori_banner.jpg" alt="Otvaranje vaše ponude – In Time Express">
+  <div class="sadrzaj">
+    <h1>Poveznica nije dostupna</h1>
+    <p id="greska-tekst">Provjerite jeste li je u cijelosti kopirali iz e-maila ili nas kontaktirajte na <strong>sbatinac.intime@gmail.com</strong>.</p>
+    <button class="gumb" type="button" id="probaj">Pokušaj ponovno</button>
+  </div>
+</div>
+
+<script>
+(function() {
+  // Isti Apps Script Web App URL kao u InTime_PotvrdaPonude.html — MORA biti identičan .../exec link.
+  var GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbz73zkx72GhrDZ-t3CamF5wuz-9V7Uxe5z9IkFxHA8F5FBlrIlc7zMUd4_EHTILD9FTAw/exec";
+  var MIN_PRIKAZ_MS = 1400;     // da animacija ne „bljesne" prekratko
+  var PODSJETNIK_MS = 7000;
+  var t = '';
+  try { t = (new URLSearchParams(location.search)).get('t') || ''; } catch (e) { t = ''; }
+
+  var elU = document.getElementById('ucitavanje'), elG = document.getElementById('greska'), elP = document.getElementById('podsjetnik');
+  var start = 0, timerP = null, radi = false;
+
+  function pokaziGresku(poruka) {
+    clearTimeout(timerP); elU.hidden = true; elG.hidden = false;
+    if (poruka) { document.getElementById('greska-tekst').textContent = poruka; }
+  }
+  function otvori() {
+    if (radi) { return; }
+    radi = true; start = Date.now(); elG.hidden = true; elU.hidden = false; elP.hidden = true;
+    clearTimeout(timerP); timerP = setTimeout(function() { elP.hidden = false; }, PODSJETNIK_MS);
+    if (!t) { radi = false; pokaziGresku('Poveznica nije potpuna. Otvorite je ponovno iz e-maila ili nas kontaktirajte na sbatinac.intime@gmail.com.'); return; }
+    fetch(GAS_WEB_APP_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ action: 'ponudaDokumentiOtvori', token: t })
+    }).then(function(r) { return r.json(); }).then(function(res) {
+      radi = false;
+      if (!res || res.status !== 'ok' || !res.url) { pokaziGresku(res && res.message); return; }
+      var ostalo = Math.max(0, MIN_PRIKAZ_MS - (Date.now() - start));
+      setTimeout(function() { location.replace(res.url); }, ostalo);
+    }).catch(function() { radi = false; pokaziGresku('Nema veze s poslužiteljem. Provjerite internet i pokušajte ponovno.'); });
+  }
+  document.getElementById('ponovi').addEventListener('click', function() { radi = false; otvori(); });
+  document.getElementById('probaj').addEventListener('click', otvori);
+  otvori();
+})();
+</script>
+</body>
+</html>
