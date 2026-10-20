@@ -2267,7 +2267,49 @@
   .kp-grupa-naslov{font-size:11.5px;font-weight:900;letter-spacing:.08em;text-transform:uppercase;color:#5a6b68;margin:0 0 6px 4px;display:flex;align-items:center;gap:8px;}
   .kp-grupa-naslov:after{content:"";flex:1;height:1px;background:#cfd8d6;}
   .kp-grupa-red{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:10px;}
-  @media (max-width:900px){.stat-row{grid-template-columns:repeat(2,minmax(0,1fr));}.kp-danas-mreza{grid-template-columns:repeat(2,minmax(0,1fr));}.kp-grupa-red{grid-template-columns:repeat(auto-fill,minmax(130px,1fr));}.kp-lijevak{flex-wrap:wrap;gap:8px;}}
+  /* v315: gumb i prozor „Uspješnost” */
+  .stat-row .kp-uspj-gumb{grid-column:span 2;display:flex;align-items:center;gap:16px;flex-wrap:wrap;text-align:left;cursor:pointer;font:inherit;--kp-c:#6c3fc4;padding:12px 18px;}
+  .stat-row .kp-uspj-gumb:hover{transform:translateY(-2px);box-shadow:0 6px 16px rgba(0,0,0,.12);}
+  .kp-uspj-naslov{font-size:17px;font-weight:800;color:#4b2a9a;}
+  .kp-uspj-sazetak{flex:1;min-width:220px;font-size:13.5px;color:#3d4a47;font-weight:600;}
+  .kp-uspj-klik{font-size:13px;font-weight:700;color:#6c3fc4;}
+  .uspj-sloj{position:fixed;inset:0;background:rgba(20,24,40,.55);z-index:9999;display:flex;align-items:flex-start;justify-content:center;overflow:auto;padding:30px 12px;}
+  .uspj-kut{background:#fff;border-radius:16px;max-width:880px;width:100%;box-shadow:0 12px 40px rgba(0,0,0,.35);padding:22px 24px 24px;position:relative;}
+  .uspj-x{position:absolute;top:10px;right:14px;border:0;background:none;font-size:26px;cursor:pointer;color:#666;}
+  .uspj-kut h2{margin:0 0 4px;font-size:22px;color:#2b2f45;}
+  .uspj-uvod{margin:0 0 16px;font-size:14px;color:#4a5a57;}
+  .uspj-red{border:1px solid #e3e6ee;border-left:6px solid var(--c);border-radius:12px;padding:14px 16px;margin:0 0 14px;background:#fbfbfe;}
+  .uspj-red h3{margin:0 0 10px;font-size:17px;color:var(--c);}
+  .uspj-tok{display:flex;align-items:stretch;gap:6px;flex-wrap:wrap;}
+  .uspj-kor{flex:1;min-width:150px;background:#fff;border:1px solid #e3e6ee;border-radius:10px;padding:10px 12px;text-align:center;}
+  .uspj-kor .n{font-size:30px;font-weight:900;color:var(--c);line-height:1.1;}
+  .uspj-kor .l{font-size:13px;font-weight:700;color:#2b2f45;margin-top:2px;}
+  .uspj-kor .p{font-size:12px;color:#6b7090;margin-top:2px;}
+  .uspj-str{align-self:center;text-align:center;font-size:12.5px;font-weight:800;color:var(--c);min-width:70px;}
+  .uspj-str b{display:block;font-size:20px;}
+  .uspj-rec{margin:10px 0 0;font-size:14px;color:#2b2f45;line-height:1.45;}
+  .uspj-det{margin:4px 0 0;font-size:12.5px;color:#6b7090;}
+  .uspj-pills{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 14px;}
+  .uspj-pill{border:1px solid #cfd3e6;background:#fff;border-radius:18px;padding:6px 14px;font:inherit;font-size:13px;font-weight:700;cursor:pointer;color:#3d4468;}
+  .uspj-pill.active{background:#6c3fc4;border-color:#6c3fc4;color:#fff;}
+  .uspj-izv{margin:10px 0 0;font-size:13px;}
+  .uspj-izv summary{cursor:pointer;font-weight:700;color:var(--c);}
+  .uspj-izv table{width:100%;border-collapse:collapse;margin-top:6px;}
+  .uspj-izv th,.uspj-izv td{padding:5px 8px;border-bottom:1px solid #eceef5;text-align:right;}
+  .uspj-izv th:first-child,.uspj-izv td:first-child{text-align:left;}
+  .uspj-izv td span{color:#6b7090;font-size:12px;}
+  /* v318: Battleships ploča */
+  .stat-row .kp-bs-gumb{grid-column:span 2;display:flex;align-items:center;gap:14px;text-align:left;cursor:pointer;font:inherit;padding:12px 18px;color:#fff;background:linear-gradient(135deg,#0b2a4a 0%,#14578f 100%);border:2px solid #0b2a4a;border-radius:14px;box-shadow:0 3px 10px rgba(11,42,74,.35);}
+  .stat-row .kp-bs-gumb:hover{background:linear-gradient(135deg,#0e3560 0%,#1b6bb0 100%);transform:translateY(-2px);box-shadow:0 6px 16px rgba(11,42,74,.45);}
+  .kp-bs-ikona{font-size:34px;line-height:1;}
+  .kp-bs-tekst{display:flex;flex-direction:column;flex:1;min-width:0;}
+  .kp-bs-naslov{font-size:17px;font-weight:900;letter-spacing:.08em;color:#fff;}
+  .kp-bs-status{font-size:13px;color:#cfe4f7;font-weight:600;}
+  .kp-bs-klik{font-size:13px;font-weight:800;color:#ffd75e;white-space:nowrap;}
+  .kp-bs-gumb.radi .kp-bs-ikona{animation:kpBsLjulja 1s ease-in-out infinite;}
+  .kp-bs-gumb.nova{border-color:#ffd75e;box-shadow:0 0 0 3px rgba(255,215,94,.55),0 3px 10px rgba(11,42,74,.35);}
+  @keyframes kpBsLjulja{0%,100%{transform:rotate(-8deg);}50%{transform:rotate(8deg);}}
+  @media (max-width:900px){.stat-row{grid-template-columns:repeat(2,minmax(0,1fr));}.stat-row .kp-bs-gumb,.stat-row .kp-uspj-gumb{grid-column:1 / -1;}.kp-danas-mreza{grid-template-columns:repeat(2,minmax(0,1fr));}.kp-grupa-red{grid-template-columns:repeat(auto-fill,minmax(130px,1fr));}.kp-lijevak{flex-wrap:wrap;gap:8px;}}
 </style>
 </head>
 <body>
@@ -2351,6 +2393,18 @@
         <div class="stat-value" id="stat-problemi">—</div>
         <div class="stat-label">Otvoreni problemi klijenata</div>
       </div>
+      <!-- v315: gumb „Uspješnost” — omjeri poslano → odgovorilo → postali klijenti za Pisma namjere, Ponude i Otvorene ponude -->
+      <button type="button" class="stat-card kp-uspj-gumb" id="kp-uspj-gumb" onclick="uspjesnostOtvori_()" title="Koliko je poslanih pisama i ponuda dalo odgovor i klijente">
+        <span class="kp-uspj-naslov">📊 Uspješnost</span>
+        <span class="kp-uspj-sazetak" id="kp-uspj-sazetak">Pisma namjere · Ponude · Otvorene ponude — poslano → odgovorilo → postali klijenti</span>
+        <span class="kp-uspj-klik">Klikni za prikaz ›</span>
+      </button>
+      <!-- v318: Battleships ploča — klik odmah provjeri je li se netko javio / potpisao / postao klijent (isto što i automatska provjera svake 3 min) -->
+      <button type="button" class="stat-card kp-bs-gumb" id="kp-bs-gumb" onclick="pogodakRucnaProvjera_()" title="Odmah provjeri: javio se, potpisao, postao klijent…">
+        <span class="kp-bs-ikona">🚢</span>
+        <span class="kp-bs-tekst"><span class="kp-bs-naslov">BATTLESHIPS</span><span class="kp-bs-status" id="kp-bs-status">Klikni da odmah provjeriš tko se javio ili potpisao</span></span>
+        <span class="kp-bs-klik" id="kp-bs-klik">Provjeri ›</span>
+      </button>
     </div>
 
     <div id="kp-lijevak" class="kp-lijevak"></div>
@@ -3343,7 +3397,7 @@
     try { ponudaOpcijeUcitaj_().then(function() { videoNacinIscrtaj_(); claudeSlanjeIscrtaj_(); brzoGumbiOsvjezi_(); }); } catch (eV) {}
     kopijaAdminUcitaj_();
     izvoriUcitaj_();
-    setTimeout(pogodciProvjeriNove_, 2500);
+    setTimeout(pogodciProvjeriNove_, 20000);   // v314: ne trči s glavnim početnim učitavanjem
     pogodciPokreniPracenje_();
     setTimeout(function() { try { var pv = document.createElement('video'); pv.preload = 'auto'; pv.muted = true; pv.src = 'pogodak.mp4'; var pr2 = document.createElement('video'); pr2.preload = 'auto'; pr2.muted = true; pr2.src = 'raskid.mp4'; videoPreducitaj_(VIDEO_SPREMNO_URL_); videoPreducitaj_(VIDEO_PALJBA_URL_); videoPreducitaj_(VIDEO_PONUDA_URL_); } catch (e) { gifPreducitaj_('gif_pogodak.gif'); } }, 4000); // povuci GIF unaprijed da se animacija pokaže odmah
   }
@@ -3362,29 +3416,65 @@
   // ne uspije (npr. Code.gs još nije redeployan na najnoviju verziju), tiho
   // se pada natrag na stari put — 10 zasebnih poziva — da admin ostane
   // upotrebljiv.
+  // v316: dvije faze. Faza 1 'jezgra' (brojači, unosi, brojevi, imenik) → odmah prikaz; faza 2 'ostalo' (ankete, FAQ, zone, kalkulator, gorivo…) odmah iza.
+  // Ako poslužitelj (stari .gs) pri fazi 1 vrati sve odjednom, faza 2 se preskače.
+  var OSTALO_STANJE_ = { tece: false, gotovo: false };
+  function primijeniJezgru_(res) {
+    primijeniCounters_(res.counters || {});
+    loadPodsjetniciBrojac_();
+    primijeniEntries_(res.entries || {});
+    primijeniBrojStatus_(res.brojStatus || {});
+    primijeniImenik_(res.imenik || {});
+  }
+  function primijeniOstalo_(res) {
+    primijeniAnkete_(res.ankete || {});
+    primijeniAnketaStatistika_(res.anketaStatistika || {});
+    primijeniFaq_(res.faq || {});
+    primijeniZoneStatus_(res.zoneStatus || {});
+    primijeniZoneArhiva_(res.zoneArhiva || {});
+    primijeniKalkulatorCjenikStatus_(res.kalkulatorCjenikStatus || {});
+    primijeniKalkulatorCjenikArhiva_(res.kalkulatorCjenikArhiva || {});
+    primijeniKalkulatorNapomene_(res.kalkulatorNapomene || {});
+    primijeniImenikAutoSync_(res.imenikAutoSync || {});
+    primijeniGorivoPostotci_(res.gorivoPostotci || {});
+    primijeniGorivoEmail_(res.gorivoEmail || {});
+    primijeniGorivoDogadjaje_(res.gorivoDogadjaji || {});
+    OSTALO_STANJE_.gotovo = true;
+  }
+  function loadOstalo_() {
+    if (OSTALO_STANJE_.tece) { return; }
+    OSTALO_STANJE_.tece = true;
+    gasCall({ action: 'adminUcitajPocetno', token: adminToken, faza: 'ostalo' }).then(function(res) {
+      OSTALO_STANJE_.tece = false;
+      if (handleAuthError(res)) { return; }
+      if (res.status !== 'ok') { loadOstaloOdvojeno_(); return; }
+      primijeniOstalo_(res);
+    }).catch(function() { OSTALO_STANJE_.tece = false; loadOstaloOdvojeno_(); });
+  }
   function loadAll() {
     try { odUcitajPovijest_(); } catch (eOd_) {}
-    gasCall({ action: 'adminUcitajPocetno', token: adminToken }).then(function(res) {
+    OSTALO_STANJE_.gotovo = false;
+    gasCall({ action: 'adminUcitajPocetno', token: adminToken, faza: 'jezgra' }).then(function(res) {
       if (handleAuthError(res)) { return; }
       if (res.status !== 'ok') { loadAllOdvojeno_(); return; }
-      primijeniCounters_(res.counters || {});
-      loadPodsjetniciBrojac_();
-      primijeniEntries_(res.entries || {});
-      primijeniAnkete_(res.ankete || {});
-      primijeniAnketaStatistika_(res.anketaStatistika || {});
-      primijeniFaq_(res.faq || {});
-      primijeniZoneStatus_(res.zoneStatus || {});
-      primijeniZoneArhiva_(res.zoneArhiva || {});
-      primijeniKalkulatorCjenikStatus_(res.kalkulatorCjenikStatus || {});
-      primijeniKalkulatorCjenikArhiva_(res.kalkulatorCjenikArhiva || {});
-      primijeniKalkulatorNapomene_(res.kalkulatorNapomene || {});
-      primijeniBrojStatus_(res.brojStatus || {});
-      primijeniImenik_(res.imenik || {});
-      primijeniImenikAutoSync_(res.imenikAutoSync || {});
-      primijeniGorivoPostotci_(res.gorivoPostotci || {});
-      primijeniGorivoEmail_(res.gorivoEmail || {});
-      primijeniGorivoDogadjaje_(res.gorivoDogadjaji || {});
+      primijeniJezgru_(res);
+      if (res.ankete !== undefined && res.gorivoPostotci !== undefined) { primijeniOstalo_(res); return; }   // stari .gs: stiglo je sve
+      setTimeout(loadOstalo_, 300);
     }).catch(function() { loadAllOdvojeno_(); });
+  }
+  function loadOstaloOdvojeno_() {
+    loadAnkete();
+    loadFaq();
+    loadZoneStatus();
+    loadZoneArhiva_();
+    loadKalkulatorCjenikStatus_();
+    loadKalkulatorCjenikArhiva_();
+    loadKalkulatorNapomene_();
+    loadImenikAutoSync_();
+    loadGorivoPostotke_();
+    loadGorivoEmail_();
+    loadGorivoDogadjaje_();
+    OSTALO_STANJE_.gotovo = true;
   }
 
   // Stari put — 10 zasebnih poziva. Ostaje kao fallback za loadAll() gore.
@@ -5072,8 +5162,23 @@
     setTimeout(function() { if (ODGODJEN_RENDER_ && !unosAktivan_()) { ODGODJEN_RENDER_ = false; if (activeTab !== 'Ankete') { renderUzCuvanje_(); } } }, 500);
   });
   function otvoreneTabOmoguci_() { var b = document.getElementById('tab-btn-otvorene'); if (b) { b.disabled = false; b.classList.remove('tab-ucitava'); } }
+  // v314: poslužitelj šalje samo NEPRAZNA polja + popis svih naziva stupaca (res.zaglavlje) — ovdje se prazna polja vraćaju (''), istim redoslijedom stupaca kao prije
+  function rehidrirajUnose_(res) {
+    try {
+      var zag = res && res.zaglavlje;
+      if (!zag || !res.entries) { return; }
+      res.entries.forEach(function(e) {
+        var kompakt = e.fields || {}, puni = {};
+        for (var i = 0; i < zag.length; i++) { puni[zag[i]] = (kompakt[zag[i]] !== undefined) ? kompakt[zag[i]] : ''; }
+        for (var k in kompakt) { if (puni[k] === undefined) { puni[k] = kompakt[k]; } }
+        e.fields = puni;
+      });
+      res.zaglavlje = null;
+    } catch (eRh) { /* ostaje kako je stiglo */ }
+  }
   function primijeniEntries_(res) {
     if (res.status !== 'ok') { return; }
+    rehidrirajUnose_(res);
     // spremanje je u tijeku → ovaj popis je zastario: odbaci ga, a nakon spremanja dohvati svježi
     if (ZAPISI_U_TIJEKU_ > 0) { OSVJEZI_NAKON_ZAPISA_ = true; return; }
     allEntries = res.entries || [];
@@ -5391,26 +5496,79 @@
     return r;
   }
 
-  // v307: pokazatelj na tabu „Otvorene ponude”: odgovorilo (prihvatilo / odbilo) / ukupno poslanih + postotak — isto kao kod Pisama namjere
+  // v315: zajednički izračun uspješnosti za Otvorene ponude i Ponude (tab-gumb + prozor „Uspješnost”)
+  // Otvorene ponude = status 'Otvorena' ILI zapis već prebačen među klijente (ima „Otvorena ponuda - datum prebacivanja”).
+  // v316: razdoblje (po datumu SLANJA) i raspodjela po izvoru kontakta
+  var USPJ_STANJE_ = { razdoblje: 'sve' };
+  var USPJ_BEZ_IZVORA_ = '— bez izvora —';
+  function uspjRaspon_(k) {
+    var sada = new Date(), god = sada.getFullYear(), mj = sada.getMonth();
+    if (k === '30') { return [sada.getTime() - 30 * 86400000, sada.getTime() + 1]; }
+    if (k === 'mjesec') { return [new Date(god, mj, 1).getTime(), sada.getTime() + 1]; }
+    if (k === 'prosli') { return [new Date(god, mj - 1, 1).getTime(), new Date(god, mj, 1).getTime()]; }
+    if (k === 'godina') { return [new Date(god, 0, 1).getTime(), sada.getTime() + 1]; }
+    return null;
+  }
+  function uspjURasponu_(f, raspon) {
+    if (!raspon) { return true; }
+    var ms = sortDatumMs_(f['Datum slanja aktivne ponude (admin)']);
+    return ms !== null && ms >= raspon[0] && ms < raspon[1];
+  }
+  function uspjDodajIzvor_(r, f, odg, kl) {
+    var iz = String(f['Izvor kontakta (admin)'] || '').trim() || USPJ_BEZ_IZVORA_;
+    var b = r.izvori[iz] || (r.izvori[iz] = { poslano: 0, odgovorilo: 0, klijenti: 0 });
+    b.poslano++; if (odg) { b.odgovorilo++; } if (kl) { b.klijenti++; }
+  }
+  function uspjesnostOtvorene_(raspon) {
+    var r = { poslano: 0, prihvatilo: 0, odbilo: 0, ceka: 0, klijenti: 0, bezPodataka: 0, izvori: {} };
+    (allEntries || []).forEach(function(e) {
+      var f = e.fields || {};
+      var prebaceno = !!f['Otvorena ponuda - datum prebacivanja (admin)'];
+      if (e.status !== 'Otvorena' && !prebaceno) { return; }
+      var st = ponudaStatusSazetak_({ fields: f });
+      var kl = prebaceno && jeOtvorenKlijent(e);
+      if (st === 'nije_poslano' && !kl) { return; }
+      if (!uspjURasponu_(f, raspon)) { return; }
+      r.poslano++;
+      var prih = (st === 'potvrdjena' || st === 'ponistena_nakon_prihvata' || kl);
+      if (prih) { r.prihvatilo++; if (!kl && st === 'potvrdjena' && !f['Otvorena ponuda - datum popunjenog upitnika (admin)']) { r.bezPodataka++; } }
+      else if (st === 'odbijena') { r.odbilo++; }
+      else if (st === 'na_cekanju') { r.ceka++; }
+      if (kl) { r.klijenti++; }
+      uspjDodajIzvor_(r, f, prih || st === 'odbijena', kl);
+    });
+    r.odgovorilo = r.prihvatilo + r.odbilo;
+    return r;
+  }
+  function uspjesnostPonude_(raspon) {
+    var r = { poslano: 0, prihvatilo: 0, odbilo: 0, ceka: 0, klijenti: 0, izvori: {} };
+    (allEntries || []).forEach(function(e) {
+      var f = e.fields || {};
+      if (e.status !== 'Interes' || kpStari_(e) || !jePonuda(e) || f['Otvorena ponuda - datum prebacivanja (admin)']) { return; }
+      var st = ponudaStatusSazetak_({ fields: f });
+      var kl = jeOtvorenKlijent(e);
+      if (st === 'nije_poslano' && !kl) { return; }
+      if (!uspjURasponu_(f, raspon)) { return; }
+      r.poslano++;
+      var prih = (st === 'potvrdjena' || st === 'ponistena_nakon_prihvata' || kl);
+      if (prih) { r.prihvatilo++; }
+      else if (st === 'odbijena') { r.odbilo++; }
+      else if (st === 'na_cekanju') { r.ceka++; }
+      if (kl) { r.klijenti++; }
+      uspjDodajIzvor_(r, f, prih || st === 'odbijena', kl);
+    });
+    r.odgovorilo = r.prihvatilo + r.odbilo;
+    return r;
+  }
+  // v315: tab „Otvorene ponude” — samo brojevi: prihvaćene / odgovorile / poslane (bez postotaka)
   function otvTabBrojac_() {
     var el = document.getElementById('tab-count-otvorene'), btn = document.getElementById('tab-btn-otvorene');
     if (!el) { return; }
     try {
-      var otv = (allEntries || []).filter(function(e) { return e.status === 'Otvorena'; });
-      var posl = 0, prih = 0, odb = 0, ceka = 0, bez = 0;
-      otv.forEach(function(e) {
-        var st = ponudaStatusSazetak_({ fields: e.fields || {} });
-        if (st === 'nije_poslano') { return; }
-        posl++;
-        if (st === 'potvrdjena' || st === 'ponistena_nakon_prihvata') { prih++; if (st === 'potvrdjena' && !(e.fields || {})['Otvorena ponuda - datum popunjenog upitnika (admin)']) { bez++; } }
-        else if (st === 'odbijena') { odb++; }
-        else if (st === 'na_cekanju') { ceka++; }
-      });
-      if (!posl) { el.textContent = ''; if (btn) { btn.title = 'Još nije poslana nijedna otvorena ponuda'; } return; }
-      var odg = prih + odb;
-      // prihvaćene / odgovorile / poslane (prihvaćene ÷ poslane · prihvaćene ÷ odgovorile)
-      el.textContent = prih + ' / ' + odg + ' / ' + posl + ' (' + pctTxt_(prih, posl) + ' · ' + pctTxt_(prih, odg) + ')' + (bez ? ' ⚠' + bez : '');
-      if (btn) { btn.title = 'Prihvaćeno: ' + prih + ' · odgovorilo: ' + odg + ' (odbilo ' + odb + ') · poslano: ' + posl + ' · čeka odgovor: ' + ceka + '\nPrvi postotak = prihvaćene ÷ poslane (' + pctTxt_(prih, posl) + ')\nDrugi postotak = prihvaćene ÷ odgovorile (' + pctTxt_(prih, odg) + ')\nOdgovorile ÷ poslane = ' + pctTxt_(odg, posl) + (bez ? '\n⚠ ' + bez + ' prihvaćenih još nije poslalo podatke (upitnik)' : ''); }
+      var u = uspjesnostOtvorene_();
+      if (!u.poslano) { el.textContent = ''; if (btn) { btn.title = 'Još nije poslana nijedna otvorena ponuda'; } return; }
+      el.textContent = u.prihvatilo + ' / ' + u.odgovorilo + ' / ' + u.poslano + (u.bezPodataka ? ' ⚠' + u.bezPodataka : '');
+      if (btn) { btn.title = 'Prihvaćeno: ' + u.prihvatilo + ' · odgovorilo: ' + u.odgovorilo + ' (odbilo ' + u.odbilo + ') · poslano: ' + u.poslano + ' · čeka odgovor: ' + u.ceka + '\nBrojevi: prihvaćene / odgovorile / poslane\nViše postotaka: gumb „Uspješnost” gore u statistici' + (u.bezPodataka ? '\n⚠ ' + u.bezPodataka + ' prihvaćenih još nije poslalo podatke (upitnik)' : ''); }
     } catch (eOt_) { /* nije kritično */ }
   }
   function renderTabCounts() {
@@ -5435,6 +5593,7 @@
     if (cekaPonudeEl_) { var cekaN_ = brojPonudaCekaOdgovor_().ponude; cekaPonudeEl_.textContent = cekaN_ ? ('⏳ ' + cekaN_) : ''; }
     document.getElementById('tab-count-arhiva').textContent = arhivaCount;
     otvTabBrojac_();   // v307: odgovoreno / poslano (kao kod Pisama namjere)
+    uspjesnostGumbOsvjezi_();   // v315
     // Glavni dashboard counter — ukupan broj klijenata u bazi (isti brojevi
     // kao kartica "Novi klijenti", samo istaknuto na vrhu među ostalim
     // brojačima da Saša odmah vidi koliko je zapisa ukupno prebačeno).
@@ -10758,7 +10917,7 @@
   }
   // iz rezultata adminPismaPogodci izdvoji događaje koje još nisi "vidio" (pamti se po ključu OIB|VRSTA u pregledniku); slavi se ako ima pozitivnih bodova
   function pogodciSlaviNove_(res) {
-    if (!res || res.status !== 'ok' || !res.dogadaji || !res.dogadaji.length) { return; }
+    if (!res || res.status !== 'ok' || !res.dogadaji || !res.dogadaji.length) { return 0; }
     var vidjeni = null;
     try { vidjeni = JSON.parse(localStorage.getItem('battleships_vidjeni') || 'null'); } catch (e) { vidjeni = null; }
     var vidjeniSet = {}; (vidjeni || []).forEach(function(k) { vidjeniSet[k] = true; });
@@ -10778,7 +10937,7 @@
     if (srvMs !== null && maxMs > srvMs) {
       gasCall({ action: 'adminPogodciOznaciVidjeno', token: adminToken, ms: maxMs }).catch(function() {});
     }
-    if (!novi.length) { return; }
+    if (!novi.length) { return 0; }
     var noviRaskid = novi.filter(function(d) { return d.vrsta === 'RASKID'; });
     if (novi.some(function(d) { return d.bodovi > 0; })) {
       if (document.hidden) { document.title = '🎯 POGODAK! — ' + pogodciNaslov_; }
@@ -10788,6 +10947,7 @@
       if (document.hidden) { document.title = '💔 RASKID — ' + pogodciNaslov_; }
       raskidSlavlje_(noviRaskid, res.mjesecBodovi, res.cilj);
     }
+    return novi.length;
   }
   // probno slavlje iz Postavki — izmišljeni podaci, ništa se ne bilježi
   function testirajPogodak_(vrsta) {
@@ -11796,40 +11956,156 @@
     postaviPodtab(odStanje_.podtab || 'slanje');
     return wrap;
   }
-  var pogodciPoll_ = null, pogodciNaslov_ = document.title;
+  var pogodciPoll_ = null, pogodciNaslov_ = document.title, PISMA_ZADNJI_ = null;
   // Pokazatelj učinkovitosti na gumbu „Pisma namjere": firme koje su se javile (pozitivno, negativno ili ručno) / ukupno poslanih pisama + postotak
   function pismaUcinkovitost_(res) {
     var el = document.getElementById('tab-count-pisma'), btn = document.getElementById('tab-btn-pisma');
     if (!el || !res || res.status !== 'ok') { return; }
+    PISMA_ZADNJI_ = res;
     var p = res.poslano || 0, j = res.pogodaka || 0;
+    uspjesnostGumbOsvjezi_();
     if (!p) { el.textContent = ''; if (btn) { btn.title = 'Još nije poslano nijedno pismo namjere'; } return; }
     // v308: prihvaćene (zainteresirane) / odgovorile / poslane (prihvaćene ÷ poslane · prihvaćene ÷ odgovorile)
     if (typeof res.pozitivni === 'number') {
       var z = (res.pozitivni || 0) + (res.direktni || 0);
-      el.textContent = z + ' / ' + j + ' / ' + p + ' (' + pctTxt_(z, p) + ' · ' + pctTxt_(z, j) + ')';
-      if (btn) { btn.title = 'Zainteresirano: ' + z + ' · odgovorilo: ' + j + ' · poslano pisama: ' + p + '\nPrvi postotak = zainteresirani ÷ poslano (' + pctTxt_(z, p) + ')\nDrugi postotak = zainteresirani ÷ odgovorili (' + pctTxt_(z, j) + ')\nOdgovorili ÷ poslano = ' + pctTxt_(j, p); }
+      el.textContent = z + ' / ' + j + ' / ' + p;
+      if (btn) { btn.title = 'Zainteresirano: ' + z + ' · odgovorilo: ' + j + ' · poslano pisama: ' + p + '\nBrojevi: zainteresirane / odgovorile / poslane\nPostoci: gumb „Uspješnost” gore u statistici'; }
       return;
     }
-    var post = (Math.round(j / p * 1000) / 10).toString().replace('.', ',');
-    el.textContent = j + ' / ' + p + ' (' + post + ' %)';
-    if (btn) { btn.title = 'Javilo se: ' + j + ' od ' + p + ' poslanih pisama · učinkovitost ' + post + ' %'; }
+    el.textContent = j + ' / ' + p;
+    if (btn) { btn.title = 'Javilo se: ' + j + ' od ' + p + ' poslanih pisama'; }
+  }
+  // v315: prozor „Uspješnost” — za svaku vrstu: poslano → odgovorilo → postali klijenti, uz postotke i rečenicu na hrvatskom
+  function uspjesnostPisma_(raspon) {
+    var r = PISMA_ZADNJI_;
+    if (!r || r.status !== 'ok') { return null; }
+    if (!r.poslaniLista) {   // stari .gs: samo ukupni brojevi
+      var p0 = r.poslano || 0, j0 = r.pogodaka || 0, z0 = (r.pozitivni || 0) + (r.direktni || 0);
+      return { poslano: p0, odgovorilo: j0, prihvatilo: z0, odbilo: Math.max(0, j0 - z0), klijenti: r.klijenti || 0, izvori: null, samoUkupno: true };
+    }
+    var dog = {};
+    (r.dogadaji || []).forEach(function(d) {
+      var o = dog[d.oib] || (dog[d.oib] = { odg: false, poz: false, kl: false });
+      if (d.vrsta === 'POZITIVAN' || d.vrsta === 'DIREKTNI') { o.odg = true; o.poz = true; }
+      else if (d.vrsta === 'NEGATIVAN') { o.odg = true; }
+      else if (d.vrsta === 'KLIJENT') { o.kl = true; }
+    });
+    var x = { poslano: 0, odgovorilo: 0, prihvatilo: 0, odbilo: 0, klijenti: 0, izvori: {} };
+    r.poslaniLista.forEach(function(l) {
+      if (raspon && !(l[0] && l[0] >= raspon[0] && l[0] < raspon[1])) { return; }
+      var o = dog[l[2]] || {}, iz = (r.poslaniIzvori || [])[l[1]] || USPJ_BEZ_IZVORA_;
+      var b = x.izvori[iz] || (x.izvori[iz] = { poslano: 0, odgovorilo: 0, klijenti: 0 });
+      x.poslano++; b.poslano++;
+      if (o.odg) { x.odgovorilo++; b.odgovorilo++; if (o.poz) { x.prihvatilo++; } else { x.odbilo++; } }
+      if (o.kl) { x.klijenti++; b.klijenti++; }
+    });
+    return x;
+  }
+  function uspjesnostGumbOsvjezi_() {
+    var el = document.getElementById('kp-uspj-sazetak');
+    if (!el) { return; }
+    try {
+      var pi = uspjesnostPisma_(), po = uspjesnostPonude_(), ot = uspjesnostOtvorene_();
+      var t = function(x) { return x ? (x.poslano + ' → ' + x.odgovorilo + ' → ' + x.klijenti) : '…'; };
+      el.textContent = 'Pisma namjere: ' + t(pi) + '  ·  Ponude: ' + t(po) + '  ·  Otvorene ponude: ' + t(ot) + '   (poslano → odgovorilo → postali klijenti)';
+    } catch (eU_) { /* nije kritično */ }
+  }
+  function uspjIzvoriHtml_(izv) {
+    var kljuci = izv ? Object.keys(izv) : [];
+    if (!kljuci.length) { return ''; }
+    kljuci.sort(function(a, b) { return (izv[b].klijenti - izv[a].klijenti) || (izv[b].odgovorilo - izv[a].odgovorilo) || (izv[b].poslano - izv[a].poslano); });
+    return '<details class="uspj-izv"><summary>Po izvoru / kampanji (' + kljuci.length + ')</summary><table><thead><tr><th>Izvor / kampanja</th><th>Poslano</th><th>Odgovorilo</th><th>Postali klijenti</th></tr></thead><tbody>' +
+      kljuci.map(function(k) { var b = izv[k]; return '<tr><td>' + esc(k) + '</td><td>' + b.poslano + '</td><td>' + b.odgovorilo + ' <span>(' + pctTxt_(b.odgovorilo, b.poslano) + ')</span></td><td>' + b.klijenti + ' <span>(' + pctTxt_(b.klijenti, b.poslano) + ')</span></td></tr>'; }).join('') +
+      '</tbody></table></details>';
+  }
+  function uspjesnostRed_(naslov, boja, x, tekstOdgovor) {
+    if (!x) { return '<div class="uspj-red" style="--c:' + boja + '"><h3>' + esc(naslov) + '</h3><p class="uspj-det">Podaci se još učitavaju… probaj za par sekundi.</p></div>'; }
+    if (!x.poslano) { return '<div class="uspj-red" style="--c:' + boja + '"><h3>' + esc(naslov) + '</h3><p class="uspj-det">Ništa nije poslano u odabranom razdoblju.</p></div>'; }
+    var rec = 'Od ' + x.poslano + ' poslanih ' + tekstOdgovor + ' ' + x.odgovorilo + ' ih je odgovorilo (' + pctTxt_(x.odgovorilo, x.poslano) + '), a ' + x.klijenti + ' ih je postalo klijentima (' + pctTxt_(x.klijenti, x.poslano) + ' svih poslanih' + (x.odgovorilo ? '; ' + pctTxt_(x.klijenti, x.odgovorilo) + ' onih koji su odgovorili' : '') + ').';
+    var det = 'Od onih koji su odgovorili: ' + x.prihvatilo + ' pozitivno (zainteresirani/prihvatili), ' + x.odbilo + ' negativno.' + (typeof x.ceka === 'number' ? ' Još čeka odgovor: ' + x.ceka + '.' : '') + (x.samoUkupno ? ' (Razdoblje i kampanje za pisma bit će dostupni kad se postavi novi .gs.)' : '');
+    return '<div class="uspj-red" style="--c:' + boja + '"><h3>' + esc(naslov) + '</h3><div class="uspj-tok">' +
+      '<div class="uspj-kor"><div class="n">' + x.poslano + '</div><div class="l">Poslano</div><div class="p">100 %</div></div>' +
+      '<div class="uspj-str"><b>→</b>' + pctTxt_(x.odgovorilo, x.poslano) + '<br>odgovori</div>' +
+      '<div class="uspj-kor"><div class="n">' + x.odgovorilo + '</div><div class="l">Odgovorilo</div><div class="p">' + x.prihvatilo + ' da · ' + x.odbilo + ' ne</div></div>' +
+      '<div class="uspj-str"><b>→</b>' + pctTxt_(x.klijenti, x.odgovorilo) + '<br>od odgovorilih</div>' +
+      '<div class="uspj-kor"><div class="n">' + x.klijenti + '</div><div class="l">Postali klijenti</div><div class="p">' + pctTxt_(x.klijenti, x.poslano) + ' svih poslanih</div></div>' +
+      '</div><p class="uspj-rec">' + esc(rec) + '</p><p class="uspj-det">' + esc(det) + '</p>' + uspjIzvoriHtml_(x.izvori) + '</div>';
+  }
+  var USPJ_RAZDOBLJA_ = [['sve', 'Sve vrijeme'], ['30', 'Zadnjih 30 dana'], ['mjesec', 'Ovaj mjesec'], ['prosli', 'Prošli mjesec'], ['godina', 'Ova godina']];
+  function uspjesnostSadrzaj_(sloj) {
+    var rasp = uspjRaspon_(USPJ_STANJE_.razdoblje);
+    var tijelo = sloj.querySelector('.uspj-tijelo');
+    tijelo.innerHTML =
+      uspjesnostRed_('✉ Pisma namjere', '#7b3fc4', uspjesnostPisma_(rasp), 'pisama') +
+      uspjesnostRed_('📄 Ponude', '#8e44ad', uspjesnostPonude_(rasp), 'ponuda') +
+      uspjesnostRed_('📨 Otvorene ponude', '#0b7a7a', uspjesnostOtvorene_(rasp), 'otvorenih ponuda');
+    Array.prototype.forEach.call(sloj.querySelectorAll('.uspj-pill'), function(b) { b.classList.toggle('active', b.getAttribute('data-k') === USPJ_STANJE_.razdoblje); });
+  }
+  function uspjesnostOtvori_() {
+    var stari = document.getElementById('uspj-sloj'); if (stari) { stari.remove(); }
+    var sloj = document.createElement('div'); sloj.id = 'uspj-sloj'; sloj.className = 'uspj-sloj';
+    sloj.innerHTML = '<div class="uspj-kut"><button type="button" class="uspj-x" title="Zatvori">×</button><h2>📊 Uspješnost</h2>' +
+      '<p class="uspj-uvod">Za svaku vrstu slanja: koliko je <b>poslano</b>, koliko je firmi <b>odgovorilo</b> (pozitivno ili negativno) i koliko ih je <b>postalo klijentima</b>. Postoci su udio u onome što je prije toga. Razdoblje se računa po datumu <b>slanja</b> pisma/ponude.</p>' +
+      '<div class="uspj-pills">' + USPJ_RAZDOBLJA_.map(function(o) { return '<button type="button" class="uspj-pill" data-k="' + o[0] + '">' + o[1] + '</button>'; }).join('') + '</div>' +
+      '<div class="uspj-tijelo"></div></div>';
+    document.body.appendChild(sloj);
+    uspjesnostSadrzaj_(sloj);
+    Array.prototype.forEach.call(sloj.querySelectorAll('.uspj-pill'), function(b) { b.addEventListener('click', function() { USPJ_STANJE_.razdoblje = b.getAttribute('data-k'); uspjesnostSadrzaj_(sloj); }); });
+    var zatvori = function() { sloj.remove(); document.removeEventListener('keydown', onKey); };
+    var onKey = function(ev) { if (ev.key === 'Escape') { zatvori(); } };
+    document.addEventListener('keydown', onKey);
+    sloj.querySelector('.uspj-x').addEventListener('click', zatvori);
+    sloj.addEventListener('click', function(ev) { if (ev.target === sloj) { zatvori(); } });
   }
   function pctTxt_(a, b) { return b ? ((Math.round(a / b * 1000) / 10).toString().replace('.', ',') + ' %') : '—'; }
-  function pogodciProvjeriNove_() {
-    if (!adminToken) { return; }
-    var slojOtvoren = !!(document.getElementById('pogodak-sloj') || document.getElementById('raskid-sloj'));
-    gasCall({ action: 'adminPismaPogodci', token: adminToken }).then(function(res) {
-      if (res && res.code === 'auth') { return; }
-      pismaUcinkovitost_(res);
-      if (slojOtvoren || document.getElementById('pogodak-sloj') || document.getElementById('raskid-sloj')) { return; }
-      pogodciSlaviNove_(res);
-      unikorniPodsjetnikProvjeri_(res);
-    }).catch(function() {});
+  // v314: provjera pogodaka je teška za poslužitelj (čita cijele tablice) — zato se ne pokreće dok prethodna još traje i ne češće od POGODCI_MIN_RAZMAK_MS_
+  var POGODCI_U_TIJEKU_ = false, POGODCI_ZADNJA_ = 0, POGODCI_MIN_RAZMAK_MS_ = 90000;
+  var POGODCI_CEKA_ = [];
+  function pogodakStatus_(tekst, radi, nova) {
+    var st = document.getElementById('kp-bs-status'), g = document.getElementById('kp-bs-gumb'), k = document.getElementById('kp-bs-klik');
+    if (st && tekst) { st.textContent = tekst; }
+    if (g) { g.classList.toggle('radi', !!radi); g.classList.toggle('nova', !!nova); }
+    if (k) { k.textContent = radi ? 'Provjeravam…' : 'Provjeri ›'; }
   }
-  // dok je admin otvoren (na bilo kojoj kartici ili u drugom prozoru preglednika) svakih 60 s provjerava ima li novog pogotka — čim se pojavi, upali se animacija
+  function pogodciProvjeriNove_(force, kraj) {
+    if (typeof kraj === 'function') { POGODCI_CEKA_.push(kraj); }
+    if (!adminToken) { return; }
+    if (POGODCI_U_TIJEKU_) { return; }
+    if (force !== true && Date.now() - POGODCI_ZADNJA_ < POGODCI_MIN_RAZMAK_MS_) { return; }
+    POGODCI_U_TIJEKU_ = true; POGODCI_ZADNJA_ = Date.now();
+    var slojOtvoren = !!(document.getElementById('pogodak-sloj') || document.getElementById('raskid-sloj'));
+    var zavrsi = function(info) { var l = POGODCI_CEKA_.splice(0); l.forEach(function(f) { try { f(info); } catch (eK) {} }); };
+    gasCall({ action: 'adminPismaPogodci', token: adminToken }).then(function(res) {
+      POGODCI_U_TIJEKU_ = false;
+      if (res && res.code === 'auth') { zavrsi({ ok: false }); return; }
+      pismaUcinkovitost_(res);
+      var novih = 0;
+      if (!(slojOtvoren || document.getElementById('pogodak-sloj') || document.getElementById('raskid-sloj'))) {
+        novih = pogodciSlaviNove_(res) || 0;
+        unikorniPodsjetnikProvjeri_(res);
+      }
+      var sat = new Date().toLocaleTimeString('hr-HR', { hour: '2-digit', minute: '2-digit' });
+      pogodakStatus_('Zadnja provjera ' + sat + (novih ? ' · 🎯 novo: ' + novih : ' · nema novih'), false, novih > 0);
+      zavrsi({ ok: !!(res && res.status === 'ok'), novih: novih, res: res });
+    }).catch(function() { POGODCI_U_TIJEKU_ = false; pogodakStatus_('Provjera nije uspjela — probaj ponovno', false, false); zavrsi({ ok: false }); });
+  }
+  // klik na Battleships ploču: odmah provjeri pogotke (javio se / potpisao / klijent…) i osvježi popis unosa
+  function pogodakRucnaProvjera_() {
+    if (POGODCI_RUCNA_) { return; }
+    POGODCI_RUCNA_ = true;
+    pogodakStatus_('Provjeravam odgovore, potpise i nove klijente…', true, false);
+    try { loadEntries(); } catch (eL) { /* nije kritično */ }
+    pogodciProvjeriNove_(true, function(info) {
+      POGODCI_RUCNA_ = false;
+      if (!info || !info.ok) { pogodakStatus_('Provjera nije uspjela — probaj ponovno', false, false); }
+    });
+    setTimeout(function() { POGODCI_RUCNA_ = false; }, 60000);
+  }
+  var POGODCI_RUCNA_ = false;
+  // dok je admin otvoren (na bilo kojoj kartici ili u drugom prozoru preglednika) svake 3 min (v314; prije 60 s) provjerava ima li novog pogotka — čim se pojavi, upali se animacija
   function pogodciPokreniPracenje_() {
     if (pogodciPoll_) { return; }
-    pogodciPoll_ = setInterval(pogodciProvjeriNove_, 60000);
+    pogodciPoll_ = setInterval(function() { pogodciProvjeriNove_(); }, 180000);
   }
   function pogodciZaustaviPracenje_() { if (pogodciPoll_) { clearInterval(pogodciPoll_); pogodciPoll_ = null; } }
   document.addEventListener('visibilitychange', function() {

@@ -125,16 +125,64 @@ function formatirajSheetVrijednost_(v) {
 // je obliku pozvan:
 //   posaljiMail_(primatelj, predmet, tijelo, opcije)   — GmailApp oblik
 //   posaljiMail_({ to: ..., subject: ..., body: ..., ... })  — MailApp oblik
+// v313: odgovori klijenata idu na in-time.hr adresu (a ne na Gmail račun s kojeg se šalje). Ako mail već nosi svoj replyTo (npr. postavka u Pismima), on ima prednost.
+// Promjena/isključivanje bez deploya: Script property REPLY_TO_ADRESA (prazna vrijednost = isključeno).
+var ODGOVORI_NA_ZADANO_ = 'sasa.batinac@in-time.hr';
+function odgovoriNaAdresa_() {
+  try { var p = PropertiesService.getScriptProperties().getProperty('REPLY_TO_ADRESA'); if (p !== null) { return String(p).trim(); } } catch (e) { /* koristi zadano */ }
+  return ODGOVORI_NA_ZADANO_;
+}
+// v317: adresa pošiljatelja za SVE mailove — Gmail „Send mail as” alias (zadano sasa.batinac@in-time.hr).
+// Koristi se samo ako je alias stvarno postavljen u Gmailu računa skripte (GmailApp.getAliases); inače se tiho šalje s računa skripte.
+// Promjena/isključivanje bez deploya: Script property MAIL_FROM_ADRESA (prazna vrijednost = isključeno).
+var MAIL_FROM_ZADANO_ = 'sasa.batinac@in-time.hr';
+var MAIL_FROM_MEMO_ = null;
+function zadanaFromAdresa_() {
+  if (MAIL_FROM_MEMO_ !== null) { return MAIL_FROM_MEMO_; }
+  var adr = MAIL_FROM_ZADANO_;
+  try { var pr = PropertiesService.getScriptProperties().getProperty('MAIL_FROM_ADRESA'); if (pr !== null) { adr = String(pr).trim(); } } catch (e) { /* zadano */ }
+  var ok = '';
+  if (adr) {
+    try {
+      var cache = CacheService.getScriptCache(), kljuc = 'fromok:' + adr.toLowerCase(), c = cache.get(kljuc);
+      if (c === null) {
+        var al = (GmailApp.getAliases() || []).map(function(x) { return String(x).toLowerCase(); });
+        c = al.indexOf(adr.toLowerCase()) !== -1 ? '1' : '0';
+        cache.put(kljuc, c, c === '1' ? 21600 : 300);
+      }
+      if (c === '1') { ok = adr; }
+    } catch (e2) { ok = ''; }
+  }
+  MAIL_FROM_MEMO_ = ok;
+  return ok;
+}
 function posaljiMail_(toIliOpcije, subject, body, opcije) {
+  var odgNa_ = odgovoriNaAdresa_();
+  var fromAdr_ = zadanaFromAdresa_();
   if (toIliOpcije && typeof toIliOpcije === 'object') {
     var opcijeSaBcc = Object.assign({}, toIliOpcije);
+    if (odgNa_ && !opcijeSaBcc.replyTo) { opcijeSaBcc.replyTo = odgNa_; }
     opcijeSaBcc.bcc = dodajGlobalnuBcc_(opcijeSaBcc.bcc);
     if (opcijeSaBcc.attachments) { opcijeSaBcc.attachments = bezAnalitickihPrivitaka_(opcijeSaBcc.attachments); if (!opcijeSaBcc.attachments.length) { delete opcijeSaBcc.attachments; } }
+    if (fromAdr_) {
+      // MailApp ne zna „from” — isti mail ide kroz GmailApp s aliasom; ako to ne uspije, šalje se kao prije
+      var gOpts = {};
+      ['cc', 'bcc', 'htmlBody', 'replyTo', 'name', 'attachments', 'inlineImages', 'noReply'].forEach(function(k) { if (opcijeSaBcc[k] !== undefined && opcijeSaBcc[k] !== null && opcijeSaBcc[k] !== '') { gOpts[k] = opcijeSaBcc[k]; } });
+      gOpts.from = fromAdr_;
+      try { GmailApp.sendEmail(opcijeSaBcc.to, opcijeSaBcc.subject || '', opcijeSaBcc.body || skiniHtmlTagoveZaFallback_(opcijeSaBcc.htmlBody) || ' ', gOpts); return; }
+      catch (eF1) { /* alias nije prošao — običan put dolje */ }
+    }
     MailApp.sendEmail(opcijeSaBcc);
   } else {
     var opts = Object.assign({}, opcije || {});
+    if (odgNa_ && !opts.replyTo) { opts.replyTo = odgNa_; }
     opts.bcc = dodajGlobalnuBcc_(opts.bcc);
     if (opts.attachments) { opts.attachments = bezAnalitickihPrivitaka_(opts.attachments); if (!opts.attachments.length) { delete opts.attachments; } }
+    if (fromAdr_ && !opts.from) {
+      var opts2 = Object.assign({}, opts); opts2.from = fromAdr_;
+      try { GmailApp.sendEmail(toIliOpcije, subject, body, opts2); return; }
+      catch (eF2) { /* alias nije prošao — šalje se bez njega */ }
+    }
     GmailApp.sendEmail(toIliOpcije, subject, body, opts);
   }
 }
@@ -1011,8 +1059,43 @@ function izracunajOcekivanoZaglavljeAnkete_() {
 // POPRAVAK 20.9.2026. (18. krug) — isti razlog i isto rješenje kao u
 // getOrCreateUpitiSheet() gore (LockService oko poravnanja zaglavlja, jer
 // adminGetCounters() I adminListAnkete() oba zovu ovu funkciju usporedno).
+// ============================================================
+// v314 — BRZI PRISTUP TABLICAMA (ubrzanje: Sašin zahtjev 19.10.2026.)
+// Prije: SVAKI poziv je za SVAKU tablicu tražio datoteku po imenu kroz Drive (sporo), uzimao globalni lock i uspoređivao cijelo zaglavlje.
+// Sad: (1) ID datoteke pamti se u kešu (6 h; ako je datoteka u smeću ili je nema, traži se po imenu kao prije),
+//      (2) provjera/popravak zaglavlja (i lock oko nje) radi se samo kad zaglavlje nije provjereno u zadnjih 6 h ZA ISTU verziju koda
+//          (ključ keša sadrži otisak očekivanog zaglavlja — nova verzija koda s novim stupcima odmah ponovno provjerava),
+//      (3) unutar jednog izvršenja ista tablica se otvara samo jednom (SHEET_MEMO_ — globali se ne dijele između poziva).
+// ============================================================
+var SHEET_MEMO_ = {};
+var SHEET_KES_SEK_ = 21600;
+function dohvatiDatoteke_(ime) {
+  var f = null, cache = null, kljuc = 'fid:' + ime;
+  try {
+    cache = CacheService.getScriptCache();
+    var id = cache.get(kljuc);
+    if (id) { var x = DriveApp.getFileById(id); if (!x.isTrashed()) { f = x; } }
+  } catch (e0) { f = null; }
+  if (!f) {
+    var it = DriveApp.getFilesByName(ime);
+    if (it.hasNext()) {
+      f = it.next();
+      try { if (cache) { cache.put(kljuc, f.getId(), SHEET_KES_SEK_); } } catch (e1) { /* keš nije kritičan */ }
+    }
+  }
+  var preostalo = !!f;
+  return { hasNext: function() { return preostalo; }, next: function() { preostalo = false; return f; } };
+}
+function zaglavljeKljuc_(naziv, ssId, ocekivano) {
+  var d = Utilities.computeDigest(Utilities.DigestAlgorithm.MD5, (ocekivano || []).join('\u0001'));
+  return 'hdr:' + naziv + ':' + ssId + ':' + d.map(function(b) { return ('0' + (b & 0xff).toString(16)).slice(-2); }).join('');
+}
+function zaglavljeProvjereno_(kljuc) { try { return !!CacheService.getScriptCache().get(kljuc); } catch (e) { return false; } }
+function zaglavljeOznaci_(kljuc) { try { CacheService.getScriptCache().put(kljuc, '1', SHEET_KES_SEK_); } catch (e) { /* nije kritično */ } }
+
 function getOrCreateAnketaSheet() {
-  var files = DriveApp.getFilesByName(ANKETA_SHEET_NAME);
+  if (SHEET_MEMO_.anketa) { return SHEET_MEMO_.anketa; }
+  var files = dohvatiDatoteke_(ANKETA_SHEET_NAME);
   var ss;
   if (files.hasNext()) {
     ss = SpreadsheetApp.open(files.next());
@@ -1020,10 +1103,12 @@ function getOrCreateAnketaSheet() {
     ss = SpreadsheetApp.create(ANKETA_SHEET_NAME);
   }
   var sheet = ss.getSheets()[0];
+  var ocekivano = izracunajOcekivanoZaglavljeAnkete_();
+  var hKljuc = zaglavljeKljuc_('ankete', ss.getId(), ocekivano);
+  if (zaglavljeProvjereno_(hKljuc)) { SHEET_MEMO_.anketa = sheet; return sheet; }
   var lock = LockService.getScriptLock();
   lock.waitLock(20000);
   try {
-  var ocekivano = izracunajOcekivanoZaglavljeAnkete_();
   if (sheet.getLastRow() === 0) {
     // Sasvim nov (prazan) sheet — upiši zaglavlje odmah.
     sheet.appendRow(ocekivano);
@@ -1051,6 +1136,8 @@ function getOrCreateAnketaSheet() {
   } finally {
     lock.releaseLock();
   }
+  zaglavljeOznaci_(hKljuc);
+  SHEET_MEMO_.anketa = sheet;
   return sheet;
 }
 
@@ -1065,7 +1152,11 @@ function getOrCreateAnketaSheet() {
 // stranici — vidi faqOcjena() niže).
 // ============================================================
 function getOrCreateFaqSheet() {
-  var files = DriveApp.getFilesByName(FAQ_SHEET_NAME);
+  if (!SHEET_MEMO_.faq) { SHEET_MEMO_.faq = getOrCreateFaqSheet_izvorno_(); }
+  return SHEET_MEMO_.faq;
+}
+function getOrCreateFaqSheet_izvorno_() {
+  var files = dohvatiDatoteke_(FAQ_SHEET_NAME);
   var ss;
   var header = ['Pitanje', 'Odgovor', 'SlikaId', 'VideoId', 'PdfId', 'Redoslijed', 'SlikaPoravnanje', 'Datum', 'Lajkovi', 'Nelajkovi'];
   if (files.hasNext()) {
@@ -1543,7 +1634,11 @@ var IMENIK_COL = {
 };
 
 function getOrCreateImenikSheet() {
-  var files = DriveApp.getFilesByName(IMENIK_SHEET_NAME);
+  if (!SHEET_MEMO_.imenik) { SHEET_MEMO_.imenik = getOrCreateImenikSheet_izvorno_(); }
+  return SHEET_MEMO_.imenik;
+}
+function getOrCreateImenikSheet_izvorno_() {
+  var files = dohvatiDatoteke_(IMENIK_SHEET_NAME);
   var ss;
   if (files.hasNext()) {
     ss = SpreadsheetApp.open(files.next());
@@ -4475,7 +4570,7 @@ function dodajHtmlPredloskeAkoNedostaju_(sheet) {
 }
 
 function getOrCreateMailPredlosciSheet() {
-  var files = DriveApp.getFilesByName(MAIL_PREDLOSCI_SHEET_NAME);
+  var files = dohvatiDatoteke_(MAIL_PREDLOSCI_SHEET_NAME);
   var ss;
   // Stupac 'HTML' dodan na SAM KRAJ (trideset i prvi krug, 20.9.2026., Sašin
   // izričit zahtjev — predlošci koji smiju sadržavati HTML/slike, ne samo
@@ -5045,7 +5140,7 @@ function faqOcjena(rowIndex, tip) {
 // promjueniti ce se u faqu...ucitati novi podaci"), ne dodaje im se.
 // ============================================================
 function getOrCreateZoneSheet() {
-  var files = DriveApp.getFilesByName(ZONE_SHEET_NAME);
+  var files = dohvatiDatoteke_(ZONE_SHEET_NAME);
   var ss;
   if (files.hasNext()) {
     ss = SpreadsheetApp.open(files.next());
@@ -5098,7 +5193,7 @@ function getOrCreateZoneArhivaFolder_() {
 // NazivDatoteke, BrojGradova, DriveFileId (ID kopije .xlsx datoteke u
 // ZONE_ARHIVA_FOLDER_NAME, za kasnije preuzimanje/vraćanje).
 function getOrCreateZoneArhivaLogSheet_() {
-  var files = DriveApp.getFilesByName(ZONE_ARHIVA_SHEET_NAME);
+  var files = dohvatiDatoteke_(ZONE_ARHIVA_SHEET_NAME);
   var ss;
   if (files.hasNext()) {
     ss = SpreadsheetApp.open(files.next());
@@ -5665,7 +5760,7 @@ function getOrCreateKalkulatorCjenikArhivaFolder_() {
 }
 
 function getOrCreateKalkulatorCjenikArhivaLogSheet_() {
-  var files = DriveApp.getFilesByName(KALKULATOR_CJENIK_ARHIVA_SHEET_NAME);
+  var files = dohvatiDatoteke_(KALKULATOR_CJENIK_ARHIVA_SHEET_NAME);
   var ss;
   if (files.hasNext()) {
     ss = SpreadsheetApp.open(files.next());
@@ -5848,7 +5943,7 @@ function adminKalkulatorCjenikArhivaDelete(token, fileId) {
 var KALKULATOR_NAPOMENE_SHEET_NAME = 'InTime_Kalkulator_Napomene';
 
 function getOrCreateKalkulatorNapomeneSheet_() {
-  var files = DriveApp.getFilesByName(KALKULATOR_NAPOMENE_SHEET_NAME);
+  var files = dohvatiDatoteke_(KALKULATOR_NAPOMENE_SHEET_NAME);
   var ss;
   if (files.hasNext()) {
     ss = SpreadsheetApp.open(files.next());
@@ -6053,7 +6148,7 @@ function ucitajKlijentovCjenikIzBloba_(blob, filename) {
 // stabilan identifikator za restore/delete — NE koristi se redni broj retka
 // (taj se pomiče kod brisanja).
 function getOrCreateKalkulatorCjenikKlijentArhivaSheet_() {
-  var files = DriveApp.getFilesByName(KALKULATOR_CJENIK_KLIJENT_ARHIVA_SHEET_NAME);
+  var files = dohvatiDatoteke_(KALKULATOR_CJENIK_KLIJENT_ARHIVA_SHEET_NAME);
   var ss;
   if (files.hasNext()) {
     ss = SpreadsheetApp.open(files.next());
@@ -6806,7 +6901,7 @@ function kalkulatorKlijentPrijava(usernameUneseno, lozinkaUnesena) {
 // kasnije otvoriti zapis i vidjeti TOČNO što je klijent unio/dobio.
 var KALKULATOR_EVIDENCIJA_SHEET_NAME_ = 'InTime_Kalkulator_Evidencija';
 function getOrCreateKalkulatorEvidencijaSheet_() {
-  var files = DriveApp.getFilesByName(KALKULATOR_EVIDENCIJA_SHEET_NAME_);
+  var files = dohvatiDatoteke_(KALKULATOR_EVIDENCIJA_SHEET_NAME_);
   var ss;
   var header = ['Datum', 'Vrsta', 'TM broj', 'Naziv tvrtke', 'Korisničko ime', 'IP adresa', 'Ulazni podaci (JSON)', 'Rezultat sažetak', 'Rezultat HTML'];
   if (files.hasNext()) {
@@ -7173,7 +7268,11 @@ function raskidHeader_() {
 }
 
 function getOrCreateRaskidSheet() {
-  var files = DriveApp.getFilesByName(RASKID_SHEET_NAME);
+  if (!SHEET_MEMO_.raskid) { SHEET_MEMO_.raskid = getOrCreateRaskidSheet_izvorno_(); }
+  return SHEET_MEMO_.raskid;
+}
+function getOrCreateRaskidSheet_izvorno_() {
+  var files = dohvatiDatoteke_(RASKID_SHEET_NAME);
   var ss = files.hasNext() ? SpreadsheetApp.open(files.next()) : SpreadsheetApp.create(RASKID_SHEET_NAME);
   var sheet = ss.getSheets()[0];
   var header = raskidHeader_();
@@ -7400,7 +7499,7 @@ function adminRaskidPostavkeReset(token, predlozakId) {
 }
 
 function getOrCreateRaskidPoslanoSheet_() {
-  var files = DriveApp.getFilesByName(RASKID_POSLANO_SHEET_);
+  var files = dohvatiDatoteke_(RASKID_POSLANO_SHEET_);
   var ss = files.hasNext() ? SpreadsheetApp.open(files.next()) : SpreadsheetApp.create(RASKID_POSLANO_SHEET_);
   var sheet = ss.getSheets()[0];
   if (sheet.getLastRow() === 0) {
@@ -8119,7 +8218,7 @@ function doPost(e) {
     } else if (data.action === 'adminKlijentPristupUvodniTekstoviReset') {
       result = adminKlijentPristupUvodniTekstoviReset(data.token);
     } else if (data.action === 'adminUcitajPocetno') {
-      result = adminUcitajPocetno(data.token);
+      result = adminUcitajPocetno(data.token, data.faza);
     } else if (data.action === 'adminGetCounters') {
       result = adminGetCounters(data.token);
     } else if (data.action === 'adminResetPosjeteUkupno') {
@@ -8461,7 +8560,7 @@ function doPost(e) {
     } else if (data.action === 'adminPismaIzlazSpremi') {
       result = adminPismaIzlazSpremi(data.token, data.razmak, data.ime, data.from, data.replyTo, data.bcc);
     } else if (data.action === 'adminPismaArhiva') {
-      result = adminPismaArhiva(data.token, data.q, data.datumOd, data.datumDo, data.kampanja, data.status, data.vrsta, data.odgovor);
+      result = adminPismaArhiva(data.token, data.q, data.datumOd, data.datumDo, data.kampanja, data.status, data.vrsta, data.odgovor, data.izvor);
     } else if (data.action === 'adminPismaArhivaBrisi') {
       result = adminPismaArhivaBrisi(data.token, data.lozinka, data.rijec, data.stavke);
     } else if (data.action === 'adminPismaPostavke') {
@@ -9578,7 +9677,7 @@ var LOGISTICKI_CENTRI_SHEET_NAME = 'InTime_Logisticki_Centri';
 var LOGISTICKI_OSOBE_SHEET_NAME = 'InTime_Logisticki_Osobe';
 
 function getOrCreateLogistickiOsobeSheet_() {
-  var files = DriveApp.getFilesByName(LOGISTICKI_OSOBE_SHEET_NAME);
+  var files = dohvatiDatoteke_(LOGISTICKI_OSOBE_SHEET_NAME);
   if (files.hasNext()) { return SpreadsheetApp.open(files.next()).getSheets()[0]; }
   var ss = SpreadsheetApp.create(LOGISTICKI_OSOBE_SHEET_NAME);
   var sheet = ss.getSheets()[0];
@@ -9666,7 +9765,7 @@ function dodajIliPopraviZadarCentarAkoTreba_(sheetCentri) {
 }
 
 function getOrCreateLogistickiCentriSheet_() {
-  var files = DriveApp.getFilesByName(LOGISTICKI_CENTRI_SHEET_NAME);
+  var files = dohvatiDatoteke_(LOGISTICKI_CENTRI_SHEET_NAME);
   if (files.hasNext()) {
     var postojeci = SpreadsheetApp.open(files.next()).getSheets()[0];
     popraviLogistickiKontaktiFormat_(postojeci);
@@ -10145,27 +10244,32 @@ function adminResetPosjeteSveukupno(token) {
 // pojedinačno osvježavanje, npr. nakon spremanja FAQ-a ili uploada zona) —
 // ova funkcija se koristi SAMO za početno/cjelovito učitavanje dashboarda
 // (vidi loadAll() u InTime_Admin.html).
-function adminUcitajPocetno(token) {
+// v316: dvije faze — 'jezgra' (brojači, unosi, brojevi, imenik: ono što treba za prvi prikaz) i 'ostalo' (ankete, FAQ, zone, kalkulator, gorivo...).
+// Bez parametra faza vraća sve odjednom (kompatibilno sa starim Admin.html).
+function adminUcitajPocetno(token, faza) {
   if (!isValidAdminToken_(token)) { return { status: 'error', message: 'Sesija je istekla — prijavite se ponovno.' }; }
-  return {
-    status: 'ok',
-    counters: adminGetCounters(token),
-    entries: adminListEntries(token),
-    ankete: adminListAnkete(token),
-    anketaStatistika: adminGetAnketaStatistika(token),
-    faq: adminFaqList(token),
-    zoneStatus: adminZoneStatus(token),
-    zoneArhiva: adminZoneArhivaList(token),
-    kalkulatorCjenikStatus: adminKalkulatorCjenikStatus(token),
-    kalkulatorCjenikArhiva: adminKalkulatorCjenikArhivaList(token),
-    kalkulatorNapomene: adminKalkulatorNapomenaList(token),
-    brojStatus: adminGetBrojStatus(token),
-    imenik: adminListImenik(token),
-    imenikAutoSync: adminGetImenikAutoSync(token),
-    gorivoPostotci: gorivoDohvatiPostotke(token),
-    gorivoEmail: gorivoDohvatiEmailPodsjetnik(token),
-    gorivoDogadjaji: gorivoDohvatiDogadjaje(token)
-  };
+  var r = { status: 'ok' };
+  if (faza !== 'ostalo') {
+    r.counters = adminGetCounters(token);
+    r.entries = adminListEntries(token);
+    r.brojStatus = adminGetBrojStatus(token);
+    r.imenik = adminListImenik(token);
+  }
+  if (faza !== 'jezgra') {
+    r.ankete = adminListAnkete(token);
+    r.anketaStatistika = adminGetAnketaStatistika(token);
+    r.faq = adminFaqList(token);
+    r.zoneStatus = adminZoneStatus(token);
+    r.zoneArhiva = adminZoneArhivaList(token);
+    r.kalkulatorCjenikStatus = adminKalkulatorCjenikStatus(token);
+    r.kalkulatorCjenikArhiva = adminKalkulatorCjenikArhivaList(token);
+    r.kalkulatorNapomene = adminKalkulatorNapomenaList(token);
+    r.imenikAutoSync = adminGetImenikAutoSync(token);
+    r.gorivoPostotci = gorivoDohvatiPostotke(token);
+    r.gorivoEmail = gorivoDohvatiEmailPodsjetnik(token);
+    r.gorivoDogadjaji = gorivoDohvatiDogadjaje(token);
+  }
+  return r;
 }
 
 // Brojači za admin dashboard: posjete (iz PropertiesService), pozitivno/
@@ -10270,7 +10374,8 @@ function adminListEntries(token) {
     var obj = {};
     for (var c = 0; c < header.length; c++) {
       var v = data[i][c];
-      obj[header[c]] = formatirajSheetVrijednost_(v);
+      var fv_ = formatirajSheetVrijednost_(v);
+      if (fv_ !== '' && fv_ !== null && fv_ !== undefined) { obj[header[c]] = fv_; }   // v314: prazna polja se ne šalju (89 % polja je prazno); klijent ih vraća preko "zaglavlje"
     }
     // Sašin izričit zahtjev (20.9.2026., dvadeset i sedmi krug — "ako
     // prihvate neka piše dan datum sat minuta i sekunda"): svi ostali
@@ -10320,7 +10425,9 @@ function adminListEntries(token) {
   }
   // Najnoviji upiti prvi.
   entries.reverse();
-  return { status: 'ok', entries: entries, labelToKey: labelToKey };
+  var zaglavljeSvih_ = header.slice();
+  ['Datum slanja aktivne ponude (admin)', 'Datum odbijanja ponude (admin)', 'Datum prihvaćanja ponude (admin)', 'Datum poništenja ponude (admin)', 'Datum poništenja prihvaćene ponude (admin)'].forEach(function(lbl) { if (header.indexOf(lbl) !== -1) { zaglavljeSvih_.push(lbl + ' (sek)'); } });
+  return { status: 'ok', entries: entries, labelToKey: labelToKey, zaglavlje: zaglavljeSvih_ };
 }
 
 // Upisuje polja upitnika koje Saša RUČNO promijeni kroz admin stranicu.
@@ -13252,7 +13359,11 @@ var LOGK_GRUPA_ = 'PANTHER - logistički podaci';   // naljepnica (label) u Goog
 var LOGK_PO_POZIVU_ = 6;
 
 function getOrCreateLogKontaktiSheet_() {
-  var files = DriveApp.getFilesByName(LOGK_SHEET_NAME);
+  if (!SHEET_MEMO_.logk) { SHEET_MEMO_.logk = getOrCreateLogKontaktiSheet__izvorno_(); }
+  return SHEET_MEMO_.logk;
+}
+function getOrCreateLogKontaktiSheet__izvorno_() {
+  var files = dohvatiDatoteke_(LOGK_SHEET_NAME);
   var ss = files.hasNext() ? SpreadsheetApp.open(files.next()) : SpreadsheetApp.create(LOGK_SHEET_NAME);
   var sheet = ss.getSheets()[0];
   if (sheet.getLastRow() === 0) {
@@ -15157,7 +15268,8 @@ function buildOdbijenicaConfirmationEmail(data) {
 // LockService-om, tako da se dva poziva nikad ne izvode paralelno nad istim
 // sheetom.
 function getOrCreateUpitiSheet() {
-  var files = DriveApp.getFilesByName(SHEET_NAME);
+  if (SHEET_MEMO_.upiti) { return SHEET_MEMO_.upiti; }
+  var files = dohvatiDatoteke_(SHEET_NAME);
   var ss;
   if (files.hasNext()) {
     ss = SpreadsheetApp.open(files.next());
@@ -15165,22 +15277,27 @@ function getOrCreateUpitiSheet() {
     ss = SpreadsheetApp.create(SHEET_NAME);
   }
   var sheet = ss.getSheets()[0];
-  var lock = LockService.getScriptLock();
-  lock.waitLock(20000);
-  try {
-    var ocekivano = izracunajOcekivanoZaglavljeUpiti_();
-    if (sheet.getLastRow() === 0) {
-      // Sasvim nov (prazan) sheet — upiši zaglavlje odmah.
-      sheet.appendRow(ocekivano);
-      sheet.getRange(1, 1, 1, ocekivano.length).setFontWeight('bold');
-      sheet.setFrozenRows(1);
-    } else {
-      uskladiZaglavljeUpitiSheeta_(sheet, ocekivano);
+  var ocekivano = izracunajOcekivanoZaglavljeUpiti_();
+  var hKljuc = zaglavljeKljuc_('upiti', ss.getId(), ocekivano);
+  if (!zaglavljeProvjereno_(hKljuc)) {
+    var lock = LockService.getScriptLock();
+    lock.waitLock(20000);
+    try {
+      if (sheet.getLastRow() === 0) {
+        // Sasvim nov (prazan) sheet — upiši zaglavlje odmah.
+        sheet.appendRow(ocekivano);
+        sheet.getRange(1, 1, 1, ocekivano.length).setFontWeight('bold');
+        sheet.setFrozenRows(1);
+      } else {
+        uskladiZaglavljeUpitiSheeta_(sheet, ocekivano);
+      }
+    } finally {
+      lock.releaseLock();
     }
-  } finally {
-    lock.releaseLock();
+    zaglavljeOznaci_(hKljuc);
   }
   upitiAutoPopravi_(sheet);
+  SHEET_MEMO_.upiti = sheet;
   return sheet;
 }
 
@@ -15843,7 +15960,11 @@ function postaviTrigerZaDnevnoCiscenjeKante() {
 // ============================================================
 
 function getOrCreateGorivoSheet_() {
-  var files = DriveApp.getFilesByName(GORIVO_SHEET_NAME);
+  if (!SHEET_MEMO_.gorivo) { SHEET_MEMO_.gorivo = getOrCreateGorivoSheet__izvorno_(); }
+  return SHEET_MEMO_.gorivo;
+}
+function getOrCreateGorivoSheet__izvorno_() {
+  var files = dohvatiDatoteke_(GORIVO_SHEET_NAME);
   var ss;
   if (files.hasNext()) {
     ss = SpreadsheetApp.open(files.next());
@@ -16251,7 +16372,7 @@ var GORIVO_CIJENE_SHEET_NAME = 'InTime_Gorivo_Cijene';
 var HAK_CIJENE_URL_ = 'https://www.hak.hr/info/cijene-goriva/';
 
 function getOrCreateGorivoCijeneSheet_() {
-  var files = DriveApp.getFilesByName(GORIVO_CIJENE_SHEET_NAME);
+  var files = dohvatiDatoteke_(GORIVO_CIJENE_SHEET_NAME);
   var ss;
   if (files.hasNext()) {
     ss = SpreadsheetApp.open(files.next());
@@ -16515,7 +16636,11 @@ var GORIVO_DOGADJAJI_SHEET_NAME = 'InTime_Gorivo_Dogadjaji';
 var GORIVO_DOGADJAJI_HEADER = ['Datum', 'Naziv', 'Vidljivo'];
 
 function getOrCreateGorivoDogadjajiSheet_() {
-  var files = DriveApp.getFilesByName(GORIVO_DOGADJAJI_SHEET_NAME);
+  if (!SHEET_MEMO_.gorivodog) { SHEET_MEMO_.gorivodog = getOrCreateGorivoDogadjajiSheet__izvorno_(); }
+  return SHEET_MEMO_.gorivodog;
+}
+function getOrCreateGorivoDogadjajiSheet__izvorno_() {
+  var files = dohvatiDatoteke_(GORIVO_DOGADJAJI_SHEET_NAME);
   var ss;
   var noviJe = false;
   if (files.hasNext()) {
@@ -17147,7 +17272,11 @@ function brziImenikUnos(token, ime, tvrtka, telefon, email, napomena) {
 }
 
 function getOrCreateBrziBiljeskeSheet_() {
-  var files = DriveApp.getFilesByName(BRZI_BILJESKE_SHEET_NAME);
+  if (!SHEET_MEMO_.brzibilj) { SHEET_MEMO_.brzibilj = getOrCreateBrziBiljeskeSheet__izvorno_(); }
+  return SHEET_MEMO_.brzibilj;
+}
+function getOrCreateBrziBiljeskeSheet__izvorno_() {
+  var files = dohvatiDatoteke_(BRZI_BILJESKE_SHEET_NAME);
   var ss = files.hasNext() ? SpreadsheetApp.open(files.next()) : SpreadsheetApp.create(BRZI_BILJESKE_SHEET_NAME);
   var sheet = ss.getSheets()[0];
   if (sheet.getLastRow() === 0) {
@@ -18178,7 +18307,7 @@ var CENTRI_EXPORT_STUPCI_ = [
 ];
 
 function getOrCreateCentriPristupSheet_() {
-  var files = DriveApp.getFilesByName(CENTRI_PRISTUP_SHEET_NAME);
+  var files = dohvatiDatoteke_(CENTRI_PRISTUP_SHEET_NAME);
   if (files.hasNext()) {
     var postojeci = SpreadsheetApp.open(files.next()).getSheets()[0];
     // Self-heal: stupac "Lozinka (vidljiva adminu)" (3.10.2026.) dopisuje se na kraj postojećeg Sheeta.
@@ -18664,7 +18793,7 @@ var CJENIK_ARHIVA_HEADER_ = ['ID', 'Naziv', 'Izvorna datoteka', 'Datum spremanja
 var CJENIK_ARHIVA_MAX_B_ = 8 * 1024 * 1024;
 
 function getOrCreateCjenikArhivaSheet_() {
-  var files = DriveApp.getFilesByName(CJENIK_ARHIVA_SHEET_NAME);
+  var files = dohvatiDatoteke_(CJENIK_ARHIVA_SHEET_NAME);
   if (files.hasNext()) { return SpreadsheetApp.open(files.next()).getSheets()[0]; }
   var ss = SpreadsheetApp.create(CJENIK_ARHIVA_SHEET_NAME);
   var sheet = ss.getSheets()[0];
@@ -18810,7 +18939,7 @@ function kolegeBrojKalk_(v) {
 }
 
 function getOrCreateKolegeSheet_() {
-  var files = DriveApp.getFilesByName(KOLEGE_SHEET_NAME);
+  var files = dohvatiDatoteke_(KOLEGE_SHEET_NAME);
   if (files.hasNext()) {
     var shExist = SpreadsheetApp.open(files.next()).getSheets()[0];
     // Postojeća tablica (prije 3.10.2026.) nema stupac "Broj kalkulatora" — dodaj ga.
@@ -18833,7 +18962,7 @@ function getOrCreateKolegeSheet_() {
 
 function getOrCreateKolegeEvidencijaSheet_() {
   var header = ['Datum', 'Vrsta', 'Funkcija', 'Ime i prezime', 'Korisničko ime', 'IP adresa', 'Ulazni podaci (JSON)', 'Rezultat sažetak', 'Rezultat HTML'];
-  var files = DriveApp.getFilesByName(KOLEGE_EVID_SHEET_NAME);
+  var files = dohvatiDatoteke_(KOLEGE_EVID_SHEET_NAME);
   if (files.hasNext()) { return SpreadsheetApp.open(files.next()).getSheets()[0]; }
   var ss = SpreadsheetApp.create(KOLEGE_EVID_SHEET_NAME);
   var sheet = ss.getSheets()[0];
@@ -19761,7 +19890,7 @@ function pismaValidirajRed_(r) {
 var PISMA_NACRTI_SHEET_NAME_ = 'InTime_Pisma_Nacrti';
 var PISMA_NACRTI_HEADER_ = ['ID', 'Datum spremanja', 'OIB', 'Naziv', 'E-mail', 'Adresa', 'Poštanski broj', 'Grad', 'Osoba', 'Predložak', 'Status', 'Izvor kontakta'];
 function getOrCreatePismaNacrtiSheet_() {
-  var files = DriveApp.getFilesByName(PISMA_NACRTI_SHEET_NAME_);
+  var files = dohvatiDatoteke_(PISMA_NACRTI_SHEET_NAME_);
   var ss = files.hasNext() ? SpreadsheetApp.open(files.next()) : SpreadsheetApp.create(PISMA_NACRTI_SHEET_NAME_);
   var sheet = ss.getSheets()[0];
   if (sheet.getLastRow() === 0) {
@@ -19837,7 +19966,7 @@ var KAMPANJE_NACRTI_HEADER_ = (function() {
   return h;
 })();
 function getOrCreateNacrtSheet_(ime, header, tekstStupci) {
-  var files = DriveApp.getFilesByName(ime);
+  var files = dohvatiDatoteke_(ime);
   var ss = files.hasNext() ? SpreadsheetApp.open(files.next()) : SpreadsheetApp.create(ime);
   var sheet = ss.getSheets()[0];
   if (sheet.getLastRow() === 0) {
@@ -19969,29 +20098,37 @@ function adminKampanjaNacrtBrisi(token, id) {
 }
 
 function getOrCreatePismaSheet_() {
-  var files = DriveApp.getFilesByName(PISMA_SHEET_NAME_);
+  if (SHEET_MEMO_.pisma) { return SHEET_MEMO_.pisma; }
+  var files = dohvatiDatoteke_(PISMA_SHEET_NAME_);
   var ss = files.hasNext() ? SpreadsheetApp.open(files.next()) : SpreadsheetApp.create(PISMA_SHEET_NAME_);
   var sheet = ss.getSheets()[0];
-  if (sheet.getLastRow() === 0) {
+  var prviPut = (sheet.getLastRow() === 0);
+  var hKljuc = zaglavljeKljuc_('pisma', ss.getId(), PISMA_HEADER_.concat([PISMA_ADRESA_NAZIV_, PISMA_IZVOR_KONT_NAZIV_]));
+  if (prviPut) {
     sheet.appendRow(PISMA_HEADER_);
     sheet.getRange(1, 1, 1, PISMA_HEADER_.length).setFontWeight('bold');
     sheet.setFrozenRows(1);
     sheet.getRange(2, 5, sheet.getMaxRows() - 1, 1).setNumberFormat('@');
     sheet.getRange(2, 13, sheet.getMaxRows() - 1, 1).setNumberFormat('@');
-  } else if (String(sheet.getRange(1, 13).getValue() || '').trim() !== PISMA_HEADER_[12]) {
-    // starija tablica (12 stupaca): dodaj stupac "Poštanski broj" na kraj
-    sheet.getRange(1, 13).setValue(sheetSig_(PISMA_HEADER_[12]));
-    sheet.getRange(1, 13).setFontWeight('bold');
-    sheet.getRange(2, 13, Math.max(sheet.getMaxRows() - 1, 1), 1).setNumberFormat('@');
   }
-  if (String(sheet.getRange(1, 14).getValue() || '').trim() !== PISMA_ADRESA_NAZIV_) {
-    sheet.getRange(1, 14).setValue(sheetSig_(PISMA_ADRESA_NAZIV_));
-    sheet.getRange(1, 14).setFontWeight('bold');
+  if (prviPut || !zaglavljeProvjereno_(hKljuc)) {
+    if (!prviPut && String(sheet.getRange(1, 13).getValue() || '').trim() !== PISMA_HEADER_[12]) {
+      // starija tablica (12 stupaca): dodaj stupac "Poštanski broj" na kraj
+      sheet.getRange(1, 13).setValue(sheetSig_(PISMA_HEADER_[12]));
+      sheet.getRange(1, 13).setFontWeight('bold');
+      sheet.getRange(2, 13, Math.max(sheet.getMaxRows() - 1, 1), 1).setNumberFormat('@');
+    }
+    if (String(sheet.getRange(1, 14).getValue() || '').trim() !== PISMA_ADRESA_NAZIV_) {
+      sheet.getRange(1, 14).setValue(sheetSig_(PISMA_ADRESA_NAZIV_));
+      sheet.getRange(1, 14).setFontWeight('bold');
+    }
+    if (String(sheet.getRange(1, 15).getValue() || '').trim() !== PISMA_IZVOR_KONT_NAZIV_) {
+      sheet.getRange(1, 15).setValue(sheetSig_(PISMA_IZVOR_KONT_NAZIV_));
+      sheet.getRange(1, 15).setFontWeight('bold');
+    }
+    zaglavljeOznaci_(hKljuc);
   }
-  if (String(sheet.getRange(1, 15).getValue() || '').trim() !== PISMA_IZVOR_KONT_NAZIV_) {
-    sheet.getRange(1, 15).setValue(sheetSig_(PISMA_IZVOR_KONT_NAZIV_));
-    sheet.getRange(1, 15).setFontWeight('bold');
-  }
+  SHEET_MEMO_.pisma = sheet;
   return sheet;
 }
 
@@ -20137,7 +20274,11 @@ var BATTLE_CILJ_MJESECNO_ = 500;
 var BATTLE_RAZINE_ = [[0, 'Mornar'], [100, 'Kormilar'], [250, 'Poručnik'], [400, 'Kapetan korvete'], [500, 'Admiral — cilj ostvaren!']];
 
 function battleSheet_() {
-  var files = DriveApp.getFilesByName(BATTLE_SHEET_NAME_);
+  if (!SHEET_MEMO_.battle) { SHEET_MEMO_.battle = battleSheet__izvorno_(); }
+  return SHEET_MEMO_.battle;
+}
+function battleSheet__izvorno_() {
+  var files = dohvatiDatoteke_(BATTLE_SHEET_NAME_);
   var ss = files.hasNext() ? SpreadsheetApp.open(files.next()) : SpreadsheetApp.create(BATTLE_SHEET_NAME_);
   var sheet = ss.getSheets()[0];
   if (sheet.getLastRow() === 0) {
@@ -20184,7 +20325,7 @@ function otvKlijentKandidati_() {
     var iTip = header.indexOf('Tip');
     if (iO === -1 || iKl === -1 || iPr === -1) { return out; }
     var vidjeni = {};
-    up.getRange(2, 1, ur - 1, lc).getValues().forEach(function(r) {
+    stupciUpita_(up, ur, [0, 1, iO, iN, iKl, iPr, iTip]).forEach(function(r) {
       if (iTip !== -1 && String(r[iTip]) === OTV_TIP_) { return; }
       if (!r[iPr] || !r[iKl]) { return; }
       var oib = oibNorm_(r[iO] || '');
@@ -20210,7 +20351,7 @@ function otvUpitnikKandidati_() {
     var iU = header.indexOf(ADMIN_ONLY_FIELDS.otv_upitnik_datum);
     if (iO === -1 || iU === -1) { return out; }
     var vidjeni = {};
-    up.getRange(2, 1, ur - 1, lc).getValues().forEach(function(r) {
+    stupciUpita_(up, ur, [iO, iN, iU]).forEach(function(r) {
       if (!r[iU]) { return; }
       var oib = oibNorm_(r[iO] || '');
       if (oib.length !== 11 || vidjeni[oib]) { return; }
@@ -20306,7 +20447,7 @@ function unikornSheet_() {
   var id = props.getProperty(UNIKORN_SHEET_ID_KEY_), ss = null;
   if (id) { try { ss = SpreadsheetApp.openById(id); } catch (e) { ss = null; } }
   if (!ss) {
-    var files = DriveApp.getFilesByName(UNIKORN_SHEET_NAME_);
+    var files = dohvatiDatoteke_(UNIKORN_SHEET_NAME_);
     ss = files.hasNext() ? SpreadsheetApp.open(files.next()) : SpreadsheetApp.create(UNIKORN_SHEET_NAME_);
     props.setProperty(UNIKORN_SHEET_ID_KEY_, ss.getId());
   }
@@ -20358,7 +20499,7 @@ function unikorniKandidati_() {
     var iU = header.indexOf(ADMIN_ONLY_FIELDS.otv_upitnik_datum);
     if (iO === -1) { return out; }
     var upit = {}, klij = {};
-    up.getRange(2, 1, ur - 1, lc).getValues().forEach(function(r) {
+    stupciUpita_(up, ur, [0, 1, iO, iN, iTip, iKl, iU]).forEach(function(r) {
       var oib = oibNorm_(r[iO] || '');
       var u = mapa[oib];
       if (!u) { return; }
@@ -20436,7 +20577,7 @@ function unikorniPoslanoMapa_() {
       var lc = up.getLastColumn(), header = up.getRange(1, 1, 1, lc).getValues()[0];
       var iO = header.indexOf('OIB'), iTip = header.indexOf('Tip'), iS = header.indexOf(ADMIN_ONLY_FIELDS.ponuda_datum_slanja);
       if (iO !== -1 && iTip !== -1) {
-        up.getRange(2, 1, ur - 1, lc).getValues().forEach(function(r) {
+        stupciUpita_(up, ur, [0, iO, iTip, iS]).forEach(function(r) {
           if (String(r[iTip]) !== OTV_TIP_) { return; }
           uzmi(oibNorm_(r[iO] || ''), (iS !== -1 && r[iS] ? pismaDatum_(r[iS]) : null) || pismaDatum_(r[0]), 'otvorena ponuda');
         });
@@ -20639,7 +20780,7 @@ function unikornVecUSustavu_(oib) {
     var iTip = header.indexOf('Tip');
     if (iO === -1) { return ''; }
     var nadjen = '';
-    up.getRange(2, 1, ur - 1, lc).getValues().some(function(r) {
+    stupciUpita_(up, ur, [iO, iN, iKl, iAr, iTip]).some(function(r) {
       if (oibNorm_(r[iO] || '') !== oib) { return false; }
       var ime = String(iN !== -1 ? r[iN] : '') || 'ta firma';
       var gdje = (iKl !== -1 && r[iKl] && !(iTip !== -1 && String(r[iTip]) === OTV_TIP_)) ? 'već je klijent' : ((iAr !== -1 && r[iAr]) ? 'već je u arhivi' : 'već postoji u sustavu (upit/ponuda)');
@@ -20730,7 +20871,7 @@ function noviKlijentiLista_() {
     } catch (eP) { /* bez pisama izvor je samo otvorena ponuda / ostalo */ }
     var tz = Session.getScriptTimeZone();
     var fmt = function(d) { return d ? Utilities.formatDate(d, tz, 'dd.MM.yyyy. HH:mm') : ''; };
-    up.getRange(2, 1, ur - 1, lc).getValues().forEach(function(r) {
+    stupciUpita_(up, ur, [iKl, iO, iN, iTip, iPr, iPon]).forEach(function(r) {
       if (iTip !== -1 && String(r[iTip]) === OTV_TIP_) { return; }
       var d = pismaDatum_(r[iKl]);
       if (!r[iKl] || !d) { return; }
@@ -20742,6 +20883,19 @@ function noviKlijentiLista_() {
     out.sort(function(a, b) { return b.datumMs - a.datumMs; });
   } catch (e) { /* lista je dodatak, ne smije srušiti igru */ }
   return out;
+}
+
+// v316: čita samo tražene stupce (0-based indeksi) umjesto cijelog Upita (436 stupaca × svi redovi) — vraća redove u kojima su popunjeni samo ti indeksi
+function stupciUpita_(sheet, lastRow, indeksi) {
+  var n = lastRow - 1, redovi = [], vidjeni = {};
+  for (var i = 0; i < n; i++) { redovi.push([]); }
+  (indeksi || []).forEach(function(ci) {
+    if (ci === undefined || ci === null || ci < 0 || vidjeni[ci]) { return; }
+    vidjeni[ci] = true;
+    var v = sheet.getRange(2, ci + 1, n, 1).getValues();
+    for (var k = 0; k < n; k++) { redovi[k][ci] = v[k][0]; }
+  });
+  return redovi;
 }
 
 // Trenutno stanje: koje događaje sustav danas vidi (kandidati za upis u evidenciju).
@@ -20768,7 +20922,7 @@ function battleKandidati_() {
     var iO = header.indexOf('OIB'), iN = header.indexOf('Naziv tvrtke'), iNap = header.indexOf('Interna napomena (admin)');
     var iKl = header.indexOf('Datum otvaranja klijenta u sustavu (admin)'), iAr = header.indexOf('Datum prebacivanja u arhivu (admin)');
     if (iO !== -1) {
-      up.getRange(2, 1, ur - 1, lc).getValues().forEach(function(r) {
+      stupciUpita_(up, ur, [0, 1, iO, iN, iNap, iKl, iAr]).forEach(function(r) {
         var vrsta = String(r[1]);
         if (vrsta !== 'Interes' && vrsta !== 'Odbijenica') { return; }
         var oib = oibNorm_(r[iO] || '');
@@ -20793,7 +20947,14 @@ function battleKandidati_() {
       });
     }
   }
-  return { poslano: broj, kandidati: out.concat(raskidKandidati_()).concat(otvKlijentKandidati_()).concat(otvUpitnikKandidati_()).concat(unikorniKandidati_()) };
+  // v316: popis poslanih pisama [vrijemeMs, indeks izvora, OIB] — za filtar razdoblja i usporedbu kampanja u prozoru „Uspješnost”
+  var izvoriIdx = {}, izvoriPopis = [], poslaniLista = [];
+  Object.keys(poslani).forEach(function(k) {
+    var x = poslani[k], iz = String(x.izvor || '');
+    if (izvoriIdx[iz] === undefined) { izvoriIdx[iz] = izvoriPopis.length; izvoriPopis.push(iz); }
+    poslaniLista.push([x.vrijeme ? x.vrijeme.getTime() : 0, izvoriIdx[iz], k]);
+  });
+  return { poslano: broj, poslaniLista: poslaniLista, poslaniIzvori: izvoriPopis, kandidati: out.concat(raskidKandidati_()).concat(otvKlijentKandidati_()).concat(otvUpitnikKandidati_()).concat(unikorniKandidati_()) };
 }
 
 // Upisuje u evidenciju samo događaje kojih još nema (ključ OIB|VRSTA), pa čita cijelu evidenciju.
@@ -20846,7 +21007,7 @@ function pismaPogodci_() {
   for (var i = 0; i < BATTLE_RAZINE_.length; i++) { if (mjesecBodovi >= BATTLE_RAZINE_[i][0]) { razina = BATTLE_RAZINE_[i][1]; sljedeca = BATTLE_RAZINE_[i + 1] || null; } }
   var pogodaka = Object.keys(pogodjeni).length;
   var popisMjeseci = Object.keys(mjeseci).filter(function(k) { return k !== 'nepoznato'; }).sort().reverse().slice(0, 60).map(function(k) { return { mjesec: k, bodovi: mjeseci[k], postignut: mjeseci[k] >= BATTLE_CILJ_MJESECNO_ }; });
-  return { poslano: st.poslano, pogodaka: pogodaka, pozitivni: br.POZITIVAN, negativni: br.NEGATIVAN, direktni: br.DIREKTNI, klijenti: br.KLIJENT, otvKlijenti: br.OTV_KLIJENT, otvUpitnici: br.OTV_UPITNIK, arhiva: br.ARHIVA, brzi: br.BRZI, raskidi: br.RASKID,
+  return { poslano: st.poslano, poslaniLista: st.poslaniLista, poslaniIzvori: st.poslaniIzvori, pogodaka: pogodaka, pozitivni: br.POZITIVAN, negativni: br.NEGATIVAN, direktni: br.DIREKTNI, klijenti: br.KLIJENT, otvKlijenti: br.OTV_KLIJENT, otvUpitnici: br.OTV_UPITNIK, arhiva: br.ARHIVA, brzi: br.BRZI, raskidi: br.RASKID,
     unikorni: unikorniPrikaz_(dogadaji), unikorniBodovi: { upitnik: BATTLE_VRSTE_.UNIKORN_UPITNIK.bodovi, klijent: BATTLE_VRSTE_.UNIKORN_KLIJENT.bodovi },
     klijentiLista: noviKlijentiLista_(), bodovi: bodovi, mjesecBodovi: mjesecBodovi, cilj: BATTLE_CILJ_MJESECNO_, tekuciMjesec: tekuci, mjeseci: popisMjeseci,
     razina: razina, sljedecaRazina: sljedeca ? { naziv: sljedeca[1], bodova: sljedeca[0] } : null,
@@ -21123,7 +21284,7 @@ function pismaDatum_(v) {
   return isNaN(d.getTime()) ? null : d;
 }
 
-function adminPismaArhiva(token, q, datumOd, datumDo, kampanja, statusFilter, vrsta, odgovorFilter) {
+function adminPismaArhiva(token, q, datumOd, datumDo, kampanja, statusFilter, vrsta, odgovorFilter, izvorFilter) {
   if (!isValidAdminToken_(token)) { return pismaAuthGreska_(); }
   var sheet = getOrCreatePismaSheet_();
   var lastRow = sheet.getLastRow();
@@ -21143,10 +21304,13 @@ function adminPismaArhiva(token, q, datumOd, datumDo, kampanja, statusFilter, vr
   } catch (eOdg) { /* stupci odgovora su dodatak — arhiva radi i bez njih */ }
   var saz = { redaka: 0, zainteresiranih: 0, odbilo: 0, klijenata: 0 };
   var odgF = String(odgovorFilter || '');
+  var izvorF = String(izvorFilter || '').trim(), izvoriSet_ = {};   // v306: filter po izvoru kontakta ('__bez' = bez izvora)
   if (lastRow >= 2) {
-    var vals = sheet.getRange(2, 1, lastRow - 1, PISMA_HEADER_.length).getValues();
+    var vals = sheet.getRange(2, 1, lastRow - 1, Math.max(PISMA_HEADER_.length, Math.min(15, sheet.getLastColumn()))).getValues();
     for (var i = 0; i < vals.length; i++) {
       var r = vals[i];
+      var izvKontRed_ = String(r[14] || '').trim();   // 15. stupac „Izvor kontakta”
+      if (izvKontRed_) { izvoriSet_[izvKontRed_] = true; }
       var kName = String(r[3]) === 'Ručno' ? 'Ručno pismo' : String(r[1]);
       var kId = String(r[3]) === 'Ručno' ? '__rucno' : String(r[0]);
       kampanje[kId] = kName;
@@ -21154,6 +21318,7 @@ function adminPismaArhiva(token, q, datumOd, datumDo, kampanja, statusFilter, vr
       if (vrsta === 'kampanje' && kId === '__rucno') { continue; }
       if (st !== 'Sve' && String(r[9]) !== st) { continue; }
       if (kampanja && kId !== String(kampanja)) { continue; }
+      if (izvorF === '__bez' ? !!izvKontRed_ : (izvorF && izvKontRed_ !== izvorF)) { continue; }
       var d = pismaDatum_(r[10]) || pismaDatum_(r[2]);
       var dStr = d ? Utilities.formatDate(d, PISMA_TZ_, 'yyyy-MM-dd') : '';
       if (datumOd && (!dStr || dStr < datumOd)) { continue; }
@@ -21174,13 +21339,13 @@ function adminPismaArhiva(token, q, datumOd, datumDo, kampanja, statusFilter, vr
       if (odgF === 'klijenti' && !klRed_) { continue; }
       ukupno++;
       if (redci.length < 500) {
-        redci.push({ odgovor: odgRed_ ? odgRed_.odg : '', odgovorDatum: odgRed_ ? odgRed_.datum : '', odgovorDirektno: !!(odgRed_ && odgRed_.direktno), klijentDatum: klRed_, red: i + 2, kampanja: kName, datum: d ? Utilities.formatDate(d, PISMA_TZ_, 'dd.MM.yyyy. HH:mm') : '', oib: String(r[4]), naziv: String(r[5]), email: String(r[6]), grad: String(r[7]), posta: String(r[12] || ''), osoba: String(r[8]), status: String(r[9]), poruka: String(r[11] || '') });
+        redci.push({ odgovor: odgRed_ ? odgRed_.odg : '', odgovorDatum: odgRed_ ? odgRed_.datum : '', odgovorDirektno: !!(odgRed_ && odgRed_.direktno), klijentDatum: klRed_, red: i + 2, kampanja: kName, datum: d ? Utilities.formatDate(d, PISMA_TZ_, 'dd.MM.yyyy. HH:mm') : '', oib: String(r[4]), naziv: String(r[5]), email: String(r[6]), grad: String(r[7]), posta: String(r[12] || ''), osoba: String(r[8]), status: String(r[9]), poruka: String(r[11] || ''), izvor: izvKontRed_ });
       }
     }
   }
   redci.reverse();
   var popisKamp = Object.keys(kampanje).map(function(id) { return { id: id, naziv: kampanje[id] }; }).reverse();
-  return { status: 'ok', redci: redci, ukupno: ukupno, kampanje: popisKamp, sazetak: saz };
+  return { status: 'ok', redci: redci, ukupno: ukupno, kampanje: popisKamp, sazetak: saz, izvori: Object.keys(izvoriSet_).sort() };
 }
 
 // Brisanje CIJELE liste (kampanje) iz arhive kampanja: admin lozinka + riječ BRISATI. Ne dopušta brisanje dok u kampanji
@@ -21331,7 +21496,7 @@ var PROBLEM_SLUZBA_STRANICA_URL_ = 'https://sbatinac.github.io/intime-portal/InT
 var PROBLEM_STATUS_STRANICA_URL_ = 'https://sbatinac.github.io/intime-portal/InTime_StatusProblema.html';
 
 function getOrCreateProblemiSheet_() {
-  var files = DriveApp.getFilesByName(PROBLEMI_SHEET_);
+  var files = dohvatiDatoteke_(PROBLEMI_SHEET_);
   var ss = files.hasNext() ? SpreadsheetApp.open(files.next()) : SpreadsheetApp.create(PROBLEMI_SHEET_);
   var sheet = ss.getSheets()[0];
   if (sheet.getMaxColumns() < PROBLEMI_HEADER_.length) { sheet.insertColumnsAfter(sheet.getMaxColumns(), PROBLEMI_HEADER_.length - sheet.getMaxColumns()); }
@@ -21352,7 +21517,7 @@ function problemiTekst_(v, maks) { return String(v == null ? '' : v).replace(/[\
 var PROBLEMI_MAIL_LIST_ = 'Mailovi';
 var PROBLEMI_MAIL_HEADER_ = ['Datum', 'Broj prijave', 'Klijent', 'OIB', 'Vrsta maila', 'Primatelji', 'Predmet', 'Mail (HTML)', 'Poslao'];
 function getOrCreateProblemiMailSheet_() {
-  var files = DriveApp.getFilesByName(PROBLEMI_SHEET_);
+  var files = dohvatiDatoteke_(PROBLEMI_SHEET_);
   var ss = files.hasNext() ? SpreadsheetApp.open(files.next()) : SpreadsheetApp.create(PROBLEMI_SHEET_);
   var sh = ss.getSheetByName(PROBLEMI_MAIL_LIST_);
   if (!sh) {
@@ -21413,7 +21578,7 @@ function adminProblemMailTijelo(token, red) {
 var PROBLEMI_ADRESE_LIST_ = 'Adrese';
 var PROBLEMI_ADRESE_HEADER_ = ['Vrsta problema', 'Poslovnica', 'Adrese', 'Zadnja izmjena'];
 function getOrCreateProblemiAdreseSheet_() {
-  var files = DriveApp.getFilesByName(PROBLEMI_SHEET_);
+  var files = dohvatiDatoteke_(PROBLEMI_SHEET_);
   var ss = files.hasNext() ? SpreadsheetApp.open(files.next()) : SpreadsheetApp.create(PROBLEMI_SHEET_);
   var sh = ss.getSheetByName(PROBLEMI_ADRESE_LIST_);
   if (!sh) {
@@ -24472,7 +24637,7 @@ function revPredlozakZaTip_(tip) {
 }
 
 function getRevizijeSpreadsheet_() {
-  var files = DriveApp.getFilesByName(REV_SHEET_NAME_);
+  var files = dohvatiDatoteke_(REV_SHEET_NAME_);
   if (files.hasNext()) { return SpreadsheetApp.open(files.next()); }
   var ss = SpreadsheetApp.create(REV_SHEET_NAME_);
   var sh = ss.getSheets()[0];
