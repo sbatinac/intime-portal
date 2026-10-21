@@ -651,6 +651,19 @@
   .entry-card.rok-24{border:2px solid #d32f2f;box-shadow:0 0 0 3px rgba(211,47,47,.18);}
   .entry-card.rok-24 > .entry-card-head{background:linear-gradient(90deg,#ffc9c9 0%,#ffeaea 45%,#ffffff 100%);box-shadow:inset 8px 0 0 #d32f2f;}
   .entry-card.rok-24 > .entry-card-head:hover{background:linear-gradient(90deg,#ffb0b0 0%,#ffdcdc 45%,#fff6f6 100%);}
+  .entry-card.rok-ok{border:2px solid #2e9e5b;box-shadow:0 0 0 3px rgba(46,158,91,.14);}
+  .entry-card.rok-ok > .entry-card-head{background:linear-gradient(90deg,#d6f5e1 0%,#f0fbf4 45%,#ffffff 100%);box-shadow:inset 8px 0 0 #2e9e5b;}
+  .entry-card.rok-ok > .entry-card-head:hover{background:linear-gradient(90deg,#bdeccd 0%,#e3f7ea 45%,#f9fefb 100%);}
+  .rok-cip.rok{background:#2e9e5b;color:#fff;}
+  .rok-cip{font-variant-numeric:tabular-nums;}
+  .rok-legenda{position:fixed;right:14px;bottom:92px;z-index:900;background:#fff;border:1px solid #d9dfdd;border-radius:12px;box-shadow:0 6px 22px rgba(0,0,0,.14);padding:10px 12px;font:600 12px/1.35 inherit;color:#2b2b2b;width:168px;}
+  .rok-legenda[hidden]{display:none;}
+  .rok-legenda b{display:block;font-size:12.5px;margin-bottom:6px;color:#1f3d3a;}
+  .rok-legenda .rl{display:flex;align-items:center;gap:8px;margin:5px 0;}
+  .rok-legenda .rl i{flex:0 0 18px;height:14px;border-radius:4px;display:inline-block;}
+  .rok-legenda .rl.z i{background:#2e9e5b;}.rok-legenda .rl.y i{background:#f2b705;}.rok-legenda .rl.r i{background:#d32f2f;}
+  .rok-legenda .rl-x{position:absolute;top:4px;right:7px;cursor:pointer;color:#9aa3a1;font-size:13px;border:0;background:none;padding:0;}
+  @media (max-width:900px){.rok-legenda{bottom:84px;width:150px;}}
   .rok-cip{display:inline-block;margin-left:8px;padding:2px 10px;border-radius:999px;font-size:12px;font-weight:900;vertical-align:middle;white-space:nowrap;}
   .rok-cip.r48{background:#f2b705;color:#3d2e00;}
   .rok-cip.r24{background:#d32f2f;color:#fff;animation:rokPuls 1.6s ease-in-out infinite;}
@@ -20216,6 +20229,39 @@
     var x = m[entry && entry.izvor];
     return x ? '<span class="izv-cip ' + x[0] + '" title="' + esc(x[2]) + '">' + x[1] + '</span>' : '';
   }
+  // v351: boja kartice po roku ponude + odbrojavanje uživo + legenda sa strane
+  function rokPad_(n) { return (n < 10 ? '0' : '') + n; }
+  function rokObojiKarticu_(card) {
+    var ms = +card.getAttribute('data-rok'); if (!ms) { return; }
+    var ost = ms - Date.now(), cip = card.querySelector('.rok-cip[data-istek]');
+    var kl = ost <= 0 ? '' : (ost <= 24 * 3600000 ? 'rok-24' : (ost <= 48 * 3600000 ? 'rok-48' : 'rok-ok'));
+    ['rok-ok', 'rok-48', 'rok-24'].forEach(function(k) { card.classList.toggle(k, k === kl); });
+    if (!cip) { return; }
+    if (ost <= 0) { cip.className = 'rok-cip r24'; cip.textContent = '⌛ rok je istekao'; return; }
+    var r = Math.floor(ost / 1000), d = Math.floor(r / 86400), h = Math.floor(r % 86400 / 3600), mi = Math.floor(r % 3600 / 60), se = r % 60;
+    cip.className = 'rok-cip ' + (kl === 'rok-24' ? 'r24' : (kl === 'rok-48' ? 'r48' : 'rok'));
+    cip.textContent = (kl === 'rok-24' ? '🔥' : (kl === 'rok-48' ? '⏰' : '⏳')) + ' ističe za ' + (d ? d + ' d ' : '') + rokPad_(h) + ' h ' + rokPad_(mi) + ' min ' + rokPad_(se) + ' s';
+  }
+  var rokTik_ = null, rokLegendaEl_ = null, rokLegendaZatvorena_ = false;
+  function rokLegenda_(vidljivo) {
+    if (!rokLegendaEl_) {
+      try { rokLegendaZatvorena_ = sessionStorage.getItem('intime_rok_legenda_x') === '1'; } catch (e) {}
+      rokLegendaEl_ = document.createElement('div'); rokLegendaEl_.className = 'rok-legenda'; rokLegendaEl_.hidden = true;
+      rokLegendaEl_.innerHTML = '<button type="button" class="rl-x" title="Sakrij legendu">✕</button><b>Rok ponude</b>' +
+        '<div class="rl z"><i></i>više od 48 h</div><div class="rl y"><i></i>ističe u 48 h</div><div class="rl r"><i></i>ističe u 24 h</div>' +
+        '<div style="margin-top:6px;font-weight:500;color:#6b7472;font-size:11px;">Odbrojava se od slanja ponude do isteka roka.</div>';
+      rokLegendaEl_.querySelector('.rl-x').addEventListener('click', function() { rokLegendaZatvorena_ = true; rokLegendaEl_.hidden = true; try { sessionStorage.setItem('intime_rok_legenda_x', '1'); } catch (e) {} });
+      document.body.appendChild(rokLegendaEl_);
+    }
+    rokLegendaEl_.hidden = !vidljivo || rokLegendaZatvorena_;
+  }
+  function rokTikni_() {
+    var kart = document.querySelectorAll('.entry-card[data-rok]'), vidljiva = false;
+    Array.prototype.forEach.call(kart, function(c) { if (c.offsetParent !== null) { vidljiva = true; rokObojiKarticu_(c); } });
+    rokLegenda_(vidljiva);
+    if (!kart.length && rokTik_) { clearInterval(rokTik_); rokTik_ = null; }
+  }
+  function rokPokreni_() { if (!rokTik_) { rokTik_ = setInterval(rokTikni_, 1000); setTimeout(rokTikni_, 50); } }
   function buildEntryCard(entry) {
     var card = document.createElement('div');
     card.className = 'entry-card';
@@ -20302,16 +20348,16 @@
       izgradiTijeloKartice_();
     });
     card.appendChild(head);
-    // v350: ponuda koja čeka odgovor i ističe u 48 h → žuto, u 24 h → crveno (vrijedi i za Otvorene ponude)
+    // v351: svaka poslana ponuda koja čeka odgovor (i Otvorene ponude) — boja po roku + odbrojavanje uživo od slanja do isteka:
+    // zeleno > 48 h, žuto ≤ 48 h, crveno ≤ 24 h. Otkucava rokTikni_ (svake sekunde, mijenja i boju kad prijeđe prag).
     try {
       if (ponudaStatusSazetak_(entry) === 'na_cekanju' && !(typeof jeArhiva === 'function' && jeArhiva(entry))) {
         var rokIst_ = parsirajHrvatskiDatumSazetak_(fieldVal(entry, 'Datum isteka ponude (admin)'));
-        var rokOst_ = rokIst_ ? rokIst_.getTime() - Date.now() : -1;
-        if (rokOst_ > 0 && rokOst_ <= 48 * 3600000) {
-          var r24_ = rokOst_ <= 24 * 3600000, rokH_ = Math.floor(rokOst_ / 3600000), rokM_ = Math.floor(rokOst_ % 3600000 / 60000);
-          card.classList.add(r24_ ? 'rok-24' : 'rok-48');
+        if (rokIst_ && rokIst_.getTime() > Date.now()) {
+          card.setAttribute('data-rok', String(rokIst_.getTime()));
           var tt_ = head.querySelector('.entry-card-title');
-          if (tt_) { tt_.insertAdjacentHTML('beforeend', '<span class="rok-cip ' + (r24_ ? 'r24' : 'r48') + '" title="Rok važenja ponude: ' + esc(fieldVal(entry, 'Datum isteka ponude (admin)')) + '">' + (r24_ ? '🔥' : '⏰') + ' ističe za ' + rokH_ + ' h ' + rokM_ + ' min</span>'); }
+          if (tt_) { tt_.insertAdjacentHTML('beforeend', '<span class="rok-cip" data-istek="' + rokIst_.getTime() + '" title="Rok važenja ponude: ' + esc(fieldVal(entry, 'Datum isteka ponude (admin)')) + '"></span>'); }
+          rokObojiKarticu_(card); rokPokreni_();
         }
       }
     } catch (eRok) { /* oznaka roka nije kritična */ }
@@ -29418,7 +29464,12 @@
       kpTrend_('trend-klijenti', kpBroji_(klijenti.filter(function(e) { return !kpStari_(e); }), 'Datum otvaranja klijenta u sustavu (admin)', 30), 'ovaj mjesec');
 
       // --- "Danas čeka tebe"
-      var sada = Date.now(), istice = 0, isteklo = 0;
+      var sada = Date.now(), istice = 0, isteklo = 0, isticeOtv = 0;
+      // v351: broje se i Otvorene ponude
+      sve.filter(function(e) { return e.status === 'Otvorena' && ponudaStatusSazetak_(e) === 'na_cekanju'; }).forEach(function(e) {
+        var ist = parsirajHrvatskiDatumSazetak_(fieldVal(e, 'Datum isteka ponude (admin)'));
+        if (ist && ist.getTime() - sada <= 48 * 3600000) { istice++; isticeOtv++; }
+      });
       interes.forEach(function(e) {
         if (jeOtvorenKlijent(e) || jeArhiva(e)) { return; }
         if (ponudaStatusSazetak_(e) === 'na_cekanju') {
@@ -29437,7 +29488,7 @@
       var kar = [
         { n: bezPonude, kl: 'plav', l: 'zainteresirani čekaju ponudu (još im nije poslana)', a: 'Otvori Zainteresirane →', tab: 'Interes' },
         { n: cekaOdg.ponude + cekaOdg.otvorene, kl: 'ind', info: true, l: 'poslanih ponuda čeka odgovor klijenta' + (cekaOdg.otvorene ? ' (Ponude: ' + cekaOdg.ponude + ', Otvorene: ' + cekaOdg.otvorene + ')' : ''), a: 'Otvori Ponude →', tab: (cekaOdg.ponude || !cekaOdg.otvorene) ? 'Ponude' : 'Otvorene' },
-        { n: istice, kl: 'crv', l: 'ponude kojima rok ističe u 48 h' + (isteklo ? ' (+ ' + isteklo + ' već isteklo)' : ''), a: 'Otvori Ponude →', tab: 'Ponude' },
+        { n: istice, kl: 'crv', l: 'ponude kojima rok ističe u 48 h' + (isticeOtv ? ' (od toga ' + isticeOtv + ' otvorenih)' : '') + (isteklo ? ' (+ ' + isteklo + ' već isteklo)' : ''), a: (isticeOtv && isticeOtv === istice) ? 'Otvorene ponude →' : 'Otvori Ponude →', tab: (isticeOtv && isticeOtv === istice) ? 'Otvorene' : 'Ponude' },
         { n: otvBez, kl: 'nar', l: 'otvorene ponude prihvaćene, a podaci (upitnik) nisu stigli', a: 'Otvorene ponude →', tab: 'Otvorene' },
         { n: stariCeka.length, kl: 'ind', l: 'stari klijenti čekaju upitnik' + (stariNijePos ? ' (' + stariNijePos + ' još nije poslano)' : ''), a: 'Unos starih klijenata →', tab: 'Stari' },
         { n: probl, kl: 'zel', l: 'otvoreni problemi klijenata', a: 'Servis klijenata →', tab: 'Problemi' }
