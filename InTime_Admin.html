@@ -652,15 +652,15 @@
   .entry-card.rok-24{border:2px solid #d32f2f;box-shadow:0 0 0 3px rgba(211,47,47,.18);}
   .entry-card.rok-24 > .entry-card-head{background:linear-gradient(90deg,#ffc9c9 0%,#ffeaea 45%,#ffffff 100%);box-shadow:inset 8px 0 0 #d32f2f;}
   .entry-card.rok-24 > .entry-card-head:hover{background:linear-gradient(90deg,#ffb0b0 0%,#ffdcdc 45%,#fff6f6 100%);}
-  .entry-card.rok-ok{border:2px solid #2e9e5b;box-shadow:0 0 0 3px rgba(46,158,91,.14);}
-  .entry-card.rok-ok > .entry-card-head{background:linear-gradient(90deg,#d6f5e1 0%,#f0fbf4 45%,#ffffff 100%);box-shadow:inset 8px 0 0 #2e9e5b;}
-  .entry-card.rok-ok > .entry-card-head:hover{background:linear-gradient(90deg,#bdeccd 0%,#e3f7ea 45%,#f9fefb 100%);}
-  .rok-cip.rok{background:#2e9e5b;color:#fff;}
-  /* v354: prihvaćena ponuda — plavo */
-  .entry-card.prihv{border:2px solid #1565c0;box-shadow:0 0 0 3px rgba(21,101,192,.15);}
-  .entry-card.prihv > .entry-card-head{background:linear-gradient(90deg,#d3e5fb 0%,#eef5fe 45%,#ffffff 100%);box-shadow:inset 8px 0 0 #1565c0;}
-  .entry-card.prihv > .entry-card-head:hover{background:linear-gradient(90deg,#b9d4f7 0%,#e1edfc 45%,#f8fbff 100%);}
-  .rok-cip.prh{background:#1565c0;color:#fff;}
+  .entry-card.rok-ok{border:2px solid #1565c0;box-shadow:0 0 0 3px rgba(21,101,192,.15);}
+  .entry-card.rok-ok > .entry-card-head{background:linear-gradient(90deg,#d3e5fb 0%,#eef5fe 45%,#ffffff 100%);box-shadow:inset 8px 0 0 #1565c0;}
+  .entry-card.rok-ok > .entry-card-head:hover{background:linear-gradient(90deg,#b9d4f7 0%,#e1edfc 45%,#f8fbff 100%);}
+  .rok-cip.rok{background:#1565c0;color:#fff;}
+  /* v355: prihvaćena ponuda — zeleno (plavo = još daleko do roka) */
+  .entry-card.prihv{border:2px solid #2e9e5b;box-shadow:0 0 0 3px rgba(46,158,91,.14);}
+  .entry-card.prihv > .entry-card-head{background:linear-gradient(90deg,#d6f5e1 0%,#f0fbf4 45%,#ffffff 100%);box-shadow:inset 8px 0 0 #2e9e5b;}
+  .entry-card.prihv > .entry-card-head:hover{background:linear-gradient(90deg,#bdeccd 0%,#e3f7ea 45%,#f9fefb 100%);}
+  .rok-cip.prh{background:#2e9e5b;color:#fff;}
   .rok-legenda .rl.b i{background:#1565c0;}
   .rok-cip{font-variant-numeric:tabular-nums;}
   .rok-legenda{position:fixed;right:14px;bottom:92px;z-index:900;background:#fff;border:1px solid #d9dfdd;border-radius:12px;box-shadow:0 6px 22px rgba(0,0,0,.14);padding:10px 12px;font:600 12px/1.35 inherit;color:#2b2b2b;width:168px;}
@@ -20259,7 +20259,7 @@
       try { rokLegendaZatvorena_ = sessionStorage.getItem('intime_rok_legenda_x') === '1'; } catch (e) {}
       rokLegendaEl_ = document.createElement('div'); rokLegendaEl_.className = 'rok-legenda'; rokLegendaEl_.hidden = true;
       rokLegendaEl_.innerHTML = '<button type="button" class="rl-x" title="Sakrij legendu">✕</button><b>Rok ponude</b>' +
-        '<div class="rl z"><i></i>više od 48 h</div><div class="rl y"><i></i>ističe u 48 h</div><div class="rl r"><i></i>ističe u 24 h</div><div class="rl b"><i></i>prihvaćena</div>' +
+        '<div class="rl b"><i></i>više od 48 h</div><div class="rl y"><i></i>ističe u 48 h</div><div class="rl r"><i></i>ističe u 24 h</div><div class="rl z"><i></i>prihvaćena</div>' +
         '<div style="margin-top:6px;font-weight:500;color:#6b7472;font-size:11px;">Odbrojava se od slanja ponude do isteka roka.</div>';
       rokLegendaEl_.querySelector('.rl-x').addEventListener('click', function() { rokLegendaZatvorena_ = true; rokLegendaEl_.hidden = true; try { sessionStorage.setItem('intime_rok_legenda_x', '1'); } catch (e) {} });
       document.body.appendChild(rokLegendaEl_);

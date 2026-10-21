@@ -10,3 +10,4 @@
 - v352 (21.10.2026.): Clarity — naziv firme (firma/ponuda/vrsta + identify) šalju i PotvrdaRevizije (nakon učitavanja poveznice), PrijavaProblema (nakon slanja prijave) i StatusProblema (nakon pronalaska prijave). Apps Script nije mijenjan.
 - v353 (21.10.2026.): Otvorene ponude — nova podkartica „📑 REVIZIJA (n)” uz Poslano/Priprema: sve otvorene ponude s kvačicom „REVIZIJA — ispred imena direktorija…” (polje „Ponuda je revizija (admin)” = DA), i poslane i u pripremi. Apps Script nije mijenjan.
 - v354 (21.10.2026.): Ponude + Otvorene ponude — prihvaćena ponuda plava (okvir, traka, oznaka „✅ PRIHVAĆENA dd.mm.”); u Klijentima i Arhivi se ne boja. Legenda dobila stavku „prihvaćena”. Apps Script nije mijenjan.
+- v355 (21.10.2026.): zamjena boja po Sašinoj želji — plavo = više od 48 h do isteka („hladno”, još daleko), zeleno = prihvaćena ponuda. Legenda ažurirana. Apps Script nije mijenjan.
