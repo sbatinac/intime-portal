@@ -12861,7 +12861,7 @@
     var istekMs = evIstekAktivan_(s) ? evIstekMs_(s) : 0;
     if (istekMs) {
       var preostalo = istekMs - Date.now();
-      chips += '<span class="ev-chip ' + (preostalo < 0 ? 'ev-c-istekla' : (preostalo <= 172800000 ? 'ev-c-dosp' : (preostalo <= 604800000 ? 'ev-c-pon-dat' : ''))) + '" title="Klikni na naziv klijenta za odbrojavanje">⏳ ' + (preostalo < 0 ? 'istekla ' : 'ističe ') + esc(evIstekFmt_(istekMs)) + '</span>';
+      chips += '<span class="ev-chip ' + (preostalo < 0 ? 'ev-c-istekla' : (preostalo <= 172800000 ? 'ev-c-dosp' : (preostalo <= 604800000 ? 'ev-c-pon-dat' : ''))) + '" title="Odbrojavanje do isteka je ispod — klik na naziv ga skriva">⏳ ' + (preostalo < 0 ? 'istekla ' : 'ističe ') + esc(evIstekFmt_(istekMs)) + '</span>';
     }
     chips += z ? ('<span class="ev-chip ev-c-poz' + (z.ishod === 'ne_zanima' ? ' ne' : '') + '">Zadnji poziv ' + esc(evFmtVrijeme_(z.vrijeme)) + ' — ' + esc(EV_ISHODI_[z.ishod] || z.ishod) + '</span>') : '<span class="ev-chip ev-c-nikad">Nikad zvan</span>';
     if (z && z.ponovno && z.ishod !== 'ne_zanima') { chips += '<span class="ev-chip ' + (dosp ? 'ev-c-dosp' : 'ev-c-pon-dat') + '">↻ Nazvati ' + esc(evFmtDatum_(z.ponovno)) + (dosp ? ' — DOSPJELO' : '') + '</span>'; }
@@ -12873,9 +12873,9 @@
       return '<span class="ev-kont"><a class="ev-mail" href="mailto:' + esc(x.v) + '">✉ ' + esc(x.v) + '</a><small>' + esc(x.o) + '</small>' + (x.id ? '<a href="#" class="ev-x" data-act="ukloni" data-id="' + esc(x.id) + '" data-k="' + esc(s.kljuc) + '" title="Ukloni ovu ručno dodanu adresu">✕</a>' : '') + '</span>';
     }).join('') || '<span class="ev-nema">nema e-mail adrese</span>';
     return '<div class="ev-kartica' + (dosp ? ' dospjelo' : '') + '" data-k="' + esc(s.kljuc) + '">' +
-      '<div class="ev-glava' + (istekMs ? ' ev-klik' : '') + '"' + (istekMs ? ' data-act="odbr" data-k="' + esc(s.kljuc) + '" title="Klikni za odbrojavanje do isteka ponude"' : '') + '><b>' + (istekMs ? '⏳ ' : '') + esc(s.naziv || '(bez naziva)') + '</b><span class="ev-oib">' + (s.oib ? 'OIB ' + esc(s.oib) : 'bez OIB-a') + '</span>' + (s.grad ? '<span class="ev-grad">' + esc(s.grad) + '</span>' : '') + (s.osoba ? '<span class="ev-grad">👤 ' + esc(s.osoba) + '</span>' : '') + '</div>' +
+      '<div class="ev-glava' + (istekMs ? ' ev-klik' : '') + '"' + (istekMs ? ' data-act="odbr" data-k="' + esc(s.kljuc) + '" title="Klikni za skrivanje/prikaz odbrojavanja"' : '') + '><b>' + (istekMs ? '⏳ ' : '') + esc(s.naziv || '(bez naziva)') + '</b><span class="ev-oib">' + (s.oib ? 'OIB ' + esc(s.oib) : 'bez OIB-a') + '</span>' + (s.grad ? '<span class="ev-grad">' + esc(s.grad) + '</span>' : '') + (s.osoba ? '<span class="ev-grad">👤 ' + esc(s.osoba) + '</span>' : '') + '</div>' +
       '<div class="ev-chips">' + chips + '</div>' +
-      (istekMs ? '<div class="ev-odbr-box"' + (evStanje_.odbr[s.kljuc] ? '' : ' hidden') + '><span class="ev-odbr" data-istek="' + istekMs + '">⏳ ' + esc(evOdbrojavanjeTekst_(istekMs)) + '</span></div>' : '') +
+      (istekMs ? '<div class="ev-odbr-box"' + (evStanje_.odbr[s.kljuc] === false ? ' hidden' : '') + '><span class="ev-odbr" data-istek="' + istekMs + '">⏳ ' + esc(evOdbrojavanjeTekst_(istekMs)) + '</span></div>' : '') +
       '<div class="ev-kontakti"><div class="ev-red">' + tel + '</div><div class="ev-red">' + mail + '</div></div>' +
       '<div class="ev-dodaj"><select class="ev-d-vrsta"><option value="tel">📞 telefon</option><option value="mail">✉ e-mail</option></select><input type="text" class="ev-d-vr" placeholder="dodaj broj ili e-mail"><input type="text" class="ev-d-oz" placeholder="čiji je (nije obavezno)"><button type="button" class="btn btn-outline btn-small" data-act="dodaj" data-k="' + esc(s.kljuc) + '">+ Dodaj</button><button type="button" class="btn btn-outline btn-small" data-act="rucno" data-k="' + esc(s.kljuc) + '" title="Za poziv koji nisi pokrenuo klikom na broj">📝 Zabilježi poziv ručno</button></div>' +
       evFormaHtml_(s) + evPovijestKarticeHtml_(s) + '</div>';
@@ -13018,7 +13018,7 @@
         }).catch(function() { alert('Greška u komunikaciji s poslužiteljem.'); });
       }
       else if (act === 'odbr') {
-        st.odbr[k] = !st.odbr[k];
+        st.odbr[k] = (st.odbr[k] === false);   // v349: odbrojavanje je zadano UKLJUČENO za sve; klik ga skriva/vraća
         var bx = kart && kart.querySelector('.ev-odbr-box'); if (bx) { bx.hidden = !st.odbr[k]; }
         if (st.odbr[k]) { evPokreniTik_(); }
       }
