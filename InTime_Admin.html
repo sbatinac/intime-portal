@@ -656,6 +656,12 @@
   .entry-card.rok-ok > .entry-card-head{background:linear-gradient(90deg,#d6f5e1 0%,#f0fbf4 45%,#ffffff 100%);box-shadow:inset 8px 0 0 #2e9e5b;}
   .entry-card.rok-ok > .entry-card-head:hover{background:linear-gradient(90deg,#bdeccd 0%,#e3f7ea 45%,#f9fefb 100%);}
   .rok-cip.rok{background:#2e9e5b;color:#fff;}
+  /* v354: prihvaćena ponuda — plavo */
+  .entry-card.prihv{border:2px solid #1565c0;box-shadow:0 0 0 3px rgba(21,101,192,.15);}
+  .entry-card.prihv > .entry-card-head{background:linear-gradient(90deg,#d3e5fb 0%,#eef5fe 45%,#ffffff 100%);box-shadow:inset 8px 0 0 #1565c0;}
+  .entry-card.prihv > .entry-card-head:hover{background:linear-gradient(90deg,#b9d4f7 0%,#e1edfc 45%,#f8fbff 100%);}
+  .rok-cip.prh{background:#1565c0;color:#fff;}
+  .rok-legenda .rl.b i{background:#1565c0;}
   .rok-cip{font-variant-numeric:tabular-nums;}
   .rok-legenda{position:fixed;right:14px;bottom:92px;z-index:900;background:#fff;border:1px solid #d9dfdd;border-radius:12px;box-shadow:0 6px 22px rgba(0,0,0,.14);padding:10px 12px;font:600 12px/1.35 inherit;color:#2b2b2b;width:168px;}
   .rok-legenda[hidden]{display:none;}
@@ -20253,7 +20259,7 @@
       try { rokLegendaZatvorena_ = sessionStorage.getItem('intime_rok_legenda_x') === '1'; } catch (e) {}
       rokLegendaEl_ = document.createElement('div'); rokLegendaEl_.className = 'rok-legenda'; rokLegendaEl_.hidden = true;
       rokLegendaEl_.innerHTML = '<button type="button" class="rl-x" title="Sakrij legendu">✕</button><b>Rok ponude</b>' +
-        '<div class="rl z"><i></i>više od 48 h</div><div class="rl y"><i></i>ističe u 48 h</div><div class="rl r"><i></i>ističe u 24 h</div>' +
+        '<div class="rl z"><i></i>više od 48 h</div><div class="rl y"><i></i>ističe u 48 h</div><div class="rl r"><i></i>ističe u 24 h</div><div class="rl b"><i></i>prihvaćena</div>' +
         '<div style="margin-top:6px;font-weight:500;color:#6b7472;font-size:11px;">Odbrojava se od slanja ponude do isteka roka.</div>';
       rokLegendaEl_.querySelector('.rl-x').addEventListener('click', function() { rokLegendaZatvorena_ = true; rokLegendaEl_.hidden = true; try { sessionStorage.setItem('intime_rok_legenda_x', '1'); } catch (e) {} });
       document.body.appendChild(rokLegendaEl_);
@@ -20261,8 +20267,8 @@
     rokLegendaEl_.hidden = !vidljivo || rokLegendaZatvorena_;
   }
   function rokTikni_() {
-    var kart = document.querySelectorAll('.entry-card[data-rok]'), vidljiva = false;
-    Array.prototype.forEach.call(kart, function(c) { if (c.offsetParent !== null) { vidljiva = true; rokObojiKarticu_(c); } });
+    var kart = document.querySelectorAll('.entry-card[data-rok], .entry-card.prihv'), vidljiva = false;
+    Array.prototype.forEach.call(kart, function(c) { if (c.offsetParent !== null) { vidljiva = true; if (c.hasAttribute('data-rok')) { rokObojiKarticu_(c); } } });
     rokLegenda_(vidljiva);
     if (!kart.length && rokTik_) { clearInterval(rokTik_); rokTik_ = null; }
   }
@@ -20366,6 +20372,15 @@
         }
       }
     } catch (eRok) { /* oznaka roka nije kritična */ }
+    // v354: prihvaćena ponuda (obična ili otvorena) — plavo + „✅ PRIHVAĆENA datum”; u Klijentima i Arhivi se ne boja
+    try {
+      if (ponudaStatusSazetak_(entry) === 'potvrdjena' && !(typeof jeArhiva === 'function' && jeArhiva(entry)) && !(!entry.otvorena && typeof jeOtvorenKlijent === 'function' && jeOtvorenKlijent(entry))) {
+        card.classList.add('prihv');
+        var dPr_ = String(fieldVal(entry, 'Datum prihvaćanja ponude (admin)') || ''), tP_ = head.querySelector('.entry-card-title');
+        if (tP_) { tP_.insertAdjacentHTML('beforeend', '<span class="rok-cip prh" title="Klijent je prihvatio ponudu">✅ PRIHVAĆENA' + (dPr_ ? ' ' + esc(dPr_.replace(/\.\s*\d{1,2}:\d{2}.*$/, '.').replace(/^(\d{2}\.\d{2}\.)\d{4}\.$/, '$1')) : '') + '</span>'); }
+        rokPokreni_();
+      }
+    } catch (ePr) { /* nije kritično */ }
 
     var body = document.createElement('div');
     body.className = 'entry-card-body';
