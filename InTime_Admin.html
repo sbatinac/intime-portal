@@ -663,6 +663,10 @@
   .rok-cip.prh{background:#2e9e5b;color:#fff;}
   .rok-legenda .rl.b i{background:#1565c0;}
   .rok-cip{font-variant-numeric:tabular-nums;}
+  .af-dok-ocisti-red{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:4px 0 8px;}
+  .af-dok-ocisti-btn{background:#fff;color:#b45309;border:2px solid #f0a030;border-radius:8px;padding:6px 14px;font:inherit;font-size:13px;font-weight:800;cursor:pointer;}
+  .af-dok-ocisti-btn:hover{background:#fff4e0;}.af-dok-ocisti-btn:disabled{opacity:.5;cursor:not-allowed;}
+  .af-dok-ocisti-st{font-size:12.5px;font-weight:700;color:#1e6b3c;}
   .rok-legenda{position:fixed;right:14px;bottom:92px;z-index:900;background:#fff;border:1px solid #d9dfdd;border-radius:12px;box-shadow:0 6px 22px rgba(0,0,0,.14);padding:10px 12px;font:600 12px/1.35 inherit;color:#2b2b2b;width:168px;}
   .rok-legenda[hidden]{display:none;}
   .rok-legenda b{display:block;font-size:12.5px;margin-bottom:6px;color:#1f3d3a;}
@@ -21881,6 +21885,8 @@
         '</div>' +
         '<div class="af-dok-blok">' +
           '<label>Dokumenti za ponudu</label>' +
+          // v356: jedna tipka prazni sve okvire (3 fiksna polja, Ostali dokumenti, Za klijenta, Samo interno) — za novo slanje; Drive se ne dira
+          '<div class="af-dok-ocisti-red"><button type="button" class="af-dok-ocisti-btn" title="Isprazni sva polja i okvire s dokumentima na ovoj kartici — datoteke na Driveu ostaju">🧹 Očisti sve dokumente (za novo slanje)</button><span class="af-dok-ocisti-st"></span></div>' +
           // v248: traka s imenom klijenta — da se pri spuštanju do priloga ne zabuni klijent/direktorij
           '<div class="af-dok-klijent-traka"><span class="af-dok-klijent-ikona">🏢</span><span class="af-dok-klijent-ime">' + esc(fieldVal(entry, 'Naziv tvrtke') || '—') + '</span>' +
             '<span class="af-dok-klijent-meta">' + (fieldVal(entry, 'Šifra ponude (admin)') ? ('Šifra ponude: <b>' + esc(fieldVal(entry, 'Šifra ponude (admin)')) + '</b>') : 'šifra ponude još nije potvrđena') + (fieldVal(entry, 'OIB') ? (' · OIB: ' + esc(fieldVal(entry, 'OIB'))) : '') + '</span></div>' +
@@ -24114,6 +24120,35 @@
       var dokumentiGotovi = [];
       var dokUkloniIzSlota_ = {};   // slotKljuc -> funkcija koja isprazni fiksno polje (isto kao ✕ u polju)
       var dokPostaviUSlot_ = {};   // slotKljuc -> funkcija postaviStavkuUSlot_ (popunjava se u petlji fiksnih polja niže)
+      var dokIsprazniSlotLokalno_ = {};   // v356: slotKljuc -> isprazni polje samo na ekranu (spremanje radi tipka „Očisti sve” jednim pozivom)
+      (function() {
+        var ocBtn = wrap.querySelector('.af-dok-ocisti-btn'), ocSt = wrap.querySelector('.af-dok-ocisti-st');
+        if (!ocBtn) { return; }
+        ocBtn.addEventListener('click', function() {
+          var nOst = (dokumentiPonude || []).length, nGot = (dokumentiGotovi || []).length;
+          var nFix = Object.keys(dokFiksniPolja).filter(function(k) { return !!dokFiksniPolja[k]; }).length;
+          if (!nOst && !nGot && !nFix) { ocSt.textContent = 'Okviri su već prazni.'; return; }
+          var por = 'Očistiti sve dokumente s ove kartice?\n\n• fiksna polja (Analitički cjenik, Cjenik Hrvatska, Ponuda za suradnju): ' + nFix + '\n• Ostali dokumenti: ' + nOst + '\n• Za klijenta / Samo interno: ' + nGot + '\n\nDatoteke na Driveu se NE brišu — samo se maknu s kartice, pa možeš složiti dokumente za novo slanje.';
+          var izvedi = function() {
+            ocBtn.disabled = true; ocSt.textContent = 'Čistim…';
+            gasCall({ action: 'adminUpdateFields', token: adminToken, rowIndex: entry.rowIndex, fields: { dokument_analiticki_cjenik: '', dokument_cjenik_hrvatska: '', dokument_ponuda_suradnja: '', dokumenti_ponude: '[]', dokumenti_gotovi: '[]' } }).then(function(res) {
+              ocBtn.disabled = false;
+              if (handleAuthError(res)) { return; }
+              if (!res || res.status !== 'ok') { ocSt.textContent = (res && res.message) || 'Čišćenje nije uspjelo.'; return; }
+              entry.fields['Analitički cjenik (admin, JSON)'] = ''; entry.fields['Cjenik Hrvatska (admin, JSON)'] = ''; entry.fields['Ponuda za suradnju (admin, JSON)'] = '';
+              entry.fields['Dokumenti za ponudu (admin, JSON)'] = '[]'; entry.fields['Gotovi dokumenti (admin, JSON)'] = '[]';
+              Object.keys(dokIsprazniSlotLokalno_).forEach(function(k) { try { dokIsprazniSlotLokalno_[k](); } catch (eS) {} });
+              dokumentiPonude.length = 0; dokumentiGotovi.length = 0;
+              try { renderDokCiljListu_(); } catch (e1) {}
+              try { renderGotove_(); } catch (e2) {}
+              if (typeof azurirajOsiguracSlanja_ === 'function') { try { azurirajOsiguracSlanja_(); } catch (e3) {} }
+              if (typeof azurirajPripremaGumb_ === 'function') { try { azurirajPripremaGumb_(); } catch (e4) {} }
+              ocSt.textContent = '✓ Očišćeno — složi dokumente za novo slanje.';
+            }).catch(function() { ocBtn.disabled = false; ocSt.textContent = 'Greška u komunikaciji s poslužiteljem.'; });
+          };
+          if (typeof odPotvrdi_ === 'function') { odPotvrdi_(por, izvedi, '🧹 Da, očisti'); } else if (window.confirm(por)) { izvedi(); }
+        });
+      })();
       try {
         var sirovoGotovi = fieldVal(entry, 'Gotovi dokumenti (admin, JSON)');
         if (sirovoGotovi) { var pg_ = JSON.parse(sirovoGotovi); if (Array.isArray(pg_)) { dokumentiGotovi = pg_; } }
@@ -24685,6 +24720,7 @@
         renderSlot_();
         dokPostaviUSlot_[slotKljuc] = postaviStavkuUSlot_;
         dokUkloniIzSlota_[slotKljuc] = function() { dokFiksniPolja[slotKljuc] = null; renderSlot_(); spremiFiksnoPolje_(); };
+        dokIsprazniSlotLokalno_[slotKljuc] = function() { dokFiksniPolja[slotKljuc] = null; renderSlot_(); };
 
         slotEl.addEventListener('dragover', function(ev) { ev.preventDefault(); slotEl.classList.add('af-dok-drag-over'); });
         slotEl.addEventListener('dragleave', function() { slotEl.classList.remove('af-dok-drag-over'); });
