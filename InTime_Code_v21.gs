@@ -367,6 +367,15 @@ var ISPRAVAK_STRANICA_URL = 'https://sbatinac.github.io/intime-portal/InTime_Isp
 // nakon hostanja zamijeniti stvarnim URL-om OVDJE i u InTime_Admin.html
 // (POTVRDA_PONUDE_STRANICA_URL, koristi se za renderMailTekst_/{{LINK_POTVRDE}}).
 var POTVRDA_PONUDE_STRANICA_URL = 'https://sbatinac.github.io/intime-portal/InTime_PotvrdaPonude.html';
+// v321: poveznica na dokumente ide preko naše stranice koja zabilježi otvaranje i prosljedi na Google (vidi InTime_Otvori.html i ponudaDokumentiOtvori).
+// Bez tokena ili bez Google poveznice vraća se izvorna poveznica — klijent nikad ne ostane bez dokumenata. Isključivanje bez deploya: Script property OTVORI_PRACENJE = 'NE'.
+var OTVORI_STRANICA_URL_ = 'https://sbatinac.github.io/intime-portal/InTime_Otvori.html';
+function linkDokumentiZaMail_(izvorniLink, token) {
+  izvorniLink = String(izvorniLink || ''); token = String(token || '').trim();
+  if (!izvorniLink || !token) { return izvorniLink; }
+  try { if (PropertiesService.getScriptProperties().getProperty('OTVORI_PRACENJE') === 'NE') { return izvorniLink; } } catch (e) { /* zadano: uključeno */ }
+  return OTVORI_STRANICA_URL_ + '?t=' + encodeURIComponent(token);
+}
 
 /* ---- OB TABLICA ("popuni kasnije, pošalji mailom") — VAŽNA NAPOMENA O RAČUNU ----
    Cijeli ovaj Apps Script projekt MORA biti otvoren/deployan pod Google
@@ -2362,6 +2371,7 @@ function adminPripremiDokumenteZaPonudu_(token, rowIndex, stavke) {
     };
     var poslaniNaziviPripreme_ = [];
     var sviNaziviPripreme_ = [];
+    var nedostajuStavke_ = [];
     // ZAŠTITA: ID dokumenta koji je spremljen kao analitički cjenik — bez obzira kako ga klijent (admin sučelje) označio, on ide SAMO u interni direktorij
     var analitickiIdPripreme_ = '';
     try {
@@ -2371,7 +2381,15 @@ function adminPripremiDokumenteZaPonudu_(token, rowIndex, stavke) {
     stavke.forEach(function(stavka) {
       if (!stavka || !stavka.id) { return; }
       var izvorFile;
-      try { izvorFile = DriveApp.getFileById(stavka.id); } catch (errNadji) { return; }
+      // v336 (20.10.2026.): dokument koji više ne postoji / je u smeću / nije dostupan NE smije se tiho preskočiti — inače ponuda
+      // (npr. "Ponuda za suradnju") nikad ne dođe u direktorij, a mail s linkom ode bez nje. Skupljamo ih i na kraju javljamo grešku.
+      try {
+        izvorFile = DriveApp.getFileById(stavka.id);
+        if (izvorFile.isTrashed()) { throw new Error('u smeću'); }
+      } catch (errNadji) {
+        nedostajuStavke_.push((stavka.fiksniNaziv ? (stavka.fiksniNaziv + ' (') : '') + (stavka.noviNaziv || stavka.slotKljuc || stavka.id) + (stavka.fiksniNaziv ? ')' : ''));
+        return;
+      }
       var originalIme = izvorFile.getName();
       var noviNaziv;
       var jeGotovo_ = (stavka.slotKljuc === 'gotovo_klijent' || stavka.slotKljuc === 'gotovo_interno');
@@ -2458,6 +2476,10 @@ function adminPripremiDokumenteZaPonudu_(token, rowIndex, stavke) {
     // Google račun s pristupom kontrolnom centru).
     if (predirektorijLinkCol !== -1) { sheet.getRange(rowIndex, predirektorijLinkCol + 1).setValue(sheetSig_(verzijaFolder.getUrl())); }
 
+    if (nedostajuStavke_.length) {
+      return { status: 'error', link: noviLink, broj: stavke.length - nedostajuStavke_.length, nedostaju: nedostajuStavke_,
+        message: 'Direktorij je pripremljen, ali ovih dokumenata NEMA na Driveu (obrisani, premješteni u smeće ili nedostupni): ' + nedostajuStavke_.join('; ') + ' — postavi ih ponovno (ili ukloni iz popisa) pa klikni „Pripremi direktorij i link”. Link NE šalji klijentu dok se ne riješi.' };
+    }
     return { status: 'ok', link: noviLink, broj: stavke.length };
   } catch (err) {
     return { status: 'error', message: 'Priprema direktorija nije uspjela: ' + err.message };
@@ -2572,11 +2594,18 @@ function pronadjiRedakPoTokenuPotvrde_(token) {
 // otvaranja poveznice, prije prikaza obrasca. Vraća samo naziv tvrtke (da
 // klijent zna da je na pravoj ponudi) i je li već potvrđeno — nikad ništa
 // osjetljivo (OIB, iznose, usluge i sl.).
+var POTVRDA_BROJ_ZADNJI_ = '';
 function potvrdaPonudeInfoOsnovno_(token) {
+  POTVRDA_BROJ_ZADNJI_ = '';
   var found = pronadjiRedakPoTokenuPotvrde_(token);
   if (!found) { return { status: 'error', message: 'Poveznica nije ispravna ili je istekla. Provjerite jeste li je u cijelosti kopirali iz e-maila, ili nas kontaktirajte na sbatinac.intime@gmail.com.' }; }
   var naziv = String(found.row[found.header.indexOf('Naziv tvrtke')] || '').trim() || '(bez naziva)';
   var stanje = izracunajStatusPonude_(found.header, found.row);
+  try {   // v346: broj ponude za oznaku u Clarityju (firma + broj)
+    var iSifC_ = found.header.indexOf(ADMIN_ONLY_FIELDS.sifra_ponude), iVerC_ = found.header.indexOf(ADMIN_ONLY_FIELDS.ponuda_verzija);
+    var sifC_ = iSifC_ === -1 ? '' : String(found.row[iSifC_] || '').trim();
+    POTVRDA_BROJ_ZADNJI_ = sifC_ ? (sifC_ + '-P' + (iVerC_ === -1 ? 1 : (parseInt(found.row[iVerC_], 10) || 1))) : '';
+  } catch (eBr_) { POTVRDA_BROJ_ZADNJI_ = ''; }
   // NOVO (26.9.2026., Sašin izričit zahtjev — bug uočen kod TESTNOG slanja
   // ponude): dok "Datum slanja aktivne ponude (admin)" još nije postavljen
   // (adminPosaljiPonudaTest ga NAMJERNO ne postavlja, samo stvarno slanje —
@@ -3254,7 +3283,7 @@ var MAIL_PREDLOSCI_SHEET_NAME = 'InTime_MailPredlosci';
 // dodam novi popravak/dodaj...AkoNedostaje_ u lanac niže, MORAM promijeniti
 // ovaj string (npr. dodati datum) da se on stvarno izvrši barem jednom —
 // inače će tiho biti preskočen za sve postojeće instalacije.
-var MAIL_PREDLOSCI_POPRAVCI_VERZIJA_ = 'v33-15.10.2026-traka-roka-ponude-i-kalkulatora';
+var MAIL_PREDLOSCI_POPRAVCI_VERZIJA_ = 'v36-20.10.2026-poslovnica-vrijeme-prikupa';
 
 // Zadani tekst predloška za ponudu — sjeme koje se upisuje SAMO ako Sheet
 // još nema nijedan predložak (prvo ikad pokretanje). Sadržaj je Sašin
@@ -3422,8 +3451,8 @@ var MAIL_PREDLOZAK_HTML_STANDARDNA_ = `<!DOCTYPE html>
 <div style="border-top:1px solid #e3e6e5;margin-top:24px;padding-top:18px;font-size:12.5px;line-height:1.6;color:#444444;">
 <strong style="color:#1f3d3a;">Saša Batinac, univ. spec. oec.</strong><br>
 Sales and Marketing Manager, Voditelj ključnih kupaca<br>
-In Time d.o.o. — Licensee of FedEx<br><br>
-M: +385 91 6262 171 · <a href="mailto:sasa.batinac@in-time.hr" style="color:#0f8b7e;text-decoration:none;">sasa.batinac@in-time.hr</a><br>
+In Time d.o.o. — Licensee of FedEx<br>
+<img src="https://sbatinac.github.io/intime-portal/InTime_Potpis_mail.gif" alt="In Time Express" width="360" style="display:block;width:360px;max-width:100%;height:auto;margin:10px 0;border:0;">M: <a href="tel:+385916262171" style="color:#0f8b7e;text-decoration:none;">+385 91 6262 171</a><br>E: <a href="mailto:sasa.batinac@in-time.hr" style="color:#0f8b7e;text-decoration:none;">sasa.batinac@in-time.hr</a><br>
 <a href="https://in-time.hr" target="_blank" rel="noopener" style="color:#0f8b7e;text-decoration:none;">in-time.hr</a> · <a href="https://fedex.com" target="_blank" rel="noopener" style="color:#0f8b7e;text-decoration:none;">fedex.com</a><br>
 In Time d.o.o. · FedEx zastupništvo · Hrvatska, BiH, Srbija, Slovenija, Crna Gora, Sjeverna Makedonija
 </div>
@@ -3525,8 +3554,8 @@ var MAIL_PREDLOZAK_HTML_KORIGIRANA_ = `<!DOCTYPE html>
 <div style="border-top:1px solid #e3e6e5;margin-top:24px;padding-top:18px;font-size:12.5px;line-height:1.6;color:#444444;">
 <strong style="color:#1f3d3a;">Saša Batinac, univ. spec. oec.</strong><br>
 Sales and Marketing Manager, Voditelj ključnih kupaca<br>
-In Time d.o.o. — Licensee of FedEx<br><br>
-M: +385 91 6262 171 · <a href="mailto:sasa.batinac@in-time.hr" style="color:#0f8b7e;text-decoration:none;">sasa.batinac@in-time.hr</a><br>
+In Time d.o.o. — Licensee of FedEx<br>
+<img src="https://sbatinac.github.io/intime-portal/InTime_Potpis_mail.gif" alt="In Time Express" width="360" style="display:block;width:360px;max-width:100%;height:auto;margin:10px 0;border:0;">M: <a href="tel:+385916262171" style="color:#0f8b7e;text-decoration:none;">+385 91 6262 171</a><br>E: <a href="mailto:sasa.batinac@in-time.hr" style="color:#0f8b7e;text-decoration:none;">sasa.batinac@in-time.hr</a><br>
 <a href="https://in-time.hr" target="_blank" rel="noopener" style="color:#0f8b7e;text-decoration:none;">in-time.hr</a> · <a href="https://fedex.com" target="_blank" rel="noopener" style="color:#0f8b7e;text-decoration:none;">fedex.com</a><br>
 In Time d.o.o. · FedEx zastupništvo · Hrvatska, BiH, Srbija, Slovenija, Crna Gora, Sjeverna Makedonija
 </div>
@@ -3598,8 +3627,8 @@ var MAIL_PREDLOZAK_HTML_NEGATIVNA_VERIFIKACIJA_ = `<!DOCTYPE html>
 <div style="border-top:1px solid #e3e6e5;margin-top:24px;padding-top:18px;font-size:12.5px;line-height:1.6;color:#444444;">
 <strong style="color:#1f3d3a;">Saša Batinac, univ. spec. oec.</strong><br>
 Sales and Marketing Manager, Voditelj ključnih kupaca<br>
-In Time d.o.o. — Licensee of FedEx<br><br>
-M: +385 91 6262 171 · <a href="mailto:sasa.batinac@in-time.hr" style="color:#0f8b7e;text-decoration:none;">sasa.batinac@in-time.hr</a><br>
+In Time d.o.o. — Licensee of FedEx<br>
+<img src="https://sbatinac.github.io/intime-portal/InTime_Potpis_mail.gif" alt="In Time Express" width="360" style="display:block;width:360px;max-width:100%;height:auto;margin:10px 0;border:0;">M: <a href="tel:+385916262171" style="color:#0f8b7e;text-decoration:none;">+385 91 6262 171</a><br>E: <a href="mailto:sasa.batinac@in-time.hr" style="color:#0f8b7e;text-decoration:none;">sasa.batinac@in-time.hr</a><br>
 <a href="https://in-time.hr" target="_blank" rel="noopener" style="color:#0f8b7e;text-decoration:none;">in-time.hr</a> · <a href="https://fedex.com" target="_blank" rel="noopener" style="color:#0f8b7e;text-decoration:none;">fedex.com</a><br>
 In Time d.o.o. · FedEx zastupništvo · Hrvatska, BiH, Srbija, Slovenija, Crna Gora, Sjeverna Makedonija
 </div>
@@ -3678,8 +3707,8 @@ var MAIL_PREDLOZAK_HTML_ODUSTAJANJE_ = `<!DOCTYPE html>
 <div style="border-top:1px solid #e3e6e5;margin-top:24px;padding-top:18px;font-size:12.5px;line-height:1.6;color:#444444;">
 <strong style="color:#1f3d3a;">Saša Batinac, univ. spec. oec.</strong><br>
 Sales and Marketing Manager, Voditelj ključnih kupaca<br>
-In Time d.o.o. — Licensee of FedEx<br><br>
-M: +385 91 6262 171 · <a href="mailto:sasa.batinac@in-time.hr" style="color:#0f8b7e;text-decoration:none;">sasa.batinac@in-time.hr</a><br>
+In Time d.o.o. — Licensee of FedEx<br>
+<img src="https://sbatinac.github.io/intime-portal/InTime_Potpis_mail.gif" alt="In Time Express" width="360" style="display:block;width:360px;max-width:100%;height:auto;margin:10px 0;border:0;">M: <a href="tel:+385916262171" style="color:#0f8b7e;text-decoration:none;">+385 91 6262 171</a><br>E: <a href="mailto:sasa.batinac@in-time.hr" style="color:#0f8b7e;text-decoration:none;">sasa.batinac@in-time.hr</a><br>
 <a href="https://in-time.hr" target="_blank" rel="noopener" style="color:#0f8b7e;text-decoration:none;">in-time.hr</a> · <a href="https://fedex.com" target="_blank" rel="noopener" style="color:#0f8b7e;text-decoration:none;">fedex.com</a><br>
 In Time d.o.o. · FedEx zastupništvo · Hrvatska, BiH, Srbija, Slovenija, Crna Gora, Sjeverna Makedonija
 </div>
@@ -3755,8 +3784,8 @@ var MAIL_PREDLOZAK_HTML_PONISTENA_PONUDA_ = `<!DOCTYPE html>
 <div style="border-top:1px solid #e3e6e5;margin-top:24px;padding-top:18px;font-size:12.5px;line-height:1.6;color:#444444;">
 <strong style="color:#1f3d3a;">Saša Batinac, univ. spec. oec.</strong><br>
 Sales and Marketing Manager, Voditelj ključnih kupaca<br>
-In Time d.o.o. — Licensee of FedEx<br><br>
-M: +385 91 6262 171 · <a href="mailto:sasa.batinac@in-time.hr" style="color:#0f8b7e;text-decoration:none;">sasa.batinac@in-time.hr</a><br>
+In Time d.o.o. — Licensee of FedEx<br>
+<img src="https://sbatinac.github.io/intime-portal/InTime_Potpis_mail.gif" alt="In Time Express" width="360" style="display:block;width:360px;max-width:100%;height:auto;margin:10px 0;border:0;">M: <a href="tel:+385916262171" style="color:#0f8b7e;text-decoration:none;">+385 91 6262 171</a><br>E: <a href="mailto:sasa.batinac@in-time.hr" style="color:#0f8b7e;text-decoration:none;">sasa.batinac@in-time.hr</a><br>
 <a href="https://in-time.hr" target="_blank" rel="noopener" style="color:#0f8b7e;text-decoration:none;">in-time.hr</a> · <a href="https://fedex.com" target="_blank" rel="noopener" style="color:#0f8b7e;text-decoration:none;">fedex.com</a><br>
 In Time d.o.o. · FedEx zastupništvo · Hrvatska, BiH, Srbija, Slovenija, Crna Gora, Sjeverna Makedonija
 </div>
@@ -3832,8 +3861,8 @@ var MAIL_PREDLOZAK_HTML_ISTEKLA_PONUDA_ = `<!DOCTYPE html>
 <div style="border-top:1px solid #e3e6e5;margin-top:24px;padding-top:18px;font-size:12.5px;line-height:1.6;color:#444444;">
 <strong style="color:#1f3d3a;">Saša Batinac, univ. spec. oec.</strong><br>
 Sales and Marketing Manager, Voditelj ključnih kupaca<br>
-In Time d.o.o. — Licensee of FedEx<br><br>
-M: +385 91 6262 171 · <a href="mailto:sasa.batinac@in-time.hr" style="color:#0f8b7e;text-decoration:none;">sasa.batinac@in-time.hr</a><br>
+In Time d.o.o. — Licensee of FedEx<br>
+<img src="https://sbatinac.github.io/intime-portal/InTime_Potpis_mail.gif" alt="In Time Express" width="360" style="display:block;width:360px;max-width:100%;height:auto;margin:10px 0;border:0;">M: <a href="tel:+385916262171" style="color:#0f8b7e;text-decoration:none;">+385 91 6262 171</a><br>E: <a href="mailto:sasa.batinac@in-time.hr" style="color:#0f8b7e;text-decoration:none;">sasa.batinac@in-time.hr</a><br>
 <a href="https://in-time.hr" target="_blank" rel="noopener" style="color:#0f8b7e;text-decoration:none;">in-time.hr</a> · <a href="https://fedex.com" target="_blank" rel="noopener" style="color:#0f8b7e;text-decoration:none;">fedex.com</a><br>
 In Time d.o.o. · FedEx zastupništvo · Hrvatska, BiH, Srbija, Slovenija, Crna Gora, Sjeverna Makedonija
 </div>
@@ -3908,8 +3937,8 @@ var MAIL_PREDLOZAK_OB_TEKST_ =
   '<div style="border-top:1px solid #e3e6e5;margin-top:18px;padding-top:14px;font-size:12.5px;line-height:1.6;color:#444444;">' +
   '<strong style="color:#1f3d3a;">Saša Batinac, univ. spec. oec.</strong><br>' +
   'Sales and Marketing Manager, Voditelj ključnih kupaca<br>' +
-  'In Time d.o.o. — Licensee of FedEx<br><br>' +
-  'M: +385 91 6262 171 · <a href="mailto:sasa.batinac@in-time.hr" style="color:#0f8b7e;text-decoration:none;">sasa.batinac@in-time.hr</a>' +
+  'In Time d.o.o. — Licensee of FedEx<br>' +
+  '<img src="https://sbatinac.github.io/intime-portal/InTime_Potpis_mail.gif" alt="In Time Express" width="360" style="display:block;width:360px;max-width:100%;height:auto;margin:10px 0;border:0;">M: <a href="tel:+385916262171" style="color:#0f8b7e;text-decoration:none;">+385 91 6262 171</a><br>E: <a href="mailto:sasa.batinac@in-time.hr" style="color:#0f8b7e;text-decoration:none;">sasa.batinac@in-time.hr</a>' +
   '</div>' +
   '</div>' +
   MAIL_UZAK_SUFIKS_;
@@ -3986,6 +4015,8 @@ var MAIL_PREDLOZAK_POSLOVNICE_TEKST_ =
   '<p style="margin:0 0 4px;"><strong>Osoba zadužena za pošiljke:</strong> {{OSOBA_POSILJKE_IME}}</p>' +
   '<p style="margin:0 0 4px;"><strong>Telefon osobe zadužene za pošiljke:</strong> {{OSOBA_POSILJKE_TELEFON}}</p>' +
   '<p style="margin:0 0 4px;"><strong>Adresa prikupa pošiljaka:</strong> {{ADRESA_PRIKUPA}}</p>' +
+  '<p style="margin:0 0 4px;"><strong>Vrijeme prikupa:</strong> {{VRIJEME_PRIKUPA}}</p>' +
+  '<p style="margin:0 0 4px;"><strong>Zadnji rok za unos naloga:</strong> {{ZADNJI_ROK_UNOSA}}</p>' +
   // NOVO (30.9.2026., Sašin izričit zahtjev — "sliku lokacije prikupa koju
   // smo ugradili na stranicu poslati i poslovnicama... u prvom mailu [koji
   // ide prema njima]... ispod adrese prikupa pošiljke"): {{SLIKA_PRIKUPA}}
@@ -4002,8 +4033,8 @@ var MAIL_PREDLOZAK_POSLOVNICE_TEKST_ =
   '<div style="border-top:1px solid #e3e6e5;margin-top:18px;padding-top:14px;font-size:12.5px;line-height:1.6;color:#444444;">' +
   '<strong style="color:#1f3d3a;">Saša Batinac, univ. spec. oec.</strong><br>' +
   'Sales and Marketing Manager, Voditelj ključnih kupaca<br>' +
-  'In Time d.o.o. — Licensee of FedEx<br><br>' +
-  'M: +385 91 6262 171 · <a href="mailto:sasa.batinac@in-time.hr" style="color:#0f8b7e;text-decoration:none;">sasa.batinac@in-time.hr</a>' +
+  'In Time d.o.o. — Licensee of FedEx<br>' +
+  '<img src="https://sbatinac.github.io/intime-portal/InTime_Potpis_mail.gif" alt="In Time Express" width="360" style="display:block;width:360px;max-width:100%;height:auto;margin:10px 0;border:0;">M: <a href="tel:+385916262171" style="color:#0f8b7e;text-decoration:none;">+385 91 6262 171</a><br>E: <a href="mailto:sasa.batinac@in-time.hr" style="color:#0f8b7e;text-decoration:none;">sasa.batinac@in-time.hr</a>' +
   '</div>' +
   '</div>' +
   MAIL_UZAK_SUFIKS_;
@@ -4046,6 +4077,22 @@ function popraviPoslovniceObavijestSlikaPrikupa_(sheet) {
     var sadrzaj = String(podaci[i][2] || '');
     if (!sadrzaj || sadrzaj.indexOf('{{SLIKA_PRIKUPA}}') !== -1 || sadrzaj.indexOf(sidro) === -1) { continue; }
     sheet.getRange(i + 2, 3).setValue(sheetSig_(sadrzaj.replace(sidro, sidro + '{{SLIKA_PRIKUPA}}')));
+  }
+}
+
+// v341 (20.10.2026., Sašin zahtjev): u mail zaduženim poslovnicama dodani "Vrijeme prikupa" i "Zadnji rok za unos naloga".
+// Već spremljeni zadani predložak dobiva retke odmah ISPOD "Adresa prikupa pošiljaka". Idempotentno; ručno uređen predložak bez tog retka se ne dira.
+function popraviPoslovniceObavijestVrijemePrikupa_(sheet) {
+  var lastRow = sheet.getLastRow();
+  if (lastRow < 2) { return; }
+  var podaci = sheet.getRange(2, 1, lastRow - 1, 7).getValues();
+  var sidro = '<p style="margin:0 0 4px;"><strong>Adresa prikupa pošiljaka:</strong> {{ADRESA_PRIKUPA}}</p>';
+  var dodatak = '<p style="margin:0 0 4px;"><strong>Vrijeme prikupa:</strong> {{VRIJEME_PRIKUPA}}</p><p style="margin:0 0 4px;"><strong>Zadnji rok za unos naloga:</strong> {{ZADNJI_ROK_UNOSA}}</p>';
+  for (var i = 0; i < podaci.length; i++) {
+    if ((podaci[i][6] || 'ponuda') !== 'poslovnica_obavijest') { continue; }
+    var sadrzaj = String(podaci[i][2] || '');
+    if (!sadrzaj || sadrzaj.indexOf('{{VRIJEME_PRIKUPA}}') !== -1 || sadrzaj.indexOf(sidro) === -1) { continue; }
+    sheet.getRange(i + 2, 3).setValue(sheetSig_(sadrzaj.replace(sidro, sidro + dodatak)));
   }
 }
 
@@ -4096,8 +4143,8 @@ var MAIL_PREDLOZAK_SVE_POSLOVNICE_TEKST_ =
   '<div style="border-top:1px solid #e3e6e5;margin-top:18px;padding-top:14px;font-size:12.5px;line-height:1.6;color:#444444;">' +
   '<strong style="color:#1f3d3a;">Saša Batinac, univ. spec. oec.</strong><br>' +
   'Sales and Marketing Manager, Voditelj ključnih kupaca<br>' +
-  'In Time d.o.o. — Licensee of FedEx<br><br>' +
-  'M: +385 91 6262 171 · <a href="mailto:sasa.batinac@in-time.hr" style="color:#0f8b7e;text-decoration:none;">sasa.batinac@in-time.hr</a>' +
+  'In Time d.o.o. — Licensee of FedEx<br>' +
+  '<img src="https://sbatinac.github.io/intime-portal/InTime_Potpis_mail.gif" alt="In Time Express" width="360" style="display:block;width:360px;max-width:100%;height:auto;margin:10px 0;border:0;">M: <a href="tel:+385916262171" style="color:#0f8b7e;text-decoration:none;">+385 91 6262 171</a><br>E: <a href="mailto:sasa.batinac@in-time.hr" style="color:#0f8b7e;text-decoration:none;">sasa.batinac@in-time.hr</a>' +
   '</div>' +
   '</div>' +
   MAIL_UZAK_SUFIKS_;
@@ -4305,8 +4352,8 @@ var MAIL_PREDLOZAK_KLIJENT_PRISTUP_TEKST_ =
   '<div style="border-top:1px solid #e3e6e5;margin-top:18px;padding-top:14px;font-size:12.5px;line-height:1.6;color:#444444;">' +
   '<strong style="color:#1f3d3a;">Saša Batinac, univ. spec. oec.</strong><br>' +
   'Sales and Marketing Manager, Voditelj ključnih kupaca<br>' +
-  'In Time d.o.o. — Licensee of FedEx<br><br>' +
-  'M: +385 91 6262 171 · <a href="mailto:sasa.batinac@in-time.hr" style="color:#0f8b7e;text-decoration:none;">sasa.batinac@in-time.hr</a>' +
+  'In Time d.o.o. — Licensee of FedEx<br>' +
+  '<img src="https://sbatinac.github.io/intime-portal/InTime_Potpis_mail.gif" alt="In Time Express" width="360" style="display:block;width:360px;max-width:100%;height:auto;margin:10px 0;border:0;">M: <a href="tel:+385916262171" style="color:#0f8b7e;text-decoration:none;">+385 91 6262 171</a><br>E: <a href="mailto:sasa.batinac@in-time.hr" style="color:#0f8b7e;text-decoration:none;">sasa.batinac@in-time.hr</a>' +
   '</div>' +
   '</td></tr></table>' +
   '</td></tr></table>';
@@ -4640,6 +4687,7 @@ function getOrCreateMailPredlosciSheet() {
     popraviKlijentPristupSirinaIEmoji_(sheet);
     popraviKlijentPristupKalkulatorBlok_(sheet);
     popraviPoslovniceObavijestSlikaPrikupa_(sheet);
+    popraviPoslovniceObavijestVrijemePrikupa_(sheet);
     popraviIkoniceUHtmlPredloscima_(sheet);
     popraviUslugeKutijuStil_(sheet);
     popraviUskiOkvirInternihPredlozaka_(sheet);
@@ -4665,6 +4713,7 @@ function getOrCreateMailPredlosciSheet() {
     dodajIkonuKalkulatoraUGumbUOtvorenim_(sheet);
     postaviTekstKorigiraneOtvoreneUPredlosku_(sheet);
     dodajJednokratnePredloskeAkoNedostaju_(sheet);
+    postaviPotpisGifUPredloske_(sheet);
     popravciProps_.setProperty('MAIL_PREDLOSCI_POPRAVCI_VERZIJA', MAIL_PREDLOSCI_POPRAVCI_VERZIJA_);
   }
   return sheet;
@@ -6417,7 +6466,11 @@ function adminDodijeliKalkulatorPristup(token, rowIndex, regenerirajLozinku, raz
     var obUsernameCol = header.indexOf(ADMIN_ONLY_FIELDS.ob_username);
     var obUsername = (obUsernameCol !== -1) ? String(row[obUsernameCol] || '').trim() : '';
     var tipColDod_ = header.indexOf('Tip');
-    var jeOtvorenaDod_ = (tipColDod_ !== -1 && String(row[tipColDod_]) === OTV_TIP_);
+    var tipOtvDod_ = (tipColDod_ !== -1 && String(row[tipColDod_]) === OTV_TIP_);
+    // v331: otvorena ponuda kojoj je testni kalkulator PRETVOREN u pravi (kalkulator_testni = 'PRAVI') ponaša se kao klijent — više nije testni.
+    var otvPraviIxDod_ = header.indexOf(ADMIN_ONLY_FIELDS.kalkulator_testni);
+    var otvJePraviDod_ = tipOtvDod_ && otvPraviIxDod_ !== -1 && String(row[otvPraviIxDod_] || '').trim() === 'PRAVI';
+    var jeOtvorenaDod_ = tipOtvDod_ && !otvJePraviDod_;
     // TESTNI KALKULATOR OBIČNE PONUDE (15.10.2026.): ista pravila kao kod otvorene ponude — dok ponuda nije prihvaćena i klijent nema PRAVI kalkulator,
     // dodjela stvara testni pristup (generirano korisničko ime, bez OB). Čim je ponuda prihvaćena, ista dodjela stvara PRAVI kalkulator (OB korisničko ime).
     var testniColDod_ = header.indexOf(ADMIN_ONLY_FIELDS.kalkulator_testni);
@@ -6480,7 +6533,7 @@ function adminDodijeliKalkulatorPristup(token, rowIndex, regenerirajLozinku, raz
     } catch (errArhDod_) { /* ne blokira dodjelu */ }
     upisi_('kalkulator_korisnicko_ime', obUsername);
     upisi_('kalkulator_lozinka', lozinka);
-    upisi_('kalkulator_testni', jeTestnaPonuda_ ? 'DA' : '');
+    upisi_('kalkulator_testni', jeTestnaPonuda_ ? 'DA' : (otvJePraviDod_ ? 'PRAVI' : ''));
     upisi_('kalkulator_cjenik_json', JSON.stringify(ucitano.cjenik));
     upisi_('kalkulator_cjenik_naziv_datoteke', ucitano.naziv);
     upisi_('kalkulator_cjenik_datum', sadaFormatiran);
@@ -6648,6 +6701,9 @@ function adminDohvatiKartuPrikupa(token, rowIndex, prisili) {
 // Briše SAMO pristupne podatke (korisničko ime, lozinka, zamrznuto) — koristi se kad se otvorena ponuda prebacuje u Ponude/Klijente:
 // testni pristup tada nestaje, a pravi se dodjeljuje na uobičajen način (OB korisničko ime).
 function kalkulatorObrisiPristupnePodatkeRedka_(sheet, header, rowIndex) {
+  // v331: ako je testni kalkulator otvorene ponude već pretvoren u PRAVI, prebacivanje u Ponude/Klijente ga NE briše.
+  var praviIx_ = header.indexOf(ADMIN_ONLY_FIELDS.kalkulator_testni);
+  if (praviIx_ !== -1 && String(sheet.getRange(rowIndex, praviIx_ + 1).getValue() || '').trim() === 'PRAVI') { return; }
   ['kalkulator_korisnicko_ime', 'kalkulator_lozinka', 'kalkulator_zamrznuto', 'kalkulator_testni'].forEach(function(polje) {
     var idx = header.indexOf(ADMIN_ONLY_FIELDS[polje]);
     if (idx !== -1) { sheet.getRange(rowIndex, idx + 1).setValue(''); }
@@ -6671,6 +6727,50 @@ function adminUkloniKalkulatorPristup(token, rowIndex) {
     return { status: 'ok' };
   } catch (err) {
     return { status: 'error', message: 'Uklanjanje pristupa nije uspjelo: ' + err.message };
+  }
+}
+
+// v331 (Sašin zahtjev): na OTVORENOJ ponudi testni kalkulator se jednim klikom pretvara u PRAVI — korisničko ime postaje OB korisničko ime,
+// lozinka se generira nova, cjenik ostaje isti. Ponuda ostaje otvorena; oznaka kalkulator_testni = 'PRAVI' (pa se testni više ne računa i ne briše pri prebacivanju).
+function adminOtvPretvoriKalkulatorUPravi(token, rowIndex) {
+  if (!isValidAdminToken_(token)) { return { status: 'error', message: 'Sesija je istekla — prijavite se ponovno.' }; }
+  rowIndex = parseInt(rowIndex, 10);
+  if (!rowIndex || rowIndex < 2) { return { status: 'error', message: 'Neispravan redak.' }; }
+  var sheet = getOrCreateUpitiSheet();
+  if (rowIndex > sheet.getLastRow()) { return { status: 'error', message: 'Redak više ne postoji (možda je već obrisan).' }; }
+  try {
+    var ocekivano = izracunajOcekivanoZaglavljeUpiti_();
+    var lastCol = Math.min(sheet.getLastColumn(), ocekivano.length);
+    var header = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
+    var row = sheet.getRange(rowIndex, 1, 1, lastCol).getValues()[0];
+    var ix = function(polje) { return header.indexOf(ADMIN_ONLY_FIELDS[polje]); };
+    var tipIx = header.indexOf('Tip');
+    if (tipIx === -1 || String(row[tipIx]) !== OTV_TIP_) { return { status: 'error', message: 'Ovo nije otvorena ponuda (kod ostalih klijenata koristi se "Dodijeli PRAVI kalkulator").' }; }
+    var testniIx = ix('kalkulator_testni'), korIx = ix('kalkulator_korisnicko_ime'), lozIx = ix('kalkulator_lozinka'), obIx = ix('ob_username');
+    if (testniIx === -1 || korIx === -1 || lozIx === -1) { return { status: 'error', message: 'Stupci kalkulatora ne postoje u Sheetu.' }; }
+    if (String(row[testniIx] || '').trim() === 'PRAVI') { return { status: 'error', message: 'Kalkulator je već pravi.' }; }
+    if (!String(row[lozIx] || '').trim() || !String(row[ix('kalkulator_cjenik_json')] || '').trim()) { return { status: 'error', message: 'Ova ponuda još nema testni kalkulator s cjenikom — prvo ga napravite.' }; }
+    var obUser = (obIx !== -1) ? String(row[obIx] || '').trim() : '';
+    if (!obUser) { return { status: 'error', message: 'Prvo popunite i potvrdite "OB korisničko ime" — koristi se kao korisničko ime pravog kalkulatora.' }; }
+    // isto korisničko ime ne smije imati netko drugi
+    if (sheet.getLastRow() > 1) {
+      var sva = sheet.getRange(2, korIx + 1, sheet.getLastRow() - 1, 1).getValues();
+      for (var i = 0; i < sva.length; i++) {
+        if (i + 2 === rowIndex) { continue; }
+        if (String(sva[i][0] || '').trim().toLowerCase() === obUser.toLowerCase()) { return { status: 'error', message: 'Korisničko ime "' + obUser + '" već koristi drugi zapis (redak ' + (i + 2) + ').' }; }
+      }
+    }
+    var nazivIx = header.indexOf('Naziv tvrtke');
+    var dOb = ix('datum_otvaranja_ob');
+    var gen = generirajKalkulatorLozinku_(dOb !== -1 ? row[dOb] : null, nazivIx !== -1 ? String(row[nazivIx] || '').trim() : '');
+    sheet.getRange(rowIndex, korIx + 1).setValue(sheetSig_(obUser));
+    sheet.getRange(rowIndex, lozIx + 1).setValue(sheetSig_(gen.lozinka));
+    sheet.getRange(rowIndex, testniIx + 1).setValue('PRAVI');
+    var zIx = ix('kalkulator_zamrznuto');
+    if (zIx !== -1) { sheet.getRange(rowIndex, zIx + 1).setValue(''); }
+    return { status: 'ok', korisnickoIme: obUser, lozinka: gen.lozinka };
+  } catch (err) {
+    return { status: 'error', message: 'Pretvaranje nije uspjelo: ' + err.message };
   }
 }
 
@@ -6726,9 +6826,9 @@ function adminDohvatiKalkulatorKorisnike(token) {
         cjenikNaziv: idx.cjenikNaziv !== -1 ? String(data[i][idx.cjenikNaziv] || '').trim() : '',
         cjenikDatum: idx.cjenikDatum !== -1 ? String(data[i][idx.cjenikDatum] || '').trim() : '',
         zamrznuto: (idx.zamrznuto !== -1 && String(data[i][idx.zamrznuto] || '').trim() === 'DA'),
-        izvor: (idx.tip !== -1 && String(data[i][idx.tip]) === OTV_TIP_) ? 'otvorena' : ((idx.testni !== -1 && String(data[i][idx.testni] || '').trim() === 'DA') ? 'ponuda' : 'klijent'),
+        izvor: (idx.tip !== -1 && String(data[i][idx.tip]) === OTV_TIP_ && !(idx.testni !== -1 && String(data[i][idx.testni] || '').trim() === 'PRAVI')) ? 'otvorena' : ((idx.testni !== -1 && String(data[i][idx.testni] || '').trim() === 'DA') ? 'ponuda' : 'klijent'),
         testniAktivan: (function() {
-          var jeT = (idx.tip !== -1 && String(data[i][idx.tip]) === OTV_TIP_) || (idx.testni !== -1 && String(data[i][idx.testni] || '').trim() === 'DA');
+          var jeT = (idx.tip !== -1 && String(data[i][idx.tip]) === OTV_TIP_ && !(idx.testni !== -1 && String(data[i][idx.testni] || '').trim() === 'PRAVI')) || (idx.testni !== -1 && String(data[i][idx.testni] || '').trim() === 'DA');
           if (!jeT) { return false; }
           var st = izracunajStatusPonude_(header, data[i]);
           return st === 'nije_poslano' || st === 'na_cekanju';
@@ -6810,10 +6910,69 @@ function kalkulatorTestniPrijava(ponudaToken) {
       var evid = getOrCreateKalkulatorEvidencijaSheet_();
       evid.appendRow(sheetSigRed_([new Date(), 'Testni kalkulator', '', String(get('Naziv tvrtke') || ''), '(testni — ponuda ' + String(get(ADMIN_ONLY_FIELDS.sifra_ponude) || '') + ')', '', '', '', '']));
     } catch (eE) { /* ne smije blokirati */ }
-    return { status: 'ok', naziv: String(get('Naziv tvrtke') || '').trim(), cjenik: ucitano.cjenik, postavke: ucitano.postavke || {} };
+    kalkTestPracenjeZabiljezi_(header, nadjen.rowIndex, row, 'Prijava');   // v325
+    var brTest_ = ''; try { brTest_ = otvBrojPonude_({ get: get }).broj; } catch (eB_) { brTest_ = ''; }
+    return { status: 'ok', naziv: String(get('Naziv tvrtke') || '').trim(), broj: brTest_, cjenik: ucitano.cjenik, postavke: ucitano.postavke || {} };
   } catch (err) {
     return { status: 'error', message: 'Testni kalkulator trenutno nije dostupan, pokušajte ponovno.' };
   }
+}
+
+// v325: praćenje testiranja cjenika na samoj ponudi (4 uzastopna stupca: broj prijava, prva prijava, zadnja aktivnost, broj izračuna).
+// Zove se kad se klijent prijavi u TESTNI kalkulator ili u njemu napravi izračun. Nikad ne smije srušiti ni usporiti klijentov tok.
+function kalkTestPracenjeZabiljezi_(header, rowIndex, row, vrsta) {
+  try {
+    if (!rowIndex || !row) { return; }
+    var cB = header.indexOf(ADMIN_ONLY_FIELDS.kalk_test_broj);
+    if (cB === -1 || header.indexOf(ADMIN_ONLY_FIELDS.kalk_test_prva) !== cB + 1 || header.indexOf(ADMIN_ONLY_FIELDS.kalk_test_zadnja) !== cB + 2 || header.indexOf(ADMIN_ONLY_FIELDS.kalk_test_izracuna) !== cB + 3) { return; }
+    var sada = new Date();
+    var broj = parseInt(row[cB], 10) || 0, izr = parseInt(row[cB + 3], 10) || 0, prva = row[cB + 1] || sada;
+    if (vrsta === 'Izračun') { izr++; } else { broj++; }
+    getOrCreateUpitiSheet().getRange(rowIndex, cB + 1, 1, 4).setValues([[broj, prva, sada, izr]]);
+  } catch (e) { /* praćenje je dodatak */ }
+}
+// v325: jednokratno (po verziji) povlači STARA testiranja iz evidencije kalkulatora u nove stupce na ponudi. Evidencija je izvor istine, pa upis prepisuje brojače (idempotentno).
+function kalkTestPracenjeBackfill_() {
+  var props = PropertiesService.getScriptProperties();
+  if (props.getProperty('KALK_TEST_PRACENJE_BACKFILL') === 'v1') { return; }
+  try {
+    var sheet = getOrCreateUpitiSheet(), lr = sheet.getLastRow();
+    if (lr < 2) { return; }
+    var ocek = izracunajOcekivanoZaglavljeUpiti_();
+    var header = sheet.getRange(1, 1, 1, Math.min(sheet.getLastColumn(), ocek.length)).getValues()[0];
+    var cB = header.indexOf(ADMIN_ONLY_FIELDS.kalk_test_broj), cU = header.indexOf(ADMIN_ONLY_FIELDS.kalkulator_korisnicko_ime), cS = header.indexOf(ADMIN_ONLY_FIELDS.sifra_ponude);
+    if (cB === -1 || cU === -1) { return; }   // stupci još nisu u Sheetu — pokušat će se pri idućem učitavanju
+    var ev = getOrCreateKalkulatorEvidencijaSheet_(), er = ev.getLastRow();
+    var agg = {};
+    var parse = function(v) {
+      if (v instanceof Date) { return v; }
+      var m = /^(\d{1,2})\.(\d{1,2})\.(\d{4})\.?\s*(\d{1,2}):(\d{2})(?::(\d{2}))?/.exec(String(v || ''));
+      return m ? new Date(+m[3], +m[2] - 1, +m[1], +m[4], +m[5], +(m[6] || 0)) : null;
+    };
+    if (er >= 2) {
+      ev.getRange(2, 1, er - 1, 5).getValues().forEach(function(x) {
+        var vrsta = String(x[1] || ''), naziv = String(x[3] || ''), user = String(x[4] || '').trim();
+        var jeTokenTest = (vrsta === 'Testni kalkulator');
+        if (!jeTokenTest && naziv.indexOf('[Testni') === -1) { return; }
+        var kljuc = '';
+        if (jeTokenTest) { var ms = /ponuda\s+([^\s)]+)\)/.exec(user); kljuc = ms ? 'S:' + ms[1] : ''; }
+        else { kljuc = user ? 'U:' + user.toLowerCase() : ''; }
+        var d = parse(x[0]);
+        if (!kljuc || !d) { return; }
+        var a = agg[kljuc] || (agg[kljuc] = { broj: 0, izr: 0, prva: d, zadnja: d });
+        if (vrsta === 'Izračun') { a.izr++; } else { a.broj++; }
+        if (d < a.prva) { a.prva = d; }
+        if (d > a.zadnja) { a.zadnja = d; }
+      });
+    }
+    var kolU = sheet.getRange(2, cU + 1, lr - 1, 1).getValues(), kolS = cS === -1 ? null : sheet.getRange(2, cS + 1, lr - 1, 1).getValues();
+    for (var i = 0; i < lr - 1; i++) {
+      var u = String(kolU[i][0] || '').trim().toLowerCase(), s = kolS ? String(kolS[i][0] || '').trim() : '';
+      var a2 = (u && agg['U:' + u]) || (s && agg['S:' + s]) || null;
+      if (a2) { sheet.getRange(i + 2, cB + 1, 1, 4).setValues([[a2.broj, a2.prva, a2.zadnja, a2.izr]]); }
+    }
+    props.setProperty('KALK_TEST_PRACENJE_BACKFILL', 'v1');
+  } catch (e) { /* pokušat će se ponovno pri idućem učitavanju */ }
 }
 
 function kalkulatorKlijentPrijava(usernameUneseno, lozinkaUnesena) {
@@ -6852,7 +7011,7 @@ function kalkulatorKlijentPrijava(usernameUneseno, lozinkaUnesena) {
         // Testni pristup otvorene ponude vrijedi samo dok ponuda čeka odgovor; nakon prihvata/odbijanja/isteka/poništenja je isključen.
         var tipLogIx_ = header.indexOf('Tip');
         var testniLogIx_ = header.indexOf(ADMIN_ONLY_FIELDS.kalkulator_testni);
-        var jeTestniLog_ = (tipLogIx_ !== -1 && String(data[i][tipLogIx_]) === OTV_TIP_) || (testniLogIx_ !== -1 && String(data[i][testniLogIx_] || '').trim() === 'DA');
+        var jeTestniLog_ = (tipLogIx_ !== -1 && String(data[i][tipLogIx_]) === OTV_TIP_ && !(testniLogIx_ !== -1 && String(data[i][testniLogIx_] || '').trim() === 'PRAVI')) || (testniLogIx_ !== -1 && String(data[i][testniLogIx_] || '').trim() === 'DA');
         if (jeTestniLog_) {
           var stanjeLog_ = izracunajStatusPonude_(header, data[i]);
           if (stanjeLog_ !== 'nije_poslano' && stanjeLog_ !== 'na_cekanju') {
@@ -6944,12 +7103,12 @@ function kalkulatorZabiljeziEvidenciju(username, vrsta, ulazniPodaciJson, rezult
     var nazivCol = header.indexOf('Naziv tvrtke');
     if (korisnickoImeCol === -1 || lozinkaCol === -1) { return { status: 'error' }; }
     var data = sheet.getRange(2, 1, lastRow - 1, lastCol).getValues();
-    var pronadjeno = null;
+    var pronadjeno = null, pronadjenoRedak_ = 0;
     var usernameLower = username.toLowerCase();
     for (var i = 0; i < data.length; i++) {
       var redUsername = String(data[i][korisnickoImeCol] || '').trim().toLowerCase();
       var redLozinka = String(data[i][lozinkaCol] || '').trim();
-      if (redUsername && redLozinka && redUsername === usernameLower) { pronadjeno = data[i]; break; }
+      if (redUsername && redLozinka && redUsername === usernameLower) { pronadjeno = data[i]; pronadjenoRedak_ = i + 2; break; }
     }
     if (!pronadjeno) { return { status: 'error' }; }
     if (zamrznutoCol !== -1 && String(pronadjeno[zamrznutoCol] || '').trim() === 'DA') { return { status: 'error' }; }
@@ -6963,7 +7122,7 @@ function kalkulatorZabiljeziEvidenciju(username, vrsta, ulazniPodaciJson, rezult
     if (rezultatHtmlZaSpremanje.length > ODSIJECI_NA_) { rezultatHtmlZaSpremanje = rezultatHtmlZaSpremanje.slice(0, ODSIJECI_NA_); }
     // Oznaka odakle je kalkulator nastao (15.10.2026.): testni iz otvorene ponude / testni iz obične ponude / (bez oznake = pravi).
     var tipEvCol_ = header.indexOf('Tip'), testniEvCol_ = header.indexOf(ADMIN_ONLY_FIELDS.kalkulator_testni);
-    var oznakaIzvora_ = (tipEvCol_ !== -1 && String(pronadjeno[tipEvCol_]) === OTV_TIP_) ? ' [Testni — otvorena ponuda]'
+    var oznakaIzvora_ = (tipEvCol_ !== -1 && String(pronadjeno[tipEvCol_]) === OTV_TIP_ && !(testniEvCol_ !== -1 && String(pronadjeno[testniEvCol_] || '').trim() === 'PRAVI')) ? ' [Testni — otvorena ponuda]'
       : ((testniEvCol_ !== -1 && String(pronadjeno[testniEvCol_] || '').trim() === 'DA') ? ' [Testni — ponuda]' : '');
     evSheet.appendRow(sheetSigRed_([
       sada,
@@ -6976,6 +7135,7 @@ function kalkulatorZabiljeziEvidenciju(username, vrsta, ulazniPodaciJson, rezult
       String(rezultatSazetak || '').trim(),
       rezultatHtmlZaSpremanje
     ]));
+    if (oznakaIzvora_) { kalkTestPracenjeZabiljezi_(header, pronadjenoRedak_, pronadjeno, vrsta); }   // v325: testni kalkulator → datum + brojač na ponudi
     return { status: 'ok' };
   } catch (err) {
     return { status: 'error' };
@@ -7350,8 +7510,8 @@ var RASKID_TIJELO_DEFAULT_ =
   '<div style="border-top:1px solid #e3e6e5;margin-top:16px;padding-top:14px;font-size:12.5px;line-height:1.6;color:#444444;">' +
   '<strong style="color:#1f3d3a;">Saša Batinac, univ. spec. oec.</strong><br>' +
   'Sales and Marketing Manager, Voditelj ključnih kupaca<br>' +
-  'In Time d.o.o. — Licensee of FedEx<br><br>' +
-  'M: +385 91 6262 171 · <a href="mailto:sasa.batinac@in-time.hr" style="color:#e4161b;text-decoration:none;">sasa.batinac@in-time.hr</a>' +
+  'In Time d.o.o. — Licensee of FedEx<br>' +
+  '<img src="https://sbatinac.github.io/intime-portal/InTime_Potpis_mail.gif" alt="In Time Express" width="360" style="display:block;width:360px;max-width:100%;height:auto;margin:10px 0;border:0;">M: <a href="tel:+385916262171" style="color:#e4161b;text-decoration:none;">+385 91 6262 171</a><br>E: <a href="mailto:sasa.batinac@in-time.hr" style="color:#e4161b;text-decoration:none;">sasa.batinac@in-time.hr</a>' +
   '</div>' +
   '</td></tr>' +
   '<tr><td style="padding:0;font-size:0;line-height:0;border-radius:0 0 12px 12px;"><img src="https://i.imgur.com/7BFnDqB.png" alt="" width="620" style="display:block;width:100%;max-width:620px;height:auto;border:0;border-radius:0 0 12px 12px;"></td></tr>' +
@@ -7842,6 +8002,23 @@ function sudregPbrOsm_(adresa, grad) {
 }
 
 // opcije.sirovo === true → vraća i prvih ~3000 znakova sirovog odgovora (za dijagnostiku).
+// v340 (20.10.2026., Sašin zahtjev): naziv iz sudskog registra automatski skraćuje pravni oblik i briše opis djelatnosti —
+// "TENA-G društvo s ograničenom odgovornošću za trgovinu i ugostiteljstvo" → "TENA-G d.o.o."; "KLIKTRONIK d.o.o. za usluge web dizajna" → "KLIKTRONIK d.o.o.".
+// Vrijedi samo za NOVE upite registra (već upisani nazivi u Sheetu se ne mijenjaju). Nazivi bez prepoznatog oblika (npr. "NK Osijek s.d.d.") ostaju kakvi jesu.
+function sudregSkratiOblik_(naziv) {
+  var n = String(naziv || '').replace(/\s+/g, ' ').trim();
+  if (!n) { return n; }
+  var re = /^(.+?)\s+(jednostavno\s+društvo\s+sa?\s+ograničenom\s+odgovornošću|društvo\s+sa?\s+ograničenom\s+odgovornošću|dioničko\s+društvo|j\.d\.o\.o\.?|d\.o\.o\.?|d\.d\.?)(?=[\s,.]|$)\.?(.*)$/i;
+  var m = re.exec(n);
+  if (!m) { return n; }
+  var osnova = m[1].replace(/[\s,]+$/, '');
+  if (!osnova || /(^|\s)s\.?$/i.test(osnova)) { return n; }   // "s.d.d." i sl. ne diramo
+  var f = m[2].toLowerCase().replace(/\s+/g, ' ');
+  var oblik = /^jednostavno/.test(f) || /^j\./.test(f) ? 'j.d.o.o.' : (/^dioni/.test(f) || /^d\.d/.test(f) ? 'd.d.' : 'd.o.o.');
+  var rep = String(m[3] || '').trim();
+  if (/^,?\s*za\s/i.test(rep)) { rep = ''; }   // opis djelatnosti ("za trgovinu i usluge …") se briše
+  return (osnova + ' ' + oblik + (rep ? ' ' + rep.replace(/^,\s*/, ', ') : '')).replace(/\s+,/g, ',').trim();
+}
 function sudregPodaci_(oib, opcije) {
   oib = String(oib || '').replace(/\D/g, '');
   if (!/^\d{11}$/.test(oib)) { return { status: 'error', message: 'OIB mora imati 11 znamenki.' }; }
@@ -7849,7 +8026,7 @@ function sudregPodaci_(oib, opcije) {
   var sirovo = opcije && opcije.sirovo === true;
   var cache = CacheService.getScriptCache();
   if (!sirovo) {
-    var c = cache.get('SUDREG_' + oib);
+    var c = cache.get('SUDREG2_' + oib);
     if (c) { try { var cp = JSON.parse(c); cp.izCachea = true; return cp; } catch (e) {} }
   }
   if (opcije && opcije.javno === true && !sudregLimit_(3, 'SUDREG_POZIVI_JAVNO')) { return { status: 'error', code: 'limit', message: 'Previše upita — pričekaj minutu pa pokušaj ponovno.' }; }
@@ -7875,10 +8052,10 @@ function sudregPodaci_(oib, opcije) {
     } else {
       var j = JSON.parse(tekst);
       var iz = sudregIzvuci_(j);
-      rez = { status: 'ok', pronadjen: !!iz.naziv, oib: oib, naziv: iz.naziv, adresa: iz.adresa, pbr: iz.pbr, pbrIzvor: iz.pbr ? 'sudreg' : '', grad: iz.grad, pravniOblik: iz.pravniOblik, mbs: iz.mbs, aktivan: iz.aktivan };
+      rez = { status: 'ok', pronadjen: !!iz.naziv, oib: oib, naziv: sudregSkratiOblik_(iz.naziv), nazivSluzbeni: iz.naziv, adresa: iz.adresa, pbr: iz.pbr, pbrIzvor: iz.pbr ? 'sudreg' : '', grad: iz.grad, pravniOblik: iz.pravniOblik, mbs: iz.mbs, aktivan: iz.aktivan };
       if (rez.pronadjen && !rez.pbr) { var osm = sudregPbrOsm_(rez.adresa, rez.grad); if (osm) { rez.pbr = osm; rez.pbrIzvor = 'osm'; } }
     }
-    if (!sirovo) { try { cache.put('SUDREG_' + oib, JSON.stringify(rez), 6 * 3600); } catch (e2) {} }
+    if (!sirovo) { try { cache.put('SUDREG2_' + oib, JSON.stringify(rez), 6 * 3600); } catch (e2) {} }
     else {
       rez.sirovo = tekst.substring(0, 3000); rez.httpKod = kod;
       try { var jj = JSON.parse(tekst); if (Array.isArray(jj)) { jj = jj[0] || {}; } rez.sjediste = jj.sjediste || (jj.subjekt && jj.subjekt.sjediste) || null; } catch (e4) {}
@@ -7934,7 +8111,8 @@ function buildAnketaConfirmationEmail(data) {
       '<p style="margin-top:24px;">Srdačan pozdrav,<br><b>Saša Batinac</b><br>' +
       'Sales and Marketing Manager, Voditelj ključnih kupaca<br>' +
       'In Time d.o.o. — Licensee of FedEx<br>' +
-      'M: +385 91 6262 171 · sasa.batinac@in-time.hr</p>' +
+      '<img src="https://sbatinac.github.io/intime-portal/InTime_Potpis_mail.gif" alt="In Time Express" width="360" style="display:block;width:360px;max-width:100%;height:auto;margin:10px 0;border:0;">' +
+      'M: <a href="tel:+385916262171" style="color:#0f8b7e;text-decoration:none;">+385 91 6262 171</a><br>E: <a href="mailto:sasa.batinac@in-time.hr" style="color:#0f8b7e;text-decoration:none;">sasa.batinac@in-time.hr</a></p>' +
     '</div>' +
     '<div style="background:#f7fafb;border-top:1px solid #e2e6ea;padding:14px 24px;font-size:11px;color:#6b6b6b;">' +
       'In Time d.o.o. · Zelena aleja 28, 10410 Vukovina · Tel: 01 6254 444' +
@@ -8283,6 +8461,8 @@ function doPost(e) {
       result = adminPripremiDokumenteZaPonudu(data.token, data.rowIndex, data.stavke);
     } else if (data.action === 'adminVratiLinkDokumenataOdbijenePonude') {
       result = adminVratiLinkDokumenataOdbijenePonude(data.token, data.rowIndex);
+    } else if (data.action === 'ponudaDokumentiOtvori') {
+      result = ponudaDokumentiOtvori(data.token);
     } else if (data.action === 'potvrdaPonudeInfo') {
       // Napomena: `data.token` ovdje NIJE admin token (kao kod ostalih
       // 'admin...' akcija) nego token za potvrdu ponude iz poveznice — isti
@@ -8355,6 +8535,8 @@ function doPost(e) {
       result = adminKalkulatorCjenikKlijentArhivaRestore(data.token, data.rowIndex, data.arhivId, data.razlog);
     } else if (data.action === 'adminKalkulatorCjenikKlijentArhivaDelete') {
       result = adminKalkulatorCjenikKlijentArhivaDelete(data.token, data.arhivId);
+    } else if (data.action === 'adminOtvPretvoriKalkulatorUPravi') {
+      result = adminOtvPretvoriKalkulatorUPravi(data.token, data.rowIndex);
     } else if (data.action === 'adminUkloniKalkulatorPristup') {
       result = adminUkloniKalkulatorPristup(data.token, data.rowIndex);
     } else if (data.action === 'adminDohvatiKalkulatorKorisnike') {
@@ -8607,6 +8789,14 @@ function doPost(e) {
       result = adminKampanjaZaustavi(data.token, data.kampanjaId, data.nastavi);
     } else if (data.action === 'adminPismaMobilno') {
       result = adminPismaMobilno(data.token, data.predlozakId, data.potvrdjeno);
+    } else if (data.action === 'adminEvidencijaPodaci') {
+      result = adminEvidencijaPodaci(data.token);
+    } else if (data.action === 'adminEvidencijaPozivSpremi') {
+      result = adminEvidencijaPozivSpremi(data.token, data.id, data.kljuc, data.naziv, data.broj, data.ishod, data.biljeska, data.ponovno);
+    } else if (data.action === 'adminEvidencijaKontaktDodaj') {
+      result = adminEvidencijaKontaktDodaj(data.token, data.kljuc, data.vrsta, data.vrijednost, data.oznaka);
+    } else if (data.action === 'adminEvidencijaKontaktUkloni') {
+      result = adminEvidencijaKontaktUkloni(data.token, data.id);
     } else if (data.action === 'adminPismaPogodci') {
       result = adminPismaPogodci(data.token);
     } else if (data.action === 'adminIzvoriKontakta') {
@@ -8625,6 +8815,10 @@ function doPost(e) {
       result = adminUnikornUkloni(data.token, data.oib);
     } else if (data.action === 'adminUnikorniPodsjetnikVidjen') {
       result = adminUnikorniPodsjetnikVidjen(data.token);
+    } else if (data.action === 'adminMailPosiljateljGet') {
+      result = adminMailPosiljateljGet(data.token);
+    } else if (data.action === 'adminMailPosiljateljSpremi') {
+      result = adminMailPosiljateljSpremi(data.token, data.nacin);
     } else if (data.action === 'adminUnikorniPostavke') {
       result = adminUnikorniPostavke(data.token);
     } else if (data.action === 'adminUnikorniPostavkeSpremi') {
@@ -9473,6 +9667,18 @@ var ADMIN_ONLY_FIELDS = {
   otv_povijest_mailova: 'Otvorena ponuda - prijašnje mail adrese (admin, JSON)',
   // v273 (16.10.2026.): tipka REVIZIJA u kartici ponude (obične i otvorene) — 'DA' = ispred imena direktorija ponude, dokumenata i arhiviranog Claudeovog direktorija ide 'REVIZIJA - '.
   revizija_ponude: 'Ponuda je revizija (admin)',
+  // v321: praćenje otvaranja (poveznica na stranicu ponude / poveznica na dokumente) — broj, prvo i zadnje otvaranje
+  pregled_ponude_broj: 'Pregled ponude - broj otvaranja (admin)',
+  pregled_ponude_prvo: 'Pregled ponude - prvo otvaranje (admin)',
+  pregled_ponude_zadnje: 'Pregled ponude - zadnje otvaranje (admin)',
+  pregled_dok_broj: 'Dokumenti ponude - broj otvaranja (admin)',
+  pregled_dok_prvo: 'Dokumenti ponude - prvo otvaranje (admin)',
+  pregled_dok_zadnje: 'Dokumenti ponude - zadnje otvaranje (admin)',
+  // v325: praćenje TESTIRANJA CJENIKA (prijava u testni kalkulator ponude / otvorene ponude) — 4 uzastopna stupca (vidi kalkTestPracenjeZabiljezi_)
+  kalk_test_broj: 'Testni kalkulator - broj prijava (admin)',
+  kalk_test_prva: 'Testni kalkulator - prva prijava (admin)',
+  kalk_test_zadnja: 'Testni kalkulator - zadnja aktivnost (admin)',
+  kalk_test_izracuna: 'Testni kalkulator - broj izračuna (admin)',
   // STARI KLIJENTI (12.10.2026.) — pomoćni stupci za praćenje slanja upitnika; klijent je inače običan redak (vidi blok "STARI KLIJENTI" na kraju datoteke).
   stari_token: 'Stari klijent - token upitnika (admin)',
   stari_primatelj: 'Stari klijent - mail za upitnik (admin)',
@@ -10250,6 +10456,7 @@ function adminUcitajPocetno(token, faza) {
   if (!isValidAdminToken_(token)) { return { status: 'error', message: 'Sesija je istekla — prijavite se ponovno.' }; }
   var r = { status: 'ok' };
   if (faza !== 'ostalo') {
+    kalkTestPracenjeBackfill_();   // v325: jednokratno (provjera zastavice je jeftina)
     r.counters = adminGetCounters(token);
     r.entries = adminListEntries(token);
     r.brojStatus = adminGetBrojStatus(token);
@@ -15247,7 +15454,8 @@ function buildOdbijenicaConfirmationEmail(data) {
       '<b>Saša Batinac</b><br>' +
       'Sales and Marketing Manager, Voditelj ključnih kupaca<br>' +
       'In Time d.o.o. — Licensee of FedEx<br>' +
-      'M: +385 91 6262 171 · sasa.batinac@in-time.hr</p>' +
+      '<img src="https://sbatinac.github.io/intime-portal/InTime_Potpis_mail.gif" alt="In Time Express" width="360" style="display:block;width:360px;max-width:100%;height:auto;margin:10px 0;border:0;">' +
+      'M: <a href="tel:+385916262171" style="color:#0f8b7e;text-decoration:none;">+385 91 6262 171</a><br>E: <a href="mailto:sasa.batinac@in-time.hr" style="color:#0f8b7e;text-decoration:none;">sasa.batinac@in-time.hr</a></p>' +
     '</div>' +
     '<div style="background:#f7fafb;border-top:1px solid #e2e6ea;padding:14px 24px;font-size:11px;color:#6b6b6b;">' +
       'In Time d.o.o. · Zelena aleja 28, 10410 Vukovina · Tel: 01 6254 444' +
@@ -15497,6 +15705,16 @@ function izracunajOcekivanoZaglavljeUpiti_() {
   header.push('Kalkulator testni pristup (admin)');
   header.push('Izvor kontakta (admin)');
   header.push('Ponuda je revizija (admin)');   // v273 — vidi ADMIN_ONLY_FIELDS.revizija_ponude
+  header.push('Pregled ponude - broj otvaranja (admin)');   // v321 — šest uzastopnih stupaca (vidi otvaranjeZabiljezi_)
+  header.push('Pregled ponude - prvo otvaranje (admin)');
+  header.push('Pregled ponude - zadnje otvaranje (admin)');
+  header.push('Dokumenti ponude - broj otvaranja (admin)');
+  header.push('Dokumenti ponude - prvo otvaranje (admin)');
+  header.push('Dokumenti ponude - zadnje otvaranje (admin)');
+  header.push('Testni kalkulator - broj prijava (admin)');   // v325 — četiri uzastopna stupca (vidi kalkTestPracenjeZabiljezi_)
+  header.push('Testni kalkulator - prva prijava (admin)');
+  header.push('Testni kalkulator - zadnja aktivnost (admin)');
+  header.push('Testni kalkulator - broj izračuna (admin)');
   // (30.9.2026., ISPRAVAK ISTI DAN: stupac "Dokumenti uz pristupne podatke
   // (admin, JSON)" koji je ovdje kratko bio dodan uklonjen je zajedno s
   // ADMIN_ONLY_FIELDS.dokumenti_klijent_pristup gore — vidi napomenu ondje.
@@ -15652,7 +15870,8 @@ function buildUpitConfirmationEmail(data, ispravakToken, ispravakLozinka) {
       '<b>Saša Batinac</b><br>' +
       'Sales and Marketing Manager, Voditelj ključnih kupaca<br>' +
       'In Time d.o.o. — Licensee of FedEx<br>' +
-      'M: +385 91 6262 171 · sasa.batinac@in-time.hr</p>' +
+      '<img src="https://sbatinac.github.io/intime-portal/InTime_Potpis_mail.gif" alt="In Time Express" width="360" style="display:block;width:360px;max-width:100%;height:auto;margin:10px 0;border:0;">' +
+      'M: <a href="tel:+385916262171" style="color:#0f8b7e;text-decoration:none;">+385 91 6262 171</a><br>E: <a href="mailto:sasa.batinac@in-time.hr" style="color:#0f8b7e;text-decoration:none;">sasa.batinac@in-time.hr</a></p>' +
     '</div>' +
     '<div style="background:#f7fafb;border-top:1px solid #e2e6ea;padding:14px 24px;font-size:11px;color:#6b6b6b;">' +
       'In Time d.o.o. · Zelena aleja 28, 10410 Vukovina · Tel: 01 6254 444' +
@@ -17929,7 +18148,7 @@ function ponPodsRender_(r, sada, tekstKljuc, istekProba) {
     PREOSTALO_NASLOV: sutra ? 'ističe sutra' : ('preostalo ' + tocno),
     UVODNA_RECENICA: otvHtmlEsc_(uvod),
     LINK_POTVRDE: POTVRDA_PONUDE_STRANICA_URL + '?token=' + encodeURIComponent(tok),
-    LINK_DOKUMENTI: String(r.get(ADMIN_ONLY_FIELDS.link_dokumenti_ponude) || '')
+    LINK_DOKUMENTI: linkDokumentiZaMail_(r.get(ADMIN_ONLY_FIELDS.link_dokumenti_ponude), tok)
   };
   var izBib = otvPredlozakIzBiblioteke_(PON_PODS_NAZIV_);
   var predmetPred = izBib && izBib.predmet ? izBib.predmet : PON_PODS_PREDMET_;
@@ -18277,7 +18496,7 @@ function dodajPodsjetnikPonudePredlozakAkoNedostaje_(sheet) {
   sheet.appendRow(sheetSigRed_([PON_PODS_NAZIV_, PON_PODS_PREDMET_, PON_PODS_HTML_, '', new Date(), 'DA', PON_PODS_KATEGORIJA_]));
 }
 
-var PON_PODS_HTML_ = "<!DOCTYPE html>\n<html lang=\"hr\" xmlns=\"http://www.w3.org/1999/xhtml\">\n<head>\n<meta charset=\"UTF-8\">\n<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n<meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\">\n<title>Podsjetnik na ponudu — In Time d.o.o.</title>\n</head>\n<body style=\"margin:0;padding:0;background-color:#f2f4f3;\">\n<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"background-color:#f2f4f3;margin:0;padding:0;border-collapse:collapse;\">\n<tr>\n<td align=\"center\" style=\"padding:24px 16px;\">\n\n<table role=\"presentation\" width=\"620\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"max-width:620px;width:100%;border-collapse:collapse;\">\n<tr>\n<td style=\"background-color:#ffffff;border:1px solid #e3e6e5;border-radius:10px;font-family:Arial,Helvetica,sans-serif;\">\n\n<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"border-collapse:collapse;\">\n<tr>\n<td style=\"border-radius:10px 10px 0 0;\">\n<img src=\"{{BANNER_URL}}\" alt=\"In Time d.o.o.\" width=\"620\" style=\"display:block;border:0;outline:none;text-decoration:none;width:100%;max-width:620px;height:auto;border-radius:10px 10px 0 0;\">\n</td>\n</tr>\n</table>\n\n<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"border-collapse:collapse;\">\n<tr>\n<td style=\"padding:28px 30px;font-family:Arial,Helvetica,sans-serif;color:#2b2b2b;\">\n\n<p style=\"font-size:14px;line-height:1.6;margin:0 0 14px;color:#2b2b2b;\">Poštovani,</p>\n<p style=\"font-size:15px;line-height:1.5;margin:0 0 14px;color:#016579;font-weight:bold;\">Ponuda br. {{BROJ_PONUDE}} — {{IME_FIRME}}</p>\n<p style=\"font-size:14px;line-height:1.6;margin:0 0 14px;color:#2b2b2b;\">{{UVODNA_RECENICA}}</p>\n\n<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"margin:0 0 18px;border-collapse:collapse;\"><tr><td align=\"center\" bgcolor=\"#c0392b\" style=\"background-color:#c0392b;border-radius:8px;padding:27px 16px;font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:1.4;font-weight:bold;color:#ffffff;text-align:center;\">Rok važenja ponude: {{ROK_VAZENJA}}<br>Do isteka preostalo: {{PREOSTALO}}</td></tr></table>\n\n<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"margin:18px 0 10px;border-collapse:collapse;\">\n<tr>\n<td align=\"center\" bgcolor=\"#016579\" style=\"border-radius:8px;background-color:#016579;\">\n<a href=\"{{LINK_POTVRDE}}\" target=\"_blank\" rel=\"noopener\" style=\"display:block;width:100%;box-sizing:border-box;padding:16px 20px;font-family:Arial,Helvetica,sans-serif;font-size:16px;font-weight:bold;color:#ffffff;text-decoration:none;text-align:center;border-radius:8px;\">Pogledaj ponudu i odgovori</a>\n</td>\n</tr>\n</table>\n<p style=\"font-size:12px;line-height:1.5;color:#777777;word-break:break-all;margin:0 0 18px;\">Ako gumb ne radi, kopirajte poveznicu u preglednik: <a href=\"{{LINK_POTVRDE}}\" style=\"color:#0f8b7e;\">{{LINK_POTVRDE}}</a></p>\n\n<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"margin:6px 0 10px;border-collapse:collapse;\">\n<tr>\n<td align=\"center\" style=\"border-radius:8px;border:2px solid #016579;background-color:#ffffff;\">\n<a href=\"{{LINK_DOKUMENTI}}\" target=\"_blank\" rel=\"noopener\" style=\"display:block;width:100%;box-sizing:border-box;padding:12px 18px;font-family:Arial,Helvetica,sans-serif;font-size:15px;font-weight:bold;color:#016579;text-decoration:none;text-align:center;border-radius:8px;\">Dokumenti ponude</a>\n</td>\n</tr>\n</table>\n\n<p style=\"font-size:14px;line-height:1.6;margin:18px 0 14px;color:#2b2b2b;\">Ako ste na ponudu već odgovorili, molimo Vas da ovaj podsjetnik zanemarite. Ako Vam treba dodatno pojašnjenje ili prilagodba ponude, slobodno nam se javite — rado ćemo pomoći.</p>\n\n<p style=\"font-size:14px;line-height:1.6;margin:0 0 4px;color:#2b2b2b;\">Srdačan pozdrav,</p>\n<div style=\"border-top:1px solid #e3e6e5;margin-top:14px;padding-top:14px;font-size:12.5px;line-height:1.6;color:#444444;\">\n<strong style=\"color:#1f3d3a;\">Saša Batinac, univ. spec. oec.</strong><br>\nSales and Marketing Manager, Voditelj ključnih kupaca<br>\nIn Time d.o.o. — Licensee of FedEx<br><br>\nM: +385 91 6262 171 · <a href=\"mailto:sasa.batinac@in-time.hr\" style=\"color:#0f8b7e;text-decoration:none;\">sasa.batinac@in-time.hr</a><br>\n<a href=\"https://in-time.hr\" target=\"_blank\" rel=\"noopener\" style=\"color:#0f8b7e;text-decoration:none;\">in-time.hr</a> · <a href=\"https://fedex.com\" target=\"_blank\" rel=\"noopener\" style=\"color:#0f8b7e;text-decoration:none;\">fedex.com</a>\n</div>\n\n</td>\n</tr>\n</table>\n\n</td>\n</tr>\n</table>\n\n<table role=\"presentation\" width=\"620\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"max-width:620px;width:100%;border-collapse:collapse;\">\n<tr>\n<td style=\"font-size:10.5px;line-height:1.5;color:#9aa3a1;text-align:center;padding:14px 10px 0;font-family:Arial,Helvetica,sans-serif;\">IN TIME d.o.o. — Licensee of FedEx · in-time.hr</td>\n</tr>\n</table>\n\n</td>\n</tr>\n</table>\n</body>\n</html>\n";
+var PON_PODS_HTML_ = "<!DOCTYPE html>\n<html lang=\"hr\" xmlns=\"http://www.w3.org/1999/xhtml\">\n<head>\n<meta charset=\"UTF-8\">\n<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n<meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\">\n<title>Podsjetnik na ponudu — In Time d.o.o.</title>\n</head>\n<body style=\"margin:0;padding:0;background-color:#f2f4f3;\">\n<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"background-color:#f2f4f3;margin:0;padding:0;border-collapse:collapse;\">\n<tr>\n<td align=\"center\" style=\"padding:24px 16px;\">\n\n<table role=\"presentation\" width=\"620\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"max-width:620px;width:100%;border-collapse:collapse;\">\n<tr>\n<td style=\"background-color:#ffffff;border:1px solid #e3e6e5;border-radius:10px;font-family:Arial,Helvetica,sans-serif;\">\n\n<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"border-collapse:collapse;\">\n<tr>\n<td style=\"border-radius:10px 10px 0 0;\">\n<img src=\"{{BANNER_URL}}\" alt=\"In Time d.o.o.\" width=\"620\" style=\"display:block;border:0;outline:none;text-decoration:none;width:100%;max-width:620px;height:auto;border-radius:10px 10px 0 0;\">\n</td>\n</tr>\n</table>\n\n<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"border-collapse:collapse;\">\n<tr>\n<td style=\"padding:28px 30px;font-family:Arial,Helvetica,sans-serif;color:#2b2b2b;\">\n\n<p style=\"font-size:14px;line-height:1.6;margin:0 0 14px;color:#2b2b2b;\">Poštovani,</p>\n<p style=\"font-size:15px;line-height:1.5;margin:0 0 14px;color:#016579;font-weight:bold;\">Ponuda br. {{BROJ_PONUDE}} — {{IME_FIRME}}</p>\n<p style=\"font-size:14px;line-height:1.6;margin:0 0 14px;color:#2b2b2b;\">{{UVODNA_RECENICA}}</p>\n\n<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"margin:0 0 18px;border-collapse:collapse;\"><tr><td align=\"center\" bgcolor=\"#c0392b\" style=\"background-color:#c0392b;border-radius:8px;padding:27px 16px;font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:1.4;font-weight:bold;color:#ffffff;text-align:center;\">Rok važenja ponude: {{ROK_VAZENJA}}<br>Do isteka preostalo: {{PREOSTALO}}</td></tr></table>\n\n<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"margin:18px 0 10px;border-collapse:collapse;\">\n<tr>\n<td align=\"center\" bgcolor=\"#016579\" style=\"border-radius:8px;background-color:#016579;\">\n<a href=\"{{LINK_POTVRDE}}\" target=\"_blank\" rel=\"noopener\" style=\"display:block;width:100%;box-sizing:border-box;padding:16px 20px;font-family:Arial,Helvetica,sans-serif;font-size:16px;font-weight:bold;color:#ffffff;text-decoration:none;text-align:center;border-radius:8px;\">Pogledaj ponudu i odgovori</a>\n</td>\n</tr>\n</table>\n<p style=\"font-size:12px;line-height:1.5;color:#777777;word-break:break-all;margin:0 0 18px;\">Ako gumb ne radi, kopirajte poveznicu u preglednik: <a href=\"{{LINK_POTVRDE}}\" style=\"color:#0f8b7e;\">{{LINK_POTVRDE}}</a></p>\n\n<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"margin:6px 0 10px;border-collapse:collapse;\">\n<tr>\n<td align=\"center\" style=\"border-radius:8px;border:2px solid #016579;background-color:#ffffff;\">\n<a href=\"{{LINK_DOKUMENTI}}\" target=\"_blank\" rel=\"noopener\" style=\"display:block;width:100%;box-sizing:border-box;padding:12px 18px;font-family:Arial,Helvetica,sans-serif;font-size:15px;font-weight:bold;color:#016579;text-decoration:none;text-align:center;border-radius:8px;\">Dokumenti ponude</a>\n</td>\n</tr>\n</table>\n\n<p style=\"font-size:14px;line-height:1.6;margin:18px 0 14px;color:#2b2b2b;\">Ako ste na ponudu već odgovorili, molimo Vas da ovaj podsjetnik zanemarite. Ako Vam treba dodatno pojašnjenje ili prilagodba ponude, slobodno nam se javite — rado ćemo pomoći.</p>\n\n<p style=\"font-size:14px;line-height:1.6;margin:0 0 4px;color:#2b2b2b;\">Srdačan pozdrav,</p>\n<div style=\"border-top:1px solid #e3e6e5;margin-top:14px;padding-top:14px;font-size:12.5px;line-height:1.6;color:#444444;\">\n<strong style=\"color:#1f3d3a;\">Saša Batinac, univ. spec. oec.</strong><br>\nSales and Marketing Manager, Voditelj ključnih kupaca<br>\nIn Time d.o.o. — Licensee of FedEx<br>\n<img src=\"https://sbatinac.github.io/intime-portal/InTime_Potpis_mail.gif\" alt=\"In Time Express\" width=\"360\" style=\"display:block;width:360px;max-width:100%;height:auto;margin:10px 0;border:0;\">M: <a href=\"tel:+385916262171\" style=\"color:#0f8b7e;text-decoration:none;\">+385 91 6262 171</a><br>E: <a href=\"mailto:sasa.batinac@in-time.hr\" style=\"color:#0f8b7e;text-decoration:none;\">sasa.batinac@in-time.hr</a><br>\n<a href=\"https://in-time.hr\" target=\"_blank\" rel=\"noopener\" style=\"color:#0f8b7e;text-decoration:none;\">in-time.hr</a> · <a href=\"https://fedex.com\" target=\"_blank\" rel=\"noopener\" style=\"color:#0f8b7e;text-decoration:none;\">fedex.com</a>\n</div>\n\n</td>\n</tr>\n</table>\n\n</td>\n</tr>\n</table>\n\n<table role=\"presentation\" width=\"620\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"max-width:620px;width:100%;border-collapse:collapse;\">\n<tr>\n<td style=\"font-size:10.5px;line-height:1.5;color:#9aa3a1;text-align:center;padding:14px 10px 0;font-family:Arial,Helvetica,sans-serif;\">IN TIME d.o.o. — Licensee of FedEx · in-time.hr</td>\n</tr>\n</table>\n\n</td>\n</tr>\n</table>\n</body>\n</html>\n";
 
 // ============================================================
 // CENTRI — KLIJENTI PO DISTRIBUCIJSKIM CENTRIMA (3.10.2026.)
@@ -19562,8 +19781,8 @@ var PISMA_TIJELO_DEFAULT_ =
   '<div style="border-top:1px solid #e3e6e5;margin-top:16px;padding-top:14px;font-size:12.5px;line-height:1.6;color:#444444;">' +
   '<strong style="color:#1f3d3a;">Saša Batinac, univ. spec. oec.</strong><br>' +
   'Sales and Marketing Manager, Voditelj ključnih kupaca<br>' +
-  'In Time d.o.o. — Licensee of FedEx<br><br>' +
-  'M: +385 91 6262 171 · <a href="mailto:sasa.batinac@in-time.hr" style="color:#4d148c;text-decoration:none;">sasa.batinac@in-time.hr</a>' +
+  'In Time d.o.o. — Licensee of FedEx<br>' +
+  '<img src="https://sbatinac.github.io/intime-portal/InTime_Potpis_mail.gif" alt="In Time Express" width="360" style="display:block;width:360px;max-width:100%;height:auto;margin:10px 0;border:0;">M: <a href="tel:+385916262171" style="color:#4d148c;text-decoration:none;">+385 91 6262 171</a><br>E: <a href="mailto:sasa.batinac@in-time.hr" style="color:#4d148c;text-decoration:none;">sasa.batinac@in-time.hr</a>' +
   '</div>' +
   '</td></tr>' +
   '<tr><td style="padding:0;font-size:0;line-height:0;border-radius:0 0 12px 12px;"><img src=\"https://i.imgur.com/7BFnDqB.png\" alt=\"\" width=\"620\" style=\"display:block;width:100%;max-width:620px;height:auto;border:0;border-radius:0 0 12px 12px;\"></td></tr>' +
@@ -19662,9 +19881,44 @@ function pismaMigracijaUpitnik_() {
   props.setProperty(PISMA_MIGRACIJA_UPITNIK_KEY_, '1');
 }
 
+// Jednokratna migracija (v335): već SPREMLJENA pisma namjere (zadani + dodatni predlošci u postavkama Pisama) dobivaju novi potpis — animacija ispod „Licensee of FedEx”, telefon kao poziv klikom, e-mail u zasebnom retku.
+// Ne dira ostatak teksta; preskače predloške koji već imaju GIF ili nemaju standardni potpis; ne piše ako bi svojstvo prešlo ograničenje Script Properties (~9 KB).
+var PISMA_MIGRACIJA_POTPIS_GIF_KEY_ = 'PISMA_MIGRACIJA_POTPIS_GIF_V1';
+function pismaPotpisGif_(html) {
+  html = String(html || '');
+  if (!html || html.indexOf('InTime_Potpis_mail.gif') !== -1) { return html; }
+  var rx = /Licensee of FedEx<br><br>(\s*)M: \+385 91 6262 171 · <a href="mailto:sasa\.batinac@in-time\.hr" style="([^"]*)">sasa\.batinac@in-time\.hr<\/a>/g;
+  return html.replace(rx, function(m, sp, st) {
+    return 'Licensee of FedEx<br>' + sp + '<img src="' + POTPIS_GIF_URL_ + '" alt="In Time Express" width="360" style="display:block;width:360px;max-width:100%;height:auto;margin:10px 0;border:0;">' +
+      'M: <a href="tel:+385916262171" style="' + st + '">+385 91 6262 171</a><br>E: <a href="mailto:sasa.batinac@in-time.hr" style="' + st + '">sasa.batinac@in-time.hr</a>';
+  });
+}
+function pismaMigracijaPotpisGif_() {
+  var props = PropertiesService.getScriptProperties();
+  if (props.getProperty(PISMA_MIGRACIJA_POTPIS_GIF_KEY_)) { return; }
+  var obradi = function(kljuc) {
+    try {
+      var raw = props.getProperty(kljuc);
+      if (!raw) { return; }
+      var q = JSON.parse(raw);
+      if (!q || !q.tijelo) { return; }
+      var novo = pismaPotpisGif_(q.tijelo);
+      if (novo === q.tijelo) { return; }
+      q.tijelo = novo;
+      var js = JSON.stringify(q);
+      if (js.length > 8900) { return; }
+      props.setProperty(kljuc, js);
+    } catch (e) { /* jedan predložak ne smije zaustaviti ostale */ }
+  };
+  obradi(PISMA_POSTAVKE_KEY_);
+  pismaTplIndeks_().forEach(function(t) { obradi('PISMA_TPL_' + t.id); });
+  props.setProperty(PISMA_MIGRACIJA_POTPIS_GIF_KEY_, '1');
+}
+
 function pismaPostavke_(predlozakId) {
   pismaMigracijaGumba_();
   pismaMigracijaUpitnik_();
+  pismaMigracijaPotpisGif_();
   var id = String(predlozakId || 'zadano');
   if (id !== 'zadano') {
     var ind = pismaTplIndeks_().filter(function(t) { return t.id === id; })[0];
@@ -19727,6 +19981,29 @@ function adminPismaIzlazSpremi(token, razmak, ime, from, replyTo, bcc) {
   var im = String(ime || '').replace(/[\r\n]+/g, ' ').trim();
   PropertiesService.getScriptProperties().setProperty(PISMA_IZLAZ_KEY_, JSON.stringify({ razmak: r, ime: im, from: f, replyTo: rt, bcc: bc }));
   return { status: 'ok' };
+}
+
+// v331: izbor pošiljatelja SVIH mailova iz ⚙ Postavki: 'INTIME' = Gmail „Send mail as” alias na in-time.hr domeni (ZADANO), 'GOOGLE' = Google račun skripte.
+// Pohranjeno u Script property MAIL_FROM_ADRESA (obrisano = zadano in-time.hr; prazno = Google račun) — isti mehanizam koji posaljiMail_ već koristi.
+function adminMailPosiljateljGet(token) {
+  if (!isValidAdminToken_(token)) { return pismaAuthGreska_(); }
+  var pr = null;
+  try { pr = PropertiesService.getScriptProperties().getProperty('MAIL_FROM_ADRESA'); } catch (e) { pr = null; }
+  var nacin = (pr !== null && String(pr).trim() === '') ? 'GOOGLE' : 'INTIME';
+  var adr = (pr !== null && String(pr).trim()) ? String(pr).trim() : MAIL_FROM_ZADANO_;
+  var aliasAktivan = false;
+  try { aliasAktivan = (GmailApp.getAliases() || []).map(function(x) { return String(x).toLowerCase(); }).indexOf(adr.toLowerCase()) !== -1; } catch (e2) { aliasAktivan = false; }
+  return { status: 'ok', nacin: nacin, adresaInTime: adr, adresaGoogle: pismaRacun_(), aliasAktivan: aliasAktivan, odgovoriNa: odgovoriNaAdresa_() };
+}
+function adminMailPosiljateljSpremi(token, nacin) {
+  if (!isValidAdminToken_(token)) { return pismaAuthGreska_(); }
+  nacin = String(nacin || '').toUpperCase();
+  if (nacin !== 'INTIME' && nacin !== 'GOOGLE') { return { status: 'error', message: 'Nepoznat izbor pošiljatelja.' }; }
+  var sp = PropertiesService.getScriptProperties();
+  if (nacin === 'GOOGLE') { sp.setProperty('MAIL_FROM_ADRESA', ''); } else { sp.deleteProperty('MAIL_FROM_ADRESA'); }
+  MAIL_FROM_MEMO_ = null;
+  try { var c = CacheService.getScriptCache(); c.remove('fromok:' + MAIL_FROM_ZADANO_.toLowerCase()); } catch (e) { /* ne smeta */ }
+  return adminMailPosiljateljGet(token);
 }
 
 function pismaKvota_() {
@@ -21302,6 +21579,33 @@ function adminPismaArhiva(token, q, datumOd, datumDo, kampanja, statusFilter, vr
       else if (k.vrsta === 'KLIJENT') { klMapa[k.oib] = tsD; }
     });
   } catch (eOdg) { /* stupci odgovora su dodatak — arhiva radi i bez njih */ }
+  // v319: što je bilo s ponudom firme (po OIB-u): klijent > odbijena > poslana. Uključuje i otvorene ponude.
+  var ponMapa = {};
+  try {
+    var upP = getOrCreateUpitiSheet(), urP = upP.getLastRow();
+    if (urP >= 2) {
+      var lcP = upP.getLastColumn();
+      var hP = upP.getRange(1, 1, 1, lcP).getValues()[0];
+      var pO = hP.indexOf('OIB'), pTip = hP.indexOf('Tip');
+      var pS = hP.indexOf('Datum slanja aktivne ponude (admin)'), pOd = hP.indexOf('Datum odbijanja ponude (admin)'), pPr = hP.indexOf('Datum prihvaćanja ponude (admin)'), pKl = hP.indexOf('Datum otvaranja klijenta u sustavu (admin)');
+      var pOB = hP.indexOf('Pregled ponude - broj otvaranja (admin)'), pOZ = hP.indexOf('Pregled ponude - zadnje otvaranje (admin)');
+      if (pO !== -1) {
+        stupciUpita_(upP, urP, [pO, pTip, pS, pOd, pPr, pKl, pOB, pOZ]).forEach(function(rp) {
+          var o = oibNorm_(rp[pO] || ''); if (o.length !== 11) { return; }
+          var jeOtv = (pTip !== -1 && String(rp[pTip]) === OTV_TIP_);
+          var stanje = '';
+          if (!jeOtv && pKl !== -1 && rp[pKl]) { stanje = 'klijent'; }
+          else if (pOd !== -1 && rp[pOd]) { stanje = 'odbijena'; }
+          else if ((pS !== -1 && rp[pS]) || (pPr !== -1 && rp[pPr])) { stanje = 'poslana'; }
+          if (!stanje) { return; }
+          var rang = { poslana: 1, odbijena: 2, klijent: 3 };
+          if (ponMapa[o] && rang[stanje] <= rang[ponMapa[o].stanje]) { return; }
+          var fd = function(ci) { if (ci === -1 || !rp[ci]) { return ''; } var dd = pismaDatum_(rp[ci]); return dd ? Utilities.formatDate(dd, PISMA_TZ_, 'dd.MM.yyyy.') : String(rp[ci]); };
+          ponMapa[o] = { stanje: stanje, poslano: fd(pS), prihvaceno: fd(pPr), odbijeno: fd(pOd), klijent: jeOtv ? '' : fd(pKl), otvoreno: (pOB === -1 ? 0 : (parseInt(rp[pOB], 10) || 0)), otvorenoZadnje: fd(pOZ) };
+        });
+      }
+    }
+  } catch (ePon) { /* oznaka ponude je dodatak */ }
   var saz = { redaka: 0, zainteresiranih: 0, odbilo: 0, klijenata: 0 };
   var odgF = String(odgovorFilter || '');
   var izvorF = String(izvorFilter || '').trim(), izvoriSet_ = {};   // v306: filter po izvoru kontakta ('__bez' = bez izvora)
@@ -21339,7 +21643,7 @@ function adminPismaArhiva(token, q, datumOd, datumDo, kampanja, statusFilter, vr
       if (odgF === 'klijenti' && !klRed_) { continue; }
       ukupno++;
       if (redci.length < 500) {
-        redci.push({ odgovor: odgRed_ ? odgRed_.odg : '', odgovorDatum: odgRed_ ? odgRed_.datum : '', odgovorDirektno: !!(odgRed_ && odgRed_.direktno), klijentDatum: klRed_, red: i + 2, kampanja: kName, datum: d ? Utilities.formatDate(d, PISMA_TZ_, 'dd.MM.yyyy. HH:mm') : '', oib: String(r[4]), naziv: String(r[5]), email: String(r[6]), grad: String(r[7]), posta: String(r[12] || ''), osoba: String(r[8]), status: String(r[9]), poruka: String(r[11] || ''), izvor: izvKontRed_ });
+        redci.push({ ponuda: ponMapa[oibRed_] ? ponMapa[oibRed_].stanje : '', ponDatumi: ponMapa[oibRed_] || null, odgovor: odgRed_ ? odgRed_.odg : '', odgovorDatum: odgRed_ ? odgRed_.datum : '', odgovorDirektno: !!(odgRed_ && odgRed_.direktno), klijentDatum: klRed_, red: i + 2, kampanja: kName, datum: d ? Utilities.formatDate(d, PISMA_TZ_, 'dd.MM.yyyy. HH:mm') : '', oib: String(r[4]), naziv: String(r[5]), email: String(r[6]), grad: String(r[7]), posta: String(r[12] || ''), osoba: String(r[8]), status: String(r[9]), poruka: String(r[11] || ''), izvor: izvKontRed_ });
       }
     }
   }
@@ -22937,7 +23241,7 @@ function otvRenderPonuda_(r, banner, vrsta) {
     BROJ_PONUDE: otvHtmlEsc_(bp.broj),
     ROK_VAZENJA: otvHtmlEsc_(rokTekst),
     LINK_POTVRDE: POTVRDA_PONUDE_STRANICA_URL + '?token=' + encodeURIComponent(tok),
-    LINK_DOKUMENTI: String(r.get(ADMIN_ONLY_FIELDS.link_dokumenti_ponude) || ''),
+    LINK_DOKUMENTI: linkDokumentiZaMail_(r.get(ADMIN_ONLY_FIELDS.link_dokumenti_ponude), tok),
     LINK_UPITNIK: OTV_UPITNIK_STRANICA_URL_ + '?ponuda=' + encodeURIComponent(tok),
     KALK_USERNAME: otvHtmlEsc_(r.get(ADMIN_ONLY_FIELDS.kalkulator_korisnicko_ime)),
     KALK_LOZINKA: otvHtmlEsc_(r.get(ADMIN_ONLY_FIELDS.kalkulator_lozinka)),
@@ -23136,7 +23440,7 @@ function dodajTestniKalkulatorUObicnePredloske_(sheet) {
   var lastRow = sheet.getLastRow();
   if (lastRow < 2) { return; }
   var podaci = sheet.getRange(2, 1, lastRow - 1, 7).getValues();
-  var sidro = /(Ako gumb ne radi, kopirajte poveznicu u preglednik: <a href="\{\{LINK_DOKUMENTI\}\}"[^>]*>\{\{LINK_DOKUMENTI\}\}<\/a><\/p>)/;
+  var sidro = /(Ako gumb ne radi, kopirajte poveznicu u preglednik:\s*<a href="\{\{LINK_DOKUMENTI\}\}"[^>]*>\{\{LINK_DOKUMENTI\}\}<\/a>\s*<\/p>)/;
   for (var i = 0; i < podaci.length; i++) {
     var naziv = String(podaci[i][0] || '').trim();
     if (naziv !== MAIL_PREDLOZAK_HTML_STANDARDNA_NAZIV_ && naziv !== MAIL_PREDLOZAK_HTML_KORIGIRANA_NAZIV_) { continue; }
@@ -23172,7 +23476,26 @@ function dodajTestniKalkulatorUPredloske_(sheet) {
 }
 
 // Potpis (ime, titula, kontakt) na kraju predložaka OTVORENIH ponuda — zamjenjuje završni "IN TIME d.o.o. / Vaš pouzdan partner…". Idempotentno.
-var OTV_POTPIS_HTML_ = "<p style=\"font-size:14px;line-height:1.6;margin:0 0 4px;color:#2b2b2b;\">Srdačan pozdrav,</p>\n<div style=\"border-top:1px solid #e3e6e5;margin-top:14px;padding-top:14px;font-size:12.5px;line-height:1.6;color:#444444;\">\n<strong style=\"color:#1f3d3a;\">Saša Batinac, univ. spec. oec.</strong><br>\nSales and Marketing Manager, Voditelj ključnih kupaca<br>\nIn Time d.o.o. — Licensee of FedEx<br><br>\nM: +385 91 6262 171 · <a href=\"mailto:sasa.batinac@in-time.hr\" style=\"color:#0f8b7e;text-decoration:none;\">sasa.batinac@in-time.hr</a><br>\n<a href=\"https://in-time.hr\" target=\"_blank\" rel=\"noopener\" style=\"color:#0f8b7e;text-decoration:none;\">in-time.hr</a> · <a href=\"https://fedex.com\" target=\"_blank\" rel=\"noopener\" style=\"color:#0f8b7e;text-decoration:none;\">fedex.com</a><br>\nIn Time d.o.o. · FedEx zastupništvo · Hrvatska, BiH, Srbija, Slovenija, Crna Gora, Sjeverna Makedonija\n</div>\n";
+var OTV_POTPIS_HTML_ = "<p style=\"font-size:14px;line-height:1.6;margin:0 0 4px;color:#2b2b2b;\">Srdačan pozdrav,</p>\n<div style=\"border-top:1px solid #e3e6e5;margin-top:14px;padding-top:14px;font-size:12.5px;line-height:1.6;color:#444444;\">\n<strong style=\"color:#1f3d3a;\">Saša Batinac, univ. spec. oec.</strong><br>\nSales and Marketing Manager, Voditelj ključnih kupaca<br>\nIn Time d.o.o. — Licensee of FedEx<br>\n<img src=\"https://sbatinac.github.io/intime-portal/InTime_Potpis_mail.gif\" alt=\"In Time Express\" width=\"360\" style=\"display:block;width:360px;max-width:100%;height:auto;margin:10px 0;border:0;\">M: <a href=\"tel:+385916262171\" style=\"color:#0f8b7e;text-decoration:none;\">+385 91 6262 171</a><br>E: <a href=\"mailto:sasa.batinac@in-time.hr\" style=\"color:#0f8b7e;text-decoration:none;\">sasa.batinac@in-time.hr</a><br>\n<a href=\"https://in-time.hr\" target=\"_blank\" rel=\"noopener\" style=\"color:#0f8b7e;text-decoration:none;\">in-time.hr</a> · <a href=\"https://fedex.com\" target=\"_blank\" rel=\"noopener\" style=\"color:#0f8b7e;text-decoration:none;\">fedex.com</a><br>\nIn Time d.o.o. · FedEx zastupništvo · Hrvatska, BiH, Srbija, Slovenija, Crna Gora, Sjeverna Makedonija\n</div>\n";
+// v334: novi potpis — animacija (GIF na GitHub Pages) ispod „Licensee of FedEx”, telefon kao poziv jednim klikom, e-mail u zasebnom retku.
+// Jednokratno prepisuje predloške koji već žive u Sheetu (kod predložaka u kodu isto je već ugrađeno). Idempotentno: preskače predloške koji već imaju GIF.
+var POTPIS_GIF_URL_ = 'https://sbatinac.github.io/intime-portal/InTime_Potpis_mail.gif';
+function postaviPotpisGifUPredloske_(sheet) {
+  var lastRow = sheet.getLastRow();
+  if (lastRow < 2) { return; }
+  var podaci = sheet.getRange(2, 1, lastRow - 1, 7).getValues();
+  var rx = /Licensee of FedEx<br><br>(\s*)M: \+385 91 6262 171 · <a href="mailto:sasa\.batinac@in-time\.hr" style="([^"]*)">sasa\.batinac@in-time\.hr<\/a>/g;
+  for (var i = 0; i < podaci.length; i++) {
+    var sadrzaj = String(podaci[i][2] || '');
+    if (!sadrzaj || sadrzaj.indexOf('InTime_Potpis_mail.gif') !== -1 || sadrzaj.indexOf('Licensee of FedEx<br><br>') === -1) { continue; }
+    var novo = sadrzaj.replace(rx, function(m, sp, st) {
+      return 'Licensee of FedEx<br>' + sp + '<img src="' + POTPIS_GIF_URL_ + '" alt="In Time Express" width="360" style="display:block;width:360px;max-width:100%;height:auto;margin:10px 0;border:0;">' +
+        'M: <a href="tel:+385916262171" style="' + st + '">+385 91 6262 171</a><br>E: <a href="mailto:sasa.batinac@in-time.hr" style="' + st + '">sasa.batinac@in-time.hr</a>';
+    });
+    if (novo !== sadrzaj) { sheet.getRange(i + 2, 3).setValue(sheetSig_(novo)); }
+  }
+}
+
 function postaviPotpisUOtvorenePredloske_(sheet) {
   var lastRow = sheet.getLastRow();
   if (lastRow < 2) { return; }
@@ -23703,8 +24026,43 @@ function otvDodatakZaJavno_(token) {
   var popunjen = !!found.row[found.header.indexOf(ADMIN_ONLY_FIELDS.otv_upitnik_datum)];
   return { otvorena: true, upitnikLink: OTV_UPITNIK_STRANICA_URL_ + '?ponuda=' + encodeURIComponent(tok), upitnikPopunjen: popunjen };
 }
+// v321: bilježi otvaranje poveznice (vrsta 'pregled' = stranica ponude, 'dok' = dokumenti). Broj, prvo i zadnje otvaranje u 3 uzastopna stupca.
+// Ne smije nikad srušiti ni usporiti klijentov tok — svaka greška se guta; isti klik unutar 30 s se ne broji dvaput.
+function otvaranjeZabiljezi_(token, vrsta, found) {
+  try {
+    var cache = CacheService.getScriptCache(), kljuc = 'otv:' + vrsta + ':' + String(token).substring(0, 40);
+    if (cache.get(kljuc)) { return; }
+    cache.put(kljuc, '1', 30);
+    found = found || pronadjiRedakPoTokenuPotvrde_(token);
+    if (!found) { return; }
+    var pref = (vrsta === 'dok') ? 'pregled_dok_' : 'pregled_ponude_';
+    var cB = found.header.indexOf(ADMIN_ONLY_FIELDS[pref + 'broj']), cP = found.header.indexOf(ADMIN_ONLY_FIELDS[pref + 'prvo']), cZ = found.header.indexOf(ADMIN_ONLY_FIELDS[pref + 'zadnje']);
+    if (cB === -1 || cP !== cB + 1 || cZ !== cB + 2) { return; }
+    var sada = new Date();
+    var broj = (parseInt(found.row[cB], 10) || 0) + 1;
+    var prvo = found.row[cP] || sada;
+    getOrCreateUpitiSheet().getRange(found.rowIndex, cB + 1, 1, 3).setValues([[broj, prvo, sada]]);
+  } catch (e) { /* praćenje je dodatak */ }
+}
+// Javno (bez admin tokena): stranica InTime_Otvori.html zove ovo kad klijent klikne poveznicu na dokumente u mailu.
+// Zapiše otvaranje i vrati pravu Google poveznicu (koja je ionako u mailu). Ništa osjetljivo se ne vraća.
+function ponudaDokumentiOtvori(token) {
+  token = String(token || '').trim();
+  if (!/^[0-9A-Za-z_-]{8,100}$/.test(token)) { return { status: 'error', message: 'Poveznica nije ispravna.' }; }
+  if (!problemiOgranici_('DOK_OTV_' + token.substring(0, 16), 200, 3600)) { return { status: 'error', message: 'Previše pokušaja — pričekajte malo.' }; }
+  var found = pronadjiRedakPoTokenuPotvrde_(token);
+  if (!found) { return { status: 'error', message: 'Poveznica nije ispravna ili je istekla.' }; }
+  var ci = found.header.indexOf('Link na direktorij dokumenata ponude (admin)');
+  var link = ci === -1 ? '' : String(found.row[ci] || '').trim();
+  if (!/^https:\/\/(drive|docs)\.google\.com\//i.test(link)) { return { status: 'error', message: 'Dokumenti za ovu ponudu još nisu dostupni — kontaktirajte In Time d.o.o.' }; }
+  var stanje = izracunajStatusPonude_(found.header, found.row);
+  if (stanje !== 'nije_poslano') { otvaranjeZabiljezi_(token, 'dok', found); }   // testni pregled (Sašin) se ne broji
+  return { status: 'ok', url: link };
+}
 function potvrdaPonudeInfo(token) {
   var res = potvrdaPonudeInfoOsnovno_(token);
+  if (res && res.status === 'ok' && POTVRDA_BROJ_ZADNJI_) { res.brojPonude = POTVRDA_BROJ_ZADNJI_; }
+  if (res && res.status === 'ok' && !res.testnaPonuda) { otvaranjeZabiljezi_(token, 'pregled'); }
   if (res && res.status === 'ok') {
     var d = null;
     try { d = otvDodatakZaJavno_(token); } catch (e) { d = null; }
@@ -23746,7 +24104,7 @@ function otvPosaljiMailUpitnikaNakonPrihvata_(token) {
   posaljiMail_(primatelj, predmet, skiniHtmlTagoveZaFallback_(html), { htmlBody: html });
 }
 
-var OTV_PREDLOZAK_PONUDA_ = "<!DOCTYPE html>\n<html lang=\"hr\" xmlns=\"http://www.w3.org/1999/xhtml\">\n<head>\n<meta charset=\"UTF-8\">\n<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n<meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\">\n<title>Otvorena ponuda — In Time d.o.o.</title>\n</head>\n<body style=\"margin:0;padding:0;background-color:#f2f4f3;\">\n<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"background-color:#f2f4f3;margin:0;padding:0;border-collapse:collapse;\">\n<tr>\n<td align=\"center\" style=\"padding:24px 16px;\">\n\n<table role=\"presentation\" width=\"620\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"max-width:620px;width:100%;border-collapse:collapse;\">\n<tr>\n<td style=\"background-color:#ffffff;border:1px solid #e3e6e5;border-radius:10px;font-family:Arial,Helvetica,sans-serif;\">\n\n<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"border-collapse:collapse;\">\n<tr>\n<td style=\"border-radius:10px 10px 0 0;\">\n<img src=\"{{BANNER_URL}}\" alt=\"In Time d.o.o.\" width=\"620\" style=\"display:block;border:0;outline:none;text-decoration:none;width:100%;max-width:620px;height:auto;border-radius:10px 10px 0 0;\">\n</td>\n</tr>\n</table>\n\n<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"border-collapse:collapse;\">\n<tr>\n<td style=\"padding:28px 30px;font-family:Arial,Helvetica,sans-serif;color:#2b2b2b;\">\n\n<p style=\"font-size:14px;line-height:1.6;margin:0 0 14px;color:#2b2b2b;\">Poštovani,</p>\n<p style=\"font-size:16px;line-height:1.6;margin:0 0 14px;color:#2b2b2b;font-weight:bold;\">zadovoljstvo nam je obratiti Vam se s prijedlogom poslovne suradnje te Vam predstaviti mogućnosti i prednosti koje Vam kao logistički partner može pružiti IN TIME d.o.o.</p>\n<p style=\"font-size:14px;line-height:1.6;margin:0 0 14px;color:#2b2b2b;\">Za Vaš poslovni subjekt <strong>{{NAZIV_FIRME}}</strong> s posebnom smo pažnjom pripremili otvorenu ponudu za poslovnu suradnju broj <strong>{{BROJ_PONUDE}}</strong>, kojom Vam želimo približiti naše logističke i distribucijske usluge, predstaviti konkurentne komercijalne uvjete te otvoriti mogućnost uspostave kvalitetnog i dugoročnog poslovnog odnosa.</p>\n<p style=\"font-size:14px;line-height:1.6;margin:0 0 14px;color:#2b2b2b;\">Kao jedan od prepoznatljivih pružatelja logističkih i distribucijskih usluga na hrvatskom tržištu, svojim poslovnim partnerima nastojimo osigurati pouzdana, učinkovita i fleksibilna logistička rješenja, uz konkurentne komercijalne uvjete, razvijenu distribucijsku mrežu i individualan pristup svakom klijentu.</p>\n<p style=\"font-size:14px;line-height:1.6;margin:0 0 14px;color:#2b2b2b;font-weight:bold;\">Svjesni smo koliko su u današnjem poslovnom okruženju važni pouzdana i pravovremena isporuka, sigurnost pošiljaka, učinkovita organizacija distribucije te kontrola logističkih troškova. Upravo zato nastojimo svojim poslovnim partnerima pružiti mnogo više od same usluge prijevoza. Naš je cilj biti partner na kojeg se možete osloniti, koji razumije potrebe Vašeg poslovanja i svojim radom pridonosi Vašoj konkurentnosti i poslovnom uspjehu.</p>\n<p style=\"font-size:14px;line-height:1.6;margin:0 0 14px;color:#2b2b2b;font-weight:bold;\">Vjerujemo da Vam kroz kvalitetu usluge, sigurnost pošiljaka, pravovremenu distribuciju i stručnu korisničku podršku možemo pružiti dodatnu vrijednost, pridonijeti optimizaciji logističkih troškova te postati stabilan i dugoročan partner u razvoju Vašeg poslovanja.</p>\n<p style=\"font-size:14px;line-height:1.6;margin:0 0 14px;color:#2b2b2b;\">Vjerujemo da se uspješna poslovna suradnja ne gradi samo na povoljnim cijenama, već prije svega na međusobnom povjerenju, kvaliteti usluge, odgovornosti i spremnosti da zajedno pronađemo najbolja rješenja.</p>\n<p style=\"font-size:14px;line-height:1.6;margin:0 0 14px;color:#2b2b2b;\">Bila bi nam iskrena čast kada biste nam pružili priliku da kroz konkretno iskustvo upoznate kvalitetu naših usluga i sami procijenite prednosti koje Vam suradnja s IN TIME-om može donijeti.</p>\n<p style=\"font-size:14px;line-height:1.6;margin:0 0 14px;color:#2b2b2b;font-weight:bold;\">Želja nam nije samo pridobiti novog klijenta, već izgraditi poslovno partnerstvo u kojem ćete prepoznati sigurnost, profesionalnost i stvarnu vrijednost za svoje poslovanje.</p>\n<div style=\"font-size:14px;line-height:1.7;background-color:#f6faf9;border:1px solid #d9ece8;border-radius:8px;padding:12px 16px;margin:0 0 14px;color:#000000;\">\nBroj ponude: <strong>{{BROJ_PONUDE}}</strong>\n</div>\n<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"margin:0 0 18px;border-collapse:collapse;\"><tr><td align=\"center\" bgcolor=\"#c0392b\" style=\"background-color:#c0392b;border-radius:8px;padding:27px 16px;font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:1.4;font-weight:bold;color:#ffffff;text-align:center;\">Rok važenja ponude: {{ROK_VAZENJA}}</td></tr></table>\n\n<p style=\"font-size:14px;line-height:1.6;margin:0 0 14px;color:#2b2b2b;\">Pozivamo Vas da detaljno pregledate ponuđene uvjete suradnje, pripadajući cjenik i mogućnosti korištenja naših logističkih usluga.</p>\n\n<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"margin:14px 0 8px;border-collapse:collapse;\">\n<tr>\n<td align=\"center\" style=\"border-radius:8px;border:2px solid #016579;background-color:#ffffff;\">\n<a href=\"{{LINK_DOKUMENTI}}\" target=\"_blank\" rel=\"noopener\" style=\"display:block;width:100%;box-sizing:border-box;padding:12px 18px;font-family:Arial,Helvetica,sans-serif;font-size:16px;font-weight:bold;color:#016579;text-decoration:none;text-align:center;\">Pogledaj dokumente ponude</a>\n</td>\n</tr>\n</table>\n<p style=\"font-size:12px;line-height:1.5;color:#777777;word-break:break-all;margin:0 0 18px;\">Ako gumb ne radi, kopirajte poveznicu u preglednik: <a href=\"{{LINK_DOKUMENTI}}\" style=\"color:#0f8b7e;\">{{LINK_DOKUMENTI}}</a></p>\n\n<p style=\"font-size:14px;line-height:1.6;margin:0 0 14px;color:#2b2b2b;\">U potpunosti smo otvoreni i za model suradnje koji uključuje istodobno korištenje usluga drugih logističkih pružatelja, uz mogućnost usporedbe kvalitete, pouzdanosti i troškova distribucije. Naš je cilj kvalitetom usluge i konkurentnim uvjetima opravdati Vaše povjerenje te postupno izgraditi dugoročan partnerski odnos.</p>\n\n<p style=\"font-size:14px;line-height:1.6;margin:22px 0 8px;color:#1f3d3a;\"><strong>PRIHVAT PONUDE</strong></p>\n<p style=\"font-size:14px;line-height:1.6;margin:0 0 14px;color:#2b2b2b;\">Ponudu možete prihvatiti brzo i jednostavno, bez čekanja na povratnu e-mail komunikaciju, klikom na poveznicu u nastavku.</p>\n<p style=\"font-size:14px;line-height:1.6;margin:0 0 14px;color:#2b2b2b;\">Za potvrdu prihvata ponude broj <strong>{{BROJ_PONUDE}}</strong> potrebno je unijeti OIB Vašeg poslovnog subjekta te ime, prezime i funkciju osobe koja potvrđuje prihvat ponude u ime poslovnog subjekta.</p>\n\n<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"margin:20px 0 10px;border-collapse:collapse;\">\n<tr>\n<td width=\"50%\" align=\"center\" bgcolor=\"#2e9e4f\" style=\"background-color:#2e9e4f;border-radius:10px 0 0 10px;\">\n<a href=\"{{LINK_POTVRDE}}\" target=\"_blank\" rel=\"noopener\" style=\"display:block;width:100%;box-sizing:border-box;padding:32px 8px;font-family:Arial,Helvetica,sans-serif;font-size:20px;font-weight:bold;color:#ffffff;text-decoration:none;text-align:center;border-radius:10px 0 0 10px;\">PRIHVATI PONUDU</a>\n</td>\n<td width=\"50%\" align=\"center\" bgcolor=\"#c0392b\" style=\"background-color:#c0392b;border-radius:0 10px 10px 0;\">\n<a href=\"{{LINK_POTVRDE}}\" target=\"_blank\" rel=\"noopener\" style=\"display:block;width:100%;box-sizing:border-box;padding:32px 8px;font-family:Arial,Helvetica,sans-serif;font-size:20px;font-weight:bold;color:#ffffff;text-decoration:none;text-align:center;border-radius:0 10px 10px 0;\">ODBIJ PONUDU</a>\n</td>\n</tr>\n</table>\n<p style=\"font-size:12px;line-height:1.5;color:#777777;word-break:break-all;margin:0 0 22px;\">Ako gumb ne radi, kopirajte poveznicu u preglednik: <a href=\"{{LINK_POTVRDE}}\" style=\"color:#0f8b7e;\">{{LINK_POTVRDE}}</a></p>\n\n<p style=\"font-size:14px;line-height:1.6;margin:22px 0 8px;color:#1f3d3a;\"><strong>DOSTAVA POSLOVNIH PODATAKA I AKTIVACIJA KORISNIČKOG RAČUNA</strong></p>\n<p style=\"font-size:14px;line-height:1.6;margin:0 0 14px;color:#2b2b2b;\">Odmah nakon potvrde prihvata ponude otvorit će Vam se obrazac za unos poslovnih podataka potrebnih za otvaranje i registraciju Vašeg poslovnog subjekta u informacijskom sustavu IN TIME d.o.o., a poveznica na obrazac stići će i na Vašu e-mail adresu.</p>\n<p style=\"font-size:14px;line-height:1.6;margin:0 0 14px;color:#2b2b2b;\">Po zaprimanju ispunjenog obrasca i provjeri dostavljenih podataka, te nakon verifikacije ponude u sjedištu društva IN TIME d.o.o. u Zagrebu, pokrenut ćemo postupak otvaranja Vašeg poslovnog subjekta i aktivacije korisničkog računa.</p>\n<p style=\"font-size:14px;line-height:1.6;margin:0 0 14px;color:#2b2b2b;\">Na e-mail adresu navedenu u obrascu primit ćete korisničko ime, lozinku i potrebne upute za pristup sustavu i unos naloga.</p>\n<p style=\"font-size:14px;line-height:1.6;margin:0 0 14px;color:#2b2b2b;\">U roku od 24 do 48 sati od zaprimanja ispravno popunjenog obrasca i konačne verifikacije ponude u sjedištu društva IN TIME d.o.o., moći ćete započeti s unosom naloga te naručivanjem IN TIME prikupa pošiljaka.</p>\n\n<p style=\"font-size:14px;line-height:1.6;margin:22px 0 14px;color:#2b2b2b;\">Za sva dodatna pitanja, pojašnjenja ili eventualne prilagodbe uvjeta suradnje stojimo Vam na raspolaganju.</p>\n<p style=\"font-size:14px;line-height:1.6;margin:0 0 14px;color:#2b2b2b;\">Zahvaljujemo Vam na izdvojenom vremenu i razmatranju naše ponude. Veselimo se prilici da kvalitetom naših usluga opravdamo Vaše povjerenje.</p>\n\n<p style=\"font-size:14px;line-height:1.6;margin:0 0 4px;color:#2b2b2b;\">Srdačan pozdrav,</p>\n<div style=\"border-top:1px solid #e3e6e5;margin-top:14px;padding-top:14px;font-size:12.5px;line-height:1.6;color:#444444;\">\n<strong style=\"color:#1f3d3a;\">Saša Batinac, univ. spec. oec.</strong><br>\nSales and Marketing Manager, Voditelj ključnih kupaca<br>\nIn Time d.o.o. — Licensee of FedEx<br><br>\nM: +385 91 6262 171 · <a href=\"mailto:sasa.batinac@in-time.hr\" style=\"color:#0f8b7e;text-decoration:none;\">sasa.batinac@in-time.hr</a><br>\n<a href=\"https://in-time.hr\" target=\"_blank\" rel=\"noopener\" style=\"color:#0f8b7e;text-decoration:none;\">in-time.hr</a> · <a href=\"https://fedex.com\" target=\"_blank\" rel=\"noopener\" style=\"color:#0f8b7e;text-decoration:none;\">fedex.com</a><br>\nIn Time d.o.o. · FedEx zastupništvo · Hrvatska, BiH, Srbija, Slovenija, Crna Gora, Sjeverna Makedonija\n</div>\n\n</td>\n</tr>\n</table>\n\n</td>\n</tr>\n</table>\n\n<table role=\"presentation\" width=\"620\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"max-width:620px;width:100%;border-collapse:collapse;\">\n<tr>\n<td style=\"font-size:10.5px;line-height:1.5;color:#9aa3a1;text-align:center;padding:14px 10px 0;font-family:Arial,Helvetica,sans-serif;\">IN TIME d.o.o. — Licensee of FedEx · in-time.hr</td>\n</tr>\n</table>\n\n</td>\n</tr>\n</table>\n</body>\n</html>\n";
+var OTV_PREDLOZAK_PONUDA_ = "<!DOCTYPE html>\n<html lang=\"hr\" xmlns=\"http://www.w3.org/1999/xhtml\">\n<head>\n<meta charset=\"UTF-8\">\n<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n<meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\">\n<title>Otvorena ponuda — In Time d.o.o.</title>\n</head>\n<body style=\"margin:0;padding:0;background-color:#f2f4f3;\">\n<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"background-color:#f2f4f3;margin:0;padding:0;border-collapse:collapse;\">\n<tr>\n<td align=\"center\" style=\"padding:24px 16px;\">\n\n<table role=\"presentation\" width=\"620\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"max-width:620px;width:100%;border-collapse:collapse;\">\n<tr>\n<td style=\"background-color:#ffffff;border:1px solid #e3e6e5;border-radius:10px;font-family:Arial,Helvetica,sans-serif;\">\n\n<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"border-collapse:collapse;\">\n<tr>\n<td style=\"border-radius:10px 10px 0 0;\">\n<img src=\"{{BANNER_URL}}\" alt=\"In Time d.o.o.\" width=\"620\" style=\"display:block;border:0;outline:none;text-decoration:none;width:100%;max-width:620px;height:auto;border-radius:10px 10px 0 0;\">\n</td>\n</tr>\n</table>\n\n<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"border-collapse:collapse;\">\n<tr>\n<td style=\"padding:28px 30px;font-family:Arial,Helvetica,sans-serif;color:#2b2b2b;\">\n\n<p style=\"font-size:14px;line-height:1.6;margin:0 0 14px;color:#2b2b2b;\">Poštovani,</p>\n<p style=\"font-size:16px;line-height:1.6;margin:0 0 14px;color:#2b2b2b;font-weight:bold;\">zadovoljstvo nam je obratiti Vam se s prijedlogom poslovne suradnje te Vam predstaviti mogućnosti i prednosti koje Vam kao logistički partner može pružiti IN TIME d.o.o.</p>\n<p style=\"font-size:14px;line-height:1.6;margin:0 0 14px;color:#2b2b2b;\">Za Vaš poslovni subjekt <strong>{{NAZIV_FIRME}}</strong> s posebnom smo pažnjom pripremili otvorenu ponudu za poslovnu suradnju broj <strong>{{BROJ_PONUDE}}</strong>, kojom Vam želimo približiti naše logističke i distribucijske usluge, predstaviti konkurentne komercijalne uvjete te otvoriti mogućnost uspostave kvalitetnog i dugoročnog poslovnog odnosa.</p>\n<p style=\"font-size:14px;line-height:1.6;margin:0 0 14px;color:#2b2b2b;\">Kao jedan od prepoznatljivih pružatelja logističkih i distribucijskih usluga na hrvatskom tržištu, svojim poslovnim partnerima nastojimo osigurati pouzdana, učinkovita i fleksibilna logistička rješenja, uz konkurentne komercijalne uvjete, razvijenu distribucijsku mrežu i individualan pristup svakom klijentu.</p>\n<p style=\"font-size:14px;line-height:1.6;margin:0 0 14px;color:#2b2b2b;font-weight:bold;\">Svjesni smo koliko su u današnjem poslovnom okruženju važni pouzdana i pravovremena isporuka, sigurnost pošiljaka, učinkovita organizacija distribucije te kontrola logističkih troškova. Upravo zato nastojimo svojim poslovnim partnerima pružiti mnogo više od same usluge prijevoza. Naš je cilj biti partner na kojeg se možete osloniti, koji razumije potrebe Vašeg poslovanja i svojim radom pridonosi Vašoj konkurentnosti i poslovnom uspjehu.</p>\n<p style=\"font-size:14px;line-height:1.6;margin:0 0 14px;color:#2b2b2b;font-weight:bold;\">Vjerujemo da Vam kroz kvalitetu usluge, sigurnost pošiljaka, pravovremenu distribuciju i stručnu korisničku podršku možemo pružiti dodatnu vrijednost, pridonijeti optimizaciji logističkih troškova te postati stabilan i dugoročan partner u razvoju Vašeg poslovanja.</p>\n<p style=\"font-size:14px;line-height:1.6;margin:0 0 14px;color:#2b2b2b;\">Vjerujemo da se uspješna poslovna suradnja ne gradi samo na povoljnim cijenama, već prije svega na međusobnom povjerenju, kvaliteti usluge, odgovornosti i spremnosti da zajedno pronađemo najbolja rješenja.</p>\n<p style=\"font-size:14px;line-height:1.6;margin:0 0 14px;color:#2b2b2b;\">Bila bi nam iskrena čast kada biste nam pružili priliku da kroz konkretno iskustvo upoznate kvalitetu naših usluga i sami procijenite prednosti koje Vam suradnja s IN TIME-om može donijeti.</p>\n<p style=\"font-size:14px;line-height:1.6;margin:0 0 14px;color:#2b2b2b;font-weight:bold;\">Želja nam nije samo pridobiti novog klijenta, već izgraditi poslovno partnerstvo u kojem ćete prepoznati sigurnost, profesionalnost i stvarnu vrijednost za svoje poslovanje.</p>\n<div style=\"font-size:14px;line-height:1.7;background-color:#f6faf9;border:1px solid #d9ece8;border-radius:8px;padding:12px 16px;margin:0 0 14px;color:#000000;\">\nBroj ponude: <strong>{{BROJ_PONUDE}}</strong>\n</div>\n<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"margin:0 0 18px;border-collapse:collapse;\"><tr><td align=\"center\" bgcolor=\"#c0392b\" style=\"background-color:#c0392b;border-radius:8px;padding:27px 16px;font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:1.4;font-weight:bold;color:#ffffff;text-align:center;\">Rok važenja ponude: {{ROK_VAZENJA}}</td></tr></table>\n\n<p style=\"font-size:14px;line-height:1.6;margin:0 0 14px;color:#2b2b2b;\">Pozivamo Vas da detaljno pregledate ponuđene uvjete suradnje, pripadajući cjenik i mogućnosti korištenja naših logističkih usluga.</p>\n\n<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"margin:14px 0 8px;border-collapse:collapse;\">\n<tr>\n<td align=\"center\" style=\"border-radius:8px;border:2px solid #016579;background-color:#ffffff;\">\n<a href=\"{{LINK_DOKUMENTI}}\" target=\"_blank\" rel=\"noopener\" style=\"display:block;width:100%;box-sizing:border-box;padding:12px 18px;font-family:Arial,Helvetica,sans-serif;font-size:16px;font-weight:bold;color:#016579;text-decoration:none;text-align:center;\">Pogledaj dokumente ponude</a>\n</td>\n</tr>\n</table>\n<p style=\"font-size:12px;line-height:1.5;color:#777777;word-break:break-all;margin:0 0 18px;\">Ako gumb ne radi, kopirajte poveznicu u preglednik: <a href=\"{{LINK_DOKUMENTI}}\" style=\"color:#0f8b7e;\">{{LINK_DOKUMENTI}}</a></p>\n\n<p style=\"font-size:14px;line-height:1.6;margin:0 0 14px;color:#2b2b2b;\">U potpunosti smo otvoreni i za model suradnje koji uključuje istodobno korištenje usluga drugih logističkih pružatelja, uz mogućnost usporedbe kvalitete, pouzdanosti i troškova distribucije. Naš je cilj kvalitetom usluge i konkurentnim uvjetima opravdati Vaše povjerenje te postupno izgraditi dugoročan partnerski odnos.</p>\n\n<p style=\"font-size:14px;line-height:1.6;margin:22px 0 8px;color:#1f3d3a;\"><strong>PRIHVAT PONUDE</strong></p>\n<p style=\"font-size:14px;line-height:1.6;margin:0 0 14px;color:#2b2b2b;\">Ponudu možete prihvatiti brzo i jednostavno, bez čekanja na povratnu e-mail komunikaciju, klikom na poveznicu u nastavku.</p>\n<p style=\"font-size:14px;line-height:1.6;margin:0 0 14px;color:#2b2b2b;\">Za potvrdu prihvata ponude broj <strong>{{BROJ_PONUDE}}</strong> potrebno je unijeti OIB Vašeg poslovnog subjekta te ime, prezime i funkciju osobe koja potvrđuje prihvat ponude u ime poslovnog subjekta.</p>\n\n<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"margin:20px 0 10px;border-collapse:collapse;\">\n<tr>\n<td width=\"50%\" align=\"center\" bgcolor=\"#2e9e4f\" style=\"background-color:#2e9e4f;border-radius:10px 0 0 10px;\">\n<a href=\"{{LINK_POTVRDE}}\" target=\"_blank\" rel=\"noopener\" style=\"display:block;width:100%;box-sizing:border-box;padding:32px 8px;font-family:Arial,Helvetica,sans-serif;font-size:20px;font-weight:bold;color:#ffffff;text-decoration:none;text-align:center;border-radius:10px 0 0 10px;\">PRIHVATI PONUDU</a>\n</td>\n<td width=\"50%\" align=\"center\" bgcolor=\"#c0392b\" style=\"background-color:#c0392b;border-radius:0 10px 10px 0;\">\n<a href=\"{{LINK_POTVRDE}}\" target=\"_blank\" rel=\"noopener\" style=\"display:block;width:100%;box-sizing:border-box;padding:32px 8px;font-family:Arial,Helvetica,sans-serif;font-size:20px;font-weight:bold;color:#ffffff;text-decoration:none;text-align:center;border-radius:0 10px 10px 0;\">ODBIJ PONUDU</a>\n</td>\n</tr>\n</table>\n<p style=\"font-size:12px;line-height:1.5;color:#777777;word-break:break-all;margin:0 0 22px;\">Ako gumb ne radi, kopirajte poveznicu u preglednik: <a href=\"{{LINK_POTVRDE}}\" style=\"color:#0f8b7e;\">{{LINK_POTVRDE}}</a></p>\n\n<p style=\"font-size:14px;line-height:1.6;margin:22px 0 8px;color:#1f3d3a;\"><strong>DOSTAVA POSLOVNIH PODATAKA I AKTIVACIJA KORISNIČKOG RAČUNA</strong></p>\n<p style=\"font-size:14px;line-height:1.6;margin:0 0 14px;color:#2b2b2b;\">Odmah nakon potvrde prihvata ponude otvorit će Vam se obrazac za unos poslovnih podataka potrebnih za otvaranje i registraciju Vašeg poslovnog subjekta u informacijskom sustavu IN TIME d.o.o., a poveznica na obrazac stići će i na Vašu e-mail adresu.</p>\n<p style=\"font-size:14px;line-height:1.6;margin:0 0 14px;color:#2b2b2b;\">Po zaprimanju ispunjenog obrasca i provjeri dostavljenih podataka, te nakon verifikacije ponude u sjedištu društva IN TIME d.o.o. u Zagrebu, pokrenut ćemo postupak otvaranja Vašeg poslovnog subjekta i aktivacije korisničkog računa.</p>\n<p style=\"font-size:14px;line-height:1.6;margin:0 0 14px;color:#2b2b2b;\">Na e-mail adresu navedenu u obrascu primit ćete korisničko ime, lozinku i potrebne upute za pristup sustavu i unos naloga.</p>\n<p style=\"font-size:14px;line-height:1.6;margin:0 0 14px;color:#2b2b2b;\">U roku od 24 do 48 sati od zaprimanja ispravno popunjenog obrasca i konačne verifikacije ponude u sjedištu društva IN TIME d.o.o., moći ćete započeti s unosom naloga te naručivanjem IN TIME prikupa pošiljaka.</p>\n\n<p style=\"font-size:14px;line-height:1.6;margin:22px 0 14px;color:#2b2b2b;\">Za sva dodatna pitanja, pojašnjenja ili eventualne prilagodbe uvjeta suradnje stojimo Vam na raspolaganju.</p>\n<p style=\"font-size:14px;line-height:1.6;margin:0 0 14px;color:#2b2b2b;\">Zahvaljujemo Vam na izdvojenom vremenu i razmatranju naše ponude. Veselimo se prilici da kvalitetom naših usluga opravdamo Vaše povjerenje.</p>\n\n<p style=\"font-size:14px;line-height:1.6;margin:0 0 4px;color:#2b2b2b;\">Srdačan pozdrav,</p>\n<div style=\"border-top:1px solid #e3e6e5;margin-top:14px;padding-top:14px;font-size:12.5px;line-height:1.6;color:#444444;\">\n<strong style=\"color:#1f3d3a;\">Saša Batinac, univ. spec. oec.</strong><br>\nSales and Marketing Manager, Voditelj ključnih kupaca<br>\nIn Time d.o.o. — Licensee of FedEx<br>\n<img src=\"https://sbatinac.github.io/intime-portal/InTime_Potpis_mail.gif\" alt=\"In Time Express\" width=\"360\" style=\"display:block;width:360px;max-width:100%;height:auto;margin:10px 0;border:0;\">M: <a href=\"tel:+385916262171\" style=\"color:#0f8b7e;text-decoration:none;\">+385 91 6262 171</a><br>E: <a href=\"mailto:sasa.batinac@in-time.hr\" style=\"color:#0f8b7e;text-decoration:none;\">sasa.batinac@in-time.hr</a><br>\n<a href=\"https://in-time.hr\" target=\"_blank\" rel=\"noopener\" style=\"color:#0f8b7e;text-decoration:none;\">in-time.hr</a> · <a href=\"https://fedex.com\" target=\"_blank\" rel=\"noopener\" style=\"color:#0f8b7e;text-decoration:none;\">fedex.com</a><br>\nIn Time d.o.o. · FedEx zastupništvo · Hrvatska, BiH, Srbija, Slovenija, Crna Gora, Sjeverna Makedonija\n</div>\n\n</td>\n</tr>\n</table>\n\n</td>\n</tr>\n</table>\n\n<table role=\"presentation\" width=\"620\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"max-width:620px;width:100%;border-collapse:collapse;\">\n<tr>\n<td style=\"font-size:10.5px;line-height:1.5;color:#9aa3a1;text-align:center;padding:14px 10px 0;font-family:Arial,Helvetica,sans-serif;\">IN TIME d.o.o. — Licensee of FedEx · in-time.hr</td>\n</tr>\n</table>\n\n</td>\n</tr>\n</table>\n</body>\n</html>\n";
 var OTV_PREDLOZAK_PODSJETNIK_ = "<!DOCTYPE html>\n<html lang=\"hr\" xmlns=\"http://www.w3.org/1999/xhtml\">\n<head>\n<meta charset=\"UTF-8\">\n<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n<meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\">\n<title>Podsjetnik na upitnik — In Time d.o.o.</title>\n</head>\n<body style=\"margin:0;padding:0;background-color:#f2f4f3;\">\n<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"background-color:#f2f4f3;margin:0;padding:0;border-collapse:collapse;\">\n<tr>\n<td align=\"center\" style=\"padding:24px 16px;\">\n\n<table role=\"presentation\" width=\"620\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"max-width:620px;width:100%;border-collapse:collapse;\">\n<tr>\n<td style=\"background-color:#ffffff;border:1px solid #e3e6e5;border-radius:10px;font-family:Arial,Helvetica,sans-serif;\">\n\n<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"border-collapse:collapse;\">\n<tr>\n<td style=\"border-radius:10px 10px 0 0;\">\n<img src=\"{{BANNER_URL}}\" alt=\"In Time d.o.o.\" width=\"620\" style=\"display:block;border:0;outline:none;text-decoration:none;width:100%;max-width:620px;height:auto;border-radius:10px 10px 0 0;\">\n</td>\n</tr>\n</table>\n\n<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"border-collapse:collapse;\">\n<tr>\n<td style=\"padding:28px 30px;font-family:Arial,Helvetica,sans-serif;color:#2b2b2b;\">\n\n<p style=\"font-size:14px;line-height:1.6;margin:0 0 14px;color:#2b2b2b;\">Poštovani,</p>\n<p style=\"font-size:15px;line-height:1.5;margin:0 0 14px;color:#016579;font-weight:bold;\">Ponuda br. {{BROJ_PONUDE}} — {{IME_FIRME}}</p>\n<p style=\"font-size:14px;line-height:1.6;margin:0 0 14px;color:#2b2b2b;\">ljubazno Vas podsjećamo da je za nastavak postupka uspostave poslovne suradnje s IN TIME d.o.o. potrebno ispuniti prethodno dostavljeni upitnik s poslovnim podacima.</p>\n<p style=\"font-size:14px;line-height:1.6;margin:0 0 14px;color:#2b2b2b;\">Navedeni podaci neophodni su nam za otvaranje Vašeg poslovnog subjekta u našem informacijskom sustavu i aktivaciju korisničkog računa.</p>\n\n<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"margin:22px 0 10px;border-collapse:collapse;\">\n<tr>\n<td align=\"center\" bgcolor=\"#016579\" style=\"border-radius:8px;background-color:#016579;\">\n<a href=\"{{LINK_UPITNIK}}\" target=\"_blank\" rel=\"noopener\" style=\"display:block;width:100%;box-sizing:border-box;padding:16px 20px;font-family:Arial,Helvetica,sans-serif;font-size:16px;font-weight:bold;color:#ffffff;text-decoration:none;text-align:center;border-radius:8px;\">Ispuni upitnik</a>\n</td>\n</tr>\n</table>\n<p style=\"font-size:12px;line-height:1.5;color:#777777;word-break:break-all;margin:0 0 22px;\">Ako gumb ne radi, kopirajte poveznicu u preglednik: <a href=\"{{LINK_UPITNIK}}\" style=\"color:#0f8b7e;\">{{LINK_UPITNIK}}</a></p>\n\n<p style=\"font-size:14px;line-height:1.6;margin:0 0 14px;color:#2b2b2b;\">Molimo Vas da upitnik popunite u što skorijem roku kako bismo mogli pravovremeno dovršiti postupak aktivacije i omogućiti Vam početak korištenja naših logističkih usluga.</p>\n<p style=\"font-size:14px;line-height:1.6;margin:0 0 14px;color:#2b2b2b;\">Zahvaljujemo na suradnji i stojimo Vam na raspolaganju za sva dodatna pitanja.</p>\n\n<p style=\"font-size:14px;line-height:1.6;margin:0 0 4px;color:#2b2b2b;\">Srdačan pozdrav,</p>\n<p style=\"font-size:14px;line-height:1.6;margin:0 0 18px;color:#2b2b2b;\"><strong>IN TIME d.o.o.</strong></p>\n\n</td>\n</tr>\n</table>\n\n</td>\n</tr>\n</table>\n\n<table role=\"presentation\" width=\"620\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"max-width:620px;width:100%;border-collapse:collapse;\">\n<tr>\n<td style=\"font-size:10.5px;line-height:1.5;color:#9aa3a1;text-align:center;padding:14px 10px 0;font-family:Arial,Helvetica,sans-serif;\">IN TIME d.o.o. — Licensee of FedEx · in-time.hr</td>\n</tr>\n</table>\n\n</td>\n</tr>\n</table>\n</body>\n</html>\n";
 var OTV_PREDLOZAK_UPITNIK_ = "<!DOCTYPE html>\n<html lang=\"hr\" xmlns=\"http://www.w3.org/1999/xhtml\">\n<head>\n<meta charset=\"UTF-8\">\n<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n<meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\">\n<title>Potvrda prihvata ponude i upitnik — In Time d.o.o.</title>\n</head>\n<body style=\"margin:0;padding:0;background-color:#f2f4f3;\">\n<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"background-color:#f2f4f3;margin:0;padding:0;border-collapse:collapse;\">\n<tr>\n<td align=\"center\" style=\"padding:24px 16px;\">\n\n<table role=\"presentation\" width=\"620\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"max-width:620px;width:100%;border-collapse:collapse;\">\n<tr>\n<td style=\"background-color:#ffffff;border:1px solid #e3e6e5;border-radius:10px;font-family:Arial,Helvetica,sans-serif;\">\n\n<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"border-collapse:collapse;\">\n<tr>\n<td style=\"border-radius:10px 10px 0 0;\">\n<img src=\"{{BANNER_URL}}\" alt=\"In Time d.o.o.\" width=\"620\" style=\"display:block;border:0;outline:none;text-decoration:none;width:100%;max-width:620px;height:auto;border-radius:10px 10px 0 0;\">\n</td>\n</tr>\n</table>\n\n<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"border-collapse:collapse;\">\n<tr>\n<td style=\"padding:28px 30px;font-family:Arial,Helvetica,sans-serif;color:#2b2b2b;\">\n\n<p style=\"font-size:14px;line-height:1.6;margin:0 0 14px;color:#2b2b2b;\">Poštovani,</p>\n<p style=\"font-size:14px;line-height:1.6;margin:0 0 14px;color:#2b2b2b;\">zahvaljujemo Vam što ste prihvatili otvorenu ponudu broj <strong>{{BROJ_PONUDE}}</strong> za Vaš poslovni subjekt <strong>{{NAZIV_FIRME}}</strong>.</p>\n<p style=\"font-size:14px;line-height:1.6;margin:0 0 14px;color:#2b2b2b;\">Za nastavak postupka uspostave poslovne suradnje potrebno je ispuniti upitnik s poslovnim podacima potrebnim za otvaranje i registraciju Vašeg poslovnog subjekta u informacijskom sustavu IN TIME d.o.o. Nažalost, <strong>ne možemo Vas otvoriti kao klijenta dok upitnik nije ispunjen.</strong></p>\n\n<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"margin:22px 0 10px;border-collapse:collapse;\">\n<tr>\n<td align=\"center\" bgcolor=\"#016579\" style=\"border-radius:8px;background-color:#016579;\">\n<a href=\"{{LINK_UPITNIK}}\" target=\"_blank\" rel=\"noopener\" style=\"display:block;width:100%;box-sizing:border-box;padding:16px 20px;font-family:Arial,Helvetica,sans-serif;font-size:16px;font-weight:bold;color:#ffffff;text-decoration:none;text-align:center;border-radius:8px;\">Ispuni upitnik</a>\n</td>\n</tr>\n</table>\n<p style=\"font-size:12px;line-height:1.5;color:#777777;word-break:break-all;margin:0 0 22px;\">Ako gumb ne radi, kopirajte poveznicu u preglednik: <a href=\"{{LINK_UPITNIK}}\" style=\"color:#0f8b7e;\">{{LINK_UPITNIK}}</a></p>\n\n<p style=\"font-size:14px;line-height:1.6;margin:0 0 14px;color:#2b2b2b;\">U roku od 24 do 48 sati od zaprimanja ispravno popunjenog obrasca i konačne verifikacije ponude u sjedištu društva IN TIME d.o.o., moći ćete započeti s unosom naloga te naručivanjem IN TIME prikupa pošiljaka.</p>\n<p style=\"font-size:14px;line-height:1.6;margin:0 0 14px;color:#2b2b2b;\">Zahvaljujemo na suradnji i stojimo Vam na raspolaganju za sva dodatna pitanja.</p>\n\n<p style=\"font-size:14px;line-height:1.6;margin:0 0 4px;color:#2b2b2b;\">Srdačan pozdrav,</p>\n<p style=\"font-size:14px;line-height:1.6;margin:0 0 18px;color:#2b2b2b;\"><strong>IN TIME d.o.o.</strong></p>\n\n</td>\n</tr>\n</table>\n\n</td>\n</tr>\n</table>\n\n<table role=\"presentation\" width=\"620\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"max-width:620px;width:100%;border-collapse:collapse;\">\n<tr>\n<td style=\"font-size:10.5px;line-height:1.5;color:#9aa3a1;text-align:center;padding:14px 10px 0;font-family:Arial,Helvetica,sans-serif;\">IN TIME d.o.o. — Licensee of FedEx · in-time.hr</td>\n</tr>\n</table>\n\n</td>\n</tr>\n</table>\n</body>\n</html>\n";
 var OTV_PREDMET_UPITNIK_ = 'IN TIME | Prihvat ponude br. {{BROJ_PONUDE}} – {{NAZIV_FIRME}} – molimo ispunite upitnik';
@@ -24508,7 +24866,7 @@ function jedPredlozakHtml_(naslov, odlomci, napomenaKucice) {
     p(napomenaKucice) +
     p('Za sva pitanja i pojašnjenja stojim Vam na raspolaganju.') +
     '<p style="font-size:14px;line-height:1.6;margin:0 0 4px;color:#2b2b2b;">Srdačan pozdrav,</p>' +
-    '<div style="border-top:1px solid #e3e6e5;margin-top:14px;padding-top:14px;font-size:12.5px;line-height:1.6;color:#444444;"><strong style="color:#1f3d3a;">Saša Batinac, univ. spec. oec.</strong><br>Sales and Marketing Manager, Voditelj ključnih kupaca<br>In Time d.o.o. — Licensee of FedEx<br><br>M: +385 91 6262 171 · <a href="mailto:sasa.batinac@in-time.hr" style="color:#0f8b7e;text-decoration:none;">sasa.batinac@in-time.hr</a><br><a href="https://in-time.hr" target="_blank" rel="noopener" style="color:#0f8b7e;text-decoration:none;">in-time.hr</a> · <a href="https://fedex.com" target="_blank" rel="noopener" style="color:#0f8b7e;text-decoration:none;">fedex.com</a></div>' +
+    '<div style="border-top:1px solid #e3e6e5;margin-top:14px;padding-top:14px;font-size:12.5px;line-height:1.6;color:#444444;"><strong style="color:#1f3d3a;">Saša Batinac, univ. spec. oec.</strong><br>Sales and Marketing Manager, Voditelj ključnih kupaca<br>In Time d.o.o. — Licensee of FedEx<br><img src="https://sbatinac.github.io/intime-portal/InTime_Potpis_mail.gif" alt="In Time Express" width="360" style="display:block;width:360px;max-width:100%;height:auto;margin:10px 0;border:0;">M: <a href="tel:+385916262171" style="color:#0f8b7e;text-decoration:none;">+385 91 6262 171</a><br>E: <a href="mailto:sasa.batinac@in-time.hr" style="color:#0f8b7e;text-decoration:none;">sasa.batinac@in-time.hr</a><br><a href="https://in-time.hr" target="_blank" rel="noopener" style="color:#0f8b7e;text-decoration:none;">in-time.hr</a> · <a href="https://fedex.com" target="_blank" rel="noopener" style="color:#0f8b7e;text-decoration:none;">fedex.com</a></div>' +
     '</td></tr></table></td></tr></table>' +
     '<table role="presentation" width="620" cellpadding="0" cellspacing="0" border="0" style="max-width:620px;width:100%;border-collapse:collapse;"><tr><td style="font-size:10.5px;line-height:1.5;color:#9aa3a1;text-align:center;padding:14px 10px 0;font-family:Arial,Helvetica,sans-serif;">IN TIME d.o.o. — Licensee of FedEx · in-time.hr</td></tr></table>' +
     '</td></tr></table></body></html>\n';
@@ -24625,10 +24983,10 @@ var REV_BANNER_SPUSTANJE_ = 'https://i.imgur.com/Bm3qURW.png';   // banner za sp
 var REV_PREDLOZAK_NAZIV_ = 'Revizija – Dizanje cijena (HTML)';
 var REV_PREDLOZAK_NAZIV_STARI_ = 'Revizija – Obavijest o promjeni uvjeta (HTML)';   // prvotno ime (v232) — preimenuje se u dizanje
 var REV_PREDLOZAK_PREDMET_ = 'IN TIME | Obavijest o reviziji uvjeta suradnje br. {{BROJ_REVIZIJE}} – {{NAZIV_FIRME}}';
-var REV_PREDLOZAK_HTML_ = "<!DOCTYPE html>\n<html lang=\"hr\" xmlns=\"http://www.w3.org/1999/xhtml\">\n<head>\n<meta charset=\"UTF-8\">\n<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n<meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\">\n<title>Obavijest o reviziji uvjeta — In Time d.o.o.</title>\n</head>\n<body style=\"margin:0;padding:0;background-color:#f2f4f3;\">\n<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"background-color:#f2f4f3;margin:0;padding:0;border-collapse:collapse;\">\n<tr>\n<td align=\"center\" style=\"padding:24px 16px;\">\n\n<table role=\"presentation\" width=\"620\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"max-width:620px;width:100%;border-collapse:collapse;\">\n<tr>\n<td style=\"background-color:#ffffff;border:1px solid #e3e6e5;border-radius:10px;font-family:Arial,Helvetica,sans-serif;\">\n\n<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"border-collapse:collapse;\">\n<tr>\n<td style=\"border-radius:10px 10px 0 0;\">\n<img src=\"{{BANNER_URL}}\" alt=\"In Time d.o.o.\" width=\"620\" style=\"display:block;border:0;outline:none;text-decoration:none;width:100%;max-width:620px;height:auto;border-radius:10px 10px 0 0;\">\n</td>\n</tr>\n</table>\n\n<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"border-collapse:collapse;\">\n<tr>\n<td style=\"padding:28px 30px;font-family:Arial,Helvetica,sans-serif;color:#2b2b2b;\">\n\n<p style=\"font-size:14px;line-height:1.6;margin:0 0 14px;color:#2b2b2b;\">Poštovani,</p>\n<p style=\"font-size:15px;line-height:1.5;margin:0 0 14px;color:#016579;font-weight:bold;\">Obavijest o reviziji uvjeta suradnje br. {{BROJ_REVIZIJE}} — {{IME_FIRME}}</p>\n<p style=\"font-size:14px;line-height:1.6;margin:0 0 16px;color:#2b2b2b;\">{{OBRAZLOZENJE}}</p>\n\n<p style=\"font-size:13px;line-height:1.4;color:#ffffff;font-weight:bold;background-color:#016579;border-radius:6px;padding:10px 14px;margin:0 0 18px;text-align:center;\">Novi uvjeti primjenjuju se od {{DATUM_PRIMJENE}}</p>\n\n<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"margin:6px 0 10px;border-collapse:collapse;\">\n<tr>\n<td align=\"center\" bgcolor=\"#016579\" style=\"border-radius:8px;background-color:#016579;\">\n<a href=\"{{LINK_DOKUMENTI}}\" target=\"_blank\" rel=\"noopener\" style=\"display:block;width:100%;box-sizing:border-box;padding:16px 20px;font-family:Arial,Helvetica,sans-serif;font-size:16px;font-weight:bold;color:#ffffff;text-decoration:none;text-align:center;border-radius:8px;\">Dokumenti revizije</a>\n</td>\n</tr>\n</table>\n<p style=\"font-size:12px;line-height:1.5;color:#777777;word-break:break-all;margin:0 0 18px;\">Ako gumb ne radi, kopirajte poveznicu u preglednik: <a href=\"{{LINK_DOKUMENTI}}\" style=\"color:#0f8b7e;\">{{LINK_DOKUMENTI}}</a></p>\n\n{{BLOK_USPOREDBA}}\n{{BLOK_POTVRDA}}\n\n<p style=\"font-size:14px;line-height:1.6;margin:18px 0 14px;color:#2b2b2b;\">Ako Vam treba dodatno pojašnjenje ili želite razgovarati o novim uvjetima, slobodno nam se javite — rado ćemo pomoći.</p>\n\n<p style=\"font-size:14px;line-height:1.6;margin:0 0 4px;color:#2b2b2b;\">Srdačan pozdrav,</p>\n<div style=\"border-top:1px solid #e3e6e5;margin-top:14px;padding-top:14px;font-size:12.5px;line-height:1.6;color:#444444;\">\n<strong style=\"color:#1f3d3a;\">Saša Batinac, univ. spec. oec.</strong><br>\nSales and Marketing Manager, Voditelj ključnih kupaca<br>\nIn Time d.o.o. — Licensee of FedEx<br><br>\nM: +385 91 6262 171 · <a href=\"mailto:sasa.batinac@in-time.hr\" style=\"color:#0f8b7e;text-decoration:none;\">sasa.batinac@in-time.hr</a><br>\n<a href=\"https://in-time.hr\" target=\"_blank\" rel=\"noopener\" style=\"color:#0f8b7e;text-decoration:none;\">in-time.hr</a> · <a href=\"https://fedex.com\" target=\"_blank\" rel=\"noopener\" style=\"color:#0f8b7e;text-decoration:none;\">fedex.com</a>\n</div>\n\n</td>\n</tr>\n</table>\n\n</td>\n</tr>\n</table>\n\n<table role=\"presentation\" width=\"620\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"max-width:620px;width:100%;border-collapse:collapse;\">\n<tr>\n<td style=\"font-size:10.5px;line-height:1.5;color:#9aa3a1;text-align:center;padding:14px 10px 0;font-family:Arial,Helvetica,sans-serif;\">IN TIME d.o.o. — Licensee of FedEx · in-time.hr</td>\n</tr>\n</table>\n\n</td>\n</tr>\n</table>\n</body>\n</html>\n";
+var REV_PREDLOZAK_HTML_ = "<!DOCTYPE html>\n<html lang=\"hr\" xmlns=\"http://www.w3.org/1999/xhtml\">\n<head>\n<meta charset=\"UTF-8\">\n<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n<meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\">\n<title>Obavijest o reviziji uvjeta — In Time d.o.o.</title>\n</head>\n<body style=\"margin:0;padding:0;background-color:#f2f4f3;\">\n<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"background-color:#f2f4f3;margin:0;padding:0;border-collapse:collapse;\">\n<tr>\n<td align=\"center\" style=\"padding:24px 16px;\">\n\n<table role=\"presentation\" width=\"620\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"max-width:620px;width:100%;border-collapse:collapse;\">\n<tr>\n<td style=\"background-color:#ffffff;border:1px solid #e3e6e5;border-radius:10px;font-family:Arial,Helvetica,sans-serif;\">\n\n<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"border-collapse:collapse;\">\n<tr>\n<td style=\"border-radius:10px 10px 0 0;\">\n<img src=\"{{BANNER_URL}}\" alt=\"In Time d.o.o.\" width=\"620\" style=\"display:block;border:0;outline:none;text-decoration:none;width:100%;max-width:620px;height:auto;border-radius:10px 10px 0 0;\">\n</td>\n</tr>\n</table>\n\n<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"border-collapse:collapse;\">\n<tr>\n<td style=\"padding:28px 30px;font-family:Arial,Helvetica,sans-serif;color:#2b2b2b;\">\n\n<p style=\"font-size:14px;line-height:1.6;margin:0 0 14px;color:#2b2b2b;\">Poštovani,</p>\n<p style=\"font-size:15px;line-height:1.5;margin:0 0 14px;color:#016579;font-weight:bold;\">Obavijest o reviziji uvjeta suradnje br. {{BROJ_REVIZIJE}} — {{IME_FIRME}}</p>\n<p style=\"font-size:14px;line-height:1.6;margin:0 0 16px;color:#2b2b2b;\">{{OBRAZLOZENJE}}</p>\n\n<p style=\"font-size:13px;line-height:1.4;color:#ffffff;font-weight:bold;background-color:#016579;border-radius:6px;padding:10px 14px;margin:0 0 18px;text-align:center;\">Novi uvjeti primjenjuju se od {{DATUM_PRIMJENE}}</p>\n\n<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"margin:6px 0 10px;border-collapse:collapse;\">\n<tr>\n<td align=\"center\" bgcolor=\"#016579\" style=\"border-radius:8px;background-color:#016579;\">\n<a href=\"{{LINK_DOKUMENTI}}\" target=\"_blank\" rel=\"noopener\" style=\"display:block;width:100%;box-sizing:border-box;padding:16px 20px;font-family:Arial,Helvetica,sans-serif;font-size:16px;font-weight:bold;color:#ffffff;text-decoration:none;text-align:center;border-radius:8px;\">Dokumenti revizije</a>\n</td>\n</tr>\n</table>\n<p style=\"font-size:12px;line-height:1.5;color:#777777;word-break:break-all;margin:0 0 18px;\">Ako gumb ne radi, kopirajte poveznicu u preglednik: <a href=\"{{LINK_DOKUMENTI}}\" style=\"color:#0f8b7e;\">{{LINK_DOKUMENTI}}</a></p>\n\n{{BLOK_USPOREDBA}}\n{{BLOK_POTVRDA}}\n\n<p style=\"font-size:14px;line-height:1.6;margin:18px 0 14px;color:#2b2b2b;\">Ako Vam treba dodatno pojašnjenje ili želite razgovarati o novim uvjetima, slobodno nam se javite — rado ćemo pomoći.</p>\n\n<p style=\"font-size:14px;line-height:1.6;margin:0 0 4px;color:#2b2b2b;\">Srdačan pozdrav,</p>\n<div style=\"border-top:1px solid #e3e6e5;margin-top:14px;padding-top:14px;font-size:12.5px;line-height:1.6;color:#444444;\">\n<strong style=\"color:#1f3d3a;\">Saša Batinac, univ. spec. oec.</strong><br>\nSales and Marketing Manager, Voditelj ključnih kupaca<br>\nIn Time d.o.o. — Licensee of FedEx<br>\n<img src=\"https://sbatinac.github.io/intime-portal/InTime_Potpis_mail.gif\" alt=\"In Time Express\" width=\"360\" style=\"display:block;width:360px;max-width:100%;height:auto;margin:10px 0;border:0;\">M: <a href=\"tel:+385916262171\" style=\"color:#0f8b7e;text-decoration:none;\">+385 91 6262 171</a><br>E: <a href=\"mailto:sasa.batinac@in-time.hr\" style=\"color:#0f8b7e;text-decoration:none;\">sasa.batinac@in-time.hr</a><br>\n<a href=\"https://in-time.hr\" target=\"_blank\" rel=\"noopener\" style=\"color:#0f8b7e;text-decoration:none;\">in-time.hr</a> · <a href=\"https://fedex.com\" target=\"_blank\" rel=\"noopener\" style=\"color:#0f8b7e;text-decoration:none;\">fedex.com</a>\n</div>\n\n</td>\n</tr>\n</table>\n\n</td>\n</tr>\n</table>\n\n<table role=\"presentation\" width=\"620\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"max-width:620px;width:100%;border-collapse:collapse;\">\n<tr>\n<td style=\"font-size:10.5px;line-height:1.5;color:#9aa3a1;text-align:center;padding:14px 10px 0;font-family:Arial,Helvetica,sans-serif;\">IN TIME d.o.o. — Licensee of FedEx · in-time.hr</td>\n</tr>\n</table>\n\n</td>\n</tr>\n</table>\n</body>\n</html>\n";
 var REV_PREDLOZAK_SMANJ_NAZIV_ = 'Revizija – Spuštanje cijena (HTML)';
 var REV_PREDLOZAK_SMANJ_PREDMET_ = 'IN TIME | Obavijest o smanjenju cijena br. {{BROJ_REVIZIJE}} – {{NAZIV_FIRME}}';
-var REV_PREDLOZAK_SMANJ_HTML_ = "<!DOCTYPE html>\n<html lang=\"hr\" xmlns=\"http://www.w3.org/1999/xhtml\">\n<head>\n<meta charset=\"UTF-8\">\n<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n<meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\">\n<title>Obavijest o smanjenju cijena — In Time d.o.o.</title>\n</head>\n<body style=\"margin:0;padding:0;background-color:#f2f4f3;\">\n<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"background-color:#f2f4f3;margin:0;padding:0;border-collapse:collapse;\">\n<tr>\n<td align=\"center\" style=\"padding:24px 16px;\">\n\n<table role=\"presentation\" width=\"620\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"max-width:620px;width:100%;border-collapse:collapse;\">\n<tr>\n<td style=\"background-color:#ffffff;border:1px solid #e3e6e5;border-radius:10px;font-family:Arial,Helvetica,sans-serif;\">\n\n<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"border-collapse:collapse;\">\n<tr>\n<td style=\"border-radius:10px 10px 0 0;\">\n<img src=\"{{BANNER_URL}}\" alt=\"In Time d.o.o.\" width=\"620\" style=\"display:block;border:0;outline:none;text-decoration:none;width:100%;max-width:620px;height:auto;border-radius:10px 10px 0 0;\">\n</td>\n</tr>\n</table>\n\n<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"border-collapse:collapse;\">\n<tr>\n<td style=\"padding:28px 30px;font-family:Arial,Helvetica,sans-serif;color:#2b2b2b;\">\n\n<p style=\"font-size:14px;line-height:1.6;margin:0 0 14px;color:#2b2b2b;\">Poštovani,</p>\n<p style=\"font-size:15px;line-height:1.5;margin:0 0 14px;color:#016579;font-weight:bold;\">Obavijest o smanjenju cijena — {{IME_FIRME}}<br><span style=\"font-size:12.5px;font-weight:normal;color:#5f6b69;\">Revizija uvjeta suradnje br. {{BROJ_REVIZIJE}}</span></p>\n<p style=\"font-size:14px;line-height:1.6;margin:0 0 16px;color:#2b2b2b;\">{{OBRAZLOZENJE}}</p>\n\n<p style=\"font-size:13px;line-height:1.4;color:#ffffff;font-weight:bold;background-color:#016579;border-radius:6px;padding:10px 14px;margin:0 0 18px;text-align:center;\">Povoljniji uvjeti primjenjuju se od {{DATUM_PRIMJENE}}</p>\n\n<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"margin:6px 0 10px;border-collapse:collapse;\">\n<tr>\n<td align=\"center\" bgcolor=\"#016579\" style=\"border-radius:8px;background-color:#016579;\">\n<a href=\"{{LINK_DOKUMENTI}}\" target=\"_blank\" rel=\"noopener\" style=\"display:block;width:100%;box-sizing:border-box;padding:16px 20px;font-family:Arial,Helvetica,sans-serif;font-size:16px;font-weight:bold;color:#ffffff;text-decoration:none;text-align:center;border-radius:8px;\">Novi cjenik i dokumenti</a>\n</td>\n</tr>\n</table>\n<p style=\"font-size:12px;line-height:1.5;color:#777777;word-break:break-all;margin:0 0 18px;\">Ako gumb ne radi, kopirajte poveznicu u preglednik: <a href=\"{{LINK_DOKUMENTI}}\" style=\"color:#0f8b7e;\">{{LINK_DOKUMENTI}}</a></p>\n\n{{BLOK_USPOREDBA}}\n{{BLOK_POTVRDA}}\n\n<p style=\"font-size:14px;line-height:1.6;margin:18px 0 14px;color:#2b2b2b;\">Hvala Vam na dosadašnjoj suradnji i povjerenju. Ako Vam treba dodatno pojašnjenje, slobodno nam se javite — veselimo se nastavku suradnje.</p>\n\n<p style=\"font-size:14px;line-height:1.6;margin:0 0 4px;color:#2b2b2b;\">Srdačan pozdrav,</p>\n<div style=\"border-top:1px solid #e3e6e5;margin-top:14px;padding-top:14px;font-size:12.5px;line-height:1.6;color:#444444;\">\n<strong style=\"color:#1f3d3a;\">Saša Batinac, univ. spec. oec.</strong><br>\nSales and Marketing Manager, Voditelj ključnih kupaca<br>\nIn Time d.o.o. — Licensee of FedEx<br><br>\nM: +385 91 6262 171 · <a href=\"mailto:sasa.batinac@in-time.hr\" style=\"color:#0f8b7e;text-decoration:none;\">sasa.batinac@in-time.hr</a><br>\n<a href=\"https://in-time.hr\" target=\"_blank\" rel=\"noopener\" style=\"color:#0f8b7e;text-decoration:none;\">in-time.hr</a> · <a href=\"https://fedex.com\" target=\"_blank\" rel=\"noopener\" style=\"color:#0f8b7e;text-decoration:none;\">fedex.com</a>\n</div>\n\n</td>\n</tr>\n</table>\n\n</td>\n</tr>\n</table>\n\n<table role=\"presentation\" width=\"620\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"max-width:620px;width:100%;border-collapse:collapse;\">\n<tr>\n<td style=\"font-size:10.5px;line-height:1.5;color:#9aa3a1;text-align:center;padding:14px 10px 0;font-family:Arial,Helvetica,sans-serif;\">IN TIME d.o.o. — Licensee of FedEx · in-time.hr</td>\n</tr>\n</table>\n\n</td>\n</tr>\n</table>\n</body>\n</html>\n";
+var REV_PREDLOZAK_SMANJ_HTML_ = "<!DOCTYPE html>\n<html lang=\"hr\" xmlns=\"http://www.w3.org/1999/xhtml\">\n<head>\n<meta charset=\"UTF-8\">\n<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n<meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\">\n<title>Obavijest o smanjenju cijena — In Time d.o.o.</title>\n</head>\n<body style=\"margin:0;padding:0;background-color:#f2f4f3;\">\n<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"background-color:#f2f4f3;margin:0;padding:0;border-collapse:collapse;\">\n<tr>\n<td align=\"center\" style=\"padding:24px 16px;\">\n\n<table role=\"presentation\" width=\"620\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"max-width:620px;width:100%;border-collapse:collapse;\">\n<tr>\n<td style=\"background-color:#ffffff;border:1px solid #e3e6e5;border-radius:10px;font-family:Arial,Helvetica,sans-serif;\">\n\n<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"border-collapse:collapse;\">\n<tr>\n<td style=\"border-radius:10px 10px 0 0;\">\n<img src=\"{{BANNER_URL}}\" alt=\"In Time d.o.o.\" width=\"620\" style=\"display:block;border:0;outline:none;text-decoration:none;width:100%;max-width:620px;height:auto;border-radius:10px 10px 0 0;\">\n</td>\n</tr>\n</table>\n\n<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"border-collapse:collapse;\">\n<tr>\n<td style=\"padding:28px 30px;font-family:Arial,Helvetica,sans-serif;color:#2b2b2b;\">\n\n<p style=\"font-size:14px;line-height:1.6;margin:0 0 14px;color:#2b2b2b;\">Poštovani,</p>\n<p style=\"font-size:15px;line-height:1.5;margin:0 0 14px;color:#016579;font-weight:bold;\">Obavijest o smanjenju cijena — {{IME_FIRME}}<br><span style=\"font-size:12.5px;font-weight:normal;color:#5f6b69;\">Revizija uvjeta suradnje br. {{BROJ_REVIZIJE}}</span></p>\n<p style=\"font-size:14px;line-height:1.6;margin:0 0 16px;color:#2b2b2b;\">{{OBRAZLOZENJE}}</p>\n\n<p style=\"font-size:13px;line-height:1.4;color:#ffffff;font-weight:bold;background-color:#016579;border-radius:6px;padding:10px 14px;margin:0 0 18px;text-align:center;\">Povoljniji uvjeti primjenjuju se od {{DATUM_PRIMJENE}}</p>\n\n<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"margin:6px 0 10px;border-collapse:collapse;\">\n<tr>\n<td align=\"center\" bgcolor=\"#016579\" style=\"border-radius:8px;background-color:#016579;\">\n<a href=\"{{LINK_DOKUMENTI}}\" target=\"_blank\" rel=\"noopener\" style=\"display:block;width:100%;box-sizing:border-box;padding:16px 20px;font-family:Arial,Helvetica,sans-serif;font-size:16px;font-weight:bold;color:#ffffff;text-decoration:none;text-align:center;border-radius:8px;\">Novi cjenik i dokumenti</a>\n</td>\n</tr>\n</table>\n<p style=\"font-size:12px;line-height:1.5;color:#777777;word-break:break-all;margin:0 0 18px;\">Ako gumb ne radi, kopirajte poveznicu u preglednik: <a href=\"{{LINK_DOKUMENTI}}\" style=\"color:#0f8b7e;\">{{LINK_DOKUMENTI}}</a></p>\n\n{{BLOK_USPOREDBA}}\n{{BLOK_POTVRDA}}\n\n<p style=\"font-size:14px;line-height:1.6;margin:18px 0 14px;color:#2b2b2b;\">Hvala Vam na dosadašnjoj suradnji i povjerenju. Ako Vam treba dodatno pojašnjenje, slobodno nam se javite — veselimo se nastavku suradnje.</p>\n\n<p style=\"font-size:14px;line-height:1.6;margin:0 0 4px;color:#2b2b2b;\">Srdačan pozdrav,</p>\n<div style=\"border-top:1px solid #e3e6e5;margin-top:14px;padding-top:14px;font-size:12.5px;line-height:1.6;color:#444444;\">\n<strong style=\"color:#1f3d3a;\">Saša Batinac, univ. spec. oec.</strong><br>\nSales and Marketing Manager, Voditelj ključnih kupaca<br>\nIn Time d.o.o. — Licensee of FedEx<br>\n<img src=\"https://sbatinac.github.io/intime-portal/InTime_Potpis_mail.gif\" alt=\"In Time Express\" width=\"360\" style=\"display:block;width:360px;max-width:100%;height:auto;margin:10px 0;border:0;\">M: <a href=\"tel:+385916262171\" style=\"color:#0f8b7e;text-decoration:none;\">+385 91 6262 171</a><br>E: <a href=\"mailto:sasa.batinac@in-time.hr\" style=\"color:#0f8b7e;text-decoration:none;\">sasa.batinac@in-time.hr</a><br>\n<a href=\"https://in-time.hr\" target=\"_blank\" rel=\"noopener\" style=\"color:#0f8b7e;text-decoration:none;\">in-time.hr</a> · <a href=\"https://fedex.com\" target=\"_blank\" rel=\"noopener\" style=\"color:#0f8b7e;text-decoration:none;\">fedex.com</a>\n</div>\n\n</td>\n</tr>\n</table>\n\n</td>\n</tr>\n</table>\n\n<table role=\"presentation\" width=\"620\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"max-width:620px;width:100%;border-collapse:collapse;\">\n<tr>\n<td style=\"font-size:10.5px;line-height:1.5;color:#9aa3a1;text-align:center;padding:14px 10px 0;font-family:Arial,Helvetica,sans-serif;\">IN TIME d.o.o. — Licensee of FedEx · in-time.hr</td>\n</tr>\n</table>\n\n</td>\n</tr>\n</table>\n</body>\n</html>\n";
 function revTipNorm_(t) { return String(t || '') === 'spustanje' ? 'spustanje' : 'dizanje'; }
 function revPredlozakZaTip_(tip) {
   return revTipNorm_(tip) === 'spustanje'
@@ -25922,4 +26280,243 @@ function aiSlanjeZabiljezi_(data) {
     var ls = getOrCreateNacrtSheet_(AI_SLANJE_NAZIV_, AI_SLANJE_HEADER_, [3]);
     ls.appendRow(sheetSigRed_([sada, opis, ref, firma, napomena]));
   } catch (e2) { /* evidencija nije kritična */ }
+}
+
+// ============================================================================
+// EVIDENCIJA POZIVA (v342, 21.10.2026.) — Sašin zahtjev: popis svih neprihvaćenih ponuda (obične + otvorene) i
+// pojedinačnih pisama namjere (bez kampanja), SVE vezano na OIB; brojevi/maileovi iz upitnika + vlastiti dodani;
+// bilježi se tko je zvan, ishod i bilješka. Zasebna tablica "InTime_Evidencija_Poziva" (listovi Pozivi i Kontakti).
+// Pozivi se NIKAD ne brišu; dodani kontakt se samo označi kao uklonjen.
+// ============================================================================
+var EVID_SHEET_NAME_ = 'InTime_Evidencija_Poziva';
+var EVID_POZIVI_HEADER_ = ['ID', 'Vrijeme', 'Ključ (OIB)', 'Naziv', 'Broj', 'Ishod', 'Bilješka', 'Nazvati ponovno (datum)', 'Izmijenjeno'];
+var EVID_KONTAKTI_HEADER_ = ['ID', 'Ključ (OIB)', 'Vrsta', 'Vrijednost', 'Oznaka', 'Dodano', 'Uklonjeno'];
+var EVID_ISHODI_ = ['poziv', 'javio', 'nije', 'kasnije', 'ne_zanima'];
+var EVID_TEL_LABELI_ = [['Mobitel', 'Kontakt osoba'], ['Ispravljeni telefon prikupa (admin)', 'Prikup (ispravljeno)'], ['Osoba za organizaciju slanja/primanja pošiljaka – telefon', 'Osoba za pošiljke'], ['Telefon odgovorne osobe', 'Odgovorna osoba'], ['Telefon centrale', 'Centrala'], ['Telefon osobe koja unosi podatke', 'Osoba koja unosi podatke'], ['Kontakt osoba u računovodstvu – telefon', 'Računovodstvo']];
+var EVID_MAIL_LABELI_ = [['Email kontakt osobe', 'Kontakt osoba'], ['Mail adrese za slanje ponude (admin)', 'Adrese za ponudu'], ['Glavna e-mail adresa tvrtke', 'Tvrtka'], ['Mail adresa odgovorne osobe', 'Odgovorna osoba'], ['Osoba za organizaciju slanja/primanja pošiljaka – email', 'Osoba za pošiljke'], ['Email osobe koja unosi podatke', 'Osoba koja unosi podatke'], ['Stari klijent - mail za upitnik (admin)', 'Stari klijent'], ['Email (odbijenica)', 'Odbijenica']];
+
+function evidencijaSheets_() {
+  if (SHEET_MEMO_.evid) { return SHEET_MEMO_.evid; }
+  var files = dohvatiDatoteke_(EVID_SHEET_NAME_);
+  var ss = files.hasNext() ? SpreadsheetApp.open(files.next()) : SpreadsheetApp.create(EVID_SHEET_NAME_);
+  var dohvati = function(naziv, zaglavlje, tekstStupci) {
+    var s = ss.getSheetByName(naziv);
+    if (!s) {
+      var prvi = ss.getSheets()[0];
+      if (prvi && prvi.getLastRow() === 0 && prvi.getName() !== 'Pozivi' && prvi.getName() !== 'Kontakti') { s = prvi; s.setName(naziv); }
+      else { s = ss.insertSheet(naziv); }
+    }
+    if (s.getLastRow() === 0) {
+      s.appendRow(zaglavlje);
+      s.getRange(1, 1, 1, zaglavlje.length).setFontWeight('bold');
+      s.setFrozenRows(1);
+      s.getRange(2, 1, s.getMaxRows() - 1, zaglavlje.length).setNumberFormat('@');   // sve kao tekst (OIB s nulom, +385…)
+    }
+    return s;
+  };
+  SHEET_MEMO_.evid = { pozivi: dohvati('Pozivi', EVID_POZIVI_HEADER_), kontakti: dohvati('Kontakti', EVID_KONTAKTI_HEADER_) };
+  return SHEET_MEMO_.evid;
+}
+
+function evidDatumTekst_(v) {
+  if (v instanceof Date) { return Utilities.formatDate(v, PISMA_TZ_, 'dd.MM.yyyy.'); }
+  return String(v || '');
+}
+
+// Izvuci telefone/maileove iz jednog retka upita: [{v, o}] bez duplikata.
+function evidKontakti_(header, row, extraMail) {
+  var tel = [], mail = [], vidjeniT = {}, vidjeniM = {};
+  var dodajT = function(sirovo, oznaka) {
+    String(sirovo === null || sirovo === undefined ? '' : sirovo).split(/[,;\n\/]+/).forEach(function(p) {
+      p = p.trim(); var d = p.replace(/\D/g, '');
+      if (d.length < 6 || d.length > 15 || vidjeniT[d]) { return; }
+      vidjeniT[d] = true; tel.push({ v: p, o: oznaka });
+    });
+  };
+  var dodajM = function(sirovo, oznaka) {
+    String(sirovo === null || sirovo === undefined ? '' : sirovo).split(/[,;\s]+/).forEach(function(p) {
+      p = p.trim(); var k = p.toLowerCase();
+      if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(p) || vidjeniM[k]) { return; }
+      vidjeniM[k] = true; mail.push({ v: p, o: oznaka });
+    });
+  };
+  EVID_TEL_LABELI_.forEach(function(l) { var ix = header.indexOf(l[0]); if (ix !== -1) { dodajT(row[ix], l[1]); } });
+  EVID_MAIL_LABELI_.forEach(function(l) { var ix = header.indexOf(l[0]); if (ix !== -1) { dodajM(row[ix], l[1]); } });
+  var ixP = header.indexOf(ADMIN_ONLY_FIELDS.otv_primatelj); if (ixP !== -1) { dodajM(row[ixP], 'Primatelj ponude'); }
+  if (extraMail) { dodajM(extraMail, 'Pismo namjere'); }
+  return { tel: tel, mail: mail };
+}
+
+function adminEvidencijaPodaci(token) {
+  if (!isValidAdminToken_(token)) { return pismaAuthGreska_(); }
+  var sh = evidencijaSheets_();
+  // 1) pojedinačna pisma namjere (Izvor = 'Ručno', Status = 'Poslano'): najnovije po OIB-u
+  var pisma = {};
+  try {
+    var ps = getOrCreatePismaSheet_(), pl = ps.getLastRow();
+    if (pl >= 2) {
+      var pv = ps.getRange(2, 1, pl - 1, Math.min(15, ps.getLastColumn())).getValues();
+      pv.forEach(function(r) {
+        if (String(r[3]) !== 'Ručno' || String(r[9]) !== 'Poslano') { return; }
+        var o = oibNorm_(r[4]);
+        var kljuc = o.length === 11 ? o : 'N:' + brziNormaliziraj_(String(r[5] || r[6] || '')).replace(/\s+/g, ' ').trim();
+        if (kljuc === 'N:') { return; }
+        var d = pismaDatum_(r[10]) || pismaDatum_(r[2]);
+        var ms = d ? d.getTime() : 0;
+        if (pisma[kljuc] && pisma[kljuc].ms >= ms) { return; }
+        pisma[kljuc] = { ms: ms, kljuc: kljuc, oib: o.length === 11 ? o : '', naziv: String(r[5] || ''), mail: String(r[6] || ''), grad: String(r[7] || ''), osoba: String(r[8] || ''), datum: d ? Utilities.formatDate(d, PISMA_TZ_, 'dd.MM.yyyy.') : '' };
+      });
+    }
+  } catch (ePis) { /* pisma su dodatak */ }
+  var odgMapa = {};
+  try {
+    battleKandidati_().kandidati.forEach(function(k) {
+      if (k.vrsta === 'POZITIVAN' || k.vrsta === 'DIREKTNI') { odgMapa[k.oib] = 'zainteresiran'; }
+      else if (k.vrsta === 'NEGATIVAN') { odgMapa[k.oib] = 'odbio'; }
+    });
+  } catch (eOdg) { /* nije kritično */ }
+  // 2) ponude i otvorene ponude iz InTime_Upiti
+  var stavke = [], ponudaKljuc = {}, klijenti = {}, kontaktiPoOib = {};
+  var up = getOrCreateUpitiSheet(), lr = up.getLastRow();
+  if (lr >= 2) {
+    var ocek = izracunajOcekivanoZaglavljeUpiti_();
+    var lc = Math.min(up.getLastColumn(), ocek.length);
+    var header = up.getRange(1, 1, 1, lc).getValues()[0];
+    var data = up.getRange(2, 1, lr - 1, lc).getValues();
+    var iTip = header.indexOf('Tip'), iOib = header.indexOf('OIB'), iPreb = header.indexOf(ADMIN_ONLY_FIELDS.otv_prebaceno_datum), iPonPreb = header.indexOf('Datum prebacivanja u ponude (admin)'), iKl = header.indexOf('Datum otvaranja klijenta u sustavu (admin)');
+    var iNaz = header.indexOf('Naziv tvrtke'), iMj = header.indexOf('Mjesto'), iKo = header.indexOf('Kontakt osoba'), iSl = header.indexOf('Datum slanja aktivne ponude (admin)'), iIst = header.indexOf('Datum isteka ponude (admin)'), iSif = header.indexOf(ADMIN_ONLY_FIELDS.sifra_ponude), iVer = header.indexOf(ADMIN_ONLY_FIELDS.ponuda_verzija);
+    for (var i = 0; i < data.length; i++) {
+      var row = data[i];
+      var oib = iOib === -1 ? '' : oibNorm_(row[iOib]);
+      var jeOtv = iTip !== -1 && String(row[iTip]) === OTV_TIP_;
+      var jePon = iPonPreb !== -1 && !!row[iPonPreb];
+      var klijent = !jeOtv && iKl !== -1 && !!row[iKl];
+      if (oib.length === 11 && klijent) { klijenti[oib] = true; }
+      if (klijent || (!jeOtv && !jePon)) {
+        // red nije ponuda; ipak sakupi kontakte ako firma ima pismo namjere
+        if (oib.length === 11 && pisma[oib] && !klijent) { var kk = evidKontakti_(header, row, ''); kontaktiPoOib[oib] = (kontaktiPoOib[oib] || []).concat([kk]); }
+        continue;
+      }
+      var kont = evidKontakti_(header, row, oib.length === 11 && pisma[oib] ? pisma[oib].mail : '');
+      var kljuc = oib.length === 11 ? oib : 'R' + (i + 2);
+      var sifra = iSif === -1 ? '' : String(row[iSif] || '').trim(), ver = iVer === -1 ? 1 : (parseInt(row[iVer], 10) || 1);
+      var st = izracunajStatusPonude_(header, row);
+      var sl = iSl === -1 ? '' : evidDatumTekst_(row[iSl]);
+      var stavka = { kljuc: kljuc, oib: oib, tip: jeOtv ? 'otvorena' : 'ponuda', naziv: iNaz === -1 ? '' : String(row[iNaz] || ''), grad: iMj === -1 ? '' : String(row[iMj] || ''), osoba: iKo === -1 ? '' : String(row[iKo] || ''),
+        status: st, datumSlanja: sl, istek: (iIst !== -1 && row[iIst] instanceof Date) ? row[iIst].toISOString() : (iIst === -1 ? '' : String(row[iIst] || '')), broj: sifra ? (sifra + '-P' + ver) : '', tel: kont.tel, mail: kont.mail, pismo: '', odgovor: odgMapa[oib] || '' };
+      if (ponudaKljuc[kljuc] !== undefined) {
+        // isti OIB u dva retka: zadrži aktivniji (ne-poništen / ne-odbijen)
+        var stara = stavke[ponudaKljuc[kljuc]];
+        var nelosa = function(s) { return s === 'na_cekanju' || s === 'nije_poslano' || s === 'istekla'; };
+        if (nelosa(st) && !nelosa(stara.status)) { stavke[ponudaKljuc[kljuc]] = stavka; }
+        continue;
+      }
+      ponudaKljuc[kljuc] = stavke.length; stavke.push(stavka);
+    }
+  }
+  // 3) pisma bez ponude/klijenta → vlastiti redak; s ponudom → samo oznaka datuma
+  Object.keys(pisma).forEach(function(k) {
+    var p = pisma[k];
+    if (klijenti[k]) { return; }
+    if (ponudaKljuc[k] !== undefined) { stavke[ponudaKljuc[k]].pismo = p.datum; return; }
+    var t = [], m = [], vt = {}, vm = {};
+    (kontaktiPoOib[k] || []).forEach(function(kk) {
+      kk.tel.forEach(function(x) { var d = x.v.replace(/\D/g, ''); if (!vt[d]) { vt[d] = true; t.push(x); } });
+      kk.mail.forEach(function(x) { var q = x.v.toLowerCase(); if (!vm[q]) { vm[q] = true; m.push(x); } });
+    });
+    String(p.mail).split(/[,;\s]+/).forEach(function(x) { x = x.trim(); var q = x.toLowerCase(); if (/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(x) && !vm[q]) { vm[q] = true; m.push({ v: x, o: 'Pismo namjere' }); } });
+    stavke.push({ kljuc: k, oib: p.oib, tip: 'pismo', naziv: p.naziv, grad: p.grad, osoba: p.osoba, status: 'pismo', datumSlanja: p.datum, broj: '', tel: t, mail: m, pismo: p.datum, odgovor: odgMapa[p.oib] || '' });
+  });
+  // 4) vlastiti dodani kontakti + povijest poziva
+  var kontakti = [], kl = sh.kontakti.getLastRow();
+  if (kl >= 2) {
+    sh.kontakti.getRange(2, 1, kl - 1, EVID_KONTAKTI_HEADER_.length).getValues().forEach(function(r) {
+      if (String(r[6]) === 'DA') { return; }
+      kontakti.push({ id: String(r[0]), kljuc: String(r[1]), vrsta: String(r[2]), v: String(r[3]), o: String(r[4]) });
+    });
+  }
+  var pozivi = [], zl = sh.pozivi.getLastRow();
+  if (zl >= 2) {
+    var od = Math.max(2, zl - 2999);
+    sh.pozivi.getRange(od, 1, zl - od + 1, EVID_POZIVI_HEADER_.length).getValues().forEach(function(r) {
+      pozivi.push({ id: String(r[0]), vrijeme: String(r[1]), kljuc: String(r[2]), naziv: String(r[3]), broj: String(r[4]), ishod: String(r[5]), biljeska: String(r[6]), ponovno: String(r[7]) });
+    });
+    pozivi.reverse();
+  }
+  return { status: 'ok', stavke: stavke, kontakti: kontakti, pozivi: pozivi };
+}
+
+function evidTrim_(v, n) { return String(v === null || v === undefined ? '' : v).replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, '').trim().slice(0, n); }
+
+// Zapiši (id prazan) ili dopuni (id zadan) jedan poziv: klik na broj upisuje redak s ishodom 'poziv'; spremanje ishoda isti redak dopunjuje.
+function adminEvidencijaPozivSpremi(token, id, kljuc, naziv, broj, ishod, biljeska, ponovno) {
+  if (!isValidAdminToken_(token)) { return pismaAuthGreska_(); }
+  kljuc = evidTrim_(kljuc, 80); ishod = evidTrim_(ishod, 20);
+  if (!kljuc) { return { status: 'error', message: 'Nedostaje OIB / ključ klijenta.' }; }
+  if (EVID_ISHODI_.indexOf(ishod) === -1) { return { status: 'error', message: 'Nepoznat ishod poziva.' }; }
+  ponovno = evidTrim_(ponovno, 10);
+  if (ponovno && !/^\d{4}-\d{2}-\d{2}$/.test(ponovno)) { return { status: 'error', message: 'Datum za ponovni poziv nije ispravan.' }; }
+  var lock = LockService.getScriptLock();
+  try { lock.waitLock(15000); } catch (eL) { return { status: 'error', message: 'Sustav je zauzet — pokušajte ponovno.' }; }
+  try {
+    var sh = evidencijaSheets_().pozivi;
+    var sada = Utilities.formatDate(new Date(), PISMA_TZ_, 'yyyy-MM-dd HH:mm:ss');
+    id = evidTrim_(id, 20);
+    if (id) {
+      var zl = sh.getLastRow();
+      if (zl >= 2) {
+        var ids = sh.getRange(2, 1, zl - 1, 1).getValues();
+        for (var i = ids.length - 1; i >= 0; i--) {
+          if (String(ids[i][0]) === id) {
+            sh.getRange(i + 2, 6, 1, 4).setNumberFormat('@').setValues([[ishod, evidTrim_(biljeska, 1000), ponovno, sada]]);
+            return { status: 'ok', id: id };
+          }
+        }
+      }
+      return { status: 'error', message: 'Zapis poziva nije pronađen.' };
+    }
+    var novi = Utilities.getUuid().slice(0, 8);
+    var red = sh.getLastRow() + 1;
+    sh.getRange(red, 1, 1, EVID_POZIVI_HEADER_.length).setNumberFormat('@').setValues([[novi, sada, kljuc, evidTrim_(naziv, 200), evidTrim_(broj, 40), ishod, evidTrim_(biljeska, 1000), ponovno, sada]]);
+    return { status: 'ok', id: novi, vrijeme: sada };
+  } finally { try { lock.releaseLock(); } catch (eR) {} }
+}
+
+function adminEvidencijaKontaktDodaj(token, kljuc, vrsta, vrijednost, oznaka) {
+  if (!isValidAdminToken_(token)) { return pismaAuthGreska_(); }
+  kljuc = evidTrim_(kljuc, 80); vrsta = evidTrim_(vrsta, 5); vrijednost = evidTrim_(vrijednost, 120); oznaka = evidTrim_(oznaka, 80);
+  if (!kljuc) { return { status: 'error', message: 'Nedostaje OIB / ključ klijenta.' }; }
+  if (vrsta === 'tel') {
+    var d = vrijednost.replace(/\D/g, '');
+    if (d.length < 6 || d.length > 15 || !/^[\d\s+()\/.\-]+$/.test(vrijednost)) { return { status: 'error', message: 'Broj telefona nije ispravan.' }; }
+  } else if (vrsta === 'mail') {
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(vrijednost)) { return { status: 'error', message: 'E-mail adresa nije ispravna.' }; }
+  } else { return { status: 'error', message: 'Nepoznata vrsta kontakta.' }; }
+  var lock = LockService.getScriptLock();
+  try { lock.waitLock(15000); } catch (eL) { return { status: 'error', message: 'Sustav je zauzet — pokušajte ponovno.' }; }
+  try {
+    var sh = evidencijaSheets_().kontakti;
+    var novi = Utilities.getUuid().slice(0, 8);
+    var red = sh.getLastRow() + 1;
+    sh.getRange(red, 1, 1, EVID_KONTAKTI_HEADER_.length).setNumberFormat('@').setValues([[novi, kljuc, vrsta, vrijednost, oznaka, Utilities.formatDate(new Date(), PISMA_TZ_, 'yyyy-MM-dd HH:mm:ss'), '']]);
+    return { status: 'ok', kontakt: { id: novi, kljuc: kljuc, vrsta: vrsta, v: vrijednost, o: oznaka } };
+  } finally { try { lock.releaseLock(); } catch (eR) {} }
+}
+
+function adminEvidencijaKontaktUkloni(token, id) {
+  if (!isValidAdminToken_(token)) { return pismaAuthGreska_(); }
+  id = evidTrim_(id, 20);
+  if (!id) { return { status: 'error', message: 'Nedostaje kontakt.' }; }
+  var lock = LockService.getScriptLock();
+  try { lock.waitLock(15000); } catch (eL) { return { status: 'error', message: 'Sustav je zauzet — pokušajte ponovno.' }; }
+  try {
+    var sh = evidencijaSheets_().kontakti, kl = sh.getLastRow();
+    if (kl >= 2) {
+      var ids = sh.getRange(2, 1, kl - 1, 1).getValues();
+      for (var i = 0; i < ids.length; i++) {
+        if (String(ids[i][0]) === id) { sh.getRange(i + 2, 7).setNumberFormat('@').setValue('DA'); return { status: 'ok' }; }
+      }
+    }
+    return { status: 'error', message: 'Kontakt nije pronađen.' };
+  } finally { try { lock.releaseLock(); } catch (eR) {} }
 }

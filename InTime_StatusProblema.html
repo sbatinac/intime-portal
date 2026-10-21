@@ -61,13 +61,50 @@
   button:disabled{opacity:.55;cursor:default;}
   .poruka{margin-top:10px;font-size:14.5px;font-weight:700;}
 </style>
-<!-- Microsoft Clarity -->
+<!-- Microsoft Clarity (v346): učitava se tek nakon privole posjetitelja; odabir se pamti u pregledniku. Admin/kolega načini se ne snimaju. -->
 <script type="text/javascript">
-    (function(c,l,a,r,i,t,y){
-        c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
-        t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
-        y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
-    })(window, document, "clarity", "script", "yyk3sq1f5g");
+(function(){
+  var ID='z13om8arht', KLJUC='intime_clarity_privola';
+  window.intimeClarityOznaci = function(){};
+  if (/[?&](kalk_admin|kalk_kolega|admin)=/.test(location.search)) { return; }
+  var privola = ''; try { privola = localStorage.getItem(KLJUC) || ''; } catch (e) {}
+  var ceka = [], ukljuceno = false;
+  function ucitaj() {
+    if (ukljuceno) { return; } ukljuceno = true;
+    (function(c,l,a,r,i,t,y){ c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)}; t=l.createElement(r); t.async=1; t.src="https://www.clarity.ms/tag/"+i; y=l.getElementsByTagName(r)[0]; y.parentNode.insertBefore(t,y); })(window, document, "clarity", "script", ID);
+    try { window.clarity('consentv2', { ad_Storage: 'denied', analytics_Storage: 'granted' }); } catch (e) {}
+    ceka.forEach(function(f){ try { f(); } catch (e) {} }); ceka = [];
+  }
+  // firma + broj ponude (+ vrsta) postaju oznake u Clarityju: filtriraš po firmi i vidiš samo njezine posjete
+  window.intimeClarityOznaci = function(firma, broj, vrsta) {
+    var f = function() {
+      try {
+        if (firma) { window.clarity('set', 'firma', String(firma)); }
+        if (broj) { window.clarity('set', 'ponuda', String(broj)); }
+        if (vrsta) { window.clarity('set', 'vrsta', String(vrsta)); }
+        var id = String(broj || firma || vrsta || '').trim();
+        if (id) { window.clarity('identify', id, undefined, undefined, String(firma || id)); }
+      } catch (e) {}
+    };
+    if (ukljuceno) { f(); } else { ceka.push(f); }
+  };
+  function spremi(v) { try { localStorage.setItem(KLJUC, v); } catch (e) {} }
+  function baner() {
+    var b = document.createElement('div');
+    b.setAttribute('role', 'dialog'); b.setAttribute('aria-label', 'Privola za analitiku');
+    b.style.cssText = 'position:fixed;left:12px;right:12px;bottom:12px;z-index:2147483000;max-width:640px;margin:0 auto;background:#1f2937;color:#fff;border-radius:12px;padding:14px 16px;box-shadow:0 6px 24px rgba(0,0,0,.35);font:14px/1.45 system-ui,Segoe UI,Arial,sans-serif;';
+    b.innerHTML = '<div style="margin-bottom:10px;">Ova stranica koristi <b>Microsoft Clarity</b> za anonimnu analizu korištenja (kretanje i klikovi po stranici) kako bismo poboljšali našu uslugu. Smijemo li? Odabir se pamti na ovom uređaju.</div>' +
+      '<div style="display:flex;gap:8px;flex-wrap:wrap;"><button type="button" id="cl-da" style="background:#2fb86a;color:#fff;border:0;border-radius:8px;padding:9px 18px;font:inherit;font-weight:700;cursor:pointer;">Prihvaćam</button>' +
+      '<button type="button" id="cl-ne" style="background:transparent;color:#fff;border:1px solid #8a94a6;border-radius:8px;padding:9px 18px;font:inherit;cursor:pointer;">Ne prihvaćam</button></div>';
+    document.body.appendChild(b);
+    b.querySelector('#cl-da').onclick = function() { spremi('da'); b.remove(); ucitaj(); };
+    b.querySelector('#cl-ne').onclick = function() { spremi('ne'); b.remove(); ceka = []; };
+  }
+  if (privola === 'da') { ucitaj(); }
+  else if (privola !== 'ne') {
+    if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', baner); } else { baner(); }
+  }
+})();
 </script>
 </head>
 <body>
