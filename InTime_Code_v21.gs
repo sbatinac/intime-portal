@@ -8841,6 +8841,12 @@ function doPost(e) {
       result = adminOdgovorSlikaPregled(data.token, data.id);
     } else if (data.action === 'adminOdgovorPosalji') {
       result = adminOdgovorPosalji(data.token, data.posalji);
+    } else if (data.action === 'adminOdgovorNacrtiList') {
+      result = adminOdgovorNacrtiList(data.token);
+    } else if (data.action === 'adminOdgovorNacrtSpremi') {
+      result = adminOdgovorNacrtSpremi(data.token, data.nacrt);
+    } else if (data.action === 'adminOdgovorNacrtStatus') {
+      result = adminOdgovorNacrtStatus(data.token, data.id, data.stanje);
     } else if (data.action === 'adminDiskMape') {
       result = adminDiskMape(data.token, data.rowIndex);
     } else if (data.action === 'adminDiskPopis') {
@@ -26207,6 +26213,62 @@ function adminOdgovorPosalji(token, p) {
   } catch (e) { return { status: 'error', message: 'Slanje nije uspjelo: ' + e.message }; }
 }
 
+
+// ===== v347: PRIPREMLJENI ODGOVORI — „Spremi za kasnije” u Odgovorima klijentima =====
+// Zasebna tablica InTime_OdgovoriPripremljeni. Ništa se ne briše fizički: „Obriši” samo postavi status 'obrisan',
+// a poslani nacrt dobije status 'poslan' + datum. Cijelo stanje forme (klijent, primatelji, tekst, privitci…) je JSON u zadnjem stupcu.
+var ODG_NACRT_SHEET_NAME_ = 'InTime_OdgovoriPripremljeni';
+var ODG_NACRT_HEADER_ = ['ID', 'Spremljeno', 'OIB', 'Naziv tvrtke', 'Primatelji', 'Predmet', 'Status', 'Poslano', 'Podaci (JSON)'];
+function odgNacrtSheet_() { return getOrCreateNacrtSheet_(ODG_NACRT_SHEET_NAME_, ODG_NACRT_HEADER_, [1, 3]); }
+function adminOdgovorNacrtiList(token) {
+  if (!isValidAdminToken_(token)) { return { status: 'error', message: 'Sesija je istekla — prijavite se ponovno.' }; }
+  try {
+    var sh = odgNacrtSheet_(), last = sh.getLastRow(), out = [];
+    if (last >= 2) {
+      var v = sh.getRange(2, 1, last - 1, ODG_NACRT_HEADER_.length).getDisplayValues();
+      for (var i = 0; i < v.length; i++) {
+        if (!v[i][0] || v[i][6] === 'obrisan') { continue; }
+        var podaci = {}; try { podaci = JSON.parse(v[i][8] || '{}') || {}; } catch (eJ) { podaci = {}; }
+        out.push({ id: v[i][0], spremljeno: v[i][1], oib: v[i][2], naziv: v[i][3], primatelji: v[i][4], predmet: v[i][5], stanje: v[i][6] || 'pripremljen', poslano: v[i][7], podaci: podaci });
+      }
+    }
+    return { status: 'ok', nacrti: out };
+  } catch (e) { return { status: 'error', message: 'Pripremljeni odgovori nisu dostupni: ' + e.message }; }
+}
+function adminOdgovorNacrtSpremi(token, n) {
+  if (!isValidAdminToken_(token)) { return { status: 'error', message: 'Sesija je istekla — prijavite se ponovno.' }; }
+  n = n || {};
+  var podaci = n.podaci || {}, json = JSON.stringify(podaci);
+  if (json.length > 48000) { return { status: 'error', message: 'Odgovor je prevelik za spremanje (skrati tekst).' }; }
+  var lock = LockService.getScriptLock();
+  try {
+    lock.waitLock(15000);
+    var sh = odgNacrtSheet_(), id = String(n.id || '').trim(), red = 0;
+    if (id) {
+      var last = sh.getLastRow();
+      if (last >= 2) { var ids = sh.getRange(2, 1, last - 1, 1).getDisplayValues(); for (var i = 0; i < ids.length; i++) { if (ids[i][0] === id) { red = i + 2; break; } } }
+    }
+    if (!id || !red) { id = 'N' + Utilities.formatDate(new Date(), 'Europe/Zagreb', 'yyMMddHHmmss') + Math.floor(Math.random() * 90 + 10); red = sh.getLastRow() + 1; }
+    var vr = [id, nacrtDatum_(), odgOibCist_(podaci.oib), String(podaci.naziv || '').slice(0, 200), (Array.isArray(n.primatelji) ? n.primatelji : []).join(', ').slice(0, 500), String(podaci.predmet || '').slice(0, 250), 'pripremljen', '', json];
+    sh.getRange(red, 1, 1, vr.length).setValues([sheetSigRed_(vr)]);
+    return { status: 'ok', id: id };
+  } catch (e) { return { status: 'error', message: 'Spremanje nije uspjelo: ' + e.message }; }
+  finally { try { lock.releaseLock(); } catch (eL) {} }
+}
+function adminOdgovorNacrtStatus(token, id, stanje) {
+  if (!isValidAdminToken_(token)) { return { status: 'error', message: 'Sesija je istekla — prijavite se ponovno.' }; }
+  id = String(id || '').trim(); stanje = String(stanje || '');
+  if (!id || ['poslan', 'obrisan', 'pripremljen'].indexOf(stanje) === -1) { return { status: 'error', message: 'Neispravan zahtjev.' }; }
+  try {
+    var sh = odgNacrtSheet_(), last = sh.getLastRow();
+    if (last < 2) { return { status: 'error', message: 'Nacrt nije pronađen.' }; }
+    var ids = sh.getRange(2, 1, last - 1, 1).getDisplayValues();
+    for (var i = 0; i < ids.length; i++) {
+      if (ids[i][0] === id) { sh.getRange(i + 2, 7, 1, 2).setValues([[stanje, stanje === 'poslan' ? nacrtDatum_() : '']]); return { status: 'ok' }; }
+    }
+    return { status: 'error', message: 'Nacrt nije pronađen.' };
+  } catch (e) { return { status: 'error', message: 'Promjena nije uspjela: ' + e.message }; }
+}
 
 // ===== v294: OPCIJE KARTICE PONUDE (kvačice „premjesti u ARHIVU nakon slanja”, „Disk 1/2”) — pamte se na poslužitelju, vrijede na svakom računalu =====
 // Po jedno svojstvo po šifri ponude ('PO_' + šifra), vrijednost je mali JSON {arhiva:1,disk1:1,disk2:1}. Prazan objekt briše svojstvo.

@@ -1,2 +1,5 @@
 
 - v283 (16.10.2026.): Odgovori klijentima — kad je biblioteka prazna, pri prvom otvaranju kartice automatski se sam ubaci odgovor „API povezivanje — testni paket” + predložak „API / tehnička podrška (banner)” (jednom po pregledniku, localStorage intime_odg_auto_sjeme). Test: t_odgovori282b.py.
+
+
+- v347 (21.10.2026.): Odgovori klijentima — (1) „Pošalji klijentu” više ne koristi Chromeov skočni prozor potvrde (Chrome ga zna blokirati pa klik tiho ne radi ništa) nego potvrdu unutar stranice; ⚡ Brzo slanje i dalje bez potvrde. (2) Traka napretka ispod gumba (kao kod ponuda): brojač sekundi, zeleno „Mail je otišao”, crveno „Mail NIJE poslan” (ostaje vidljivo). (3) „💾 Spremi za kasnije” + nova podkartica „🗂 Pripremljeni odgovori” (Otvori i pošalji / makni s popisa; prikaz već poslanih). Poslani nacrt dobije status „poslan”. Ništa se ne briše — „makni” samo postavi status. Forma se više ne prazni pri prelasku na drugu podkarticu. Server: tablica InTime_OdgovoriPripremljeni, akcije adminOdgovorNacrtiList / NacrtSpremi / NacrtStatus. Testovi: t_odg347.py, t_nacrt347.py (lažni odgovori).

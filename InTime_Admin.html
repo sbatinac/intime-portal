@@ -11670,7 +11670,25 @@
     function dalje() { if (i >= redovi.length) { return Promise.resolve(dodano); } javi('Dodajem primjere… ' + (i + 1) + ' / ' + redovi.length); return redovi[i++]().then(dalje); }
     return dalje().then(function(d) { mailPredlosciCache = null; return d; });
   }
-  var odStanje_ = { odgovori: [], povijest: [], povijestSve: [], ucitano: false, podtab: 'slanje', klijent: null, odabraniId: '', predlozakRow: '', uredi: null, filterKat: '', filterQ: '', histFilter: '' };
+  // v347: potvrda UNUTAR stranice (Chrome zna blokirati window.confirm → klik na „Pošalji” tada tiho ne radi ništa)
+  function odPotvrdi_(poruka, daFn, daTekst) {
+    if (typeof BRZO_DO_ !== 'undefined' && BRZO_DO_ > Date.now()) { daFn(); return; }   // ⚡ Brzo slanje: bez potvrde
+    var m = document.createElement('div');
+    m.setAttribute('style', 'position:fixed;inset:0;z-index:100000;background:rgba(20,24,48,.45);display:flex;align-items:center;justify-content:center;padding:16px;');
+    m.innerHTML = '<div role="dialog" aria-modal="true" style="background:#fff;border-radius:14px;max-width:560px;width:100%;box-shadow:0 12px 40px rgba(0,0,0,.25);font-family:inherit;">' +
+      '<div style="padding:16px 20px 6px;font-size:13.5px;line-height:1.55;color:#1a1f33;white-space:pre-wrap;max-height:60vh;overflow:auto;"></div>' +
+      '<div style="display:flex;gap:8px;justify-content:flex-end;padding:12px 20px 16px;"><button type="button" class="odp-ne" style="padding:9px 16px;border-radius:8px;border:1px solid #3949ab;background:#fff;color:#3949ab;font:inherit;font-weight:800;cursor:pointer;">Odustani</button><button type="button" class="odp-da" style="padding:9px 18px;border-radius:8px;border:1px solid #1e8449;background:#1e8449;color:#fff;font:inherit;font-weight:800;cursor:pointer;"></button></div></div>';
+    m.querySelector('div[role=dialog] > div').textContent = poruka;
+    m.querySelector('.odp-da').textContent = daTekst || '📨 Da, pošalji';
+    function zatvori() { document.removeEventListener('keydown', tipka, true); m.remove(); }
+    function tipka(ev) { if (ev.key === 'Escape') { zatvori(); } }
+    m.querySelector('.odp-ne').addEventListener('click', zatvori);
+    m.querySelector('.odp-da').addEventListener('click', function() { zatvori(); daFn(); });
+    m.addEventListener('mousedown', function(ev) { if (ev.target === m) { zatvori(); } });
+    document.addEventListener('keydown', tipka, true);
+    document.body.appendChild(m); setTimeout(function() { m.querySelector('.odp-da').focus(); }, 30);
+  }
+  var odStanje_ = { odgovori: [], povijest: [], povijestSve: [], ucitano: false, podtab: 'slanje', klijent: null, odabraniId: '', predlozakRow: '', uredi: null, filterKat: '', filterQ: '', histFilter: '', nacrti: [], nacrtiUcitani: false, nacrtId: '', nacrtUcitaj: null, nacrtiPoslani: false };
   var odPovijestUcitana_ = false;
   function odNorm_(s) {
     var t = String(s == null ? '' : s).toLowerCase();
@@ -11814,20 +11832,22 @@
       '.od-wrap .lc-podtabs{border-bottom-color:#c5cae9;flex-wrap:wrap;}' +
       '.od-wrap .lc-podtab-btn{color:#4a5170;}.od-wrap .lc-podtab-btn:hover{color:#3949ab;}.od-wrap .lc-podtab-btn.active{color:#3949ab;border-bottom-color:#ff6200;}' +
       '</style>' +
-      '<div class="lc-podtabs"><button type="button" class="lc-podtab-btn" data-pt="slanje">✉ Slanje odgovora</button><button type="button" class="lc-podtab-btn" data-pt="biblioteka">📚 Biblioteka odgovora <span class="od-br-bib"></span></button><button type="button" class="lc-podtab-btn" data-pt="poslano">📋 Poslano <span class="od-br-pos"></span></button></div>' +
-      '<div class="od-pane" data-pane="slanje"></div><div class="od-pane" data-pane="biblioteka" hidden></div><div class="od-pane" data-pane="poslano" hidden></div>';
+      '<div class="lc-podtabs"><button type="button" class="lc-podtab-btn" data-pt="slanje">✉ Slanje odgovora</button><button type="button" class="lc-podtab-btn" data-pt="biblioteka">📚 Biblioteka odgovora <span class="od-br-bib"></span></button><button type="button" class="lc-podtab-btn" data-pt="pripremljeni">🗂 Pripremljeni odgovori <span class="od-br-pri"></span></button><button type="button" class="lc-podtab-btn" data-pt="poslano">📋 Poslano <span class="od-br-pos"></span></button></div>' +
+      '<div class="od-pane" data-pane="slanje"></div><div class="od-pane" data-pane="biblioteka" hidden></div><div class="od-pane" data-pane="pripremljeni" hidden></div><div class="od-pane" data-pane="poslano" hidden></div>';
 
-    var panes = { slanje: wrap.querySelector('[data-pane="slanje"]'), biblioteka: wrap.querySelector('[data-pane="biblioteka"]'), poslano: wrap.querySelector('[data-pane="poslano"]') };
+    var panes = { slanje: wrap.querySelector('[data-pane="slanje"]'), biblioteka: wrap.querySelector('[data-pane="biblioteka"]'), poslano: wrap.querySelector('[data-pane="poslano"]'), pripremljeni: wrap.querySelector('[data-pane="pripremljeni"]') };
     function brojke() {
       var a = wrap.querySelector('.od-br-bib'), b = wrap.querySelector('.od-br-pos');
       if (a) { a.textContent = '(' + odStanje_.odgovori.length + ')'; }
       if (b) { b.textContent = '(' + odStanje_.povijestSve.length + ')'; }
+      var c = wrap.querySelector('.od-br-pri'); if (c) { var nPri = odStanje_.nacrti.filter(function(n) { return n.stanje === 'pripremljen'; }).length; c.textContent = odStanje_.nacrtiUcitani ? '(' + nPri + ')' : ''; }
     }
     function postaviPodtab(pt) {
+      if (odStanje_.podtab === 'slanje' && pt !== 'slanje' && typeof odStanje_.slanjeSnimka === 'function' && !odStanje_.nacrtUcitaj) { try { odStanje_.nacrtUcitaj = odStanje_.slanjeSnimka(); } catch (eS) { /* nije kritično */ } }
       odStanje_.podtab = pt;
       Array.prototype.forEach.call(wrap.querySelectorAll('.lc-podtab-btn'), function(b) { b.classList.toggle('active', b.getAttribute('data-pt') === pt); });
       Object.keys(panes).forEach(function(k) { panes[k].hidden = (k !== pt); });
-      if (pt === 'slanje') { gradiSlanje(); } else if (pt === 'biblioteka') { gradiBiblioteku(); } else { gradiPoslano(); }
+      if (pt === 'slanje') { gradiSlanje(); } else if (pt === 'biblioteka') { gradiBiblioteku(); } else if (pt === 'pripremljeni') { gradiPripremljene(); } else { gradiPoslano(); }
       brojke();
     }
     Array.prototype.forEach.call(wrap.querySelectorAll('.lc-podtab-btn'), function(b) { b.addEventListener('click', function() { odStanje_.uredi = null; postaviPodtab(b.getAttribute('data-pt')); }); });
@@ -11855,6 +11875,7 @@
       var kats = []; odStanje_.odgovori.forEach(function(o) { if (o.kategorija && kats.indexOf(o.kategorija) === -1) { kats.push(o.kategorija); } }); kats.sort();
       var pl = predlosci();
       pane.innerHTML =
+        (odStanje_.nacrtId ? '<div class="od-upoz" id="od-nacrt-traka" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;border-left-color:#3949ab;background:#eef0fb;color:#283593;"><span>🗂 Uređuješ <b>pripremljeni odgovor</b> — „💾 Spremi za kasnije” sprema promjene u njega, „📨 Pošalji klijentu” ga šalje i označi kao poslan.</span><button type="button" class="od-gumb sek mali" id="od-nacrt-novi">✖ Zatvori i počni novi</button></div>' : '') +
         '<div class="od-kartica"><div class="od-glava"><span>1️⃣ Klijent</span><small>upiši OIB — naziv i mail se povuku iz svega što imamo</small></div><div class="od-tijelo">' +
           '<div class="od-mreza">' +
             '<label class="od-polje">OIB<input type="text" id="od-oib" inputmode="numeric" maxlength="11" placeholder="11 znamenki" autocomplete="off" value="' + esc((odStanje_.klijent && odStanje_.klijent.oib) || '') + '"><small id="od-oib-st" style="font-weight:600;color:#6b7090;min-height:14px;"></small></label>' +
@@ -11888,12 +11909,31 @@
           '<div id="od-upoz"></div>' +
           '<div style="font-size:12px;font-weight:700;color:#3a4160;margin:6px 0 2px;">Pregled maila</div><div class="od-pregled" id="od-pregled"></div>' +
           '<label style="display:flex;gap:8px;align-items:center;margin:10px 0;font-size:13px;cursor:pointer;"><input type="checkbox" id="od-kopija"> Kopija maila meni (BCC)</label>' +
-          '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;"><button type="button" class="od-gumb zeleni" id="od-posalji">📨 Pošalji klijentu</button></div>' +
+          '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;"><button type="button" class="od-gumb zeleni" id="od-posalji">📨 Pošalji klijentu</button><button type="button" class="od-gumb sek" id="od-spremi-nacrt" title="Sprema sve (klijent, primatelji, tekst, privitci) u „Pripremljeni odgovori” — ništa se ne šalje">💾 Spremi za kasnije</button></div>' +
+          '<div class="af-slanje-progress-wrap" id="od-progress"><div class="af-slanje-progress-track"><div class="af-slanje-progress-bar"></div></div><div class="af-slanje-progress-label" id="od-progress-label"></div></div>' +
           '<div class="od-status" id="od-status-slanje"></div>' +
         '</div></div>';
       var $ = function(id) { return pane.querySelector('#' + id); };
       var stanjeSlanja = { mailovi: [], odabraniMailovi: {}, privitci: [], iskljuceniPriv: {} };
       function status(t, tip) { var e = $('od-status-slanje'); e.textContent = t || ''; e.className = 'od-status' + (tip ? ' ' + tip : ''); }
+      // v347: traka napretka slanja (ista kao kod ponuda) + brojač sekundi; greška ostaje vidljiva dok se ne pošalje ponovno
+      var odProgTimer_ = null, odProgSakrij_ = null;
+      function odProgres(stanje, tekst) {
+        var w = $('od-progress'), l = $('od-progress-label'); if (!w) { return; }
+        if (odProgTimer_) { clearInterval(odProgTimer_); odProgTimer_ = null; }
+        if (odProgSakrij_) { clearTimeout(odProgSakrij_); odProgSakrij_ = null; }
+        w.classList.remove('gotovo', 'greska');
+        if (stanje === 'start') {
+          var t0 = Date.now(); w.classList.add('aktivan');
+          var crtaj = function() { var sek = Math.round((Date.now() - t0) / 1000); l.textContent = '📨 Šaljem mail klijentu… ' + sek + ' s' + (sek >= 30 ? ' — poslužitelj još radi (privitci/slike), ne zatvaraj stranicu' : ''); };
+          crtaj(); odProgTimer_ = setInterval(crtaj, 1000);
+        } else if (stanje === 'ok') {
+          w.classList.add('aktivan', 'gotovo'); l.textContent = tekst || '✅ Poslano!';
+          odProgSakrij_ = setTimeout(function() { w.classList.remove('aktivan', 'gotovo'); }, 4000);
+        } else {
+          w.classList.add('aktivan', 'greska'); l.textContent = tekst || '✖ Mail NIJE poslan.';
+        }
+      }
 
       function trenutniOdgovor() { return odStanje_.odgovori.filter(function(o) { return o.id === odStanje_.odabraniId; })[0] || null; }
       function trenutniPredlozak() { var r = parseInt($('od-pred').value, 10); return pl.filter(function(p) { return p.rowIndex === r; })[0] || null; }
@@ -12052,6 +12092,45 @@
 
       popuniOdgovore(); popuniPredloske(); iscrtajMailove(); iscrtajPrivitke();
       if (odStanje_.odabraniId) { izaberiOdgovor(odStanje_.odabraniId); } else { osvjeziPregled(); }
+      // v347: stanje forme — za „Spremi za kasnije” i da se ništa ne izgubi pri prelasku na drugu podkarticu
+      function prikupiStanje() {
+        var d = podaci();
+        return { oib: d.oib, naziv: d.naziv, kontakt: d.kontakt, grad: d.grad, sifra: d.sifra, mailovi: stanjeSlanja.mailovi.slice(), odabrani: Object.assign({}, stanjeSlanja.odabraniMailovi),
+          odgovorId: odStanje_.odabraniId || '', predlozakRow: $('od-pred').value, predmet: $('od-predmet').value, tekst: $('od-tekst').value,
+          privitci: stanjeSlanja.privitci.slice(), iskljuceni: Object.assign({}, stanjeSlanja.iskljuceniPriv), kopija: $('od-kopija').checked, pitanje: $('od-pitanje') ? $('od-pitanje').value : '' };
+      }
+      function primijeniStanje(d) {
+        if (!d) { return; }
+        $('od-oib').value = d.oib || ''; zadnjiOib = d.oib || '';
+        $('od-naziv').value = d.naziv || ''; $('od-kontakt').value = d.kontakt || ''; $('od-grad').value = d.grad || ''; $('od-sifra').value = d.sifra || '';
+        if (d.oib) { odStanje_.klijent = { oib: d.oib }; }
+        odStanje_.odabraniId = d.odgovorId || ''; popuniOdgovore(); $('od-odg').value = odStanje_.odabraniId;
+        var sel = $('od-pred'); if (d.predlozakRow && sel.querySelector('option[value="' + d.predlozakRow + '"]')) { sel.value = d.predlozakRow; odStanje_.predlozakRow = d.predlozakRow; }
+        $('od-predmet').value = d.predmet || ''; $('od-tekst').value = d.tekst || '';
+        stanjeSlanja.mailovi = Array.isArray(d.mailovi) ? d.mailovi : []; stanjeSlanja.odabraniMailovi = d.odabrani || {};
+        stanjeSlanja.privitci = Array.isArray(d.privitci) ? d.privitci : []; stanjeSlanja.iskljuceniPriv = d.iskljuceni || {};
+        $('od-kopija').checked = !!d.kopija; if ($('od-pitanje') && d.pitanje) { $('od-pitanje').value = d.pitanje; }
+        iscrtajMailove(); iscrtajPrivitke(); osvjeziPregled();
+      }
+      odStanje_.slanjeSnimka = prikupiStanje;
+      if (odStanje_.nacrtUcitaj) { var zaUc = odStanje_.nacrtUcitaj; odStanje_.nacrtUcitaj = null; primijeniStanje(zaUc); }
+      if ($('od-nacrt-novi')) { $('od-nacrt-novi').addEventListener('click', function() { odStanje_.nacrtId = ''; odStanje_.odabraniId = ''; odStanje_.klijent = null; odStanje_.slanjeSnimka = null; gradiSlanje(); }); }
+      $('od-spremi-nacrt').addEventListener('click', function() {
+        var b = $('od-spremi-nacrt'), st = prikupiStanje();
+        if (!st.tekst.trim() && !st.oib && !st.naziv) { status('Nema ništa za spremiti — upiši klijenta ili izaberi odgovor.', 'greska'); return; }
+        var prim = stanjeSlanja.mailovi.filter(function(x) { return stanjeSlanja.odabraniMailovi[x.adresa]; }).map(function(x) { return x.adresa; });
+        st.predmet = st.predmet; b.disabled = true; status('💾 Spremam…');
+        gasCall({ action: 'adminOdgovorNacrtSpremi', token: adminToken, nacrt: { id: odStanje_.nacrtId || '', primatelji: prim, podaci: st } }).then(function(res) {
+          b.disabled = false;
+          if (handleAuthError(res)) { return; }
+          if (res && res.status === 'ok') {
+            var bioNov = !odStanje_.nacrtId; odStanje_.nacrtId = res.id;
+            status('💾 Spremljeno u „🗂 Pripremljeni odgovori” — ništa nije poslano. Možeš ga otvoriti i poslati kasnije.', 'ok');
+            if (bioNov && !$('od-nacrt-traka')) { odStanje_.nacrtUcitaj = st; gradiSlanje(); status('💾 Spremljeno u „🗂 Pripremljeni odgovori” — ništa nije poslano. Možeš ga otvoriti i poslati kasnije.', 'ok'); }
+            odNacrtiUcitaj_(true).then(brojke);
+          } else { status((res && res.message) || 'Spremanje nije uspjelo.', 'greska'); }
+        }).catch(function() { b.disabled = false; status('Spremanje nije uspjelo — nema veze s poslužiteljem.', 'greska'); });
+      });
       $('od-oib').addEventListener('input', function() { zadnjiOib = ''; traziKlijenta(); });
       ['od-naziv', 'od-kontakt', 'od-grad', 'od-sifra', 'od-predmet', 'od-tekst'].forEach(function(id) { $(id).addEventListener('input', osvjeziPregled); });
       $('od-kat').addEventListener('change', function() { popuniOdgovore(); });
@@ -12089,18 +12168,21 @@
         var poruka = 'Poslati odgovor klijentu?\n\nKlijent: ' + (d.naziv || '—') + (d.oib ? ' (OIB ' + d.oib + ')' : '') + '\nNa: ' + primatelji.join(', ') + '\nPredmet: ' + m.predmet + '\nPrivitci: ' + (priv.length ? priv.map(function(p) { return p.name; }).join(', ') : 'nema') + (slikeSl.length ? '\nSlike u tekstu maila: ' + slikeSl.map(function(p) { return p.name; }).join(', ') : '');
         if (/\[DOPUNI/i.test(m.tijelo)) { poruka += '\n\n⚠ U tekstu još stoji [DOPUNI: …] — nije dopunjeno!'; }
         if (nedostaje.length) { poruka += '\n\n⚠ U tekstu još stoji [' + nedostaje.join('], [') + '] — jesi li siguran?'; }
-        if (!window.confirm(poruka)) { return; }
-        btn.disabled = true; status('Šaljem…');
+        odPotvrdi_(poruka, function() {
+        btn.disabled = true; status(''); odProgres('start');
         var mSlanje = izgradiMail(true);
         var o = trenutniOdgovor();
         gasCall({ action: 'adminOdgovorPosalji', token: adminToken, posalji: { oib: d.oib, naziv: d.naziv, primatelji: primatelji, predmet: m.predmet, tijelo: mSlanje.tijelo, jeHtml: mSlanje.html, privitciIds: priv.map(function(p) { return p.id; }), slike: slikeSl.map(function(x) { return { n: x.n, id: x.id }; }), kopijaSebi: $('od-kopija').checked, odgovorId: o ? o.id : '', odgovorNaziv: o ? o.naziv : '(ručni tekst)' } }).then(function(res) {
           btn.disabled = false;
-          if (handleAuthError(res)) { return; }
-          if (res.status === 'ok') {
+          if (handleAuthError(res)) { odProgres('greska', '✖ Mail NIJE poslan — sesija je istekla, prijavi se ponovno.'); return; }
+          if (res && res.status === 'ok') {
+            odProgres('ok', '✅ Mail je otišao — ' + primatelji.join(', '));
+            if (odStanje_.nacrtId) { var nId = odStanje_.nacrtId; odStanje_.nacrtId = ''; var tr = $('od-nacrt-traka'); if (tr) { tr.remove(); } gasCall({ action: 'adminOdgovorNacrtStatus', token: adminToken, id: nId, stanje: 'poslan' }).then(function() { odNacrtiUcitaj_(true).then(brojke); }).catch(function() {}); }
             status('✅ Poslano na: ' + primatelji.join(', ') + ((res.prilozi && res.prilozi.length) ? ' · privitci: ' + res.prilozi.join(', ') : '') + (res.zapisGreska ? ' · ⚠ nije zapisano u evidenciju: ' + res.zapisGreska : ''), 'ok');
             gasCall({ action: 'adminOdgovoriPovijest', token: adminToken }).then(function(r2) { if (r2 && r2.status === 'ok') { odStanje_.povijestSve = r2.povijest || []; odOsvjeziKartice_(); iscrtajPovijestKlijenta(odPovijestOib_(d.oib)); brojke(); } }).catch(function() {});
-          } else { status(res.message || 'Slanje nije uspjelo.', 'greska'); }
-        }).catch(function() { btn.disabled = false; status('Greška u komunikaciji s poslužiteljem — provjeri je li mail otišao u „Poslano” prije ponovnog slanja.', 'greska'); });
+          } else { odProgres('greska', '✖ Mail NIJE poslan.'); status((res && res.message) || 'Slanje nije uspjelo.', 'greska'); }
+        }).catch(function() { btn.disabled = false; odProgres('greska', '⚠ Nema odgovora poslužitelja — ne zna se je li mail otišao.'); status('Greška u komunikaciji s poslužiteljem — provjeri je li mail otišao u „Poslano” prije ponovnog slanja.', 'greska'); });
+        });
       });
     }
 
@@ -12201,6 +12283,47 @@
     }
 
     // ------------------------------------------------------------------ POSLANO
+    // v347: 🗂 PRIPREMLJENI ODGOVORI — spremljeni, još neposlani odgovori
+    function odNacrtiUcitaj_(forsiraj) {
+      if (odStanje_.nacrtiUcitani && !forsiraj) { return Promise.resolve(odStanje_.nacrti); }
+      return gasCall({ action: 'adminOdgovorNacrtiList', token: adminToken }).then(function(r) {
+        if (handleAuthError(r)) { return []; }
+        if (r && r.status === 'ok') { odStanje_.nacrti = r.nacrti || []; odStanje_.nacrtiUcitani = true; } else { throw new Error((r && r.message) || 'Učitavanje nije uspjelo.'); }
+        return odStanje_.nacrti;
+      });
+    }
+    function gradiPripremljene() {
+      var pane = panes.pripremljeni;
+      pane.innerHTML = '<div class="od-kartica"><div class="od-glava"><span>🗂 Pripremljeni odgovori</span><small>spremljeno s „💾 Spremi za kasnije” — otvori, provjeri i pošalji</small></div><div class="od-tijelo">' +
+        '<label style="display:flex;gap:8px;align-items:center;font-size:13px;margin-bottom:10px;cursor:pointer;"><input type="checkbox" id="odn-poslani"' + (odStanje_.nacrtiPoslani ? ' checked' : '') + '> prikaži i već poslane</label><div id="odn-lista"><p class="od-hint">Učitavam…</p></div></div></div>';
+      var lista = pane.querySelector('#odn-lista');
+      pane.querySelector('#odn-poslani').addEventListener('change', function(ev) { odStanje_.nacrtiPoslani = ev.target.checked; iscrtaj(); });
+      function iscrtaj() {
+        var r = odStanje_.nacrti.filter(function(n) { return n.stanje === 'pripremljen' || (odStanje_.nacrtiPoslani && n.stanje === 'poslan'); }).slice().reverse();
+        if (!r.length) { lista.innerHTML = '<div class="od-hint">Nema pripremljenih odgovora. U „✉ Slanje odgovora” klikni „💾 Spremi za kasnije” umjesto slanja.</div>'; return; }
+        lista.innerHTML = r.map(function(n) {
+          var poslan = n.stanje === 'poslan', p = n.podaci || {}, odg = odStanje_.odgovori.filter(function(o) { return o.id === p.odgovorId; })[0];
+          return '<div class="od-red"' + (poslan ? ' style="opacity:.7;"' : '') + '><div class="od-red-naslov"><span>' + esc(n.naziv || '(bez naziva)') + '</span>' + (n.oib ? '<span class="od-cip">OIB ' + esc(n.oib) + '</span>' : '') +
+            (poslan ? '<span class="od-cip" style="background:#e6f6ec;color:#1e6b3c;">✓ poslano ' + esc(n.poslano) + '</span>' : '<span class="od-cip" style="background:#fff3e0;color:#b45309;">čeka slanje</span>') +
+            '<span style="margin-left:auto;display:flex;gap:6px;flex-wrap:wrap;">' + (poslan ? '' : '<button type="button" class="od-gumb zeleni mali" data-a="otvori" data-id="' + esc(n.id) + '">✉ Otvori i pošalji</button><button type="button" class="od-gumb opasan mali" data-a="ukloni" data-id="' + esc(n.id) + '" title="Makni s popisa (zapis ostaje u tablici)">🗑</button>') + '</span></div>' +
+            '<div class="od-hint" style="margin:4px 0 0;"><b>Predmet:</b> ' + esc(n.predmet || '—') + (odg ? ' · <b>Odgovor:</b> ' + esc(odg.naziv) : '') + '</div>' +
+            '<div class="od-hint" style="margin:2px 0 0;"><b>Na:</b> ' + esc(n.primatelji || '— (nije označen primatelj)') + ' · spremljeno ' + esc(n.spremljeno) + ((p.privitci && p.privitci.length) ? ' · 📎 ' + p.privitci.length : '') + '</div></div>';
+        }).join('');
+        Array.prototype.forEach.call(lista.querySelectorAll('button[data-a]'), function(b) {
+          b.addEventListener('click', function() {
+            var id = b.getAttribute('data-id'), n = odStanje_.nacrti.filter(function(z) { return z.id === id; })[0]; if (!n) { return; }
+            if (b.getAttribute('data-a') === 'otvori') { odStanje_.nacrtId = n.id; odStanje_.nacrtUcitaj = n.podaci || {}; odStanje_.slanjeSnimka = null; postaviPodtab('slanje'); window.scrollTo(0, 0); return; }
+            odPotvrdi_('Maknuti pripremljeni odgovor za „' + (n.naziv || 'bez naziva') + '” s popisa?\n\nNe šalje se ništa; zapis ostaje u tablici.', function() {
+              b.disabled = true;
+              gasCall({ action: 'adminOdgovorNacrtStatus', token: adminToken, id: id, stanje: 'obrisan' }).then(function(res) {
+                if (res && res.status === 'ok') { if (odStanje_.nacrtId === id) { odStanje_.nacrtId = ''; } odStanje_.nacrti = odStanje_.nacrti.filter(function(z) { return z.id !== id; }); iscrtaj(); brojke(); } else { b.disabled = false; window.alert((res && res.message) || 'Nije uspjelo.'); }
+              }).catch(function() { b.disabled = false; });
+            }, 'Makni s popisa');
+          });
+        });
+      }
+      Promise.all([odNacrtiUcitaj_(true), odStanje_.ucitano ? null : ucitaj(false)]).then(function() { iscrtaj(); brojke(); }).catch(function(e) { lista.innerHTML = '<div class="od-status greska">' + esc(e.message || 'Učitavanje nije uspjelo.') + '</div>'; });
+    }
     function gradiPoslano() {
       var pane = panes.poslano;
       if (!odStanje_.ucitano) { pane.innerHTML = '<p class="od-hint">Učitavam…</p>'; ucitaj(false).then(function() { if (odStanje_.podtab === 'poslano') { gradiPoslano(); } brojke(); }); return; }
