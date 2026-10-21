@@ -22112,7 +22112,7 @@
             // poništena (ili prije prvog slanja) — vidi
             // azurirajOsiguracSlanja_()/renderRokBlok_() niže za uvjet i
             // .af-slanje-okvir.zamrznuto CSS za izgled.
-            '<div class="af-slanje-zamrznuto-traka" hidden>🔒 Zamrznuto dok se čeka klijentov odgovor — ponovno se otključava tek ako ponuda bude odbijena ili je poništimo.</div>' +
+            '<div class="af-slanje-zamrznuto-traka" hidden>🔒 Zamrznuto dok se čeka klijentov odgovor — ponovno se otključava tek ako ponuda bude odbijena ili je poništimo. Za ponovno slanje iste ponude koristi tipku „↻ Ponovno pošalji istu ponudu” iznad.</div>' +
             '<div class="af-slanje-desc">Šalje se TOČNO tekst iz pregleda predloška iznad (uključujući trenutno odabrani predložak) — poveznice, a kao fizički prilog SAMO dokumenti uz koje je uključen prekidač „📧 Priloži mailu“ (ako ga ne uključiš nigdje, mail ide bez priloga). Direktorij iza poveznice {{LINK_DOKUMENTI}} sadrži: Ponudu za suradnju + sve dokumente dodane u "Ostali dokumenti" (blok "Dokumenti za ponudu" gore), pod nazivima nakon preimenovanja. Analitički cjenik i Cjenik Hrvatska ostaju interni, klijent ih NE vidi.</div>' +
             '<div class="af-slanje-test-red">' +
               '<input type="email" class="af-slanje-test-input" placeholder="test adresa za probno slanje" value="send.it.again.031@gmail.com">' +
@@ -25748,10 +25748,12 @@
       if (!entry.otvorena && slanjePosaljiBtn0_()) {
         slanjePonoviBtn = document.createElement('button');
         slanjePonoviBtn.type = 'button'; slanjePonoviBtn.className = 'af-slanje-btn af-slanje-ponovi-btn'; slanjePonoviBtn.hidden = true;
-        slanjePonoviBtn.style.cssText = 'display:block;width:100%;margin-top:8px;background:#fff;border:2px solid #016579;color:#016579;';
-        slanjePonoviBtn.textContent = '↻ Ponovi ponudu (isti ili drugi mail)';
-        var omotP_ = wrap.querySelector('.af-slanje-posalji-omot');
-        if (omotP_) { omotP_.appendChild(slanjePonoviBtn); }
+        slanjePonoviBtn.style.cssText = 'display:block;width:100%;margin:10px 0 4px;background:#fff;border:2px solid #016579;color:#016579;font-weight:800;';
+        slanjePonoviBtn.textContent = '↻ Ponovno pošalji istu ponudu (isti link i rok — isti ili drugi mail)';
+        // v357: tipka mora biti IZVAN zamrznutog okvira (dok ponuda čeka odgovor okvir ima pointer-events:none, pa se na nju nije moglo kliknuti)
+        var okvirP_ = wrap.querySelector('.af-slanje-okvir'), omotP_ = wrap.querySelector('.af-slanje-posalji-omot');
+        if (okvirP_ && okvirP_.parentNode) { okvirP_.parentNode.insertBefore(slanjePonoviBtn, okvirP_); }
+        else if (omotP_) { omotP_.appendChild(slanjePonoviBtn); }
       }
       // v294: kvačice „premjesti u ARHIVU nakon slanja” i „Disk 1/2” pamte se NA POSLUŽITELJU uz šifru ponude (vrijede na svakom računalu); localStorage samo kao pričuva
       (function() {
