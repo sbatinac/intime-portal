@@ -25745,7 +25745,7 @@
       }
       // v301: „↻ Ponovi ponudu (drugi mail)” i za OBIČNE ponude — šalje ISTU ponudu (isti tekst, link i rok) na isti ili drugi mail; datum slanja i rok se ne mijenjaju
       var slanjePonoviBtn = null;
-      if (!entry.otvorena && slanjePosaljiBtn0_()) {
+      if (slanjePosaljiBtn0_()) {   // v358: i za otvorene ponude
         slanjePonoviBtn = document.createElement('button');
         slanjePonoviBtn.type = 'button'; slanjePonoviBtn.className = 'af-slanje-btn af-slanje-ponovi-btn'; slanjePonoviBtn.hidden = true;
         slanjePonoviBtn.style.cssText = 'display:block;width:100%;margin:10px 0 4px;background:#fff;border:2px solid #016579;color:#016579;font-weight:800;';
