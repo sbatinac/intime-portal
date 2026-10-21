@@ -447,6 +447,7 @@
     gasCall({ action: 'revizijaPotvrdaInfo', token: token }).then(function(res) {
       if (res.status !== 'ok') { document.getElementById('error-message').textContent = res.message || 'Ova poveznica nije ispravna ili je istekla.'; showScreen('error-screen'); return; }
       nazivTvrtke = res.naziv || '';
+      try { intimeClarityOznaci(nazivTvrtke, res.sifra || '', 'revizija uvjeta'); } catch (eCl) { /* analitika nije kritična */ }
       postaviBanner_(res.banner);
       if (res.vecPotvrdjeno) {
         document.getElementById('already-naziv').textContent = nazivTvrtke;

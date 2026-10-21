@@ -450,6 +450,7 @@
       .then(function(res) {
         clearTimeout(t);
         if (!res || res.status !== 'ok') { gumb.disabled = false; gumb.textContent = 'Pošalji prijavu'; prikaziGresku_((res && res.message) || 'Slanje nije uspjelo. Pokušajte ponovno ili nas nazovite na 01 6254 444.'); return; }
+        try { intimeClarityOznaci(p.naziv, res.broj || '', 'prijava problema'); } catch (eCl) { /* analitika nije kritična */ }
         document.getElementById('prijava-broj').textContent = res.broj || '';
         if (res.awb) { var aw = document.getElementById('prijava-awb'); aw.textContent = '📦 Broj pošiljke: ' + res.awb; aw.hidden = false; }
         if (res.statusLink && /^https:\/\//.test(res.statusLink)) { document.getElementById('prijava-status-link').href = res.statusLink; }

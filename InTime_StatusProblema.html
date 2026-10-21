@@ -149,7 +149,7 @@
       var gumb = this; gumb.disabled = true; por.className = 'poruka'; por.textContent = 'Tražim…';
       poziv({ action: 'problemStatusKlijent', upit: u, email: m }).then(function(res){
         gumb.disabled = false;
-        if (res && res.status === 'ok') { app((res.prijave || []).map(karticaPrijave).join('') + '<p style="text-align:center;margin-top:18px;"><a href="InTime_StatusProblema.html" style="color:#135450;font-weight:700;">← Nova pretraga</a></p>'); }
+        if (res && res.status === 'ok') { try { var p0 = (res.prijave || [])[0] || {}; intimeClarityOznaci(p0.naziv, p0.broj, 'status problema'); } catch (eCl) {} app((res.prijave || []).map(karticaPrijave).join('') + '<p style="text-align:center;margin-top:18px;"><a href="InTime_StatusProblema.html" style="color:#135450;font-weight:700;">← Nova pretraga</a></p>'); }
         else { por.className = 'poruka greska'; por.textContent = (res && res.message) || 'Prijava nije pronađena.'; }
       }).catch(function(){ gumb.disabled = false; por.className = 'poruka greska'; por.textContent = 'Nema veze s poslužiteljem — pokušajte ponovno.'; });
     });
@@ -157,7 +157,7 @@
   function ucitaj(){
     if (!BROJ || !TOKEN) { pokaziFormu(''); return; }
     poziv({ action: 'problemStatusKlijent', broj: BROJ, token: TOKEN })
-      .then(function(res){ if (res && res.status === 'ok') { app(karticaPrijave(res.prijava) + '<p style="text-align:center;margin-top:18px;"><a href="InTime_StatusProblema.html" style="color:#135450;font-weight:700;">🔎 Pronađi drugu prijavu</a></p>'); } else { pokaziFormu('<div class="kartica greska">' + esc((res && res.message) || 'Prijava nije pronađena.') + '</div>'); } })
+      .then(function(res){ if (res && res.status === 'ok') { try { intimeClarityOznaci((res.prijava || {}).naziv, (res.prijava || {}).broj, 'status problema'); } catch (eCl) {} app(karticaPrijave(res.prijava) + '<p style="text-align:center;margin-top:18px;"><a href="InTime_StatusProblema.html" style="color:#135450;font-weight:700;">🔎 Pronađi drugu prijavu</a></p>'); } else { pokaziFormu('<div class="kartica greska">' + esc((res && res.message) || 'Prijava nije pronađena.') + '</div>'); } })
       .catch(function(){ app('<div class="kartica greska">Nema veze s poslužiteljem — pokušajte ponovno za nekoliko trenutaka.</div>'); });
   }
   ucitaj();
