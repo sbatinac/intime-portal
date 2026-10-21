@@ -10932,20 +10932,21 @@
     izvoriSpremiNa_(lista, function(r) { st.textContent = r.status === 'ok' ? '✓ Spremljeno (' + r.izvori.length + ' izvora).' : (r.message || 'Greška.'); st.style.color = r.status === 'ok' ? '#1e8449' : '#a93226'; });
   }
   // v297: unos novog izvora i ispravak naziva idu kroz prozorčić UNUTAR stranice (window.prompt preglednik blokira nakon prvog puta pa „+” više nije radio)
-  function izvorProzor_(naslov, vrijednost, tekstGumba, onSpremi) {
+  function izvorProzor_(naslov, vrijednost, tekstGumba, onSpremi, maxDuljina) {
+    var maxD_ = maxDuljina || 80;
     var stari = document.getElementById('izvor-modal'); if (stari) { stari.remove(); }
     var m = document.createElement('div'); m.id = 'izvor-modal';
     m.style.cssText = 'position:fixed;inset:0;z-index:100000;background:rgba(20,30,28,.55);display:flex;align-items:center;justify-content:center;padding:16px;';
-    m.innerHTML = '<div style="background:#fff;border-radius:12px;padding:18px 20px;width:min(440px,100%);box-shadow:0 12px 40px rgba(0,0,0,.35);font-family:inherit;">' +
+    m.innerHTML = '<div style="background:#fff;border-radius:12px;padding:18px 20px;width:min(560px,100%);box-shadow:0 12px 40px rgba(0,0,0,.35);font-family:inherit;">' +
       '<div style="font-weight:800;font-size:15px;margin-bottom:10px;">' + esc(naslov) + '</div>' +
-      '<input type="text" maxlength="80" style="width:100%;box-sizing:border-box;padding:9px 10px;font:inherit;border:1px solid #bcd0ea;border-radius:8px;" value="' + esc(vrijednost || '') + '">' +
+      '<input type="text" maxlength="' + maxD_ + '" style="width:100%;box-sizing:border-box;padding:9px 10px;font:inherit;border:1px solid #bcd0ea;border-radius:8px;" value="' + esc(vrijednost || '') + '">' +
       '<div class="izvor-modal-st" style="min-height:18px;margin:6px 0 2px;font-size:13px;font-weight:700;color:#a93226;"></div>' +
       '<div style="display:flex;gap:8px;justify-content:flex-end;"><button type="button" class="btn btn-outline btn-small izvor-modal-odustani">Odustani</button><button type="button" class="btn btn-small izvor-modal-ok">' + esc(tekstGumba) + '</button></div></div>';
     document.body.appendChild(m);
     var inp = m.querySelector('input'), st = m.querySelector('.izvor-modal-st'), ok = m.querySelector('.izvor-modal-ok');
     function zatvori() { m.remove(); }
     function potvrdi() {
-      var v = inp.value.replace(/[\r\n]+/g, ' ').trim().slice(0, 80);
+      var v = inp.value.replace(/[\r\n]+/g, ' ').trim().slice(0, maxD_);
       if (!v) { st.textContent = 'Upiši naziv.'; return; }
       ok.disabled = true; st.style.color = '#4a5a57'; st.textContent = /Pošalji/.test(tekstGumba || '') ? 'Šaljem…' : 'Spremam…';
       onSpremi(v, function(greska) { if (greska) { ok.disabled = false; st.style.color = '#a93226'; st.textContent = greska; } else { zatvori(); } });
@@ -25983,17 +25984,22 @@
           slanjePonoviBtn.addEventListener('click', function(ev) {
             ev.stopPropagation();
             var oznaceni_ = dohvatiOznaceneMailoveZaSlanje_();
-            izvorProzor_('Ponovi ponudu — na koji mail da se pošalje ista ponuda?', oznaceni_[0] || fieldVal(entry, 'Email kontakt osobe') || '', '↻ Pošalji ponovno', function(mail, gotovo) {
-              if (!/^[^\s@,;]+@[^\s@,;]+\.[^\s@,;]{2,}$/.test(mail)) { gotovo('Mail nije ispravna adresa.'); return; }
+            // v361: predloži adrese na koje je ponuda IZVORNO poslana (spremljeni odabir pri slanju; kod otvorene ponude njezin primatelj)
+            var izvorni_ = String(fieldVal(entry, 'Mail adrese za slanje ponude (admin)') || '').trim() || String(fieldVal(entry, 'Otvorena ponuda - mail primatelja (admin)') || '').trim() || oznaceni_.join(', ') || fieldVal(entry, 'Email kontakt osobe') || '';
+            izvorProzor_('Ponovi ponudu — na koje adrese? (predložene su one na koje je ponuda izvorno poslana; više adresa odvoji zarezom)', izvorni_, '↻ Pošalji ponovno', function(mailUnos, gotovo) {
+              var lista_ = String(mailUnos || '').split(/[,;\s]+/).map(function(x) { return x.trim(); }).filter(function(x) { return x; });
+              var losi_ = lista_.filter(function(x) { return !/^[^\s@,;]+@[^\s@,;]+\.[^\s@,;]{2,}$/.test(x); });
+              if (!lista_.length || losi_.length) { gotovo(losi_.length ? ('Nije ispravna adresa: ' + losi_.join(', ')) : 'Upiši barem jednu adresu.'); return; }
+              var mail = lista_.join(', ');
               var t = dohvatiTekstZaSlanje_();
               if (!t.tijelo.trim()) { gotovo('Nema teksta za slanje — odaberi predložak.'); return; }
               slanjePostaviStatus_('Ponovno šaljem ponudu na ' + mail + '…', null);
-              gasCall({ action: 'adminPosaljiPonudaMail', token: adminToken, rowIndex: entry.rowIndex, primatelji: [mail], predmet: t.predmet, tijelo: t.tijelo, kopijaSebi: !!(slanjeKopijaCb && slanjeKopijaCb.checked), jeHtml: t.html, nazivPredloska: t.naziv, arhiviraj: false }).then(function(res) {
+              gasCall({ action: 'adminPosaljiPonudaMail', token: adminToken, rowIndex: entry.rowIndex, primatelji: lista_, predmet: t.predmet, tijelo: t.tijelo, kopijaSebi: !!(slanjeKopijaCb && slanjeKopijaCb.checked), jeHtml: t.html, nazivPredloska: t.naziv, arhiviraj: false }).then(function(res) {
                 if (handleAuthError(res)) { gotovo('Sesija je istekla.'); return; }
                 if (res && res.status === 'ok') { gotovo(); slanjePostaviStatus_('✓ Ista ponuda ponovno je poslana na ' + mail + '.', 'ok'); }
                 else { gotovo((res && res.message) || 'Slanje nije uspjelo.'); slanjePostaviStatus_((res && res.message) || 'Ponovno slanje nije uspjelo.', 'error'); }
               }).catch(function() { gotovo('Nema veze s poslužiteljem.'); });
-            });
+            }, 600);
           });
         }
 
