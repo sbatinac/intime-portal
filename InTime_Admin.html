@@ -644,6 +644,17 @@
   .entry-card-head{transition:background .12s,box-shadow .12s;}
   .entry-card-head:hover{background:#fdecec;box-shadow:inset 5px 0 0 #e4161b;}
   .entry-card-head:hover .entry-card-title{color:#a80f14;}
+  /* v350: rok ponude ističe — žuto ≤48 h, crveno ≤24 h (drugačije od crvenkastog hovera: puni okvir + traka slijeva + oznaka) */
+  .entry-card.rok-48{border:2px solid #f2b705;box-shadow:0 0 0 3px rgba(242,183,5,.18);}
+  .entry-card.rok-48 > .entry-card-head{background:linear-gradient(90deg,#fff1b8 0%,#fffbea 45%,#ffffff 100%);box-shadow:inset 8px 0 0 #f2b705;}
+  .entry-card.rok-48 > .entry-card-head:hover{background:linear-gradient(90deg,#ffe78a 0%,#fff4c7 45%,#fffdf3 100%);}
+  .entry-card.rok-24{border:2px solid #d32f2f;box-shadow:0 0 0 3px rgba(211,47,47,.18);}
+  .entry-card.rok-24 > .entry-card-head{background:linear-gradient(90deg,#ffc9c9 0%,#ffeaea 45%,#ffffff 100%);box-shadow:inset 8px 0 0 #d32f2f;}
+  .entry-card.rok-24 > .entry-card-head:hover{background:linear-gradient(90deg,#ffb0b0 0%,#ffdcdc 45%,#fff6f6 100%);}
+  .rok-cip{display:inline-block;margin-left:8px;padding:2px 10px;border-radius:999px;font-size:12px;font-weight:900;vertical-align:middle;white-space:nowrap;}
+  .rok-cip.r48{background:#f2b705;color:#3d2e00;}
+  .rok-cip.r24{background:#d32f2f;color:#fff;animation:rokPuls 1.6s ease-in-out infinite;}
+  @keyframes rokPuls{0%,100%{box-shadow:0 0 0 0 rgba(211,47,47,.55);}50%{box-shadow:0 0 0 6px rgba(211,47,47,0);}}
   .entry-card-title{font-size:15px;font-weight:700;color:var(--graphite);}
   .entry-card-sub{font-size:12px;color:var(--grey);margin-top:3px;}
   .entry-card-sub span{margin-right:12px;}
@@ -20291,6 +20302,19 @@
       izgradiTijeloKartice_();
     });
     card.appendChild(head);
+    // v350: ponuda koja čeka odgovor i ističe u 48 h → žuto, u 24 h → crveno (vrijedi i za Otvorene ponude)
+    try {
+      if (ponudaStatusSazetak_(entry) === 'na_cekanju' && !(typeof jeArhiva === 'function' && jeArhiva(entry))) {
+        var rokIst_ = parsirajHrvatskiDatumSazetak_(fieldVal(entry, 'Datum isteka ponude (admin)'));
+        var rokOst_ = rokIst_ ? rokIst_.getTime() - Date.now() : -1;
+        if (rokOst_ > 0 && rokOst_ <= 48 * 3600000) {
+          var r24_ = rokOst_ <= 24 * 3600000, rokH_ = Math.floor(rokOst_ / 3600000), rokM_ = Math.floor(rokOst_ % 3600000 / 60000);
+          card.classList.add(r24_ ? 'rok-24' : 'rok-48');
+          var tt_ = head.querySelector('.entry-card-title');
+          if (tt_) { tt_.insertAdjacentHTML('beforeend', '<span class="rok-cip ' + (r24_ ? 'r24' : 'r48') + '" title="Rok važenja ponude: ' + esc(fieldVal(entry, 'Datum isteka ponude (admin)')) + '">' + (r24_ ? '🔥' : '⏰') + ' ističe za ' + rokH_ + ' h ' + rokM_ + ' min</span>'); }
+        }
+      }
+    } catch (eRok) { /* oznaka roka nije kritična */ }
 
     var body = document.createElement('div');
     body.className = 'entry-card-body';
