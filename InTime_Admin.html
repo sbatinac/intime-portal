@@ -663,6 +663,8 @@
   .rok-cip.prh{background:#2e9e5b;color:#fff;}
   .rok-legenda .rl.b i{background:#1565c0;}
   .rok-cip{font-variant-numeric:tabular-nums;}
+  .kart-ponovi-mini{margin-left:8px;padding:2px 10px;border-radius:999px;border:1.5px solid #016579;background:#fff;color:#016579;font:inherit;font-size:12px;font-weight:800;cursor:pointer;vertical-align:middle;}
+  .kart-ponovi-mini:hover{background:#016579;color:#fff;}
   .af-dok-ocisti-red{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:4px 0 8px;}
   .af-dok-ocisti-btn{background:#fff;color:#b45309;border:2px solid #f0a030;border-radius:8px;padding:6px 14px;font:inherit;font-size:13px;font-weight:800;cursor:pointer;}
   .af-dok-ocisti-btn:hover{background:#fff4e0;}.af-dok-ocisti-btn:disabled{opacity:.5;cursor:not-allowed;}
@@ -20376,6 +20378,28 @@
         }
       }
     } catch (eRok) { /* oznaka roka nije kritična */ }
+    // v360: mala tipka „↻ Ponovi” u zaglavlju kartice (ponuda čeka odgovor) — otvori karticu i pokreni veliku tipku „Ponovno pošalji istu ponudu”
+    try {
+      if (ponudaStatusSazetak_(entry) === 'na_cekanju' && !(typeof jeArhiva === 'function' && jeArhiva(entry))) {
+        var tPon_ = head.querySelector('.entry-card-title');
+        if (tPon_) {
+          var bPon_ = document.createElement('button');
+          bPon_.type = 'button'; bPon_.className = 'kart-ponovi-mini'; bPon_.textContent = '↻ Ponovi';
+          bPon_.title = 'Ponovno pošalji istu ponudu (isti link i rok) — isti ili drugi mail';
+          bPon_.addEventListener('click', function(ev) {
+            ev.stopPropagation(); ev.preventDefault();
+            if (!card.classList.contains('expanded')) { card.classList.add('expanded'); try { izgradiTijeloKartice_(); } catch (eIz) {} }
+            var pok_ = 0;
+            (function cekaj() {
+              var vb = card.querySelector('.af-slanje-ponovi-btn');
+              if (vb && !vb.hidden) { vb.scrollIntoView({ behavior: 'smooth', block: 'center' }); setTimeout(function() { vb.click(); }, 350); return; }
+              if (++pok_ < 40) { setTimeout(cekaj, 200); }
+            })();
+          });
+          tPon_.appendChild(bPon_);
+        }
+      }
+    } catch (ePonMini) { /* nije kritično */ }
     // v354: prihvaćena ponuda (obična ili otvorena) — plavo + „✅ PRIHVAĆENA datum”; u Klijentima i Arhivi se ne boja
     try {
       if (ponudaStatusSazetak_(entry) === 'potvrdjena' && !(typeof jeArhiva === 'function' && jeArhiva(entry)) && !(!entry.otvorena && typeof jeOtvorenKlijent === 'function' && jeOtvorenKlijent(entry))) {
