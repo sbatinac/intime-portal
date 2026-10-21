@@ -25754,6 +25754,7 @@
         var okvirP_ = wrap.querySelector('.af-slanje-okvir'), omotP_ = wrap.querySelector('.af-slanje-posalji-omot');
         if (okvirP_ && okvirP_.parentNode) { okvirP_.parentNode.insertBefore(slanjePonoviBtn, okvirP_); }
         else if (omotP_) { omotP_.appendChild(slanjePonoviBtn); }
+        try { slanjePonoviBtn.hidden = (ponudaStatusSazetak_(entry) !== 'na_cekanju'); } catch (eSt_) { /* provjera niže */ }
       }
       // v294: kvačice „premjesti u ARHIVU nakon slanja” i „Disk 1/2” pamte se NA POSLUŽITELJU uz šifru ponude (vrijede na svakom računalu); localStorage samo kao pričuva
       (function() {
@@ -25842,6 +25843,8 @@
         var cekaOdgovor = (trenutniStatus_ === 'na_cekanju' || trenutniStatus_ === 'istekla');
         if (slanjeOkvirEl) { slanjeOkvirEl.classList.toggle('zamrznuto', cekaOdgovor); }
         if (slanjeZamrznutoTraka) { slanjeZamrznutoTraka.hidden = !cekaOdgovor; }
+        // v359: tipka „Ponovno pošalji” odmah ovdje (prije ostalih provjera — ako neka niže pukne, tipka ipak mora biti vidljiva)
+        if (slanjePonoviBtn) { slanjePonoviBtn.hidden = (trenutniStatus_ !== 'na_cekanju' && !(trenutniStatus_ === null && ponudaStatusSazetak_(entry) === 'na_cekanju')); }
 
         var poslovnicaOk = !!(poslovnicaToggle && poslovnicaToggle.disabled);
         var sifraOk = !!(sifraInput && sifraInput.readOnly && sifraInput.value.trim());
@@ -25895,7 +25898,6 @@
         }
         prethodnoSpremno_ = spremnoSad_;
         if (slanjePosaljiBtn) { slanjePosaljiBtn.disabled = !sveOk; }
-        if (slanjePonoviBtn) { slanjePonoviBtn.hidden = (trenutniStatus_ !== 'na_cekanju'); }
         if (slanjeKopirajNazivBtn) {
           // v337: „Kopiraj naziv ponude” je UVIJEK aktivan (prije je bio zaključan dok status nije „poslano”, pa nakon slanja nije radio)
           slanjeKopirajNazivBtn.disabled = false;
