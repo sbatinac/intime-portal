@@ -603,6 +603,7 @@
 .tab-btn.tab-ucitava,.tab-btn:disabled{opacity:.55;cursor:wait;}
   .brzo-gumb{margin-left:8px;padding:8px 14px;border-radius:8px;border:2px solid #f59f00;background:#fff4d6;color:#7a4d00;font:inherit;font-weight:800;font-size:13px;cursor:pointer;vertical-align:middle;}
   .brzo-gumb:hover{background:#ffe9a8;}
+  .pod-pills .lc-podtab-btn.pod-rev{color:#c0392b;font-weight:800;}.pod-pills .lc-podtab-btn.pod-rev.active{color:#c0392b;border-bottom-color:#c0392b;}
   .rev-ponuda-bedz{display:inline-block;margin-left:8px;border-radius:6px;padding:1px 9px;font-size:12.5px;font-weight:900;letter-spacing:.06em;vertical-align:middle;background:#c0392b;color:#fff;animation:revPonudaBlink 1.1s ease-in-out infinite;}
   @keyframes revPonudaBlink{0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(192,57,43,.55);}50%{opacity:.45;box-shadow:0 0 0 5px rgba(192,57,43,0);}}
   .rev-bedz.upoz-crv{background:#fde2e0;color:#8f1d14;border-color:#e8a29b;}
@@ -3705,9 +3706,11 @@
   // v306: podkartice „Poslano” (zadana, otvara se odmah) i „Priprema” (snimljene ponude koje još nisu poslane) — za Ponude i Otvorene ponude
   var ponudePod_ = 'poslano', otvPod_ = 'poslano';
   function jePoslanaPonuda_(e) { return ponudaStatusSazetak_({ fields: (e && e.fields) || {} }) !== 'nije_poslano'; }
-  function podPillsHtml_(pod, nPos, nPri) {
+  function podPillsHtml_(pod, nPos, nPri, nRev) {
     return '<div class="lc-podtabs pod-pills" style="margin:0 0 10px;"><button type="button" class="lc-podtab-btn' + (pod === 'poslano' ? ' active' : '') + '" data-pod="poslano">✉ Poslano (' + nPos + ')</button>' +
-      '<button type="button" class="lc-podtab-btn' + (pod === 'priprema' ? ' active' : '') + '" data-pod="priprema">📝 Priprema (' + nPri + ')</button></div>';
+      '<button type="button" class="lc-podtab-btn' + (pod === 'priprema' ? ' active' : '') + '" data-pod="priprema">📝 Priprema (' + nPri + ')</button>' +
+      // v353: Otvorene ponude — sve koje su nastale kao REVIZIJA (kvačica „REVIZIJA — ispred imena direktorija…”), i poslane i u pripremi
+      (typeof nRev === 'number' ? '<button type="button" class="lc-podtab-btn pod-rev' + (pod === 'revizija' ? ' active' : '') + '" data-pod="revizija" title="Sve otvorene ponude označene kao REVIZIJA (poslane i u pripremi)">📑 REVIZIJA (' + nRev + ')</button>' : '') + '</div>';
   }
   var SORT_OPCIJE_ = [
     ['ulaz_novo', 'Najnovije u sustavu (zadano)'],
@@ -17958,19 +17961,21 @@
       // tek stvorena / otvorena ponuda: prebaci na podkarticu u kojoj se nalazi (neposlana = Priprema)
       if (otvStanje_.otvoriRow) { sveOtv_.forEach(function(e) { if (e.rowIndex === otvStanje_.otvoriRow) { otvPod_ = jePoslanaPonuda_(e) ? 'poslano' : 'priprema'; } }); }
       var nPosO_ = sveOtv_.filter(jePoslanaPonuda_).length;
+      var jeRev_ = function(e) { return fieldVal(e, 'Ponuda je revizija (admin)') === 'DA'; };
+      var nRevO_ = sveOtv_.filter(jeRev_).length;
       var podMjesto_ = paneSlanje.querySelector('.ov-pod-mjesto');
       if (podMjesto_) {
-        podMjesto_.innerHTML = podPillsHtml_(otvPod_, nPosO_, sveOtv_.length - nPosO_);
+        podMjesto_.innerHTML = podPillsHtml_(otvPod_, nPosO_, sveOtv_.length - nPosO_, nRevO_);
         Array.prototype.forEach.call(podMjesto_.querySelectorAll('[data-pod]'), function(b) { b.addEventListener('click', function() { otvPod_ = b.getAttribute('data-pod'); iscrtajKartice(); }); });
       }
       var otv = sveOtv_.filter(function(e) {
-        if (!q) { return jePoslanaPonuda_(e) === (otvPod_ === 'poslano'); }
+        if (!q) { return otvPod_ === 'revizija' ? jeRev_(e) : (jePoslanaPonuda_(e) === (otvPod_ === 'poslano')); }
         var f = e.fields || {};
         return [f['Broj'], f['Naziv tvrtke'], f['OIB'], f['Email kontakt osobe'], f['Šifra ponude (admin)']].join(' ').toLowerCase().indexOf(q) !== -1;
       });
       otv = sortirajKartice_(otv, 'Otvorene');
       box.innerHTML = '';
-      if (!otv.length) { box.innerHTML = '<div class="ov-prazno">' + (!entriesUcitano_ ? 'Učitavam ponude…' : (q ? 'Nema otvorenih ponuda za ovu pretragu.' : (sveOtv_.length ? (otvPod_ === 'poslano' ? 'Nema poslanih otvorenih ponuda. Neposlane su u kartici „Priprema”.' : 'Nema otvorenih ponuda u pripremi.') : 'Još nema otvorenih ponuda — stvori prvu gore.'))) + '</div>'; return; }
+      if (!otv.length) { box.innerHTML = '<div class="ov-prazno">' + (!entriesUcitano_ ? 'Učitavam ponude…' : (q ? 'Nema otvorenih ponuda za ovu pretragu.' : (sveOtv_.length ? (otvPod_ === 'revizija' ? 'Nema otvorenih ponuda označenih kao REVIZIJA.' : (otvPod_ === 'poslano' ? 'Nema poslanih otvorenih ponuda. Neposlane su u kartici „Priprema”.' : 'Nema otvorenih ponuda u pripremi.')) : 'Još nema otvorenih ponuda — stvori prvu gore.'))) + '</div>'; return; }
       var zaOtvoriti = null;
       otv.forEach(function(e) {
         var kartica = buildEntryCard(otvKlonKartice_(e));
