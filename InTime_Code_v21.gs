@@ -8339,6 +8339,8 @@ function doPost(e) {
       result = adminGetTestMail(data.token);
     } else if (data.action === 'adminPosaljiPonudaTest') {
       result = adminPosaljiPonudaTest(data.token, data.rowIndex, data.testMail, data.predmet, data.tijelo, data.jeHtml);
+    } else if (data.action === 'adminPonudeSlanjaList') {
+      result = adminPonudeSlanjaList(data.token);
     } else if (data.action === 'adminPosaljiPonudaMail') {
       result = adminPosaljiPonudaMail(data.token, data.rowIndex, data.primatelji, data.predmet, data.tijelo, data.kopijaSebi, data.jeHtml, data.nazivPredloska, data.arhiviraj);
     } else if (data.action === 'adminPosaljiObZahtjevTest') {
@@ -14256,7 +14258,10 @@ function adminPosaljiPonudaMail(token, rowIndex, primatelji, predmet, tijelo, ko
     if (prilSlanje_.blobovi.length) { opcije.attachments = prilSlanje_.blobovi; }
     var plainTijelo = tijelo;
     if (jeHtml) { opcije.htmlBody = tijelo; plainTijelo = skiniHtmlTagoveZaFallback_(tijelo); }
+    var vrstaSlanja_ = 'ponovno';   // v362: evidencija slanja — je li ovo prvo slanje ove verzije ili ponovljeno
+    try { var shV_ = getOrCreateUpitiSheet(), lcV_ = shV_.getLastColumn(); if (izracunajStatusPonude_(shV_.getRange(1, 1, 1, lcV_).getValues()[0], shV_.getRange(rowIndex, 1, 1, lcV_).getValues()[0]) === 'nije_poslano') { vrstaSlanja_ = 'prvo'; } } catch (eV_) { /* ostaje 'ponovno' */ }
     posaljiMail_(primatelji.join(','), predmet || '(bez predmeta)', plainTijelo, opcije);
+    try { ponSlanjeZabiljezi_(rowIndex, primatelji, vrstaSlanja_, !!kopijaSebi); } catch (eEv_) { /* evidencija ne smije srušiti slanje */ }
 
     // Jednokratni kalkulator iste firme (OIB) ili iste adrese više ne vrijedi — poslana je prava ponuda.
     try { jedProvjeriZamjenuPonudom_(rowIndex, primatelji); } catch (errJed) { /* ne smije srušiti slanje */ }
@@ -14360,6 +14365,32 @@ function adminPosaljiPonudaMail(token, rowIndex, primatelji, predmet, tijelo, ko
   } catch (err) {
     return { status: 'error', message: 'Slanje ponude nije uspjelo: ' + err.message };
   }
+}
+
+// ===== v362: EVIDENCIJA SLANJA PONUDA — svako slanje (prvo i ponovljeno) svake verzije; prikazuje se na kartici ponude =====
+var PON_SLANJA_SHEET_ = 'InTime_PonudeSlanja';
+var PON_SLANJA_HEADER_ = ['Datum', 'Broj ponude', 'Šifra', 'Verzija', 'OIB', 'Naziv tvrtke', 'Vrsta', 'Primatelji', 'Pošiljatelj', 'Kopija sebi', 'Redak'];
+function ponSlanjeZabiljezi_(rowIndex, primatelji, vrsta, kopija) {
+  var sh = getOrCreateUpitiSheet(), lc = sh.getLastColumn();
+  var h = sh.getRange(1, 1, 1, lc).getValues()[0], r = sh.getRange(rowIndex, 1, 1, lc).getValues()[0];
+  var g = function(l) { var i = h.indexOf(l); return i === -1 ? '' : r[i]; };
+  var sif = String(g(ADMIN_ONLY_FIELDS.sifra_ponude) || '').trim(), ver = parseInt(g(ADMIN_ONLY_FIELDS.ponuda_verzija), 10) || 1;
+  var od = ''; try { od = zadanaFromAdresa_() || Session.getEffectiveUser().getEmail(); } catch (eO) { od = ''; }
+  var ev = getOrCreateNacrtSheet_(PON_SLANJA_SHEET_, PON_SLANJA_HEADER_, [2, 3, 5]);
+  ev.appendRow(sheetSigRed_([nacrtDatum_(), sif ? sif + '-P' + ver : '', sif, ver, String(g('OIB') || ''), String(g('Naziv tvrtke') || '').slice(0, 200), vrsta === 'prvo' ? 'prvo slanje' : 'ponovno slanje', (primatelji || []).join(', ').slice(0, 500), od, kopija ? 'DA' : '', rowIndex]));
+}
+function adminPonudeSlanjaList(token) {
+  if (!isValidAdminToken_(token)) { return { status: 'error', message: 'Sesija je istekla — prijavite se ponovno.' }; }
+  try {
+    var ev = getOrCreateNacrtSheet_(PON_SLANJA_SHEET_, PON_SLANJA_HEADER_, [2, 3, 5]), last = ev.getLastRow(), out = [];
+    if (last >= 2) {
+      ev.getRange(2, 1, last - 1, PON_SLANJA_HEADER_.length).getDisplayValues().forEach(function(x) {
+        if (!x[0]) { return; }
+        out.push({ t: x[0], broj: x[1], sifra: x[2], verzija: parseInt(x[3], 10) || 1, oib: x[4], naziv: x[5], vrsta: x[6], primatelji: x[7], od: x[8], kopija: x[9] === 'DA', redak: parseInt(x[10], 10) || 0 });
+      });
+    }
+    return { status: 'ok', slanja: out };
+  } catch (e) { return { status: 'error', message: 'Evidencija slanja nije dostupna: ' + e.message }; }
 }
 
 // ---- "POŠALJI ZAHTJEV ZA ONLINE BOOKING" — panel u InTime_Admin.html

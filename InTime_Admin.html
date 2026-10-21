@@ -663,6 +663,17 @@
   .rok-cip.prh{background:#2e9e5b;color:#fff;}
   .rok-legenda .rl.b i{background:#1565c0;}
   .rok-cip{font-variant-numeric:tabular-nums;}
+  .pon-evid{border:1px solid #c9dcf3;background:#f4f9ff;border-radius:10px;padding:6px 12px 8px;margin:0 0 10px;font-size:12.5px;color:#22344a;}
+  .pon-evid summary{cursor:pointer;font-weight:700;color:#1b4a8a;padding:3px 0;}
+  .pon-evid .pe-ver{margin:8px 0 3px;font-size:13px;color:#14325e;}
+  .pon-evid .pe-br{font-family:ui-monospace,Consolas,monospace;font-size:11.5px;background:#e3eefc;border-radius:5px;padding:1px 6px;}
+  .pon-evid .pe-trenutna{background:#1565c0;color:#fff;border-radius:999px;padding:1px 8px;font-size:11px;font-weight:800;}
+  .pon-evid .pe-st{background:#eceff3;color:#4a5568;border-radius:999px;padding:1px 8px;font-size:11px;font-weight:700;}
+  .pon-evid .pe-red{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap;padding:3px 0 3px 14px;border-left:3px solid #b6cff0;margin-left:4px;}
+  .pon-evid .pe-red.pon{border-left-color:#016579;}
+  .pon-evid .pe-vr{font-weight:800;min-width:118px;}.pon-evid .pe-red.pon .pe-vr{color:#016579;}
+  .pon-evid .pe-dt{font-variant-numeric:tabular-nums;color:#33475b;}
+  .pon-evid .pe-prim{color:#4a5a6a;word-break:break-all;}
   .kart-ponovi-mini{margin-left:8px;padding:2px 10px;border-radius:999px;border:1.5px solid #016579;background:#fff;color:#016579;font:inherit;font-size:12px;font-weight:800;cursor:pointer;vertical-align:middle;}
   .kart-ponovi-mini:hover{background:#016579;color:#fff;}
   .af-dok-ocisti-red{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:4px 0 8px;}
@@ -3338,6 +3349,8 @@
         }
         j.message = 'Sustav je trenutno zauzet (druga radnja još traje). Pokušao sam automatski nekoliko puta — pričekaj nekoliko sekundi i klikni ponovno.';
       }
+      // v362: nakon svakog slanja ponude osvježi „Evidenciju slanja” na karticama
+      try { if (payload && payload.action === 'adminPosaljiPonudaMail' && j && j.status === 'ok') { ponSlanja_ = null; setTimeout(function() { document.dispatchEvent(new Event('pon-slanje-osvjezi')); }, 50); } } catch (ePs_) {}
       // ZAŠTITA ANALITIČKOG CJENIKA: server javlja što je zaustavio (privitak/kopija u mapu za klijenta)
       try { if (j && j.zaustavljeniPrivitci && j.zaustavljeniPrivitci.length) { setTimeout(function() { window.alert('⛔ ZAŠTITA ANALITIČKOG CJENIKA\n\n' + j.zaustavljeniPrivitci.join('\n') + '\n\nAnalitički cjenik je interni dokument i ne smije do klijenta.'); }, 50); } } catch (eZ) {}
       return j;
@@ -20247,6 +20260,48 @@
     var x = m[entry && entry.izvor];
     return x ? '<span class="izv-cip ' + x[0] + '" title="' + esc(x[2]) + '">' + x[1] + '</span>' : '';
   }
+  // v362: EVIDENCIJA SLANJA PONUDE — sva slanja (prvo + ponovljena) po verzijama: 1. ponuda, 2. ponuda …
+  var ponSlanja_ = null, ponSlanjaObecanje_ = null;
+  function ponSlanjaUcitaj_() {
+    if (ponSlanja_) { return Promise.resolve(ponSlanja_); }
+    if (ponSlanjaObecanje_) { return ponSlanjaObecanje_; }
+    ponSlanjaObecanje_ = gasCall({ action: 'adminPonudeSlanjaList', token: adminToken }).then(function(r) {
+      ponSlanjaObecanje_ = null;
+      ponSlanja_ = (r && r.status === 'ok') ? (r.slanja || []) : [];
+      return ponSlanja_;
+    }).catch(function() { ponSlanjaObecanje_ = null; return []; });
+    return ponSlanjaObecanje_;
+  }
+  function ponIsoFmt_(iso) { var d = new Date(iso); if (isNaN(d)) { return String(iso || ''); } var p = function(n) { return (n < 10 ? '0' : '') + n; }; return p(d.getDate()) + '.' + p(d.getMonth() + 1) + '.' + d.getFullYear() + '. ' + p(d.getHours()) + ':' + p(d.getMinutes()); }
+  function ponEvidHtml_(entry, lista) {
+    var sif = String(fieldVal(entry, 'Šifra ponude (admin)') || '').trim(), oib = String(fieldVal(entry, 'OIB') || '').trim();
+    var curVer = parseInt(fieldVal(entry, 'Redni broj slanja ponude (admin)'), 10) || 1;
+    var moje = (lista || []).filter(function(x) { return sif ? (x.sifra === sif && (!oib || !x.oib || x.oib === oib)) : (x.redak === entry.rowIndex); });
+    var poVer = {};
+    moje.forEach(function(x) { (poVer[x.verzija] = poVer[x.verzija] || []).push({ t: x.t, prvo: /prvo/.test(x.vrsta), prim: x.primatelji, zap: true }); });
+    // starije verzije i slanja prije uvođenja evidencije (21.10.2026.) — iz podataka kartice
+    var pov = []; try { pov = JSON.parse(fieldVal(entry, 'Povijest prijašnjih slanja ponude (admin, JSON)') || '[]') || []; } catch (e) { pov = []; }
+    pov.forEach(function(v) { var ver = parseInt(v.verzija, 10) || 1; if (v.datumSlanja && !(poVer[ver] || []).some(function(z) { return z.prvo; })) { (poVer[ver] = poVer[ver] || []).unshift({ t: ponIsoFmt_(v.datumSlanja), prvo: true, prim: '', zap: false, status: v.status }); } });
+    var ds = String(fieldVal(entry, 'Datum slanja aktivne ponude (admin)') || '').trim();
+    if (ds && !(poVer[curVer] || []).some(function(z) { return z.prvo; })) { (poVer[curVer] = poVer[curVer] || []).unshift({ t: ds, prvo: true, prim: String(fieldVal(entry, 'Mail adrese za slanje ponude (admin)') || fieldVal(entry, 'Otvorena ponuda - mail primatelja (admin)') || ''), zap: false }); }
+    var verzije = Object.keys(poVer).map(Number).sort(function(a, b) { return a - b; });
+    if (!verzije.length) { return ''; }
+    var ukupno = 0, ponovljeno = 0; verzije.forEach(function(v) { poVer[v].forEach(function(z) { ukupno++; if (!z.prvo) { ponovljeno++; } }); });
+    var STAT = { potvrdjena: 'prihvaćena', odbijena: 'odbijena', ponistena: 'poništena', istekla: 'istekla', ponistena_nakon_prihvata: 'poništena nakon prihvata' };
+    var h = '<details class="pon-evid" open><summary>📨 Evidencija slanja — <b>' + Math.max(curVer, verzije[verzije.length - 1]) + '. ponuda' + (verzije.length > 1 ? ' (ukupno ' + verzije.length + ' verzije)' : '') + '</b> · poslano ' + ukupno + '×' + (ponovljeno ? ' (od toga ponovljeno ' + ponovljeno + '×)' : '') + '</summary>';
+    verzije.forEach(function(v) {
+      var stavke = poVer[v], st = '';
+      stavke.forEach(function(z) { if (z.status) { st = STAT[z.status] || z.status; } });
+      h += '<div class="pe-ver"><b>' + v + '. ponuda</b> <span class="pe-br">' + esc(sif ? sif + '-P' + v : 'P' + v) + '</span>' + (v === curVer ? ' <span class="pe-trenutna">trenutna</span>' : (st ? ' <span class="pe-st">' + esc(st) + '</span>' : '')) + '</div>';
+      var n = 0;
+      stavke.forEach(function(z) {
+        n = z.prvo ? n : n + 1;
+        h += '<div class="pe-red ' + (z.prvo ? 'prvo' : 'pon') + '"><span class="pe-ikona">' + (z.prvo ? '📧' : '↻') + '</span><span class="pe-vr">' + (z.prvo ? 'Poslano' : n + '. ponovno slanje') + '</span><span class="pe-dt">' + esc(z.t) + '</span><span class="pe-prim">' + (z.prim ? '→ ' + esc(z.prim) : '<i>adrese nisu zabilježene</i>') + '</span></div>';
+      });
+    });
+    return h + '</details>';
+  }
+
   // v351: boja kartice po roku ponude + odbrojavanje uživo + legenda sa strane
   function rokPad_(n) { return (n < 10 ? '0' : '') + n; }
   function rokObojiKarticu_(card) {
@@ -25781,6 +25836,15 @@
         else if (omotP_) { omotP_.appendChild(slanjePonoviBtn); }
         try { slanjePonoviBtn.hidden = (ponudaStatusSazetak_(entry) !== 'na_cekanju'); } catch (eSt_) { /* provjera niže */ }
       }
+      // v362: podkartica „📨 Evidencija slanja” — odmah iznad bloka „Slanje ponude mailom”
+      (function() {
+        var okv = wrap.querySelector('.af-slanje-okvir'); if (!okv || !okv.parentNode) { return; }
+        var ev = document.createElement('div'); ev.className = 'pon-evid-mjesto';
+        okv.parentNode.insertBefore(ev, okv);
+        var crtaj = function() { if (ev._bioUDomu && !ev.isConnected) { document.removeEventListener('pon-slanje-osvjezi', crtaj); return; } if (ev.isConnected) { ev._bioUDomu = true; } ponSlanjaUcitaj_().then(function(l) { var otv = ev.querySelector('details'); var bilo = otv ? otv.open : true; ev.innerHTML = ponEvidHtml_(entry, l); var d2 = ev.querySelector('details'); if (d2) { d2.open = bilo; } }); };
+        document.addEventListener('pon-slanje-osvjezi', crtaj);
+        crtaj();
+      })();
       // v294: kvačice „premjesti u ARHIVU nakon slanja” i „Disk 1/2” pamte se NA POSLUŽITELJU uz šifru ponude (vrijede na svakom računalu); localStorage samo kao pričuva
       (function() {
         var sifraP = fieldVal(entry, 'Šifra ponude (admin)') || '';
