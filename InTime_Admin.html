@@ -11525,19 +11525,56 @@
     '  <div style="background:#f4f4f4;padding:12px 26px;font-size:12px;color:#777777;text-align:center;">In Time d.o.o. · FedEx licencirani partner</div>\n' +
     '</div>';
   // ----- v282: pripremljeni primjeri (nacrti — Saša ih doradi: [DOPUNI: …] označava mjesta koja treba ispuniti) -----
+  // v348: predložak odgovora u istom obliku kao mail ponude (tablice — izgleda isto u Gmailu i Outlooku) + Sašin puni potpis
+  var OD_PREDLOZAK_OZNAKA_ = '<!-- intime-odgovor-v348 -->';
+  var OD_POTPIS_HTML_ =
+    '<p style="font-size:14px;line-height:1.6;margin:18px 0 14px;color:#2b2b2b;">Srdačan pozdrav / Kind regards,</p>\n' +
+    '<p style="font-size:14px;line-height:1.6;margin:0 0 18px;color:#2b2b2b;">Saša Batinac</p>\n' +
+    '<div style="border-top:1px solid #e3e6e5;margin-top:24px;padding-top:18px;font-size:12.5px;line-height:1.6;color:#444444;">\n' +
+    '<strong style="color:#1f3d3a;">Saša Batinac, univ. spec. oec.</strong><br>\n' +
+    'Sales and Marketing Manager, Voditelj ključnih kupaca<br>\n' +
+    'In Time d.o.o. — Licensee of FedEx<br>\n' +
+    '<img src="https://sbatinac.github.io/intime-portal/InTime_Potpis_mail.gif" alt="In Time Express" width="360" style="display:block;width:360px;max-width:100%;height:auto;margin:10px 0;border:0;">M: <a href="tel:+385916262171" style="color:#0f8b7e;text-decoration:none;">+385 91 6262 171</a><br>E: <a href="mailto:sasa.batinac@in-time.hr" style="color:#0f8b7e;text-decoration:none;">sasa.batinac@in-time.hr</a><br>\n' +
+    '<a href="https://in-time.hr" target="_blank" rel="noopener" style="color:#0f8b7e;text-decoration:none;">in-time.hr</a> · <a href="https://fedex.com" target="_blank" rel="noopener" style="color:#0f8b7e;text-decoration:none;">fedex.com</a><br>\n' +
+    'In Time d.o.o. · FedEx zastupništvo · Hrvatska, BiH, Srbija, Slovenija, Crna Gora, Sjeverna Makedonija\n' +
+    '</div>\n';
   function odPredlozakHtml_(boja, naslov, podnaslov, banner) {
-    return '<div style="font-family:Arial,Helvetica,sans-serif;max-width:600px;margin:0 auto;border:1px solid #e0e0e0;border-radius:12px;overflow:hidden;background:#ffffff;">\n' +
-      '  <!-- BANNER: zamijeni ovaj plavi blok svojom slikom (gumb "Umetni sliku"): <img src="..." alt="In Time" style="display:block;width:100%;height:auto;border:0;"> -->\n' +
-      (banner
-        ? '  <img src="' + banner + '" alt="' + naslov + '" width="600" style="display:block;width:100%;height:auto;border:0;">\n'
-        :       '  <div style="background:' + boja + ';padding:26px 26px;text-align:left;color:#ffffff;"><div style="font-size:12px;letter-spacing:.12em;opacity:.85;">IN TIME D.O.O. · FEDEX</div><div style="font-size:24px;font-weight:bold;margin-top:4px;">' + naslov + '</div><div style="font-size:13px;opacity:.9;margin-top:2px;">' + podnaslov + '</div></div>\n' ) +
-      '  <div style="padding:22px 26px;font-size:15px;line-height:1.6;color:#222222;">\n' +
-      '    <p style="margin:0 0 14px;">Poštovani {{KONTAKT_OSOBA}},</p>\n' +
-      '    {{TEKST_ODGOVORA}}\n' +
-      '    <p style="margin:18px 0 0;">Srdačan pozdrav,<br><b>In Time d.o.o.</b></p>\n' +
-      '  </div>\n' +
-      '  <div style="background:#f4f4f4;padding:12px 26px;font-size:12px;color:#777777;text-align:center;">In Time d.o.o. · {{NAZIV_TVRTKE}}</div>\n' +
-      '</div>';
+    var glava = banner
+      ? '<img src="' + banner + '" alt="' + naslov + '" width="620" style="display:block;border:0;outline:none;text-decoration:none;width:100%;max-width:620px;height:auto;border-radius:10px 10px 0 0;">'
+      : '<div style="background-color:' + boja + ';padding:26px 30px;color:#ffffff;border-radius:10px 10px 0 0;font-family:Arial,Helvetica,sans-serif;"><div style="font-size:12px;letter-spacing:2px;opacity:.85;">IN TIME D.O.O. · FEDEX</div><div style="font-size:24px;font-weight:bold;margin-top:4px;">' + naslov + '</div><div style="font-size:13px;opacity:.9;margin-top:2px;">' + podnaslov + '</div></div>';
+    return OD_PREDLOZAK_OZNAKA_ + '\n' +
+      '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#f2f4f3;margin:0;padding:0;border-collapse:collapse;"><tr><td align="center" style="padding:24px 16px;">\n' +
+      '<table role="presentation" width="620" cellpadding="0" cellspacing="0" border="0" style="max-width:620px;width:100%;border-collapse:collapse;"><tr>\n' +
+      '<td style="background-color:#ffffff;border:1px solid #e3e6e5;border-radius:10px;font-family:Arial,Helvetica,sans-serif;">\n' +
+      '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;"><tr><td style="border-radius:10px 10px 0 0;">\n' + glava + '\n</td></tr></table>\n' +
+      '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;"><tr>\n' +
+      '<td style="padding:28px 30px;font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.6;color:#2b2b2b;">\n' +
+      '<p style="font-size:14px;line-height:1.6;margin:0 0 14px;color:#2b2b2b;">Poštovani {{KONTAKT_OSOBA}},</p>\n' +
+      '{{TEKST_ODGOVORA}}\n' +
+      OD_POTPIS_HTML_ +
+      '</td></tr></table>\n' +
+      '</td></tr></table>\n' +
+      '<table role="presentation" width="620" cellpadding="0" cellspacing="0" border="0" style="max-width:620px;width:100%;border-collapse:collapse;"><tr>\n' +
+      '<td style="font-size:10.5px;line-height:1.5;color:#9aa3a1;text-align:center;padding:14px 10px 0;font-family:Arial,Helvetica,sans-serif;">In Time d.o.o. — Licensee of FedEx · odgovor za {{NAZIV_TVRTKE}}</td>\n' +
+      '</tr></table>\n' +
+      '</td></tr></table>';
+  }
+  // v348: već spremljeni predlošci odgovora iz starog generatora (div, „Srdačan pozdrav, In Time d.o.o.”) prebacuju se na novi izgled.
+  // Zadržava se banner (ili boja/naslov), naziv, „zadani”. Ručno izrađeni predlošci (drugačija struktura) se ne diraju.
+  var OD_STARI_POZDRAV_ = 'Srdačan pozdrav,<br><b>In Time d.o.o.</b>';
+  function odPredlosciNadogradi_() {
+    var lista = (mailPredlosciCache || []).filter(function(p) { return p.kategorija === OD_KATEGORIJA_PREDLOSKA_; });
+    var zaNad = lista.filter(function(p) { var t = String(p.sadrzaj || ''); return t.indexOf(OD_PREDLOZAK_OZNAKA_) === -1 && t.indexOf(OD_STARI_POZDRAV_) !== -1 && t.indexOf('{{TEKST_ODGOVORA}}') !== -1; });
+    if (!zaNad.length) { return Promise.resolve(0); }
+    var n = 0;
+    return zaNad.reduce(function(pr, p) {
+      return pr.then(function() {
+        var t = String(p.sadrzaj), mB = t.match(/<img src="([^"]+)" alt="([^"]*)" width="600"/), mBoja = t.match(/background:(#[0-9a-fA-F]{3,6});padding:26px/);
+        var mNasl = t.match(/font-size:24px;font-weight:bold;margin-top:4px;">([^<]*)</), mPod = t.match(/font-size:13px;opacity:\.9;margin-top:2px;">([^<]*)</);
+        var html = mB ? odPredlozakHtml_('#4d148c', mB[2], '', mB[1]) : odPredlozakHtml_(mBoja ? mBoja[1] : '#4d148c', mNasl ? mNasl[1] : 'Odgovor na Vaš upit', mPod ? mPod[1] : 'In Time d.o.o.', '');
+        return gasCall({ action: 'adminMailPredlozakSpremi', token: adminToken, predlozak: { rowIndex: p.rowIndex, naziv: p.naziv, predmet: p.predmet || '', sadrzaj: html, zadani: !!p.zadani, html: true, kategorija: OD_KATEGORIJA_PREDLOSKA_ } }).then(function(r) { if (r && r.status === 'ok') { n++; p.sadrzaj = html; } });
+      });
+    }, Promise.resolve()).then(function() { return n; });
   }
   var OD_PRIMJERI_PREDLOSKA_ = [
     { naziv: 'Općenito (banner)', boja: '#4d148c', naslov: 'Odgovor na Vaš upit', podnaslov: 'In Time d.o.o.', zadani: true, banner: 'https://i.imgur.com/egLUuLh.png', auto: true },
@@ -11864,6 +11901,7 @@
         if (r[1] && r[1].status === 'ok') { odStanje_.povijestSve = r[1].povijest || []; odPovijestUcitana_ = true; odOsvjeziKartice_(); }
         odStanje_.ucitano = true;
         odAutoSjeme_();
+        odPredlosciNadogradi_().then(function(n) { if (n && odStanje_.podtab === 'slanje' && typeof gradiSlanje === 'function') { var sn = odStanje_.slanjeSnimka; if (typeof sn === 'function' && !odStanje_.nacrtUcitaj) { try { odStanje_.nacrtUcitaj = sn(); } catch (eN) {} } gradiSlanje(); } }).catch(function() {});
         return r;
       });
     }
@@ -11968,7 +12006,7 @@
       }
       function tekstUHtml(t) {
         var h = esc(t).replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1" style="color:#4d148c;">$1</a>');
-        return h.split(/\n{2,}/).map(function(p) { return '<p style="margin:0 0 12px;">' + p.replace(/\n/g, '<br>') + '</p>'; }).join('');
+        return h.split(/\n{2,}/).map(function(p) { return '<p style="font-size:14px;line-height:1.6;margin:0 0 14px;color:#2b2b2b;">' + p.replace(/\n/g, '<br>') + '</p>'; }).join('');
       }
       function slikeOdgovora() { return stanjeSlanja.privitci.filter(function(p) { return p.inline; }); }
       function umetniSlike(html, zaSlanje) {
