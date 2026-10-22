@@ -22863,6 +22863,18 @@
       prebaciHint_.className = 'af-prebaci-hint';
       prebaciKlijentBtn.parentNode.insertAdjacentElement('afterend', prebaciHint_);
       var prebaciUvjeti_ = function() {
+        // v366: REVIZIJA (postojeći klijent) — može u klijente bilo kad; obavezno samo TM, OB, odgovorna osoba, adresa i kontakti
+        if (fieldVal(entry, 'Ponuda je revizija (admin)') === 'DA') {
+          return [
+            { ok: !!fieldVal(entry, 'Identifikacijski TM broj klijenta (admin)'), naziv: 'TM broj' },
+            { ok: !!(fieldVal(entry, 'OB korisničko ime (admin)') || fieldVal(entry, 'Preferirana e-mail adresa za prijavu u Online Booking (OB)')), naziv: 'Online Booking (korisničko ime)' },
+            { ok: !!fieldVal(entry, 'Ime i prezime'), naziv: 'odgovorna osoba' },
+            { ok: !!(fieldVal(entry, 'Adresa sjedišta') && fieldVal(entry, 'Mjesto')), naziv: 'adresa (ulica i mjesto)' },
+            { ok: !!fieldVal(entry, 'Kontakt osoba'), naziv: 'kontakt osoba' },
+            { ok: !!(fieldVal(entry, 'Mobitel') || fieldVal(entry, 'Telefon odgovorne osobe')), naziv: 'telefon' },
+            { ok: !!(fieldVal(entry, 'Email kontakt osobe') || fieldVal(entry, 'Mail adresa odgovorne osobe')), naziv: 'e-mail' }
+          ];
+        }
         return [
           { ok: !!fieldVal(entry, 'Identifikacijski TM broj klijenta (admin)'), naziv: 'TM broj' },
           { ok: !!fieldVal(entry, 'OB korisničko ime (admin)'), naziv: 'OB korisničko ime' },
@@ -22885,9 +22897,10 @@
         prebaciKlijentBtn.classList.toggle('locked', !sve);
         prebaciKlijentBtn.disabled = !sve;
         prebaciKlijentBtn.textContent = sve ? 'Prebaci u nove klijente' : '🔒 Prebaci u nove klijente';
-        prebaciHint_.innerHTML = sve
+        var revPfx_ = fieldVal(entry, 'Ponuda je revizija (admin)') === 'DA' ? '<b style="color:#c0392b;">📑 REVIZIJA — skraćeni uvjeti (bez OB maila, poslovnica, upitnika i prihvata).</b> ' : '';
+        prebaciHint_.innerHTML = revPfx_ + (sve
           ? '<span class="stavka ok">✓ Svi uvjeti ispunjeni</span>'
-          : ('🔒 Otključava se kad bude ispunjeno:' + st.map(function(x) { return '<span class="stavka' + (x.ok ? ' ok' : '') + '">' + (x.ok ? '✓' : '✕') + ' ' + esc(x.naziv) + '</span>'; }).join(''));
+          : ('🔒 Otključava se kad bude ispunjeno:' + st.map(function(x) { return '<span class="stavka' + (x.ok ? ' ok' : '') + '">' + (x.ok ? '✓' : '✕') + ' ' + esc(x.naziv) + '</span>'; }).join('')));
       };
       var prebaciTimer_ = setInterval(prebaciOsvjezi_, 600);
       prebaciOsvjezi_();
@@ -23715,6 +23728,9 @@
         var uvjetObLozinka_ = fieldVal(entry, 'OB lozinka (admin)');
         var uvjetVrijemePrikupa_ = fieldVal(entry, 'Vrijeme prikupa — ručno uređeno (admin)') || fieldVal(entry, 'Vrijeme prikupa pošiljaka (dolazak vozila)');
         var nedostaje_ = [];
+        if (fieldVal(entry, 'Ponuda je revizija (admin)') === 'DA' && typeof prebaciUvjeti_ === 'function') {   // v366: revizija — skraćeni uvjeti
+          nedostaje_ = prebaciUvjeti_().filter(function(x) { return !x.ok; }).map(function(x) { return x.naziv; });
+        } else {
         if (!uvjetTmBroj_) { nedostaje_.push('TM broj'); }
         if (!uvjetObUsername_) { nedostaje_.push('Online Booking korisničko ime'); }
         if (!uvjetObLozinka_) { nedostaje_.push('Online Booking lozinka'); }
@@ -23725,6 +23741,7 @@
         if (!fieldVal(entry, 'Datum slanja zahtjeva za OB (admin)')) { nedostaje_.push('mail: zahtjev za Online Booking nije poslan'); }
         if (!fieldVal(entry, 'Datum slanja maila klijentu s pristupnim podacima (admin)')) { nedostaje_.push('mail: pristupni podaci klijentu nisu poslani'); }
         if (!fieldVal(entry, 'Datum slanja obavijesti nadležnim poslovnicama (admin)')) { nedostaje_.push('mail: obavijest nadležnim poslovnicama nije poslana'); }
+        }
         if (nedostaje_.length > 0) {
           alert('Nije zadovoljeno za prebacivanje u nove klijente — nedostaje: ' + nedostaje_.join(', ') + '.');
           return;
