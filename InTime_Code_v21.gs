@@ -23871,11 +23871,12 @@ function otvPonudaSpremiUpitnik(data) {
 }
 
 // ===== v363: BRZI UPITNIK — jedna lozinka (postavlja se u adminu, Postavke); uz nju su u upitniku otvorene ponude obavezni samo
-// OIB, naziv, adresa sjedišta (adresa, grad, poštanski broj), kontakt osoba, e-mail, telefon i IBAN. Ostalo je neobavezno.
+// OIB, naziv, adresa sjedišta, kontakt osoba, e-mail, telefon, IBAN, osoba za pripremu robe (ime/e-mail/telefon), adresa i vrijeme prikupa (v364). Ostalo neobavezno.
 // Lozinka sama ništa ne otvara: radi samo uz ispravnu poveznicu upitnika (token prihvaćene otvorene ponude). Pohranjen je samo hash.
 var BRZI_UP_SHEET_ = 'InTime_BrziUpitnici';
 var BRZI_UP_HEADER_ = ['Datum', 'OIB', 'Naziv tvrtke', 'Broj ponude', 'Redak'];
-var BRZI_UP_POLJA_ = [['naziv', 'naziv firme'], ['adresa', 'adresa sjedišta'], ['grad', 'grad'], ['postanski_broj', 'poštanski broj'], ['kontakt', 'kontakt osoba'], ['kontakt_email', 'e-mail kontakt osobe'], ['telefon', 'telefon'], ['iban', 'IBAN']];
+var BRZI_UP_POLJA_ = [['naziv', 'naziv firme'], ['adresa', 'adresa sjedišta'], ['grad', 'grad'], ['postanski_broj', 'poštanski broj'], ['kontakt', 'kontakt osoba'], ['kontakt_email', 'e-mail kontakt osobe'], ['telefon', 'telefon'], ['iban', 'IBAN'],
+  ['logistika_osoba_ime', 'osoba za pripremu robe'], ['logistika_osoba_email', 'e-mail osobe za pripremu robe'], ['logistika_osoba_telefon', 'telefon osobe za pripremu robe'], ['vrijeme_prikupa', 'vrijeme prikupa']];
 // Zadana lozinka (Sašin izbor 22.10.2026.) — u kodu je samo hash; vrijedi dok se u Postavkama ne postavi druga ili isključi.
 var BRZI_UP_ZADANI_SALT_ = 'intime-brzi-v363', BRZI_UP_ZADANI_HASH_ = '4efbe3a40a5788b074fc01ff900c1eb5aeca10c962f70e0cd68ae1805fcbeb2b';
 function brziLozinkaPodaci_() {
@@ -23895,6 +23896,9 @@ function brziNedostaje_(d) {
   BRZI_UP_POLJA_.forEach(function(p) { if (!String(d[p[0]] || '').trim()) { n.push(p[1]); } });
   if (d.kontakt_email && !EMAIL_REGEX_.test(String(d.kontakt_email).trim())) { n.push('ispravan e-mail'); }
   if (d.iban && !/^HR\d{19}$/.test(String(d.iban).trim())) { n.push('ispravan IBAN (HR + 19 znamenki)'); }
+  var mp = String(d.mjesto_prikupa_isto_kao_sjediste || '');
+  if (mp !== 'Da' && mp !== 'Ne') { n.push('adresa prikupa'); }
+  else if (mp === 'Ne' && !(String(d.mjesto_prikupa_adresa || '').trim() && String(d.mjesto_prikupa_grad || '').trim() && String(d.mjesto_prikupa_postanski_broj || '').trim())) { n.push('adresa prikupa (adresa, grad, poštanski broj)'); }
   return n;
 }
 function brziUpitnikProvjera(tok, loz) {

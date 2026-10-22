@@ -2395,7 +2395,7 @@
           <div class="time-pickup-wrap">
             <div class="time-pickup-handle-row">
               <div class="time-pickup-handle" id="vrijeme-prikupa-handle"></div>
-              <input type="range" id="vrijeme-prikupa-range" class="time-pickup-input" min="480" max="960" step="30" value="720" oninput="updateVrijemePrikupa()">
+              <input type="range" id="vrijeme-prikupa-range" class="time-pickup-input" min="480" max="960" step="30" value="720" oninput="this.dataset.dirnuto='1';updateVrijemePrikupa()">
             </div>
             <div class="time-pickup-ruler">
               <div class="time-pickup-rail"></div>
@@ -6672,10 +6672,20 @@
   }
 
   // v363: osnovna polja brzog upitnika (isto provjerava i poslužitelj)
-  var BRZI_POLJA_ = [['naziv', 'naziv firme'], ['adresa', 'adresa sjedišta'], ['grad', 'grad'], ['postanski_broj', 'poštanski broj'], ['kontakt', 'kontakt osoba'], ['kontakt_email', 'e-mail kontakt osobe'], ['telefon', 'telefon'], ['iban', 'IBAN']];
+  var BRZI_POLJA_ = [['naziv', 'naziv firme'], ['adresa', 'adresa sjedišta'], ['grad', 'grad'], ['postanski_broj', 'poštanski broj'], ['kontakt', 'kontakt osoba'], ['kontakt_email', 'e-mail kontakt osobe'], ['telefon', 'telefon'], ['iban', 'IBAN'],
+    ['logistika_osoba_ime', 'osoba za pripremu robe'], ['logistika_osoba_email', 'e-mail osobe za pripremu robe'], ['logistika_osoba_telefon', 'telefon osobe za pripremu robe']];
   function brziNedostaje_(form) {
     var ned = [], prvi = null;
     BRZI_POLJA_.forEach(function(p) { var el = form.querySelector('[name="' + p[0] + '"]'); if (!el || !String(el.value || '').trim()) { ned.push(p[1]); if (!prvi && el) { prvi = el; } } });
+    var le = form.querySelector('[name="logistika_osoba_email"]'); if (le && le.value.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(le.value.trim())) { ned.push('ispravan e-mail osobe za pripremu robe'); prvi = prvi || le; }
+    // v364: adresa prikupa — „Da” (sjedište, uz potvrdu) ili „Ne” (upisana druga adresa)
+    var mp = form.querySelector('input[name="mjesto_prikupa_isto_kao_sjediste"]:checked');
+    if (!mp) { ned.push('adresa prikupa (je li na adresi sjedišta?)'); prvi = prvi || form.querySelector('input[name="mjesto_prikupa_isto_kao_sjediste"]'); }
+    else if (mp.value === 'Da') { try { preuzmiAdresuSjedistaZaPrikup(); } catch (ePk) {} var pt = document.getElementById('mjesto-prikupa-potvrda'); if (pt && !pt.checked) { ned.push('potvrda adrese prikupa'); prvi = prvi || pt; } }
+    else { ['mjesto-prikupa-adresa', 'mjesto-prikupa-grad', 'mjesto-prikupa-postanski-broj'].forEach(function(id) { var e = document.getElementById(id); if (e && !e.value.trim()) { if (ned.indexOf('adresa prikupa') === -1) { ned.push('adresa prikupa'); } prvi = prvi || e; } }); }
+    // v364: vrijeme prikupa — traka ima zadano 12:00, pa se traži da ga klijent potvrdi ili pomakne
+    var vrH = document.getElementById('vrijeme-prikupa-hidden'), vrR = document.getElementById('vrijeme-prikupa-range'), vrP = document.getElementById('brzi-vrijeme-potvrda');
+    if (!vrH || !vrH.value || !((vrR && vrR.dataset.dirnuto === '1') || (vrP && vrP.checked))) { ned.push('vrijeme prikupa (pomaknite traku ili potvrdite vrijeme)'); prvi = prvi || vrP || vrR; }
     var em = form.querySelector('[name="kontakt_email"]'); if (em && em.value.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em.value.trim())) { ned.push('ispravan e-mail'); prvi = prvi || em; }
     var ib = form.querySelector('[name="iban"]'); if (ib && ib.value.trim() && !/^HR\d{19}$/.test(ib.value.trim())) { ned.push('ispravan IBAN (HR + 19 znamenki)'); prvi = prvi || ib; }
     var oib = form.querySelector('[name="oib"]'); if (oib && oib.value.trim().length !== 11) { ned.unshift('OIB (11 znamenki)'); prvi = oib; }
@@ -6701,8 +6711,14 @@
           window.BRZI_LOZINKA_ = l;
           document.documentElement.classList.add('brzi-upitnik-mod');
           BRZI_POLJA_.concat([['oib']]).forEach(function(p) { var el = form.querySelector('[name="' + p[0] + '"]'); if (el) { el.style.outline = '2px solid #e0a400'; el.style.outlineOffset = '1px'; } });
+          Array.prototype.forEach.call(form.querySelectorAll('input[name="mjesto_prikupa_isto_kao_sjediste"]'), function(r) { var l = r.closest('.choice-group'); if (l) { l.style.outline = '2px solid #e0a400'; l.style.outlineOffset = '3px'; l.style.borderRadius = '8px'; } });
+          var tpw = form.querySelector('.time-pickup-wrap');
+          if (tpw && !document.getElementById('brzi-vrijeme-potvrda')) {
+            tpw.style.outline = '2px solid #e0a400'; tpw.style.outlineOffset = '4px'; tpw.style.borderRadius = '8px';
+            tpw.insertAdjacentHTML('beforeend', '<label style="display:flex;gap:8px;align-items:center;margin-top:10px;font-weight:700;color:#5a4300;cursor:pointer;"><input type="checkbox" id="brzi-vrijeme-potvrda"> Potvrđujem odabrano vrijeme prikupa</label>');
+          }
           k.style.borderStyle = 'solid'; k.style.background = '#fff3c4';
-          k.innerHTML = '<div style="font-weight:800;">⚡ Brzi unos je uključen</div><div style="margin-top:4px;">Obavezno je samo: <b>OIB, naziv firme, adresa sjedišta (adresa, grad, poštanski broj), kontakt osoba, e-mail, telefon i IBAN</b> (označena žutim okvirom). Sva ostala polja popunite koliko znate — možete ih i preskočiti.</div>';
+          k.innerHTML = '<div style="font-weight:800;">⚡ Brzi unos je uključen</div><div style="margin-top:4px;">Obavezno je samo: <b>OIB, naziv firme, adresa sjedišta, kontakt osoba (e-mail, telefon), IBAN, osoba za pripremu robe (ime, e-mail, telefon), adresa prikupa i vrijeme prikupa</b> (označeno žutim okvirom). Sva ostala polja popunite koliko znate — možete ih i preskočiti.</div>';
         }).catch(function() { ok.disabled = false; st.style.color = '#a93226'; st.textContent = 'Nema veze s poslužiteljem — pokušajte ponovno.'; });
     }
     ok.addEventListener('click', potvrdi);
