@@ -6671,9 +6671,53 @@
     return null;
   }
 
+  // v363: osnovna polja brzog upitnika (isto provjerava i poslužitelj)
+  var BRZI_POLJA_ = [['naziv', 'naziv firme'], ['adresa', 'adresa sjedišta'], ['grad', 'grad'], ['postanski_broj', 'poštanski broj'], ['kontakt', 'kontakt osoba'], ['kontakt_email', 'e-mail kontakt osobe'], ['telefon', 'telefon'], ['iban', 'IBAN']];
+  function brziNedostaje_(form) {
+    var ned = [], prvi = null;
+    BRZI_POLJA_.forEach(function(p) { var el = form.querySelector('[name="' + p[0] + '"]'); if (!el || !String(el.value || '').trim()) { ned.push(p[1]); if (!prvi && el) { prvi = el; } } });
+    var em = form.querySelector('[name="kontakt_email"]'); if (em && em.value.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em.value.trim())) { ned.push('ispravan e-mail'); prvi = prvi || em; }
+    var ib = form.querySelector('[name="iban"]'); if (ib && ib.value.trim() && !/^HR\d{19}$/.test(ib.value.trim())) { ned.push('ispravan IBAN (HR + 19 znamenki)'); prvi = prvi || ib; }
+    var oib = form.querySelector('[name="oib"]'); if (oib && oib.value.trim().length !== 11) { ned.unshift('OIB (11 znamenki)'); prvi = oib; }
+    return ned.length ? { tekst: ned.join(', '), el: prvi } : null;
+  }
+  function brziKutijaUmetni_() {
+    if (window.PONUDA_STARI_ || document.getElementById('brzi-kutija')) { return; }
+    var form = document.getElementById('panel-interes'); if (!form) { return; }
+    var k = document.createElement('div'); k.id = 'brzi-kutija';
+    k.style.cssText = 'border:2px dashed #e0a400;background:#fffbea;border-radius:10px;padding:10px 14px;margin:0 0 16px;font-size:14px;color:#5a4300;';
+    k.innerHTML = '<div style="font-weight:800;margin-bottom:6px;">⚡ Imate lozinku za brzi unos?</div>' +
+      '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;"><input type="password" id="brzi-loz" autocomplete="off" placeholder="lozinka od In Time d.o.o." style="padding:8px 10px;border:1px solid #d9c27a;border-radius:8px;font:inherit;min-width:200px;">' +
+      '<button type="button" id="brzi-ok" style="background:#e0a400;color:#fff;border:0;border-radius:8px;padding:9px 16px;font:inherit;font-weight:800;cursor:pointer;">Potvrdi</button><span id="brzi-st" style="font-weight:700;"></span></div>';
+    form.insertBefore(k, form.firstChild);
+    var inp = k.querySelector('#brzi-loz'), st = k.querySelector('#brzi-st'), ok = k.querySelector('#brzi-ok');
+    function potvrdi() {
+      var l = inp.value.trim(); if (!l) { st.textContent = 'Upišite lozinku.'; st.style.color = '#a93226'; return; }
+      ok.disabled = true; st.style.color = '#5a4300'; st.textContent = 'Provjeravam…';
+      fetch(GAS_WEB_APP_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: 'brziUpitnikProvjera', token: window.PONUDA_TOKEN_, lozinka: l }) })
+        .then(function(r) { return r.json(); }).then(function(res) {
+          ok.disabled = false;
+          if (!res || res.status !== 'ok') { st.style.color = '#a93226'; st.textContent = (res && res.message) || 'Lozinka nije ispravna.'; return; }
+          window.BRZI_LOZINKA_ = l;
+          document.documentElement.classList.add('brzi-upitnik-mod');
+          BRZI_POLJA_.concat([['oib']]).forEach(function(p) { var el = form.querySelector('[name="' + p[0] + '"]'); if (el) { el.style.outline = '2px solid #e0a400'; el.style.outlineOffset = '1px'; } });
+          k.style.borderStyle = 'solid'; k.style.background = '#fff3c4';
+          k.innerHTML = '<div style="font-weight:800;">⚡ Brzi unos je uključen</div><div style="margin-top:4px;">Obavezno je samo: <b>OIB, naziv firme, adresa sjedišta (adresa, grad, poštanski broj), kontakt osoba, e-mail, telefon i IBAN</b> (označena žutim okvirom). Sva ostala polja popunite koliko znate — možete ih i preskočiti.</div>';
+        }).catch(function() { ok.disabled = false; st.style.color = '#a93226'; st.textContent = 'Nema veze s poslužiteljem — pokušajte ponovno.'; });
+    }
+    ok.addEventListener('click', potvrdi);
+    inp.addEventListener('keydown', function(ev) { if (ev.key === 'Enter') { ev.preventDefault(); potvrdi(); } });
+  }
   async function submitForm(e, which){
     e.preventDefault();
     var form = e.target;
+    // v363: BRZI UPITNIK (lozinka) — provjeravaju se samo osnovna polja, sve ostalo je neobavezno
+    var _brziMod = (which === 'interes' && !!window.BRZI_LOZINKA_);
+    if (_brziMod) {
+      var _bNed = brziNedostaje_(form);
+      if (_bNed) { alert('Za brzi unos obavezno je popuniti: ' + _bNed.tekst + '.'); if (_bNed.el) { _bNed.el.scrollIntoView({behavior:'smooth', block:'center'}); _bNed.el.focus(); } return false; }
+    }
+    if (!_brziMod) {
 
     // Zamjena za isključenu native "required" validaciju (vidi opširan komentar
     // uz prvoNeispravnoPoljeUFormi() gore) — mora biti PRVA provjera, prije bilo
@@ -6960,6 +7004,8 @@
       }
     }
 
+    }   // kraj pune provjere (preskače se u brzom načinu, v363)
+
     // Bilježenje vremena slanja + trajanja popunjavanja — automatski, tik
     // prije stvarnog slanja, korisnik ne može utjecati (polja su skrivena).
     // Trajanje se računa od trenutka OTVARANJA OVOG KONKRETNOG panela
@@ -7009,6 +7055,7 @@
     }
     var _ponuda = !!window.PONUDA_TOKEN_;
     if (_ponuda) { payload.otvorena_token = window.PONUDA_TOKEN_; }
+    if (_brziMod) { payload.brzi_lozinka = window.BRZI_LOZINKA_; }
     // admin popunjava umjesto klijenta (gumb "Popuni ja umjesto klijenta"): klijentu ne ide potvrdni mail
     try { if (/[?&]bez_maila=1(&|$)/.test(location.search)) { payload.bez_potvrde_klijentu = 'Da'; } } catch (eBm) { /* nebitno */ }
     var _submitBtnFinal = form.querySelector('button[type="submit"]');
@@ -7569,6 +7616,7 @@
           if (oibEl) { try { oibEl.dispatchEvent(new Event('input', { bubbles: true })); } catch (e) {} }
           var gumb = document.querySelector('#panel-interes button[type="submit"]');
           if (gumb) { gumb.textContent = 'Pošalji upitnik'; }
+          try { brziKutijaUmetni_(); } catch (eBz) { /* dodatak */ }
           showPanel('interes');
           setTimeout(function(){ window.scrollTo(0, 0); }, 150);
         }

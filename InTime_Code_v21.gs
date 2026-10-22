@@ -9035,6 +9035,13 @@ function doPost(e) {
       result = otvPonudePodsjetnik(data.token, data.rowIndex, data.kopijaSebi);
     } else if (data.action === 'otvPonudePrebaci') {
       result = otvPonudePrebaci(data.token, data.rowIndex, data.kamo);
+    } else if (data.action === 'brziUpitnikProvjera') {
+      // Javna akcija — lozinka za brzi upitnik (v363); radi samo uz ispravan token otvorene ponude
+      result = brziUpitnikProvjera(data.token, data.lozinka);
+    } else if (data.action === 'adminBrziLozinkaGet') {
+      result = adminBrziLozinkaGet(data.token);
+    } else if (data.action === 'adminBrziLozinkaSpremi') {
+      result = adminBrziLozinkaSpremi(data.token, data.lozinka);
     } else if (data.action === 'otvPonudaUpitnikInfo') {
       // Javna akcija — `data.token` je token potvrde ponude iz poveznice (ne admin token), isto kao potvrdaPonudeInfo.
       result = otvPonudaUpitnikInfo(data.token);
@@ -14389,7 +14396,12 @@ function adminPonudeSlanjaList(token) {
         out.push({ t: x[0], broj: x[1], sifra: x[2], verzija: parseInt(x[3], 10) || 1, oib: x[4], naziv: x[5], vrsta: x[6], primatelji: x[7], od: x[8], kopija: x[9] === 'DA', redak: parseInt(x[10], 10) || 0 });
       });
     }
-    return { status: 'ok', slanja: out };
+    var brzi = [];
+    try {
+      var bs = getOrCreateNacrtSheet_(BRZI_UP_SHEET_, BRZI_UP_HEADER_, [2]), bl = bs.getLastRow();
+      if (bl >= 2) { bs.getRange(2, 1, bl - 1, BRZI_UP_HEADER_.length).getDisplayValues().forEach(function(x) { if (x[0]) { brzi.push({ t: x[0], oib: x[1], naziv: x[2], broj: x[3], redak: parseInt(x[4], 10) || 0 }); } }); }
+    } catch (eB) { /* nije kritično */ }
+    return { status: 'ok', slanja: out, brzi: brzi };
   } catch (e) { return { status: 'error', message: 'Evidencija slanja nije dostupna: ' + e.message }; }
 }
 
@@ -23832,6 +23844,15 @@ function otvPonudaSpremiUpitnik(data) {
   var h = found.header, row = found.row;
   if (izracunajStatusPonude_(h, row) !== 'potvrdjena') { return { status: 'error', message: 'Upitnik se može poslati tek nakon prihvaćanja ponude.' }; }
   if (row[h.indexOf(ADMIN_ONLY_FIELDS.otv_upitnik_datum)]) { return { status: 'error', code: 'vec_popunjeno', message: 'Upitnik je već popunjen. Hvala!' }; }
+  // v363: BRZI UPITNIK — uz ispravnu lozinku obavezna su samo osnovna polja
+  var brzi_ = false;
+  if (data.brzi_lozinka !== undefined) {
+    var lozB_ = String(data.brzi_lozinka || ''); delete data.brzi_lozinka;
+    if (!brziLozinkaIspravna_(lozB_)) { return { status: 'error', message: 'Lozinka za brzi unos nije ispravna — upitnik nije spremljen.' }; }
+    var nedost_ = brziNedostaje_(data);
+    if (nedost_.length) { return { status: 'error', message: 'Za brzi unos obavezno je: ' + nedost_.join(', ') + '.' }; }
+    brzi_ = true;
+  }
   // OIB je iz ponude — ne može se promijeniti kroz upitnik (naziv dolazi iz obrasca, jer ga OIB-lookup popuni iz sudskog registra; ako je prazan, uzima se naziv iz ponude)
   data.oib = String(row[h.indexOf('OIB')] || '');
   if (!String(data.naziv || '').trim()) { data.naziv = String(row[h.indexOf('Naziv tvrtke')] || ''); }
@@ -23839,8 +23860,67 @@ function otvPonudaSpremiUpitnik(data) {
   var res = saveUpit(data, found.rowIndex);
   if (res && res.status === 'ok') {
     try { getOrCreateUpitiSheet().getRange(found.rowIndex, h.indexOf(ADMIN_ONLY_FIELDS.otv_upitnik_datum) + 1).setValue(new Date()); } catch (eU) { /* datum je pomoćan */ }
+    if (brzi_) {
+      try {
+        var bp_ = otvBrojPonude_({ get: function(l) { var i = h.indexOf(l); return i === -1 ? '' : row[i]; } });
+        getOrCreateNacrtSheet_(BRZI_UP_SHEET_, BRZI_UP_HEADER_, [2]).appendRow(sheetSigRed_([nacrtDatum_(), String(data.oib || ''), String(data.naziv || '').slice(0, 200), bp_.broj || '', found.rowIndex]));
+      } catch (eBz) { /* oznaka je pomoćna */ }
+    }
   }
   return res;
+}
+
+// ===== v363: BRZI UPITNIK — jedna lozinka (postavlja se u adminu, Postavke); uz nju su u upitniku otvorene ponude obavezni samo
+// OIB, naziv, adresa sjedišta (adresa, grad, poštanski broj), kontakt osoba, e-mail, telefon i IBAN. Ostalo je neobavezno.
+// Lozinka sama ništa ne otvara: radi samo uz ispravnu poveznicu upitnika (token prihvaćene otvorene ponude). Pohranjen je samo hash.
+var BRZI_UP_SHEET_ = 'InTime_BrziUpitnici';
+var BRZI_UP_HEADER_ = ['Datum', 'OIB', 'Naziv tvrtke', 'Broj ponude', 'Redak'];
+var BRZI_UP_POLJA_ = [['naziv', 'naziv firme'], ['adresa', 'adresa sjedišta'], ['grad', 'grad'], ['postanski_broj', 'poštanski broj'], ['kontakt', 'kontakt osoba'], ['kontakt_email', 'e-mail kontakt osobe'], ['telefon', 'telefon'], ['iban', 'IBAN']];
+// Zadana lozinka (Sašin izbor 22.10.2026.) — u kodu je samo hash; vrijedi dok se u Postavkama ne postavi druga ili isključi.
+var BRZI_UP_ZADANI_SALT_ = 'intime-brzi-v363', BRZI_UP_ZADANI_HASH_ = '4efbe3a40a5788b074fc01ff900c1eb5aeca10c962f70e0cd68ae1805fcbeb2b';
+function brziLozinkaPodaci_() {
+  var pr = PropertiesService.getScriptProperties(), hash = pr.getProperty('BRZI_UP_HASH'), salt = pr.getProperty('BRZI_UP_SALT');
+  if (hash === 'ISKLJUCENO') { return null; }
+  if (!hash) { return { hash: BRZI_UP_ZADANI_HASH_, salt: BRZI_UP_ZADANI_SALT_, zadana: true }; }
+  return { hash: hash, salt: salt, zadana: false };
+}
+function brziLozinkaIspravna_(loz) {
+  var lp = brziLozinkaPodaci_();
+  if (!lp || !loz) { return false; }
+  var hash = lp.hash, salt = lp.salt;
+  return sha256Hex_(salt + String(loz).trim()) === hash;
+}
+function brziNedostaje_(d) {
+  var n = [];
+  BRZI_UP_POLJA_.forEach(function(p) { if (!String(d[p[0]] || '').trim()) { n.push(p[1]); } });
+  if (d.kontakt_email && !EMAIL_REGEX_.test(String(d.kontakt_email).trim())) { n.push('ispravan e-mail'); }
+  if (d.iban && !/^HR\d{19}$/.test(String(d.iban).trim())) { n.push('ispravan IBAN (HR + 19 znamenki)'); }
+  return n;
+}
+function brziUpitnikProvjera(tok, loz) {
+  tok = String(tok || '').trim();
+  if (!/^[0-9A-Za-z_-]{8,100}$/.test(tok)) { return { status: 'error', message: 'Poveznica nije ispravna.' }; }
+  if (!problemiOgranici_('BRZI_UP_' + tok.substring(0, 16), 6, 900)) { return { status: 'error', message: 'Previše pokušaja — pričekajte 15 minuta.' }; }
+  var found = otvRedPoTokenu_(tok);
+  if (!found) { return { status: 'error', message: 'Poveznica nije ispravna.' }; }
+  if (izracunajStatusPonude_(found.header, found.row) !== 'potvrdjena') { return { status: 'error', message: 'Upitnik se otvara nakon prihvaćanja ponude.' }; }
+  if (!brziLozinkaIspravna_(loz)) { return { status: 'error', message: 'Lozinka nije ispravna.' }; }
+  return { status: 'ok', polja: BRZI_UP_POLJA_.map(function(p) { return p[0]; }) };
+}
+function adminBrziLozinkaGet(token) {
+  if (!isValidAdminToken_(token)) { return { status: 'error', message: 'Sesija je istekla — prijavite se ponovno.' }; }
+  var lp = brziLozinkaPodaci_();
+  return { status: 'ok', postavljena: !!lp, zadana: !!(lp && lp.zadana) };
+}
+function adminBrziLozinkaSpremi(token, loz) {
+  if (!isValidAdminToken_(token)) { return { status: 'error', message: 'Sesija je istekla — prijavite se ponovno.' }; }
+  loz = String(loz || '').trim();
+  var pr = PropertiesService.getScriptProperties();
+  if (!loz) { pr.setProperty('BRZI_UP_HASH', 'ISKLJUCENO'); pr.deleteProperty('BRZI_UP_SALT'); return { status: 'ok', postavljena: false }; }
+  if (loz.length < 4) { return { status: 'error', message: 'Lozinka mora imati barem 4 znaka.' }; }
+  var salt = Utilities.getUuid();
+  pr.setProperty('BRZI_UP_SALT', salt); pr.setProperty('BRZI_UP_HASH', sha256Hex_(salt + loz));
+  return { status: 'ok', postavljena: true };
 }
 
 // ======================================================================

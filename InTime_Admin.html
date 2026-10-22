@@ -674,6 +674,8 @@
   .pon-evid .pe-vr{font-weight:800;min-width:118px;}.pon-evid .pe-red.pon .pe-vr{color:#016579;}
   .pon-evid .pe-dt{font-variant-numeric:tabular-nums;color:#33475b;}
   .pon-evid .pe-prim{color:#4a5a6a;word-break:break-all;}
+  .brzi-cip{display:inline-block;margin-left:8px;padding:2px 9px;border-radius:999px;background:#e0a400;color:#3d2e00;font-size:11.5px;font-weight:900;vertical-align:middle;}
+  .pon-evid .pe-brzi{margin-top:8px;background:#fff3c4;border:1px solid #e0a400;border-radius:8px;padding:6px 10px;color:#5a4300;}
   .kart-ponovi-mini{margin-left:8px;padding:2px 10px;border-radius:999px;border:1.5px solid #016579;background:#fff;color:#016579;font:inherit;font-size:12px;font-weight:800;cursor:pointer;vertical-align:middle;}
   .kart-ponovi-mini:hover{background:#016579;color:#fff;}
   .af-dok-ocisti-red{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:4px 0 8px;}
@@ -2872,6 +2874,12 @@
       <label style="display:flex;align-items:flex-start;gap:8px;margin:0 0 8px;cursor:pointer;font-size:13.5px;"><input type="radio" name="mp-nacin" id="mp-google" value="GOOGLE" style="margin-top:3px;"> <span><b>Google račun</b> <span id="mp-adr-google" style="color:#4a5a57;"></span><span style="display:block;font-size:12px;color:#6a7a77;">Šalje izravno s Gmail računa na kojem radi skripta.</span></span></label>
       <div id="mp-upozorenje" hidden style="background:#fff4e0;border:1px solid #f0c36d;border-radius:8px;padding:6px 10px;font-size:12.5px;color:#7a5200;margin-bottom:8px;">⚠ Adresa In Time domene nije postavljena kao Gmail „Send mail as” alias na računu skripte — dok se to ne postavi, mailovi će i uz ovaj izbor ići s Google računa.</div>
       <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;"><button type="button" class="btn btn-small" onclick="mailPosiljateljSpremi_()">Spremi</button><span id="mp-status" style="font-size:12.5px;font-weight:700;"></span></div>
+    </div>
+    <!-- Brzi upitnik — lozinka (v363) -->
+    <div style="border:2px solid #e0a400;background:#fffbea;border-radius:10px;padding:10px 12px;margin-bottom:14px;">
+      <label style="display:block;font-weight:700;margin-bottom:4px;color:#7a5a00;">⚡ Lozinka za brzi upitnik (otvorene ponude)</label>
+      <p class="settings-hint" style="margin:0 0 8px;">Kad je klijentu hitno: javiš mu lozinku, on je upiše na vrhu upitnika i tada su obavezni samo OIB, naziv, adresa sjedišta, kontakt osoba, e-mail, telefon i IBAN. Lozinka radi samo uz pravi link upitnika iz maila. Prazno + Spremi = isključeno.</p>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;"><input type="password" id="brzi-loz-admin" autocomplete="new-password" placeholder="nova lozinka (min. 4 znaka)" style="padding:7px 10px;border:1px solid #d9c27a;border-radius:8px;font:inherit;min-width:220px;"><button type="button" class="btn btn-small" onclick="brziLozinkaSpremi_()">Spremi</button><span id="brzi-loz-status" style="font-size:12.5px;font-weight:700;"></span></div>
     </div>
     <!-- Izvori kontakta (16.10.2026.) -->
     <div style="border:2px solid #1b4a8a;background:#f3f8ff;border-radius:10px;padding:10px 12px;margin-bottom:14px;">
@@ -5416,6 +5424,7 @@
     if (ZAPISI_U_TIJEKU_ > 0) { OSVJEZI_NAKON_ZAPISA_ = true; return; }
     allEntries = res.entries || [];
     entriesUcitano_ = true; otvoreneTabOmoguci_();
+    setTimeout(function() { try { if (ponSlanja_) { brziOznakeNaKarticama_(); } else { ponSlanjaUcitaj_(); } } catch (eBz_) {} }, 600);   // v363: oznake brzog upitnika
     try { setTimeout(logKontaktAutoProvjeri_, 400); } catch (eLk) {}
     labelToKeyMap = res.labelToKey || {};
     renderTabCounts();
@@ -10898,6 +10907,24 @@
   function mailPosiljateljUcitaj_() {
     mailPosiljateljIscrtaj_(null); var a = document.getElementById('mp-intime'); if (a) { a.checked = true; }
     gasCall({ action: 'adminMailPosiljateljGet', token: adminToken }).then(function(r) { if (r && r.status === 'ok') { mailPosiljateljIscrtaj_(r); } }).catch(function() {});
+  }
+  // v363: lozinka za brzi upitnik
+  function brziLozinkaUcitaj_() {
+    var st = document.getElementById('brzi-loz-status'); if (!st) { return; }
+    gasCall({ action: 'adminBrziLozinkaGet', token: adminToken }).then(function(r) {
+      if (r && r.status === 'ok') { st.style.color = r.postavljena ? '#1e8449' : '#a93226'; st.textContent = r.postavljena ? (r.zadana ? '✓ uključeno (zadana lozinka)' : '✓ uključeno (tvoja lozinka)') : '✕ isključeno'; }
+    }).catch(function() {});
+  }
+  function brziLozinkaSpremi_() {
+    var inp = document.getElementById('brzi-loz-admin'), st = document.getElementById('brzi-loz-status');
+    var v = inp.value.trim();
+    if (v && v.length < 4) { st.style.color = '#a93226'; st.textContent = 'Najmanje 4 znaka.'; return; }
+    st.style.color = '#4a5a57'; st.textContent = 'Spremam…';
+    gasCall({ action: 'adminBrziLozinkaSpremi', token: adminToken, lozinka: v }).then(function(r) {
+      if (handleAuthError(r)) { return; }
+      if (r && r.status === 'ok') { inp.value = ''; st.style.color = r.postavljena ? '#1e8449' : '#a93226'; st.textContent = r.postavljena ? '✓ Nova lozinka spremljena.' : '✕ Brzi upitnik je isključen.'; }
+      else { st.style.color = '#a93226'; st.textContent = (r && r.message) || 'Greška.'; }
+    }).catch(function() { st.style.color = '#a93226'; st.textContent = 'Greška u komunikaciji.'; });
   }
   function mailPosiljateljSpremi_() {
     var st = document.getElementById('mp-status'), g = document.getElementById('mp-google');
@@ -20261,13 +20288,25 @@
     return x ? '<span class="izv-cip ' + x[0] + '" title="' + esc(x[2]) + '">' + x[1] + '</span>' : '';
   }
   // v362: EVIDENCIJA SLANJA PONUDE — sva slanja (prvo + ponovljena) po verzijama: 1. ponuda, 2. ponuda …
-  var ponSlanja_ = null, ponSlanjaObecanje_ = null;
+  var ponSlanja_ = null, ponSlanjaObecanje_ = null, ponBrzi_ = [];
+  function brziZapis_(entry) { var oib = String(fieldVal(entry, 'OIB') || ''); return (ponBrzi_ || []).filter(function(b) { return (b.redak && b.redak === entry.rowIndex) || (oib && b.oib === oib); })[0] || null; }
+  function brziOznakeNaKarticama_() {
+    (ponBrzi_ || []).forEach(function(b) {
+      if (!b.redak) { return; }
+      Array.prototype.forEach.call(document.querySelectorAll('.entry-card[data-row-index="' + b.redak + '"] .entry-card-title'), function(t) {
+        if (t.querySelector('.brzi-cip')) { return; }
+        t.insertAdjacentHTML('beforeend', '<span class="brzi-cip" title="Upitnik popunjen brzim unosom (lozinka) ' + esc(b.t) + ' — ostali podaci nisu obavezni, provjeri i dopuni">⚡ brzi upitnik</span>');
+      });
+    });
+  }
   function ponSlanjaUcitaj_() {
     if (ponSlanja_) { return Promise.resolve(ponSlanja_); }
     if (ponSlanjaObecanje_) { return ponSlanjaObecanje_; }
     ponSlanjaObecanje_ = gasCall({ action: 'adminPonudeSlanjaList', token: adminToken }).then(function(r) {
       ponSlanjaObecanje_ = null;
       ponSlanja_ = (r && r.status === 'ok') ? (r.slanja || []) : [];
+      ponBrzi_ = (r && r.status === 'ok') ? (r.brzi || []) : [];
+      try { brziOznakeNaKarticama_(); } catch (eBo) {}
       return ponSlanja_;
     }).catch(function() { ponSlanjaObecanje_ = null; return []; });
     return ponSlanjaObecanje_;
@@ -20285,7 +20324,8 @@
     var ds = String(fieldVal(entry, 'Datum slanja aktivne ponude (admin)') || '').trim();
     if (ds && !(poVer[curVer] || []).some(function(z) { return z.prvo; })) { (poVer[curVer] = poVer[curVer] || []).unshift({ t: ds, prvo: true, prim: String(fieldVal(entry, 'Mail adrese za slanje ponude (admin)') || fieldVal(entry, 'Otvorena ponuda - mail primatelja (admin)') || ''), zap: false }); }
     var verzije = Object.keys(poVer).map(Number).sort(function(a, b) { return a - b; });
-    if (!verzije.length) { return ''; }
+    var bz_ = brziZapis_(entry), bzHtml_ = bz_ ? '<div class="pe-brzi">⚡ Upitnik popunjen <b>brzim unosom</b> (lozinka) ' + esc(bz_.t) + ' — obavezni su bili samo osnovni podaci; ostalo provjeri i dopuni.</div>' : '';
+    if (!verzije.length) { return bzHtml_; }
     var ukupno = 0, ponovljeno = 0; verzije.forEach(function(v) { poVer[v].forEach(function(z) { ukupno++; if (!z.prvo) { ponovljeno++; } }); });
     var STAT = { potvrdjena: 'prihvaćena', odbijena: 'odbijena', ponistena: 'poništena', istekla: 'istekla', ponistena_nakon_prihvata: 'poništena nakon prihvata' };
     var h = '<details class="pon-evid" open><summary>📨 Evidencija slanja — <b>' + Math.max(curVer, verzije[verzije.length - 1]) + '. ponuda' + (verzije.length > 1 ? ' (ukupno ' + verzije.length + ' verzije)' : '') + '</b> · poslano ' + ukupno + '×' + (ponovljeno ? ' (od toga ponovljeno ' + ponovljeno + '×)' : '') + '</summary>';
@@ -20299,7 +20339,7 @@
         h += '<div class="pe-red ' + (z.prvo ? 'prvo' : 'pon') + '"><span class="pe-ikona">' + (z.prvo ? '📧' : '↻') + '</span><span class="pe-vr">' + (z.prvo ? 'Poslano' : n + '. ponovno slanje') + '</span><span class="pe-dt">' + esc(z.t) + '</span><span class="pe-prim">' + (z.prim ? '→ ' + esc(z.prim) : '<i>adrese nisu zabilježene</i>') + '</span></div>';
       });
     });
-    return h + '</details>';
+    return h + bzHtml_ + '</details>';
   }
 
   // v351: boja kartice po roku ponude + odbrojavanje uživo + legenda sa strane
@@ -20456,6 +20496,7 @@
         }
       }
     } catch (ePonMini) { /* nije kritično */ }
+    try { var bzK_ = brziZapis_(entry), tB_ = head.querySelector('.entry-card-title'); if (bzK_ && tB_ && !tB_.querySelector('.brzi-cip')) { tB_.insertAdjacentHTML('beforeend', '<span class="brzi-cip" title="Upitnik popunjen brzim unosom (lozinka) ' + esc(bzK_.t) + '">⚡ brzi upitnik</span>'); } } catch (eBzK) {}
     // v354: prihvaćena ponuda (obična ili otvorena) — plavo + „✅ PRIHVAĆENA datum”; u Klijentima i Arhivi se ne boja
     try {
       if (ponudaStatusSazetak_(entry) === 'potvrdjena' && !(typeof jeArhiva === 'function' && jeArhiva(entry)) && !(!entry.otvorena && typeof jeOtvorenKlijent === 'function' && jeOtvorenKlijent(entry))) {
@@ -29455,6 +29496,7 @@
     sudregOsvjeziStanje_();
     unikPostavkeUcitaj_();
     try { mailPosiljateljUcitaj_(); } catch (eMp) {}
+    try { brziLozinkaUcitaj_(); } catch (eBz) {}
     gasCall({ action: 'adminPostavkeGet', token: adminToken }).then(function(res) {
       if (handleAuthError(res)) { return; }
       if (res.status === 'ok') {
