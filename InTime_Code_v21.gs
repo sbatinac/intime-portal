@@ -897,6 +897,26 @@ function upitiAutoPopravi_(sheet) {
   cache.put('auto_err_fix', '1', 600);
   try { popraviErrorCelijeList_(sheet); } catch (e1) {}
   try { popraviErrorCelijeList_(getOrCreateImenikSheet()); } catch (e2) {}
+  try { popraviOibNuleList_(sheet); } catch (e3) {}
+}
+
+// v365: stari redovi kojima je Sheets maknuo vodeću nulu OIB-a (06760450295 → 6760450295) — vraća se nula i ćelija postaje tekst.
+// Dira samo stupce s nazivom „OIB” (ili koji počinju s „OIB ”), samo vrijednosti od 9–10 znamenki; ništa se ne briše.
+function popraviOibNuleList_(sheet) {
+  if (!sheet) { return 0; }
+  var lr = sheet.getLastRow(), lc = sheet.getLastColumn(); if (lr < 2) { return 0; }
+  var h = sheet.getRange(1, 1, 1, lc).getValues()[0], n = 0;
+  h.forEach(function(naziv, ci) {
+    var nz = String(naziv || '').trim();
+    if (!(nz === 'OIB' || /^OIB[\s(]/.test(nz))) { return; }
+    var rng = sheet.getRange(2, ci + 1, lr - 1, 1), vals = rng.getValues(), promjena = false;
+    for (var r = 0; r < vals.length; r++) {
+      var d = String(vals[r][0] === null || vals[r][0] === undefined ? '' : vals[r][0]).replace(/\D/g, '');
+      if ((typeof vals[r][0] === 'number' || /^\d{9,10}$/.test(String(vals[r][0]))) && d.length >= 9 && d.length < 11) { vals[r][0] = "'" + oibNorm_(d); promjena = true; n++; }
+    }
+    if (promjena) { rng.setValues(vals); }
+  });
+  return n;
 }
 
 function adminPopraviErrorCelije(token) {
@@ -10597,6 +10617,7 @@ function adminListEntries(token) {
     for (var c = 0; c < header.length; c++) {
       var v = data[i][c];
       var fv_ = formatirajSheetVrijednost_(v);
+      if (c === iOibIz_ && fv_ !== '' && fv_ !== null && fv_ !== undefined) { fv_ = oibNorm_(fv_) || fv_; }   // v365: OIB uvijek s vodećom nulom
       if (fv_ !== '' && fv_ !== null && fv_ !== undefined) { obj[header[c]] = fv_; }   // v314: prazna polja se ne šalju (89 % polja je prazno); klijent ih vraća preko "zaglavlje"
     }
     // Sašin izričit zahtjev (20.9.2026., dvadeset i sedmi krug — "ako
