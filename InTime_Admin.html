@@ -25866,7 +25866,10 @@
           slanjeKopirajNazivBtn.textContent = '📋 Kopiraj naziv ponude';
           var tekstK_ = document.createElement('div'); tekstK_.className = 'af-kopiraj-naziv-tekst'; tekstK_.style.cssText = 'font-size:12px;color:#5b6664;margin-top:3px;word-break:break-word;';
           kutijaK_.appendChild(slanjeKopirajNazivBtn); kutijaK_.appendChild(tekstK_);
-          omotK_.appendChild(kutijaK_);
+          // v367: IZVAN zamrznutog okvira „Slanje ponude mailom” (inače pointer-events:none nakon slanja ponude) — odmah ispod njega
+          var okvirK_ = wrap.querySelector('.af-slanje-okvir');
+          if (okvirK_ && okvirK_.parentNode) { kutijaK_.style.margin = '8px 0 0'; okvirK_.parentNode.insertBefore(kutijaK_, okvirK_.nextSibling); }
+          else { omotK_.appendChild(kutijaK_); }
           slanjeKopirajNazivBtn.addEventListener('click', function(ev) {
             ev.stopPropagation();
             var t_ = nazivPonudeZaKopiranje_();
