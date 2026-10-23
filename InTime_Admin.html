@@ -17893,6 +17893,7 @@
         '<div class="sort-red" style="margin:0 0 8px;">' + sortBarHtml_('Otvorene') + '</div>' +
         '<div class="ov-karte entry-list-inner" id="ov-karte"></div>';
       var $ = function(id) { return paneSlanje.querySelector('#' + id); };
+      try { sifraPoljeVezi_($('ov-broj')); } catch (eSf) {}   // v368: BROJ-GG-SB
       function status(t, greska) {
         var el = $('ov-slanje-status'); el.textContent = t || ''; el.className = 'ov-status' + (greska ? ' greska' : '');
         // poruka mora biti uočljiva (ne sitno slovo uz gumb)
@@ -17928,6 +17929,7 @@
         });
       });
       function stvori(potvrdjenoDuplikat) {
+        if ($('ov-broj').value.trim()) { $('ov-broj').value = sifraPonudeFormat_($('ov-broj').value); }   // v368
         var p = { broj: $('ov-broj').value.trim(), oib: $('ov-oib').value.trim(), naziv: $('ov-naziv').value.trim(), grad: $('ov-grad').value.trim(), primatelj: $('ov-mail').value.trim(), izvorKontakta: $('ov-izvor').value === '__novi__' ? '' : $('ov-izvor').value, docs: [], rowIndex: 0, potvrdjenoDuplikat: !!potvrdjenoDuplikat };
         if (!p.broj || p.broj.length < 3 || /[\s\/\\]/.test(p.broj)) { status('Upiši broj ponude (bez razmaka), npr. 4567-26-SB.', true); return; }
         if (!p.naziv) { status('Upiši naziv firme.', true); return; }
@@ -20287,6 +20289,18 @@
     var x = m[entry && entry.izvor];
     return x ? '<span class="izv-cip ' + x[0] + '" title="' + esc(x[2]) + '">' + x[1] + '</span>' : '';
   }
+  // v368: broj ponude uvijek BROJ-GG-SB velikim slovima (isto radi i poslužitelj): „4501” / „4501-26-sb” → „4501-26-SB”
+  function sifraPonudeFormat_(t) {
+    var u = String(t == null ? '' : t).trim().toUpperCase();
+    var m = /^(\d{1,8})(?:[\s\-_.\/]*(\d{2}))?(?:[\s\-_.\/]*SB)?$/.exec(u);
+    if (!m) { return u; }
+    return m[1] + '-' + (m[2] || String(new Date().getFullYear()).slice(-2)) + '-SB';
+  }
+  function sifraPoljeVezi_(inp) {
+    if (!inp || inp._sifraVezano) { return; } inp._sifraVezano = true;
+    inp.addEventListener('input', function() { var p = inp.selectionStart; inp.value = inp.value.toUpperCase(); if (p !== null && inp.setSelectionRange) { inp.setSelectionRange(p, p); } });
+    inp.addEventListener('blur', function() { if (inp.value.trim() && !inp.readOnly) { inp.value = sifraPonudeFormat_(inp.value); } });
+  }
   // v362: EVIDENCIJA SLANJA PONUDE — sva slanja (prvo + ponovljena) po verzijama: 1. ponuda, 2. ponuda …
   var ponSlanja_ = null, ponSlanjaObecanje_ = null, ponBrzi_ = [];
   function brziZapis_(entry) { var oib = String(fieldVal(entry, 'OIB') || ''); return (ponBrzi_ || []).filter(function(b) { return (b.redak && b.redak === entry.rowIndex) || (oib && b.oib === oib); })[0] || null; }
@@ -20313,9 +20327,9 @@
   }
   function ponIsoFmt_(iso) { var d = new Date(iso); if (isNaN(d)) { return String(iso || ''); } var p = function(n) { return (n < 10 ? '0' : '') + n; }; return p(d.getDate()) + '.' + p(d.getMonth() + 1) + '.' + d.getFullYear() + '. ' + p(d.getHours()) + ':' + p(d.getMinutes()); }
   function ponEvidHtml_(entry, lista) {
-    var sif = String(fieldVal(entry, 'Šifra ponude (admin)') || '').trim(), oib = String(fieldVal(entry, 'OIB') || '').trim();
+    var sif = fieldVal(entry, 'Šifra ponude (admin)') ? sifraPonudeFormat_(fieldVal(entry, 'Šifra ponude (admin)')) : '', oib = String(fieldVal(entry, 'OIB') || '').trim();
     var curVer = parseInt(fieldVal(entry, 'Redni broj slanja ponude (admin)'), 10) || 1;
-    var moje = (lista || []).filter(function(x) { return sif ? (x.sifra === sif && (!oib || !x.oib || x.oib === oib)) : (x.redak === entry.rowIndex); });
+    var moje = (lista || []).filter(function(x) { return sif ? (sifraPonudeFormat_(x.sifra) === sif && (!oib || !x.oib || x.oib === oib)) : (x.redak === entry.rowIndex); });
     var poVer = {};
     moje.forEach(function(x) { (poVer[x.verzija] = poVer[x.verzija] || []).push({ t: x.t, prvo: /prvo/.test(x.vrsta), prim: x.primatelji, zap: true }); });
     // starije verzije i slanja prije uvođenja evidencije (21.10.2026.) — iz podataka kartice
@@ -23268,9 +23282,11 @@
       sifraInput.value = sifraInput.value.toUpperCase();
       if (pozicija !== null && sifraInput.setSelectionRange) { sifraInput.setSelectionRange(pozicija, pozicija); }
     });
+    sifraPoljeVezi_(sifraInput);
     sifraPotvrdiBtn.addEventListener('click', function(ev) {
       ev.stopPropagation();
-      var vrijednost = sifraInput.value.trim();
+      var vrijednost = sifraPonudeFormat_(sifraInput.value);   // v368
+      sifraInput.value = vrijednost;
       if (!vrijednost) {
         sifraStatusEl.textContent = 'Upiši šifru prije potvrde.';
         sifraStatusEl.classList.add('error');
@@ -25850,7 +25866,7 @@
       // v304: „📋 Kopiraj naziv ponude” odmah ispod tipke za slanje (ponude i otvorene ponude) — aktivna tek kad je ponuda poslana
       var slanjeKopirajNazivBtn = null;
       var nazivPonudeZaKopiranje_ = function() {
-        var sif = String(fieldVal(entry, 'Šifra ponude (admin)') || '').trim();
+        var sif = sifraPonudeFormat_(fieldVal(entry, 'Šifra ponude (admin)'));
         var klijent = String(fieldVal(entry, 'Naziv tvrtke') || '').trim() || '(bez naziva)';
         var grad = String(fieldVal(entry, 'Mjesto') || '').trim().toUpperCase() || '(bez mjesta)';
         var rev = fieldVal(entry, 'Ponuda je revizija (admin)') === 'DA';

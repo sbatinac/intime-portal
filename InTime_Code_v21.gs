@@ -898,6 +898,26 @@ function upitiAutoPopravi_(sheet) {
   try { popraviErrorCelijeList_(sheet); } catch (e1) {}
   try { popraviErrorCelijeList_(getOrCreateImenikSheet()); } catch (e2) {}
   try { popraviOibNuleList_(sheet); } catch (e3) {}
+  try { popraviSifreVelikaSlova_(sheet); } catch (e4) {}
+}
+// v368: broj ponude (šifra) uvijek BROJ-GG-SB velikim slovima — postojeći zapisi (npr. 4501-26-sb) se ispravljaju u „Šifra ponude (admin)” i „Broj” (samo ako je Broj ista šifra).
+function popraviSifreVelikaSlova_(sheet) {
+  if (!sheet) { return 0; }
+  var lr = sheet.getLastRow(), lc = sheet.getLastColumn(); if (lr < 2) { return 0; }
+  var h = sheet.getRange(1, 1, 1, lc).getValues()[0], cS = h.indexOf(ADMIN_ONLY_FIELDS.sifra_ponude), cB = h.indexOf('Broj'), n = 0;
+  if (cS === -1) { return 0; }
+  var rS = sheet.getRange(2, cS + 1, lr - 1, 1), vS = rS.getValues(), promS = false;
+  var rB = cB !== -1 ? sheet.getRange(2, cB + 1, lr - 1, 1) : null, vB = rB ? rB.getValues() : null, promB = false;
+  for (var i = 0; i < vS.length; i++) {
+    var t = String(vS[i][0] || '').trim(), u = sifraPonudeFormat_(t);
+    if (t && t !== u) {
+      vS[i][0] = sheetSig_(u); promS = true; n++;
+      if (vB && String(vB[i][0] || '') === t) { vB[i][0] = sheetSig_(u); promB = true; }
+    }
+  }
+  if (promS) { rS.setValues(vS); }
+  if (promB) { rB.setValues(vB); }
+  return n;
 }
 
 // v365: stari redovi kojima je Sheets maknuo vodeću nulu OIB-a (06760450295 → 6760450295) — vraća se nula i ćelija postaje tekst.
@@ -2298,7 +2318,7 @@ function adminPripremiDokumenteZaPonudu_(token, rowIndex, stavke) {
     var oib = (row[header.indexOf('OIB')] || '').toString().trim() || '(bez OIB-a)';
     var grad = (row[header.indexOf('Mjesto')] || '').toString().trim().toUpperCase() || '(bez mjesta)';
 
-    var sifraSirova = (row[header.indexOf(ADMIN_ONLY_FIELDS.sifra_ponude)] || '').toString().trim();
+    var sifraSirova = (row[header.indexOf(ADMIN_ONLY_FIELDS.sifra_ponude)] || '').toString().trim(); if (sifraSirova) { sifraSirova = sifraPonudeFormat_(sifraSirova); }
     if (!sifraSirova) { return { status: 'error', message: 'Prvo potvrdi INTRIX šifru ponude (gore, "✓ Potvrdi") — bez nje se direktorij ne može imenovati.' }; }
     var verzijaCol = header.indexOf(ADMIN_ONLY_FIELDS.ponuda_verzija);
     var verzija = (verzijaCol !== -1 && parseInt(row[verzijaCol], 10)) || 1;
@@ -10727,6 +10747,7 @@ function adminUpdateFields(token, rowIndex, fields) {
         poslije: String(fields[key] || '').trim()
       };
     }
+    if (key === 'sifra_ponude' && fields[key]) { fields[key] = sifraPonudeFormat_(fields[key]); }   // v368: BROJ-GG-SB, velikim slovima
     sheet.getRange(rowIndex, colIdx + 1).setValue(sheetSig_(fields[key]));
     primijenjenoPolja++;
   });
@@ -14181,7 +14202,7 @@ function zabiljeziEvidencijuSlanja_(rowIndex, primatelji, kada, nazivPredloska, 
   var naziv = (row[header.indexOf('Naziv tvrtke')] || '').toString().trim() || '(bez naziva)';
   var oib = (row[header.indexOf('OIB')] || '').toString().trim() || '(bez OIB-a)';
   var grad = (row[header.indexOf('Mjesto')] || '').toString().trim().toUpperCase() || '(bez mjesta)';
-  var sifraSirova = (row[header.indexOf(ADMIN_ONLY_FIELDS.sifra_ponude)] || '').toString().trim();
+  var sifraSirova = (row[header.indexOf(ADMIN_ONLY_FIELDS.sifra_ponude)] || '').toString().trim(); if (sifraSirova) { sifraSirova = sifraPonudeFormat_(sifraSirova); }
   if (!sifraSirova) { return; }
   var verzijaCol = header.indexOf(ADMIN_ONLY_FIELDS.ponuda_verzija);
   var verzija = (verzijaCol !== -1 && parseInt(row[verzijaCol], 10)) || 1;
@@ -14402,7 +14423,7 @@ function ponSlanjeZabiljezi_(rowIndex, primatelji, vrsta, kopija) {
   var sh = getOrCreateUpitiSheet(), lc = sh.getLastColumn();
   var h = sh.getRange(1, 1, 1, lc).getValues()[0], r = sh.getRange(rowIndex, 1, 1, lc).getValues()[0];
   var g = function(l) { var i = h.indexOf(l); return i === -1 ? '' : r[i]; };
-  var sif = String(g(ADMIN_ONLY_FIELDS.sifra_ponude) || '').trim(), ver = parseInt(g(ADMIN_ONLY_FIELDS.ponuda_verzija), 10) || 1;
+  var sif = g(ADMIN_ONLY_FIELDS.sifra_ponude) ? sifraPonudeFormat_(g(ADMIN_ONLY_FIELDS.sifra_ponude)) : '', ver = parseInt(g(ADMIN_ONLY_FIELDS.ponuda_verzija), 10) || 1;
   var od = ''; try { od = zadanaFromAdresa_() || Session.getEffectiveUser().getEmail(); } catch (eO) { od = ''; }
   var ev = getOrCreateNacrtSheet_(PON_SLANJA_SHEET_, PON_SLANJA_HEADER_, [2, 3, 5]);
   ev.appendRow(sheetSigRed_([nacrtDatum_(), sif ? sif + '-P' + ver : '', sif, ver, String(g('OIB') || ''), String(g('Naziv tvrtke') || '').slice(0, 200), vrsta === 'prvo' ? 'prvo slanje' : 'ponovno slanje', (primatelji || []).join(', ').slice(0, 500), od, kopija ? 'DA' : '', rowIndex]));
@@ -18020,7 +18041,7 @@ function provjeriIIzvijestiIsteklePonude_() {
       // ne pokušava iznova unedogled istu ponudu bez adrese.
       var rowIndex = i + 2;
       if (primatelji.length) {
-        var sifraSirova = sifraCol !== -1 ? String(row[sifraCol] || '').trim() : '';
+        var sifraSirova = sifraCol !== -1 ? String(row[sifraCol] || '').trim() : ''; if (sifraSirova) { sifraSirova = sifraPonudeFormat_(sifraSirova); }
         var verzija = (verzijaCol !== -1 && parseInt(row[verzijaCol], 10)) || 1;
         var sifraPonude = sifraSirova ? (sifraSirova + '-P' + verzija) : '(bez broja ponude)';
         var tijeloTekst = 'Poštovani,\n\n' +
@@ -23074,8 +23095,17 @@ function otvCitajRed_(rowIndex) {
   return { sheet: sheet, header: header, row: row, rowIndex: rowIndex, get: function(label) { var i = header.indexOf(label); return i === -1 ? '' : row[i]; },
     set: function(label, v) { var i = header.indexOf(label); if (i !== -1) { sheet.getRange(rowIndex, i + 1).setValue(sheetSig_(v)); row[i] = v; } } };
 }
+// v368: broj ponude uvijek u formatu BROJ-GG-SB (GG = zadnje 2 znamenke tekuće godine), velikim slovima.
+// „4501” / „4501-26-sb” / „4501 26 SB” → „4501-26-SB”. Ako ne počinje brojem, samo se pretvara u velika slova.
+function sifraPonudeFormat_(t) {
+  var u = String(t == null ? '' : t).trim().toUpperCase();
+  var m = /^(\d{1,8})(?:[\s\-_.\/]*(\d{2}))?(?:[\s\-_.\/]*SB)?$/.exec(u);
+  if (!m) { return u; }
+  var gg = m[2] || String(new Date().getFullYear()).slice(-2);
+  return m[1] + '-' + gg + '-SB';
+}
 function otvBrojPonude_(r) {
-  var sifra = String(r.get(ADMIN_ONLY_FIELDS.sifra_ponude) || '').trim();
+  var sifra = sifraPonudeFormat_(r.get(ADMIN_ONLY_FIELDS.sifra_ponude));
   var verzija = parseInt(r.get(ADMIN_ONLY_FIELDS.ponuda_verzija), 10) || 1;
   return { sifra: sifra, verzija: verzija, broj: sifra + '-P' + verzija };
 }
@@ -23213,7 +23243,7 @@ function otvStavkeIzDokumenata_(docs, sifra) {
 function otvPonudeSpremi(token, p) {
   if (!isValidAdminToken_(token)) { return { status: 'error', message: 'Sesija je istekla — prijavite se ponovno.' }; }
   p = p || {};
-  var sifra = String(p.broj || '').trim();
+  var sifra = sifraPonudeFormat_(p.broj);   // v368: BROJ-GG-SB, velikim slovima
   var oib = String(p.oib || '').trim();
   var naziv = String(p.naziv || '').trim();
   var primatelj = String(p.primatelj || '').trim();
