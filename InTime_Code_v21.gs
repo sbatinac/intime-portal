@@ -10748,6 +10748,12 @@ function adminUpdateFields(token, rowIndex, fields) {
       };
     }
     if (key === 'sifra_ponude' && fields[key]) { fields[key] = sifraPonudeFormat_(fields[key]); }   // v368: BROJ-GG-SB, velikim slovima
+    if (key === 'sifra_ponude') {   // v369: broj ponude se ne mijenja nakon što je ponuda poslana
+      var stariS_ = String(sheet.getRange(rowIndex, colIdx + 1).getValue() || '').trim();
+      var dsC_ = header.indexOf('Datum slanja aktivne ponude (admin)'), pvC_ = header.indexOf(ADMIN_ONLY_FIELDS.ponuda_povijest_json);
+      var poslana_ = (dsC_ !== -1 && sheet.getRange(rowIndex, dsC_ + 1).getValue()) || (pvC_ !== -1 && /\S/.test(String(sheet.getRange(rowIndex, pvC_ + 1).getValue() || '').replace(/^\[\]$/, '')));
+      if (poslana_ && stariS_ && sifraPonudeFormat_(stariS_) !== String(fields[key] || '')) { odbijenaPolja.push('Broj ponude se ne može mijenjati — ponuda je već poslana.'); return; }
+    }
     sheet.getRange(rowIndex, colIdx + 1).setValue(sheetSig_(fields[key]));
     primijenjenoPolja++;
   });

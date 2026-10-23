@@ -16330,7 +16330,7 @@
                 '<div class="rev-sit rev-uputa">Klikni → uz dokument: u polje (Analitički, Cjenik HR, Ponuda) ili u okvir „Za klijenta“ / „Samo interno“. Kopira se bez preimenovanja (✎ = ručno preimenuj kopiju).</div></div>' +
               '<div class="rev-desno">' +
                 '<div class="rev-slot rev-slot-an" data-slot="analiticki"><div class="rev-slot-naslov"><span class="rev-tocka"></span><b>Analitički cjenik - In Time d.o.o.</b><span class="rev-tip">EXCEL</span></div><div class="rev-slot-sadrzaj"></div></div>' +
-                '<div class="rev-slot rev-slot-hr" data-slot="cjenikhr"><div class="rev-slot-naslov"><span class="rev-tocka"></span><b>Cjenik Hrvatska</b><span class="rev-tip">EXCEL</span></div><div class="rev-slot-sadrzaj"></div></div>' +
+                '<div class="rev-slot rev-slot-hr" data-slot="cjenikhr"><div class="rev-slot-naslov"><span class="rev-tocka"></span><b>Cjenik Hrvatska → 🧮 KALKULATOR</b><span class="rev-tip">XLSX</span></div><div class="rev-slot-sadrzaj"></div></div>' +
                 '<div class="rev-slot rev-slot-po" data-slot="ponudasuradnja"><div class="rev-slot-naslov"><span class="rev-tocka"></span><b>Ponuda revizije uvjeta - In Time d.o.o.</b><span class="rev-tip">PDF</span></div><div class="rev-slot-sadrzaj"></div></div>' +
                 '<div class="rev-okvir rev-zaklijenta"><div class="rev-okvir-glava"><b>📤 Za klijenta — ide na oba mjesta</b></div><div class="rev-gk-lista"></div><div class="rev-sit">U direktorij koji klijent dobiva linkom i jedan primjerak u interni direktorij revizije.</div></div>' +
                 '<div class="rev-okvir rev-interno"><div class="rev-okvir-glava"><b>🔒 Samo interno — ne šalje se</b></div><div class="rev-gi-lista"></div><div class="rev-sit">Ostaje samo u internom direktoriju revizije. Klijent ih ne vidi.</div></div>' +
@@ -22038,7 +22038,7 @@
                   '<div class="af-dok-fiksno-sadrzaj"></div>' +
                 '</div>' +
                 '<div class="af-dok-fiksno af-dok-fiksno-plavo" data-slot="cjenikhr">' +
-                  '<div class="af-dok-fiksno-naslov"><span>🔵 Cjenik Hrvatska</span><span class="af-dok-fiksno-tip">Excel</span></div>' +
+                  '<div class="af-dok-fiksno-naslov"><span>🔵 Cjenik Hrvatska → 🧮 KALKULATOR</span><span class="af-dok-fiksno-tip">XLSX</span></div><div style="font-size:11px;color:#1b4a8a;margin:-2px 0 4px;">iz njega se puni kalkulator cijena klijenta (testni i pravi)</div>' +
                   '<div class="af-dok-fiksno-sadrzaj"></div>' +
                 '</div>' +
                 '<div class="af-dok-fiksno af-dok-fiksno-ljubicasto" data-slot="ponudasuradnja">' +
@@ -23283,6 +23283,14 @@
       if (pozicija !== null && sifraInput.setSelectionRange) { sifraInput.setSelectionRange(pozicija, pozicija); }
     });
     sifraPoljeVezi_(sifraInput);
+    // v369: broj ponude se smije mijenjati SAMO dok ponuda nije poslana; nakon slanja je zaključan
+    var sifraZakljucaj_ = function() {
+      var poslana_ = !!fieldVal(entry, 'Datum slanja aktivne ponude (admin)') || !!fieldVal(entry, 'Povijest prijašnjih slanja ponude (admin, JSON)').replace(/^\[\]$/, '');
+      if (!poslana_ || !fieldVal(entry, 'Šifra ponude (admin)')) { return; }
+      sifraInput.readOnly = true; sifraPotvrdiBtn.style.display = 'none'; sifraPromijeniBtn.style.display = 'none';
+      sifraStatusEl.classList.remove('error'); sifraStatusEl.textContent = '🔒 Zaključano — ponuda je poslana, broj se više ne mijenja.';
+    };
+    sifraZakljucaj_();
     sifraPotvrdiBtn.addEventListener('click', function(ev) {
       ev.stopPropagation();
       var vrijednost = sifraPonudeFormat_(sifraInput.value);   // v368
@@ -23322,6 +23330,7 @@
     });
     sifraPromijeniBtn.addEventListener('click', function(ev) {
       ev.stopPropagation();
+      if (fieldVal(entry, 'Datum slanja aktivne ponude (admin)')) { sifraZakljucaj_(); return; }
       if (!confirm('Sigurno želiš promijeniti Internu In Time šifru ponude (INTRIX)?\n\nTrenutna šifra: "' + sifraInput.value + '"')) { return; }
       sifraInput.readOnly = false;
       sifraInput.focus();
@@ -24586,7 +24595,7 @@
           res.datoteke.forEach(function(f) {
             h += '<div class="af-dok-stavka af-gotovo-stavka" draggable="true" data-id="' + esc(f.id) + '" data-name="' + esc(f.name) + '" data-url="' + esc(f.url) + '"><span>📄</span><span class="af-dok-naziv" title="' + esc(f.name) + '">' + esc(f.name) + '</span>' +
               '<span class="af-gotovo-akcije"><button type="button" class="gk" data-c="klijent"><i class="st">→ </i>Klijent</button><button type="button" class="gi" data-c="interno"><i class="st">→ </i>Interno</button>' +
-              '<button type="button" class="gz" data-slot="analiticki" title="Analitički cjenik (Excel)"><i class="st">→ </i>Analitički cjenik</button><button type="button" class="gp" data-slot="cjenikhr" title="Cjenik Hrvatska (Excel)"><i class="st">→ </i>Cjenik Hrvatska</button><button type="button" class="gl" data-slot="ponudasuradnja" title="Ponuda za suradnju (PDF)"><i class="st">→ </i>Ponuda za suradnju</button></span></div>';
+              '<button type="button" class="gz" data-slot="analiticki" title="Analitički cjenik (Excel)"><i class="st">→ </i>Analitički cjenik</button><button type="button" class="gp" data-slot="cjenikhr" title="Cjenik Hrvatska (XLSX) — iz njega se puni kalkulator cijena klijenta"><i class="st">→ </i>Cjenik HR → 🧮 kalkulator</button><button type="button" class="gl" data-slot="ponudasuradnja" title="Ponuda za suradnju (PDF)"><i class="st">→ </i>Ponuda za suradnju</button></span></div>';
           });
           gotovoIzvorLista.innerHTML = h || '<div class="af-dok-prazno">Mapa je prazna.</div>';
           setTimeout(function() { oznaciGotoveGumbe_(); }, 0);
