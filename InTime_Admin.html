@@ -5880,17 +5880,18 @@
     if (!el) { return; }
     try {
       // v344: gumb pokazuje samo otvorene ponude koje su POSLANE i još NISU prebačene u Ponude / Klijente (statistika prihvaćenih ostaje u prozoru Uspješnost)
-      var n = 0, ceka = 0;
+      var n = 0, ceka = 0, prih = 0;
       (allEntries || []).forEach(function(e) {
         var f = e.fields || {};
         if (e.status !== 'Otvorena' || f['Otvorena ponuda - datum prebacivanja (admin)']) { return; }
         var st = ponudaStatusSazetak_({ fields: f });
         if (st === 'nije_poslano') { return; }
+        if (st === 'potvrdjena' || st === 'ponistena_nakon_prihvata') { prih++; return; }   // v372: prihvaćene se ne broje na gumbu
         n++; if (st === 'na_cekanju') { ceka++; }
       });
       if (!n) { el.textContent = ''; if (btn) { btn.title = 'Nema otvorenih ponuda u Otvorenim'; } return; }
       el.textContent = String(n);
-      if (btn) { btn.title = 'Poslane otvorene ponude koje su još u Otvorenim: ' + n + ' (čeka odgovor: ' + ceka + '). Prebačene u Ponude se ne računaju. Statistika: Uspješnost.'; }
+      if (btn) { btn.title = 'Poslane otvorene ponude koje su još u Otvorenim (bez prihvaćenih): ' + n + ' (čeka odgovor: ' + ceka + '). Prihvaćene se ne računaju (sad ih je ' + prih + '), ni prebačene u Ponude. Statistika: Uspješnost.'; }
     } catch (eOt_) { /* nije kritično */ }
   }
   function renderTabCounts() {
