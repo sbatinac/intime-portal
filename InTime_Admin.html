@@ -2418,6 +2418,15 @@
   .kp-l-st{flex:1;text-align:center;}.kp-l-st .n{font-size:22px;font-weight:900;color:#0d2230;}.kp-l-st .l{font-size:12px;color:#4a5a57;}
   .kp-l-st.zadnji{border-left:1px dashed #cfd8d6;}
   .kp-l-str{font-size:12px;font-weight:800;color:#0b7a4b;padding:0 6px;text-align:center;white-space:nowrap;}
+  /* v378: Brojači u Postavkama — jasan kontrast */
+  .set-brojaci .permanent-stat-note{color:#1f2d3d !important;font-size:14px;font-weight:600;background:#fff;border:1px solid #c9daf3;border-radius:8px;padding:10px 12px;margin:0 0 10px;opacity:1 !important;}
+  .set-brojaci .permanent-stat-note strong{color:#0d47a1;font-size:18px;}
+  .set-brojaci .broj-panel{background:#fff !important;border:1px solid #c9daf3;border-radius:8px;color:#1f2d3d !important;opacity:1 !important;}
+  .set-brojaci .broj-panel-naslov{color:#0d47a1 !important;font-weight:800;}
+  .set-brojaci .broj-toggle-item{color:#1f2d3d !important;font-weight:700;opacity:1 !important;}
+  .set-brojaci .broj-stanje-badge{background:#e8f0fe !important;color:#0d47a1 !important;border:1px solid #bcd0ea;}
+  .set-brojaci .stat-reset-btn{background:#1565c0 !important;color:#fff !important;border:none !important;opacity:1 !important;font-weight:700;padding:6px 12px;border-radius:8px;cursor:pointer;}
+  .set-brojaci .stat-reset-btn:hover{background:#0d47a1 !important;}
   .kp-brojaci{margin:0 0 16px;background:#fff;border:1px dashed #cfd8d6;border-radius:12px;padding:0 14px;}
   .kp-brojaci>summary{cursor:pointer;font-size:12.5px;font-weight:800;color:#5a6b68;padding:10px 0;}
   .kp-brojaci[open]>summary{border-bottom:1px solid #eef2f1;margin-bottom:10px;}
@@ -2630,35 +2639,6 @@
 
     <div id="kp-lijevak" class="kp-lijevak"></div>
 
-    <details class="kp-brojaci"><summary>⚙ Brojači posjeta i numeracija (testni način)</summary>
-    <p class="permanent-stat-note">Ukupan broj dolazaka na stranicu od početka rada stranice (trajna statistika): <strong id="stat-posjete-sveukupno">—</strong> <button type="button" class="stat-reset-btn" style="margin-top:0;margin-left:6px;vertical-align:middle;" onclick="pokreniResetSveukupnihPosjeta_()" title="Resetiraj trajni brojač — zahtijeva dvostruku potvrdu (riječ + admin lozinka)">↺ Resetiraj</button></p>
-
-    <div class="broj-panel">
-      <span class="broj-panel-naslov">Numeracija — testni način:</span>
-      <label class="broj-toggle-item">
-        <span class="broj-toggle-switch"><input type="checkbox" id="broj-test-upitnik" onchange="postaviBrojTest_('upitnik', this.checked)"><span class="broj-toggle-slider"></span></span>
-        Upitnik <span id="broj-stanje-upitnik" class="broj-stanje-badge"></span>
-      </label>
-      <label class="broj-toggle-item">
-        <span class="broj-toggle-switch"><input type="checkbox" id="broj-test-odbijenica" onchange="postaviBrojTest_('odbijenica', this.checked)"><span class="broj-toggle-slider"></span></span>
-        Odbijenica <span id="broj-stanje-odbijenica" class="broj-stanje-badge"></span>
-      </label>
-      <label class="broj-toggle-item">
-        <span class="broj-toggle-switch"><input type="checkbox" id="broj-test-anketa" onchange="postaviBrojTest_('anketa', this.checked)"><span class="broj-toggle-slider"></span></span>
-        Ocjena kvalitete <span id="broj-stanje-anketa" class="broj-stanje-badge"></span>
-      </label>
-      <button type="button" class="stat-reset-btn" onclick="openPodesiBrojeveModal()" title="Ručno podesi sljedeći broj za bilo koju vrstu (zaštićeno lozinkom + potvrdom riječju)">⚙ Podesi numeraciju</button>
-      <!-- NOVO (19.9.2026., Sašin izričit zahtjev) — "master reset" SVIH TRI
-           numeracije odjednom (Upitnik/Odbijenica/Ocjena kvalitete → natrag
-           na 0001), za slučaj puno testiranja umjesto pojedinačnog resetiranja
-           svake vrste kroz "Podesi numeraciju". NAJVIŠA razina zaštite u
-           cijelom adminu, Sašin izričit redoslijed: (1) "jesi siguran" #1 →
-           (2) potvrda riječju → (3) "jesi siguran" #2 → (4) admin lozinka —
-           vidi openMasterResetBrojevaModal() niže. (9.10.2026.: GUMB JE PREMJEŠTEN
-           U ⚙️ POSTAVKE — "Numeracija" kartica; tok zaštite nepromijenjen.) -->
-      <span id="broj-panel-status" class="broj-toggle-label-test" hidden>Testni način uključen — novi unosi dobivaju fiksni testni broj, pravi brojač se ne diže.</span>
-    </div>
-    </details>
 
     <div class="tabs">
       <button type="button" class="tab-btn active" id="tab-btn-interes" onclick="switchTab('Interes')">Zainteresirani (<span id="tab-count-interes">0</span>)</button>
@@ -2810,6 +2790,37 @@
         <input type="checkbox" id="settings-auto-zatvori" onchange="autoZatvoriPostavi_(this.checked)" style="width:20px;height:20px;"> ⏱ Kartice se same zatvaraju nakon 5 s bez miša iznad njih
       </label>
       <p class="settings-hint" style="margin:0;">Ne zatvara se dok upisuješ u polje, dok traje spremanje/slanje ili dok je otvoren prozor. Vrijedi za ovo računalo.</p>
+    </div>
+    <!-- v378: premješteno s glavne stranice (Sašin zahtjev) -->
+    <div class="set-brojaci" style="border:2px solid #1565c0;background:#f2f7ff;border-radius:10px;padding:10px 12px;margin-bottom:14px;">
+      <label style="display:block;font-weight:800;margin-bottom:8px;color:#0d47a1;font-size:15px;">🔢 Brojači posjeta i numeracija (testni način)</label>
+    <p class="permanent-stat-note">Ukupan broj dolazaka na stranicu od početka rada stranice (trajna statistika): <strong id="stat-posjete-sveukupno">—</strong> <button type="button" class="stat-reset-btn" style="margin-top:0;margin-left:6px;vertical-align:middle;" onclick="pokreniResetSveukupnihPosjeta_()" title="Resetiraj trajni brojač — zahtijeva dvostruku potvrdu (riječ + admin lozinka)">↺ Resetiraj</button></p>
+
+    <div class="broj-panel">
+      <span class="broj-panel-naslov">Numeracija — testni način:</span>
+      <label class="broj-toggle-item">
+        <span class="broj-toggle-switch"><input type="checkbox" id="broj-test-upitnik" onchange="postaviBrojTest_('upitnik', this.checked)"><span class="broj-toggle-slider"></span></span>
+        Upitnik <span id="broj-stanje-upitnik" class="broj-stanje-badge"></span>
+      </label>
+      <label class="broj-toggle-item">
+        <span class="broj-toggle-switch"><input type="checkbox" id="broj-test-odbijenica" onchange="postaviBrojTest_('odbijenica', this.checked)"><span class="broj-toggle-slider"></span></span>
+        Odbijenica <span id="broj-stanje-odbijenica" class="broj-stanje-badge"></span>
+      </label>
+      <label class="broj-toggle-item">
+        <span class="broj-toggle-switch"><input type="checkbox" id="broj-test-anketa" onchange="postaviBrojTest_('anketa', this.checked)"><span class="broj-toggle-slider"></span></span>
+        Ocjena kvalitete <span id="broj-stanje-anketa" class="broj-stanje-badge"></span>
+      </label>
+      <button type="button" class="stat-reset-btn" onclick="openPodesiBrojeveModal()" title="Ručno podesi sljedeći broj za bilo koju vrstu (zaštićeno lozinkom + potvrdom riječju)">⚙ Podesi numeraciju</button>
+      <!-- NOVO (19.9.2026., Sašin izričit zahtjev) — "master reset" SVIH TRI
+           numeracije odjednom (Upitnik/Odbijenica/Ocjena kvalitete → natrag
+           na 0001), za slučaj puno testiranja umjesto pojedinačnog resetiranja
+           svake vrste kroz "Podesi numeraciju". NAJVIŠA razina zaštite u
+           cijelom adminu, Sašin izričit redoslijed: (1) "jesi siguran" #1 →
+           (2) potvrda riječju → (3) "jesi siguran" #2 → (4) admin lozinka —
+           vidi openMasterResetBrojevaModal() niže. (9.10.2026.: GUMB JE PREMJEŠTEN
+           U ⚙️ POSTAVKE — "Numeracija" kartica; tok zaštite nepromijenjen.) -->
+      <span id="broj-panel-status" class="broj-toggle-label-test" hidden>Testni način uključen — novi unosi dobivaju fiksni testni broj, pravi brojač se ne diže.</span>
+    </div>
     </div>
     <div style="border:2px solid #1e8449;background:#f1faf4;border-radius:10px;padding:10px 12px;margin-bottom:14px;">
       <label style="display:block;font-weight:700;margin-bottom:4px;color:#1e8449;">🔗 Direktni linkovi — što sve možeš poslati klijentu</label>
