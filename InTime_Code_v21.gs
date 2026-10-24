@@ -9752,7 +9752,8 @@ var ADMIN_ONLY_FIELDS = {
   pods_up_poslano: 'Podsjetnici na upitnik - poslano (admin, JSON)',
   // IZVOR KONTAKTA (16.10.2026., Sašin zahtjev): kako je Saša došao do firme (Info In Time, Hladni poziv, Preporuka, Pronašao na terenu…).
   // Ručno se bira na pismu namjere, otvorenoj ponudi, starom klijentu ili na kartici; ako je prazno a firma je odgovorila na pismo, nasljeđuje se s pisma.
-  izvor_kontakta: 'Izvor kontakta (admin)'
+  izvor_kontakta: 'Izvor kontakta (admin)',
+  intrix: 'INTRIX (admin)'   // v374: prihvaćena ponuda je u INTRIX-u (prekidač na kartici); poništava se kad ponuda dobije TM broj
   // (30.9.2026., ISPRAVAK ISTI DAN: polje "dokumenti_klijent_pristup" koje je
   // ovdje kratko postojalo — po-klijentu JSON popis mail-priloga — u
   // potpunosti je UKLONJENO. Saša je pojasnio da su ti dokumenti OPĆE upute
@@ -15818,6 +15819,7 @@ function izracunajOcekivanoZaglavljeUpiti_() {
   header.push('Testni kalkulator - prva prijava (admin)');
   header.push('Testni kalkulator - zadnja aktivnost (admin)');
   header.push('Testni kalkulator - broj izračuna (admin)');
+  header.push('INTRIX (admin)');   // v374 — na sam kraj (self-healing doda stupac)
   // (30.9.2026., ISPRAVAK ISTI DAN: stupac "Dokumenti uz pristupne podatke
   // (admin, JSON)" koji je ovdje kratko bio dodan uklonjen je zajedno s
   // ADMIN_ONLY_FIELDS.dokumenti_klijent_pristup gore — vidi napomenu ondje.
