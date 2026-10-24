@@ -2376,6 +2376,10 @@
   .kp-d .l{font-size:12.5px;color:#4a5a57;margin:3px 0 6px;min-height:32px;}
   .kp-d .a{font-size:12px;font-weight:800;color:#0b6b60;}
   .kp-d.crv .n{color:#c0392b;}.kp-d.nar .n{color:#e65100;}.kp-d.ind .n{color:#4f46e5;}.kp-d.zel .n{color:#0b7a4b;}.kp-d.plav .n{color:#1a73c8;}
+  /* v377: INTRIX kućica — ljubičasta kad ima ponuda u INTRIX-u */
+  .kp-d.ljub .n{color:#7b2ff7;}
+  .kp-d.ljub:not(.nula){background:linear-gradient(135deg,#5b1fc7 0%,#7b2ff7 60%,#9d5cff 100%) !important;border-color:#b98cff !important;box-shadow:0 0 18px rgba(123,47,247,.45) !important;}
+  .kp-d.ljub:not(.nula) .n,.kp-d.ljub:not(.nula) .l,.kp-d.ljub:not(.nula) .a{color:#fff !important;text-shadow:none !important;}
   .kp-d.nula{opacity:.55;}.kp-d.nula .n{color:#8a9a97;}
   .kp-danas-ok{font-size:13px;color:#0b7a4b;font-weight:700;margin-top:8px;}
   /* ---- KOMANDNA PLOČA — gornja zona u stilu „plavi PANTHER" (20.10.2026.): isti sjaj kao prijava; kartice ispod ostaju svijetle zbog čitljivosti ---- */
@@ -29811,6 +29815,13 @@
       var stariNijePos = stariCeka.filter(function(e) { return !(parseInt(fieldVal(e, 'Stari klijent - broj slanja upitnika (admin)'), 10) > 0); }).length;
       // zainteresirani koji čekaju prvu ponudu = upiti koji su još na kartici „Zainteresirani" (nisu ponuda, klijent, arhiva ni stari klijent)
       var bezPonude = interes.filter(function(e) { return !kpStari_(e) && kpGdje_(e).tab === 'Interes'; }).length;
+      // v377: prihvaćene ponude u INTRIX-u (bez TM broja) — Ponude i Otvorene
+      var ixPon = 0, ixOtv = 0;
+      sve.forEach(function(e) {
+        if (ponudaStatusSazetak_(e) !== 'potvrdjena' || !intrixAktivan_(e)) { return; }
+        if (e.status === 'Otvorena') { if (!fieldVal(e, 'Otvorena ponuda - datum prebacivanja (admin)')) { ixOtv++; } }
+        else if (e.status === 'Interes' && jePonuda(e) && !jeOtvorenKlijent(e) && !jeArhiva(e)) { ixPon++; }
+      });
       var stProb = document.getElementById('stat-problemi');
       var probl = stProb ? (parseInt(stProb.textContent, 10) || 0) : 0;
       var kar = [
@@ -29819,7 +29830,8 @@
         { n: istice, kl: 'crv', l: 'ponude kojima rok ističe u 48 h' + (isticeOtv ? ' (od toga ' + isticeOtv + ' otvorenih)' : '') + (isteklo ? ' (+ ' + isteklo + ' već isteklo)' : ''), a: (isticeOtv && isticeOtv === istice) ? 'Otvorene ponude →' : 'Otvori Ponude →', tab: (isticeOtv && isticeOtv === istice) ? 'Otvorene' : 'Ponude' },
         { n: otvBez, kl: 'nar', l: 'otvorene ponude prihvaćene, a podaci (upitnik) nisu stigli', a: 'Otvorene ponude →', tab: 'Otvorene' },
         { n: stariCeka.length, kl: 'ind', l: 'stari klijenti čekaju upitnik' + (stariNijePos ? ' (' + stariNijePos + ' još nije poslano)' : ''), a: 'Unos starih klijenata →', tab: 'Stari' },
-        { n: probl, kl: 'zel', l: 'otvoreni problemi klijenata', a: 'Servis klijenata →', tab: 'Problemi' }
+        { n: probl, kl: 'zel', l: 'otvoreni problemi klijenata', a: 'Servis klijenata →', tab: 'Problemi' },
+        { n: ixPon + ixOtv, kl: 'ljub', info: true, l: 'ponuda čeka odobrenje u INTRIX-u' + (ixOtv && ixPon ? ' (Ponude: ' + ixPon + ', Otvorene: ' + ixOtv + ')' : ''), a: (ixOtv && !ixPon) ? 'Otvorene ponude →' : 'Otvori Ponude →', tab: (ixOtv && !ixPon) ? 'Otvorene' : 'Ponude' }
       ];
       var box = document.getElementById('kp-danas');
       if (box) {
