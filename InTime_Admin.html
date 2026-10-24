@@ -3330,7 +3330,23 @@
   function zapisiGotovi_() {
     if (ZAPISI_U_TIJEKU_ === 0 && OSVJEZI_NAKON_ZAPISA_) { OSVJEZI_NAKON_ZAPISA_ = false; try { loadEntries(); } catch (eZg) { /* nije kritično */ } }
   }
+  // v370: ISTA čitanja poslana u isto vrijeme (npr. otvaranje otvorene ponude slalo je popis logističkih centara i pregled mape po 3 puta)
+  // idu poslužitelju JEDNOM; svaki pozivatelj dobije svoju kopiju odgovora. Samo dok poziv traje — nema zastarjelih podataka.
+  var CITANJA_SPOJI_ = /^(adminLogistickiCentriList|adminBrowseSustavFolder|admin[A-Za-z]*UvodniTekstoviList|adminMailPredlosciList|adminListOsnovnaDokumentacija|adminDohvatiKlijentPristupOpceDokumente|adminKalkulatorPracenjeSazetak|adminGetTestMail|adminPostavkeGet|adminIzvoriKontakta|adminOdgovoriPovijest|adminRevizijeKlijenti|brziBiljeskeLista|adminPonudeSlanjaList|adminPonudaOpcijeLista|adminPonudaNacrtiLista|adminLogKontaktiStanje|adminPismaPogodci|otvPonudeLista|adminListEntries|adminGetCounters)$/;
+  var CITANJA_U_TIJEKU_ = {};
   function gasCall(payload, pokusaj) {
+    if (!pokusaj && payload && CITANJA_SPOJI_.test(String(payload.action || ''))) {
+      var kljucC_; try { kljucC_ = JSON.stringify(payload); } catch (eK) { kljucC_ = null; }
+      if (kljucC_) {
+        var zajednicki_ = CITANJA_U_TIJEKU_[kljucC_];
+        if (!zajednicki_) {
+          zajednicki_ = CITANJA_U_TIJEKU_[kljucC_] = gasCallOsnovni_(payload, 1);
+          var makni_ = function() { if (CITANJA_U_TIJEKU_[kljucC_] === zajednicki_) { delete CITANJA_U_TIJEKU_[kljucC_]; } };
+          zajednicki_.then(makni_, makni_);
+        }
+        return zajednicki_.then(function(j) { try { return JSON.parse(JSON.stringify(j)); } catch (eC) { return j; } });
+      }
+    }
     pokusaj = pokusaj || 1;
     if (pokusaj === 1 && ZAPIS_AKCIJE_.test(String(payload.action || ''))) {
       ZAPISI_U_TIJEKU_++;
@@ -3585,12 +3601,21 @@
     setTimeout(gifPaljbaZatvori_, 100);
   }
 
+  var PRIJAVA_U_TIJEKU_ = false;   // v370: drugi klik / Enter dok prijava traje ne šalje još jednu prijavu (prije se sve učitavalo dvaput)
+  function prijavaGumb_(radi) {
+    var g = document.querySelector('#login-form .prijava-gumb'); if (!g) { return; }
+    if (!g.dataset.izvorno) { g.dataset.izvorno = g.textContent; }
+    g.disabled = !!radi; g.textContent = radi ? 'Prijavljujem…' : g.dataset.izvorno; g.style.opacity = radi ? '.7' : '';
+  }
   function handleLogin(e) {
     e.preventDefault();
+    if (PRIJAVA_U_TIJEKU_) { return false; }
+    PRIJAVA_U_TIJEKU_ = true; prijavaGumb_(true);
     var pass = document.getElementById('login-password').value;
     var user = document.getElementById('login-username').value;
     document.getElementById('login-error').hidden = true;
     gasCall({ action: 'adminLogin', username: user, password: pass }).then(function(res) {
+      PRIJAVA_U_TIJEKU_ = false; prijavaGumb_(false);
       if (res.status !== 'ok') {
         showLoginError(res.message || 'Prijava nije uspjela.');
         return;
@@ -3600,6 +3625,7 @@
       document.getElementById('login-password').value = '';
       showDashboard();
     }).catch(function() {
+      PRIJAVA_U_TIJEKU_ = false; prijavaGumb_(false);
       showLoginError('Greška u komunikaciji s poslužiteljem. Provjerite internetsku vezu i GAS_WEB_APP_URL.');
     });
     return false;
@@ -10755,7 +10781,7 @@
     nacrtaj();
     azurirajKucicu();
     var intervalSat = setInterval(azurirajKucicu, 1000);
-    var intervalPuls = setInterval(function(){ if (prikaziDodatak) nacrtaj(); }, 60);
+    var intervalPuls = setInterval(function(){ if (prikaziDodatak && !document.hidden && canvas.offsetParent !== null) nacrtaj(); }, 60);   // v370: crta samo kad je graf na ekranu
 
     return {
       osvjezi: function(){ dohvatiPodatke().then(function(p){ primijeniPodatke(p||{}); }); },
