@@ -9106,6 +9106,7 @@ function doPost(e) {
   } catch (err) {
     result = { status: 'error', message: err.message };
   }
+  try { if (!(data && data.action && CISTA_CITANJA_RE_.test(String(data.action)))) { pogodciKesObrisi_(); } } catch (ePk_) { /* v371: keš pogodaka */ }
   try { if (data && data.poslaoAI === true && result && result.status === 'ok') { aiSlanjeZabiljezi_(data); } } catch (eAi_) { /* bilješka nije kritična */ }
   if (ZAUSTAVLJENI_PRIVITCI_.length && result && typeof result === 'object' && !Array.isArray(result)) { result.zaustavljeniPrivitci = ZAUSTAVLJENI_PRIVITCI_.slice(0, 20); }
   return ContentService
@@ -10510,27 +10511,32 @@ function adminResetPosjeteSveukupno(token) {
 function adminUcitajPocetno(token, faza) {
   if (!isValidAdminToken_(token)) { return { status: 'error', message: 'Sesija je istekla — prijavite se ponovno.' }; }
   var r = { status: 'ok' };
+  // v371: mjerenje trajanja svakog dijela (r._ms) — da se vidi gdje poslužitelj gubi vrijeme; podaci su isti kao prije
+  var ms_ = {}, t_ = Date.now();
+  function mj_(ime, fn) { var t0 = Date.now(); var v = fn(); ms_[ime] = Date.now() - t0; return v; }
   if (faza !== 'ostalo') {
-    kalkTestPracenjeBackfill_();   // v325: jednokratno (provjera zastavice je jeftina)
-    r.counters = adminGetCounters(token);
-    r.entries = adminListEntries(token);
-    r.brojStatus = adminGetBrojStatus(token);
-    r.imenik = adminListImenik(token);
+    mj_('backfill', function() { return kalkTestPracenjeBackfill_(); });   // v325: jednokratno (provjera zastavice je jeftina)
+    r.counters = mj_('counters', function() { return adminGetCounters(token); });
+    r.entries = mj_('entries', function() { return adminListEntries(token); });
+    r.brojStatus = mj_('brojStatus', function() { return adminGetBrojStatus(token); });
+    r.imenik = mj_('imenik', function() { return adminListImenik(token); });
   }
   if (faza !== 'jezgra') {
-    r.ankete = adminListAnkete(token);
-    r.anketaStatistika = adminGetAnketaStatistika(token);
-    r.faq = adminFaqList(token);
-    r.zoneStatus = adminZoneStatus(token);
-    r.zoneArhiva = adminZoneArhivaList(token);
-    r.kalkulatorCjenikStatus = adminKalkulatorCjenikStatus(token);
-    r.kalkulatorCjenikArhiva = adminKalkulatorCjenikArhivaList(token);
-    r.kalkulatorNapomene = adminKalkulatorNapomenaList(token);
-    r.imenikAutoSync = adminGetImenikAutoSync(token);
-    r.gorivoPostotci = gorivoDohvatiPostotke(token);
-    r.gorivoEmail = gorivoDohvatiEmailPodsjetnik(token);
-    r.gorivoDogadjaji = gorivoDohvatiDogadjaje(token);
+    r.ankete = mj_('ankete', function() { return adminListAnkete(token); });
+    r.anketaStatistika = mj_('anketaStatistika', function() { return adminGetAnketaStatistika(token); });
+    r.faq = mj_('faq', function() { return adminFaqList(token); });
+    r.zoneStatus = mj_('zoneStatus', function() { return adminZoneStatus(token); });
+    r.zoneArhiva = mj_('zoneArhiva', function() { return adminZoneArhivaList(token); });
+    r.kalkulatorCjenikStatus = mj_('kalkCjenikStatus', function() { return adminKalkulatorCjenikStatus(token); });
+    r.kalkulatorCjenikArhiva = mj_('kalkCjenikArhiva', function() { return adminKalkulatorCjenikArhivaList(token); });
+    r.kalkulatorNapomene = mj_('kalkNapomene', function() { return adminKalkulatorNapomenaList(token); });
+    r.imenikAutoSync = mj_('imenikAutoSync', function() { return adminGetImenikAutoSync(token); });
+    r.gorivoPostotci = mj_('gorivoPostotci', function() { return gorivoDohvatiPostotke(token); });
+    r.gorivoEmail = mj_('gorivoEmail', function() { return gorivoDohvatiEmailPodsjetnik(token); });
+    r.gorivoDogadjaji = mj_('gorivoDogadjaji', function() { return gorivoDohvatiDogadjaje(token); });
   }
+  ms_.ukupno = Date.now() - t_;
+  r._ms = ms_;
   return r;
 }
 
@@ -21406,9 +21412,22 @@ function adminPogodciOznaciVidjeno(token, ms) {
     } finally { lock.releaseLock(); }
   } catch (e) { return { status: 'error', message: String(e && e.message || e) }; }
 }
+// v371: UBRZANJE — izračun pogodaka (8–11 s) pamti se 10 min; briše se čim bilo koja radnja koja nije čisto čitanje
+// prođe kroz doPost (novi upit, pismo, ponuda, prebacivanje…), pa novi pogodak stiže odmah kao i prije.
+var POGODCI_KES_KLJUC_ = 'pogodci_v371', POGODCI_KES_SEK_ = 600;
+var CISTA_CITANJA_RE_ = /(List|Lista|Get|Status|Povijest|Sazetak|Pogodci|Stanje|Info|Provjera|Statistika)$|^(adminUcitajPocetno|adminBrowseSustavFolder|adminRevizijeKlijenti|adminIzvoriKontakta|trackVisit|adminLogin)$|^(adminDohvati|adminList|adminGet|gorivoDohvati)/;
+function pogodciKesObrisi_() { try { CacheService.getScriptCache().remove(POGODCI_KES_KLJUC_); } catch (e) { /* nije kritično */ } }
 function adminPismaPogodci(token) {
   if (!isValidAdminToken_(token)) { return pismaAuthGreska_(); }
-  try { var g = pismaPogodci_(); g.status = 'ok'; g.zadnjeVidjenoMs = pogodciZadnjeVidjenoMs_(); return g; }
+  try {
+    var kes = null; try { kes = CacheService.getScriptCache().get(POGODCI_KES_KLJUC_); } catch (eK) { kes = null; }
+    if (kes) { var gk = JSON.parse(kes); gk.zadnjeVidjenoMs = pogodciZadnjeVidjenoMs_(); gk.izKesa = true; return gk; }
+  } catch (eK2) { /* izračunaj ispočetka */ }
+  try {
+    var g = pismaPogodci_(); g.status = 'ok';
+    try { var js = JSON.stringify(g); if (js.length < 95000) { CacheService.getScriptCache().put(POGODCI_KES_KLJUC_, js, POGODCI_KES_SEK_); } } catch (eP) { /* prevelik ili keš nedostupan */ }
+    g.zadnjeVidjenoMs = pogodciZadnjeVidjenoMs_(); return g;
+  }
   catch (err) { return { status: 'error', message: 'Izračun Battleshipsa nije uspio: ' + err.message }; }
 }
 

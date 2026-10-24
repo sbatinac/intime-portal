@@ -3710,7 +3710,7 @@
       if (res.status !== 'ok') { loadAllOdvojeno_(); return; }
       primijeniJezgru_(res);
       if (res.ankete !== undefined && res.gorivoPostotci !== undefined) { primijeniOstalo_(res); return; }   // stari .gs: stiglo je sve
-      setTimeout(loadOstalo_, 300);
+      setTimeout(function() { if (!OSTALO_STANJE_.gotovo) { loadOstalo_(); } }, 30000);   // v371: sporedni podaci (ankete, FAQ, zone, kalkulator, gorivo) 30 s kasnije — ne guše prve klikove; odmah ako se otvori njihova kartica ili Postavke
     }).catch(function() { loadAllOdvojeno_(); });
   }
   function loadOstaloOdvojeno_() {
@@ -5954,6 +5954,7 @@
     document.getElementById('tab-btn-pogodci').classList.toggle('active', tab === 'Pogodci');
     var statPanel = document.getElementById('anketa-statistika-panel');
     if (statPanel) { statPanel.hidden = (tab !== 'Ankete') || !statPanel.innerHTML; }
+    try { if (!OSTALO_STANJE_.gotovo && /^(Ankete|FAQ|Zone|Kalkulator|Gorivo|Imenik|Cjenici)$/.test(tab)) { loadOstalo_(); } } catch (eOs_) {}   // v371
     renderEntries();
     if (tab === 'NoviKlijenti' || tab === 'Revizije') { revizijeOsvjezi_(true); }
   }
@@ -29554,6 +29555,7 @@
     });
   })();
   function openSettingsModal() {
+    try { if (!OSTALO_STANJE_.gotovo) { loadOstalo_(); } } catch (eOs2_) {}   // v371: Postavke trebaju gorivo/imenik postavke
     var errEl = document.getElementById('settings-error');
     var okEl = document.getElementById('settings-ok');
     var emailEl = document.getElementById('settings-bcc-email');
