@@ -593,6 +593,14 @@
   .cj-kalk{margin:14px 0;border:2px solid #1f5fb0;border-radius:12px;overflow:hidden;}
   .cj-kalk-glava{background:#1f5fb0;color:#fff;padding:8px 14px;font-weight:800;display:flex;justify-content:space-between;align-items:center;gap:10px;}
   .cj-kalk iframe{width:100%;height:1500px;border:0;display:block;background:#fff;}
+  /* v373: brojač na gumbima Ponude / Otvorene ponude — veliko: čeka odgovor; malo: prihvaćene (žuto), odbijene (crveno), ukupno */
+  .bs-brojac{display:inline-flex;flex-direction:column;align-items:center;vertical-align:middle;margin-left:6px;line-height:1.1;}
+  .bs-brojac .bs-v{font-size:17px;font-weight:800;background:rgba(255,255,255,.22);border-radius:10px;padding:1px 9px;min-width:14px;text-align:center;}
+  .bs-brojac .bs-m{display:flex;gap:3px;margin-top:3px;flex-wrap:wrap;justify-content:center;}
+  .bs-brojac .bs-m b{font-size:10.5px;font-weight:800;border-radius:8px;padding:0 5px;line-height:15px;}
+  .bs-brojac .bs-p{background:#ffd23f;color:#4a3500;}
+  .bs-brojac .bs-o{background:#e5383b;color:#fff;}
+  .bs-brojac .bs-u{background:rgba(0,0,0,.28);color:#fff;}
   .ponude-ceka-bedz{display:inline-block;margin-left:6px;background:#ffb703;color:#5a3a00;border-radius:10px;padding:0 7px;font-size:11.5px;font-weight:800;}
   .ponude-ceka-bedz:empty{display:none;}
   .ponude-ceka-traka{margin:0 0 12px;padding:10px 14px;border-radius:10px;background:#fff8e1;border:1px solid #f0c24b;color:#6b4300;font-size:13.5px;font-weight:600;}
@@ -2639,7 +2647,7 @@
 
     <div class="tabs">
       <button type="button" class="tab-btn active" id="tab-btn-interes" onclick="switchTab('Interes')">Zainteresirani (<span id="tab-count-interes">0</span>)</button>
-      <button type="button" class="tab-btn" id="tab-btn-ponude" onclick="switchTab('Ponude')">Ponude (<span id="tab-count-ponude">0</span>)<span id="tab-ceka-ponude" class="ponude-ceka-bedz" title="Poslane ponude koje čekaju odgovor klijenta"></span></button>
+      <button type="button" class="tab-btn" id="tab-btn-ponude" onclick="switchTab('Ponude')">Ponude <span id="tab-count-ponude" class="bs-brojac"></span><span id="tab-ceka-ponude" hidden></span></button>
       <!-- Sašin izričit zahtjev (19.9.2026., osmi krug): "Arhiva klijenata" —
            mjesto gdje idu klijenti od kojih se odustalo (umjesto starog
            "Vrati u Zainteresirani" iz "Ponude", koji je uklonjen). Za sada
@@ -2693,7 +2701,7 @@
       <!-- NOVO (4.10.2026.): ljubičasta kartica "Pisma namjere" — ručni unos firme + odmah slanje maila, te mail kampanja iz Excela (drag & drop, slanje svake 3 s). -->
       <button type="button" class="tab-btn tab-btn-ljubicasti" id="tab-btn-pisma" onclick="switchTab('Pisma')" title="Učinkovitost: firme koje su se javile / ukupno poslanih pisama">✉ Pisma namjere <span id="tab-count-pisma" class="tab-pisma-ucin"></span></button>
       <!-- NOVO (11.10.2026.): tirkizna kartica "Otvorene ponude" — podkartice Slanje i Evidencija poslanih; klijent prihvati ponudu pa mu se odmah otvara upitnik. -->
-      <button type="button" class="tab-btn tab-btn-tirkizni tab-ucitava" id="tab-btn-otvorene" disabled title="Učitavam popis…" onclick="switchTab('Otvorene')">📨 Otvorene ponude <span id="tab-count-otvorene" class="tab-pisma-ucin">…</span></button>
+      <button type="button" class="tab-btn tab-btn-tirkizni tab-ucitava" id="tab-btn-otvorene" disabled title="Učitavam popis…" onclick="switchTab('Otvorene')">📨 Otvorene ponude <span id="tab-count-otvorene" class="bs-brojac">…</span></button>
       <!-- NOVO (21.10.2026.): zelena kartica "Evidencija poziva" — neprihvaćene ponude i pojedinačna pisma namjere po OIB-u, poziv klikom na broj (tel:), ishod + bilješka. -->
       <button type="button" class="tab-btn tab-btn-poziv" id="tab-btn-evidencija" onclick="switchTab('Evidencija')" title="Koga sam zvao: neprihvaćene ponude i pojedinačna pisma namjere">📞 Evidencija poziva <span id="tab-count-evid" class="tab-pisma-ucin"></span></button>
       <button type="button" class="tab-btn tab-btn-indigo" id="tab-btn-odgovori" onclick="switchTab('Odgovori')" title="Pripremljeni odgovori na česta pitanja klijenata — slanje po OIB-u">💬 Odgovori klijentima <span id="tab-count-odgovori"></span></button>
@@ -5874,24 +5882,31 @@
     r.odgovorilo = r.prihvatilo + r.odbilo;
     return r;
   }
+  // v373: ista logika za Ponude i Otvorene ponude — veliki broj = čeka odgovor; malo: žuto prihvaćene, crveno odbijene, sivo ukupno u kartici
+  function bsBroji_(lista) {
+    var r = { ceka: 0, prih: 0, odb: 0, uk: 0 };
+    lista.forEach(function(e) {
+      r.uk++;
+      var st = ponudaStatusSazetak_({ fields: e.fields || {} });
+      if (st === 'na_cekanju') { r.ceka++; }
+      else if (st === 'potvrdjena' || st === 'ponistena_nakon_prihvata') { r.prih++; }
+      else if (st === 'odbijena') { r.odb++; }
+    });
+    return r;
+  }
+  function bsIscrtaj_(el, btn, r, naziv) {
+    if (!el) { return; }
+    el.innerHTML = '<span class="bs-v" title="Čeka odgovor klijenta">' + r.ceka + '</span>' +
+      '<span class="bs-m"><b class="bs-p" title="Prihvaćene">✓ ' + r.prih + '</b><b class="bs-o" title="Odbijene">✗ ' + r.odb + '</b><b class="bs-u" title="Ukupno u kartici">Σ ' + r.uk + '</b></span>';
+    if (btn) { btn.title = naziv + ': čeka odgovor ' + r.ceka + ' · prihvaćene ' + r.prih + ' · odbijene ' + r.odb + ' · ukupno ' + r.uk + (naziv === 'Otvorene ponude' ? ' (prebačene u Ponude se ne računaju)' : ''); }
+  }
   // v315: tab „Otvorene ponude” — samo brojevi: prihvaćene / odgovorile / poslane (bez postotaka)
   function otvTabBrojac_() {
     var el = document.getElementById('tab-count-otvorene'), btn = document.getElementById('tab-btn-otvorene');
     if (!el) { return; }
     try {
-      // v344: gumb pokazuje samo otvorene ponude koje su POSLANE i još NISU prebačene u Ponude / Klijente (statistika prihvaćenih ostaje u prozoru Uspješnost)
-      var n = 0, ceka = 0, prih = 0;
-      (allEntries || []).forEach(function(e) {
-        var f = e.fields || {};
-        if (e.status !== 'Otvorena' || f['Otvorena ponuda - datum prebacivanja (admin)']) { return; }
-        var st = ponudaStatusSazetak_({ fields: f });
-        if (st === 'nije_poslano') { return; }
-        if (st === 'potvrdjena' || st === 'ponistena_nakon_prihvata') { prih++; return; }   // v372: prihvaćene se ne broje na gumbu
-        n++; if (st === 'na_cekanju') { ceka++; }
-      });
-      if (!n) { el.textContent = ''; if (btn) { btn.title = 'Nema otvorenih ponuda u Otvorenim'; } return; }
-      el.textContent = String(n);
-      if (btn) { btn.title = 'Poslane otvorene ponude koje su još u Otvorenim (bez prihvaćenih): ' + n + ' (čeka odgovor: ' + ceka + '). Prihvaćene se ne računaju (sad ih je ' + prih + '), ni prebačene u Ponude. Statistika: Uspješnost.'; }
+      var lista = (allEntries || []).filter(function(e) { return e.status === 'Otvorena' && !(e.fields || {})['Otvorena ponuda - datum prebacivanja (admin)']; });
+      bsIscrtaj_(el, btn, bsBroji_(lista), 'Otvorene ponude');
     } catch (eOt_) { /* nije kritično */ }
   }
   function renderTabCounts() {
@@ -5909,11 +5924,11 @@
     var revWarnEl_ = document.getElementById('tab-warn-revizije'); if (revWarnEl_) { revWarnEl_.textContent = revUpozCount ? ('⚠ ' + revUpozCount) : ''; }
     var logPodaciBrojacEl_ = document.getElementById('tab-count-log-podaci');
     if (logPodaciBrojacEl_) { logPodaciBrojacEl_.textContent = noviKlijentiCount; }
-    document.getElementById('tab-count-ponude').textContent = ponudeCount;
+    try { bsIscrtaj_(document.getElementById('tab-count-ponude'), document.getElementById('tab-btn-ponude'), bsBroji_(allEntries.filter(function(e){ return e.status === 'Interes' && jePonuda(e) && !jeOtvorenKlijent(e) && !jeArhiva(e); })), 'Ponude'); } catch (eBs_) { document.getElementById('tab-count-ponude').textContent = ponudeCount; }
     var cekaStariEl_ = document.getElementById('tab-ceka-stari');
     if (cekaStariEl_) { var cekaSt_ = brojStarihCekaUpitnik_().poslano; cekaStariEl_.textContent = cekaSt_ ? ('⏳ ' + cekaSt_) : ''; }
     var cekaPonudeEl_ = document.getElementById('tab-ceka-ponude');
-    if (cekaPonudeEl_) { var cekaN_ = brojPonudaCekaOdgovor_().ponude; cekaPonudeEl_.textContent = cekaN_ ? ('⏳ ' + cekaN_) : ''; }
+    if (cekaPonudeEl_) { cekaPonudeEl_.textContent = ''; }   // v373: čeka je sad veliki broj na gumbu
     document.getElementById('tab-count-arhiva').textContent = arhivaCount;
     otvTabBrojac_();   // v307: odgovoreno / poslano (kao kod Pisama namjere)
     uspjesnostGumbOsvjezi_();   // v315
