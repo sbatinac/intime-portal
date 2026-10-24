@@ -5915,7 +5915,7 @@
   function bsIscrtaj_(el, btn, r, naziv) {
     if (!el) { return; }
     el.innerHTML = '<span class="bs-v" title="Čeka odgovor klijenta">' + r.ceka + '</span>' +
-      '<span class="bs-m">' + (r.intrix ? '<b class="bs-i" title="Prihvaćene ponude u INTRIX-u (čekaju TM broj)">INTRIX ' + r.intrix + '</b>' : '') + '<b class="bs-p" title="Prihvaćene (bez onih u INTRIX-u)">✓ ' + r.prih + '</b><b class="bs-o" title="Odbijene">✗ ' + r.odb + '</b><b class="bs-u" title="Ukupno u kartici">Σ ' + r.uk + '</b></span>';
+      '<span class="bs-m"><b class="bs-p" title="Prihvaćene (bez onih u INTRIX-u)">✓ ' + r.prih + '</b><b class="bs-o" title="Odbijene">✗ ' + r.odb + '</b>' + (r.intrix ? '<b class="bs-i" title="Prihvaćene ponude u INTRIX-u (čekaju TM broj)">INTRIX ' + r.intrix + '</b>' : '') + '<b class="bs-u" title="Ukupno u kartici">Σ ' + r.uk + '</b></span>';
     if (btn) { btn.title = naziv + ': čeka odgovor ' + r.ceka + ' · prihvaćene ' + r.prih + (r.intrix ? ' · u INTRIX-u ' + r.intrix : '') + ' · odbijene ' + r.odb + ' · ukupno ' + r.uk + (naziv === 'Otvorene ponude' ? ' (prebačene u Ponude se ne računaju)' : ''); }
   }
   // v315: tab „Otvorene ponude” — samo brojevi: prihvaćene / odgovorile / poslane (bez postotaka)
