@@ -671,6 +671,9 @@
   .entry-card.intrix > .entry-card-head:hover{background:linear-gradient(90deg,#d8c0ff 0%,#ece0ff 45%,#fbf8ff 100%) !important;}
   .entry-card.ima-intrix > .entry-card-head{position:relative;padding-bottom:46px;}
   .intrix-prek{position:absolute;right:14px;bottom:8px;z-index:2;padding:6px 22px;border-radius:999px;border:2px solid #9aa3ad;background:#f1f3f5;color:#7d8791;font:inherit;font-size:16px;font-weight:900;letter-spacing:.18em;cursor:pointer;transition:all .25s;}
+  .kratki-kart-btn{background:#0b7a4b;color:#fff;border:0;border-radius:999px;padding:3px 12px;font:inherit;font-size:12px;font-weight:800;cursor:pointer;vertical-align:middle;}
+  .kratki-kart-btn:hover{background:#086039;}
+  .kratki-kart-btn.poslan{background:#e3f4ea;color:#0b7a4b;border:1.5px solid #0b7a4b;}
   .intrix-prek:hover{border-color:#1e88e5;color:#1e88e5;}
   .intrix-prek.on{background:#0b1f3a;border-color:#2196f3;color:#4fc3ff;text-shadow:0 0 6px #2196f3,0 0 12px #2196f3;box-shadow:0 0 10px rgba(33,150,243,.7),inset 0 0 6px rgba(33,150,243,.5);animation:intrixSjaj 2s ease-in-out infinite;}
   .intrix-prek[disabled]{opacity:.6;cursor:wait;}
@@ -5935,6 +5938,41 @@
     switchTab('Intrix');
     var l = document.getElementById('entries-list');
     if (l) { window.scrollTo({ top: l.getBoundingClientRect().top + window.pageYOffset - 20, behavior: 'smooth' }); }
+  }
+  // v382: prozor „Kratki upitnik” s kartice ponude (isti poziv kao u Otvorene ponude → Evidencija poslanih)
+  function kratkiUpitnikProzor_(entry, gumb) {
+    var mail = fieldVal(entry, 'Otvorena ponuda - mail primatelja (admin)') || fieldVal(entry, 'Email kontakt osobe') || '';
+    var o = document.createElement('div');
+    o.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:100000;display:flex;align-items:center;justify-content:center;padding:16px;';
+    o.innerHTML = '<div style="background:#fff;border-radius:14px;max-width:520px;width:100%;box-shadow:0 12px 40px rgba(0,0,0,.3);overflow:hidden;font-size:14px;color:#1f2d3d;">' +
+      '<div style="background:#0b7a4b;color:#fff;padding:12px 16px;font-weight:800;font-size:16px;">📝 Kratki upitnik — ' + esc(fieldVal(entry, 'Naziv tvrtke') || '') + '</div>' +
+      '<div style="padding:14px 16px;line-height:1.5;">Klijent upisuje samo osnovne podatke (tvrtka i IBAN, kontakt osoba, osoba za pripremu robe, adresa i vrijeme prikupa). Automatski podsjetnici za dugi upitnik se isključuju.' +
+      (mail ? '<div style="margin-top:8px;">Mail ide na: <b>' + esc(mail) + '</b></div>' : '') +
+      '<label style="display:flex;gap:6px;align-items:center;margin-top:8px;"><input type="checkbox" class="kr-kopija"> 📧 Pošalji kopiju na administratorski mail</label>' +
+      '<div class="kr-st" style="margin-top:8px;font-weight:700;"></div>' +
+      '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;"><button type="button" class="kr-salji" style="background:#0b7a4b;color:#fff;border:0;border-radius:8px;padding:9px 14px;font:inherit;font-weight:800;cursor:pointer;">✉ Pošalji kratki upitnik</button>' +
+      '<button type="button" class="kr-link" style="background:#fff;color:#0b7a4b;border:2px solid #0b7a4b;border-radius:8px;padding:7px 12px;font:inherit;font-weight:800;cursor:pointer;">📋 Samo kopiraj link</button>' +
+      '<button type="button" class="kr-x" style="background:#eef1f0;color:#333;border:0;border-radius:8px;padding:9px 14px;font:inherit;font-weight:700;cursor:pointer;">Odustani</button></div></div></div>';
+    document.body.appendChild(o);
+    var st = o.querySelector('.kr-st');
+    function zatvori() { if (o.parentNode) { o.parentNode.removeChild(o); } }
+    o.querySelector('.kr-x').addEventListener('click', zatvori);
+    o.addEventListener('click', function(ev) { if (ev.target === o) { zatvori(); } });
+    function pozovi(samoLink, b) {
+      b.disabled = true; st.style.color = '#1f2d3d'; st.textContent = samoLink ? 'Pripremam link…' : 'Šaljem…';
+      gasCall({ action: 'otvPonudeKratkiUpitnik', token: adminToken, rowIndex: entry.rowIndex, kopijaSebi: !!o.querySelector('.kr-kopija:checked'), samoLink: samoLink }).then(function(res) {
+        b.disabled = false;
+        if (handleAuthError(res)) { zatvori(); return; }
+        if (!res || res.status !== 'ok') { st.style.color = '#a93226'; st.textContent = (res && res.message) || 'Nije uspjelo.'; return; }
+        try { var pr = navigator.clipboard.writeText(res.link); if (pr && pr.catch) { pr.catch(function() {}); } } catch (eCb) {}
+        entry.fields['Kratki upitnik - dopušten (admin)'] = entry.fields['Kratki upitnik - dopušten (admin)'] || formatirajSadaHr_();
+        if (gumb) { gumb.classList.add('poslan'); gumb.textContent = '📝 Kratki upitnik ✓'; }
+        st.style.color = '#0b7a4b';
+        st.innerHTML = (samoLink ? '✓ Link je kopiran:' : '✓ Poslano na ' + esc(res.poslanoNa) + ' (link je i kopiran):') + '<div style="font-weight:500;word-break:break-all;margin-top:4px;font-size:12.5px;">' + esc(res.link) + '</div><div style="font-weight:500;margin-top:4px;">Automatski podsjetnici za dugi upitnik su isključeni.</div>';
+      }).catch(function() { b.disabled = false; st.style.color = '#a93226'; st.textContent = 'Nema veze s poslužiteljem — pokušaj ponovno.'; });
+    }
+    o.querySelector('.kr-salji').addEventListener('click', function() { pozovi(false, this); });
+    o.querySelector('.kr-link').addEventListener('click', function() { pozovi(true, this); });
   }
   function intrixAktivan_(e) {
     var f = (e && e.fields) || {};
@@ -20586,6 +20624,13 @@
       var otvaranjeH_ = ponudaOtvaranjeHtml_(entry); if (otvaranjeH_) { subParts.push(otvaranjeH_); }
       var podsCipH_ = podsCipZaEntry_(entry); if (podsCipH_) { subParts.push(podsCipH_); }
       if (entry.otvorena) { subParts.push(otvPodaciStatusHtml_(entry)); }
+      // v382: gumb „Kratki upitnik” i na kartici otvorene ponude (prihvaćena, podaci nisu stigli)
+      try {
+        if (entry.otvorena && ponudaStatusSazetak_(entry) === 'potvrdjena' && !fieldVal(entry, 'Otvorena ponuda - datum popunjenog upitnika (admin)')) {
+          var krDat_ = fieldVal(entry, 'Kratki upitnik - dopušten (admin)');
+          subParts.push('<button type="button" class="kratki-kart-btn' + (krDat_ ? ' poslan' : '') + '" title="' + (krDat_ ? 'Kratki upitnik je uključen ' + esc(krDat_) + ' — klik za ponovno slanje ili kopiranje linka' : 'Pošalji klijentu kratki upitnik (samo osnovni podaci)') + '">📝 Kratki upitnik' + (krDat_ ? ' ✓' : '') + '</button>');
+        }
+      } catch (eKrB_) { /* nije kritično */ }
       if (mobitel) { subParts.push('Mobitel: ' + esc(mobitel)); }
     } else {
       var tel = fieldVal(entry, 'Telefon (odbijenica)');
@@ -20689,6 +20734,7 @@
       }
     } catch (ePr) { /* nije kritično */ }
 
+    try { var krBtn_ = head.querySelector('.kratki-kart-btn'); if (krBtn_) { krBtn_.addEventListener('click', function(ev) { ev.stopPropagation(); ev.preventDefault(); kratkiUpitnikProzor_(entry, krBtn_); }); } } catch (eKrL_) {}
     var body = document.createElement('div');
     body.className = 'entry-card-body';
     card.appendChild(body);
@@ -28596,6 +28642,15 @@
         // vidi rebuild niže — pa se ovdje NAMJERNO više ne ponavlja.
         rokTrenutno.innerHTML = redovi.length ? redovi.join('<br>') : 'Odaberi rok i klikni "Aktiviraj rok i link" — poveznica za klijenta generira se automatski.';
         try { podsBlokGradi_(wrap.querySelector('.af-pods-mjesto'), entry.rowIndex, status, String(slanje || '') + '|' + String(istek || '') + '|' + String(verzija)); } catch (ePods_) { /* podsjetnici su dodatak, ne smiju srušiti karticu */ }
+        // v382: podsjetnici na UPITNIK i u kartici otvorene ponude (prihvaćena, podaci nisu stigli) — isti blok kao u Otvorene ponude → Evidencija poslanih
+        try {
+          var podsMj_ = wrap.querySelector('.af-pods-mjesto'), upMj_ = wrap.querySelector('.af-pods-up-mjesto');
+          var trebaUp_ = entry.otvorena && status === 'potvrdjena' && !fieldVal(entry, 'Otvorena ponuda - datum popunjenog upitnika (admin)');
+          if (trebaUp_ && podsMj_) {
+            if (!upMj_) { upMj_ = document.createElement('div'); upMj_.className = 'af-pods-up-mjesto'; upMj_.style.marginTop = '8px'; podsMj_.parentNode.insertBefore(upMj_, podsMj_.nextSibling); }
+            podsUpBlokGradi_(upMj_, entry.rowIndex, String(fieldVal(entry, 'Datum prihvaćanja ponude (admin)') || '') + '|' + String(fieldVal(entry, 'Kratki upitnik - dopušten (admin)') || ''));
+          } else if (upMj_) { upMj_.innerHTML = ''; upMj_.removeAttribute('data-sig'); }
+        } catch (ePodsUp_) { /* dodatak */ }
 
         // Dvije male ikone (Sašin izričit zahtjev, 22.9.2026., deveti krug:
         // "u svakoj fazi prihvaćena i odbijena napravi malu ikonicu vidi
