@@ -691,6 +691,7 @@
   .entry-card.prihv > .entry-card-head{background:linear-gradient(90deg,#d6f5e1 0%,#f0fbf4 45%,#ffffff 100%);box-shadow:inset 8px 0 0 #2e9e5b;}
   .entry-card.prihv > .entry-card-head:hover{background:linear-gradient(90deg,#bdeccd 0%,#e3f7ea 45%,#f9fefb 100%);}
   .rok-cip.prh{background:#2e9e5b;color:#fff;}
+  .rok-cip.prh.prh-adm{background:#d62b1f !important;color:#fff !important;border-color:#a8180f !important;}   /* v384: prihvat unio Saša = crveno */
   .rok-legenda .rl.b i{background:#1565c0;}
   .rok-cip{font-variant-numeric:tabular-nums;}
   .pon-evid{border:1px solid #c9dcf3;background:#f4f9ff;border-radius:10px;padding:6px 12px 8px;margin:0 0 10px;font-size:12.5px;color:#22344a;}
@@ -20753,7 +20754,7 @@
         card.classList.add('prihv');
         var dPr_ = String(fieldVal(entry, 'Datum prihvaćanja ponude (admin)') || ''), tP_ = head.querySelector('.entry-card-title');
         var prAdm_ = String(fieldVal(entry, 'Prihvat unio admin u ime klijenta (admin)') || '');
-        if (tP_) { tP_.insertAdjacentHTML('beforeend', '<span class="rok-cip prh" title="' + (prAdm_ ? 'Prihvat unio admin u ime klijenta: ' + esc(prAdm_) : 'Klijent je prihvatio ponudu') + '">✅ PRIHVAĆENA' + (prAdm_ ? ' ✍ (Saša)' : '') + (dPr_ ? ' ' + esc(dPr_.replace(/\.\s*\d{1,2}:\d{2}.*$/, '.').replace(/^(\d{2}\.\d{2}\.)\d{4}\.$/, '$1')) : '') + '</span>'); }
+        if (tP_) { tP_.insertAdjacentHTML('beforeend', '<span class="rok-cip prh' + (prAdm_ ? ' prh-adm' : '') + '" title="' + (prAdm_ ? 'Prihvat unio admin u ime klijenta: ' + esc(prAdm_) : 'Klijent je prihvatio ponudu') + '">✅ PRIHVAĆENA' + (prAdm_ ? ' ✍ (Saša)' : '') + (dPr_ ? ' ' + esc(dPr_.replace(/\.\s*\d{1,2}:\d{2}.*$/, '.').replace(/^(\d{2}\.\d{2}\.)\d{4}\.$/, '$1')) : '') + '</span>'); }
         rokPokreni_();
         // v374: prekidač INTRIX (samo prihvaćene ponude) — uključen: ljubičasta kartica + ljubičasti broj na gumbu; dodjelom TM broja se sam gasi
         if (tP_ && !String(fieldVal(entry, 'Identifikacijski TM broj klijenta (admin)') || '').trim()) {
