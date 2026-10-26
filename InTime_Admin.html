@@ -18272,7 +18272,7 @@
       }
       if (st === 'istekla') { h += '<button type="button" class="ov-gumb sek mali" data-a="rok">⏱ Postavi novi rok (otključaj)</button><button type="button" class="ov-gumb opasan mali" data-a="ponisti">Poništi ponudu</button>'; }
       if (st === 'potvrdjena' && p.jeOtvorena) {
-        if (!p.upitnikDatum) { h += '<button type="button" class="ov-gumb mali" data-a="podsjetnik">🔔 Pošalji podsjetnik na upitnik</button>'; }
+        if (!p.upitnikDatum) { h += '<button type="button" class="ov-gumb mali" data-a="podsjetnik">🔔 Pošalji podsjetnik na upitnik</button><button type="button" class="ov-gumb mali" data-a="kratki" style="background:#0b7a4b;">📝 Kratki upitnik</button>'; }
         else { h += '<span class="ov-cip z">upitnik popunjen — dovrši u kartici ponude</span>'; }
       }
       if (st === 'odbijena' || st === 'istekla' || st === 'ponistena') {
@@ -18331,6 +18331,26 @@
               if (res.status !== 'ok') { poruka(res.message || 'Nije uspjelo.', true); return; }
               osvjezi();
             }).catch(function(e) { poruka(otvGreska_(e), true); });
+            return;
+          }
+          if (a === 'kratki') {
+            var uK = otvoriUmetak('<div style="margin-bottom:6px;"><b>📝 Kratki upitnik</b> — klijent upisuje samo osnovne podatke (tvrtka i IBAN, kontakt osoba, osoba za pripremu robe, adresa i vrijeme prikupa). Automatski podsjetnici za dugi upitnik se isključuju.</div>' +
+              '<div style="margin-bottom:6px;">Poslati mail s kratkim upitnikom na <b>' + esc(p.primatelj) + '</b>?</div>' + kopijaAdminHtml_('ov-kopija-red', 'ov-kopija') +
+              '<button type="button" class="ov-gumb mali ov-ok">✉ Pošalji kratki upitnik</button> <button type="button" class="ov-gumb sek mali ov-link">📋 Samo kopiraj link</button> <button type="button" class="ov-gumb sek mali ov-odust">Odustani</button>');
+            uK.querySelector('.ov-odust').addEventListener('click', function() { umetak.hidden = true; });
+            var kratkiPozovi = function(samoLink, gumb) {
+              gumb.disabled = true; poruka(samoLink ? 'Pripremam link…' : 'Šaljem…');
+              otvPoziv_('otvPonudeKratkiUpitnik', { rowIndex: p.rowIndex, kopijaSebi: !!uK.querySelector('.ov-kopija:checked'), samoLink: samoLink }).then(function(res) {
+                gumb.disabled = false;
+                if (res.status !== 'ok') { poruka(res.message || 'Nije uspjelo.', true); return; }
+                var kopiraj = function() { try { var pr = navigator.clipboard.writeText(res.link); if (pr && pr.catch) { pr.catch(function() {}); } } catch (eCb) {} };
+                if (samoLink) { kopiraj(); window.alert('✓ Link na kratki upitnik je kopiran:\n\n' + res.link + '\n\nAutomatski podsjetnici za dugi upitnik su isključeni.'); }
+                else { kopiraj(); window.alert('✓ Kratki upitnik poslan na ' + res.poslanoNa + '.\n(Link je i kopiran.)\n\nAutomatski podsjetnici za dugi upitnik su isključeni.'); }
+                osvjezi();
+              }).catch(function(e) { gumb.disabled = false; poruka(otvGreska_(e), true); });
+            };
+            uK.querySelector('.ov-ok').addEventListener('click', function() { kratkiPozovi(false, this); });
+            uK.querySelector('.ov-link').addEventListener('click', function() { kratkiPozovi(true, this); });
             return;
           }
           if (a === 'podsjetnik') {

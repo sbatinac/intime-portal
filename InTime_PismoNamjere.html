@@ -6691,6 +6691,48 @@
     var oib = form.querySelector('[name="oib"]'); if (oib && oib.value.trim().length !== 11) { ned.unshift('OIB (11 znamenki)'); prvi = oib; }
     return ned.length ? { tekst: ned.join(', '), el: prvi } : null;
   }
+  // v381: KRATKI UPITNIK — kad ga je In Time uključio za ovu ponudu, prikazuju se SAMO osnovna polja (isto što i brzi unos lozinkom)
+  var KRATKI_IMENA_ = ['oib', 'naziv', 'adresa', 'grad', 'postanski_broj', 'iban', 'kontakt', 'kontakt_email', 'telefon', 'logistika_osoba_ime', 'logistika_osoba_email', 'logistika_osoba_telefon',
+    'mjesto_prikupa_isto_kao_sjediste', 'mjesto_prikupa_adresa', 'mjesto_prikupa_grad', 'mjesto_prikupa_postanski_broj', 'mjesto_prikupa_potvrda', 'vrijeme_prikupa'];
+  function kratkiUpitnikUkljuci_() {
+    var form = document.getElementById('panel-interes'); if (!form) { return; }
+    window.KRATKI_UPITNIK_ = true;
+    document.documentElement.classList.add('kratki-upitnik-mod');
+    if (!document.getElementById('kratki-stil')) {
+      var st = document.createElement('style'); st.id = 'kratki-stil';
+      st.textContent = '.kratki-sakrij{display:none !important;}';
+      document.head.appendChild(st);
+    }
+    function treba(el) { return Array.prototype.some.call(el.querySelectorAll('[name]'), function(x) { return KRATKI_IMENA_.indexOf(x.name) !== -1; }) || (el.name && KRATKI_IMENA_.indexOf(el.name) !== -1) || el.classList.contains('time-pickup-wrap'); }
+    function imaPolja(el) { return !!el.name || el.querySelector('[name]') || el.classList.contains('time-pickup-wrap'); }
+    function obradi(roditelj) {
+      var buf = [];
+      Array.prototype.forEach.call(roditelj.children, function(c) {
+        if (/^H[1-4]$/.test(c.tagName) || c.tagName === 'DATALIST' || c.type === 'hidden') { return; }
+        if (!imaPolja(c)) { buf.push(c); return; }
+        var ok = treba(c);
+        buf.concat([c]).forEach(function(x) { x.classList.toggle('kratki-sakrij', !ok); });
+        if (ok && c.classList.contains('pair')) { obradiPar(c); }
+        buf = [];
+      });
+      buf.forEach(function(x) { x.classList.add('kratki-sakrij'); });
+    }
+    function obradiPar(par) {
+      Array.prototype.forEach.call(par.children, function(d) { if (imaPolja(d) && !treba(d)) { d.classList.add('kratki-sakrij'); } });
+    }
+    Array.prototype.forEach.call(form.querySelectorAll('.form-section'), function(sec) {
+      if (!treba(sec)) { sec.classList.add('kratki-sakrij'); return; }
+      obradi(sec);
+    });
+    var tpw = form.querySelector('.time-pickup-wrap');
+    if (tpw && !document.getElementById('brzi-vrijeme-potvrda')) {
+      tpw.insertAdjacentHTML('beforeend', '<label style="display:flex;gap:8px;align-items:center;margin-top:10px;font-weight:700;color:#016579;cursor:pointer;"><input type="checkbox" id="brzi-vrijeme-potvrda"> Potvrđujem odabrano vrijeme prikupa</label>');
+    }
+    var k = document.createElement('div'); k.id = 'kratki-kutija';
+    k.style.cssText = 'border:2px solid #016579;background:#eef8f8;border-radius:10px;padding:12px 16px;margin:0 0 16px;font-size:14px;color:#0b3d3a;';
+    k.innerHTML = '<div style="font-weight:800;font-size:15px;margin-bottom:4px;">📝 Kratki upitnik</div><div>Potrebni su samo osnovni podaci: tvrtka i IBAN, kontakt osoba, osoba za pripremu robe te adresa i vrijeme prikupa. Ispunjavanje traje nekoliko minuta.</div>';
+    form.insertBefore(k, form.firstChild);
+  }
   function brziKutijaUmetni_() {
     if (window.PONUDA_STARI_ || document.getElementById('brzi-kutija')) { return; }
     var form = document.getElementById('panel-interes'); if (!form) { return; }
@@ -6728,7 +6770,7 @@
     e.preventDefault();
     var form = e.target;
     // v363: BRZI UPITNIK (lozinka) — provjeravaju se samo osnovna polja, sve ostalo je neobavezno
-    var _brziMod = (which === 'interes' && !!window.BRZI_LOZINKA_);
+    var _brziMod = (which === 'interes' && (!!window.BRZI_LOZINKA_ || !!window.KRATKI_UPITNIK_));   // v381: i kratki upitnik
     if (_brziMod) {
       var _bNed = brziNedostaje_(form);
       if (_bNed) { alert('Za brzi unos obavezno je popuniti: ' + _bNed.tekst + '.'); if (_bNed.el) { _bNed.el.scrollIntoView({behavior:'smooth', block:'center'}); _bNed.el.focus(); } return false; }
@@ -7071,7 +7113,7 @@
     }
     var _ponuda = !!window.PONUDA_TOKEN_;
     if (_ponuda) { payload.otvorena_token = window.PONUDA_TOKEN_; }
-    if (_brziMod) { payload.brzi_lozinka = window.BRZI_LOZINKA_; }
+    if (_brziMod) { if (window.BRZI_LOZINKA_) { payload.brzi_lozinka = window.BRZI_LOZINKA_; } else { payload.kratki_upitnik = true; } }
     // admin popunjava umjesto klijenta (gumb "Popuni ja umjesto klijenta"): klijentu ne ide potvrdni mail
     try { if (/[?&]bez_maila=1(&|$)/.test(location.search)) { payload.bez_potvrde_klijentu = 'Da'; } } catch (eBm) { /* nebitno */ }
     var _submitBtnFinal = form.querySelector('button[type="submit"]');
@@ -7632,7 +7674,8 @@
           if (oibEl) { try { oibEl.dispatchEvent(new Event('input', { bubbles: true })); } catch (e) {} }
           var gumb = document.querySelector('#panel-interes button[type="submit"]');
           if (gumb) { gumb.textContent = 'Pošalji upitnik'; }
-          try { brziKutijaUmetni_(); } catch (eBz) { /* dodatak */ }
+          if (res.kratki && !window.PONUDA_STARI_) { try { kratkiUpitnikUkljuci_(); } catch (eKr) { /* dodatak */ } }
+          else { try { brziKutijaUmetni_(); } catch (eBz) { /* dodatak */ } }
           showPanel('interes');
           setTimeout(function(){ window.scrollTo(0, 0); }, 150);
         }

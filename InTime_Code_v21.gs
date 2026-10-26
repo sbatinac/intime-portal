@@ -9071,6 +9071,8 @@ function doPost(e) {
       result = otvPonudePonovi(data.token, data.rowIndex, data.noviMail, data.kopijaSebi);
     } else if (data.action === 'otvPonudeNovaVerzija') {
       result = otvPonudeNovaVerzija(data.token, data.rowIndex, data.rokDana);
+    } else if (data.action === 'otvPonudeKratkiUpitnik') {
+      result = otvPonudeKratkiUpitnik(data.token, data.rowIndex, data.kopijaSebi, data.samoLink);
     } else if (data.action === 'otvPonudePodsjetnik') {
       result = otvPonudePodsjetnik(data.token, data.rowIndex, data.kopijaSebi);
     } else if (data.action === 'otvPonudePrebaci') {
@@ -9753,6 +9755,7 @@ var ADMIN_ONLY_FIELDS = {
   // IZVOR KONTAKTA (16.10.2026., Sašin zahtjev): kako je Saša došao do firme (Info In Time, Hladni poziv, Preporuka, Pronašao na terenu…).
   // Ručno se bira na pismu namjere, otvorenoj ponudi, starom klijentu ili na kartici; ako je prazno a firma je odgovorila na pismo, nasljeđuje se s pisma.
   izvor_kontakta: 'Izvor kontakta (admin)',
+  kratki_upitnik: 'Kratki upitnik - dopušten (admin)',   // v381: datum kad je Saša klijentu dopustio/poslao kratki upitnik (samo osnovni podaci)
   intrix: 'INTRIX (admin)'   // v374: prihvaćena ponuda je u INTRIX-u (prekidač na kartici); poništava se kad ponuda dobije TM broj
   // (30.9.2026., ISPRAVAK ISTI DAN: polje "dokumenti_klijent_pristup" koje je
   // ovdje kratko postojalo — po-klijentu JSON popis mail-priloga — u
@@ -15820,6 +15823,7 @@ function izracunajOcekivanoZaglavljeUpiti_() {
   header.push('Testni kalkulator - zadnja aktivnost (admin)');
   header.push('Testni kalkulator - broj izračuna (admin)');
   header.push('INTRIX (admin)');   // v374 — na sam kraj (self-healing doda stupac)
+  header.push('Kratki upitnik - dopušten (admin)');   // v381
   // (30.9.2026., ISPRAVAK ISTI DAN: stupac "Dokumenti uz pristupne podatke
   // (admin, JSON)" koji je ovdje kratko bio dodan uklonjen je zajedno s
   // ADMIN_ONLY_FIELDS.dokumenti_klijent_pristup gore — vidi napomenu ondje.
@@ -23484,6 +23488,45 @@ function otvPonudePodsjetnik(token, rowIndex, kopijaSebi) {
   return { status: 'ok', poslanoNa: primatelj };
 }
 
+// v381: KRATKI UPITNIK (Sašin zahtjev 26.10.2026.) — za prihvaćenu otvorenu ponudu bez upitnika: klijent dobiva upitnik sa SAMO osnovnim
+// podacima (ista polja kao brzi unos lozinkom). Poslužitelj kratki unos prihvaća samo za ponudu kojoj je Saša to uključio (stupac
+// „Kratki upitnik - dopušten (admin)”). Uključivanjem se automatski podsjetnici za dugi upitnik isključuju (plan ISKLJ).
+var OTV_PREDMET_KRATKI_ = 'IN TIME | Kratki upitnik – samo osnovni podaci – ponuda br. {{BROJ_PONUDE}} – {{NAZIV_FIRME}}';
+function otvKratkiPredlozak_() {
+  return String(OTV_PREDLOZAK_PODSJETNIK_)
+    .replace('<title>Podsjetnik na upitnik — In Time d.o.o.</title>', '<title>Kratki upitnik — In Time d.o.o.</title>')
+    .replace('ljubazno Vas podsjećamo da je za nastavak postupka uspostave poslovne suradnje s IN TIME d.o.o. potrebno ispuniti prethodno dostavljeni upitnik s poslovnim podacima.',
+      'kako bismo ubrzali uspostavu poslovne suradnje, pripremili smo Vam <strong>kratki upitnik</strong> — dovoljno je unijeti samo osnovne podatke: podatke o tvrtki i IBAN, kontakt osobu, osobu zaduženu za pripremu robe te adresu i vrijeme prikupa pošiljaka. Ispunjavanje traje svega nekoliko minuta.')
+    .replace('>Ispuni upitnik</a>', '>Ispuni kratki upitnik</a>');
+}
+function otvPonudeKratkiUpitnik(token, rowIndex, kopijaSebi, samoLink) {
+  if (!isValidAdminToken_(token)) { return { status: 'error', message: 'Sesija je istekla — prijavite se ponovno.' }; }
+  var r = otvCitajRed_(rowIndex);
+  if (!r || String(r.get('Tip')) !== OTV_TIP_) { return { status: 'error', message: 'Redak nije otvorena ponuda.' }; }
+  if (izracunajStatusPonude_(r.header, r.row) !== 'potvrdjena') { return { status: 'error', message: 'Kratki upitnik ima smisla tek nakon što je klijent prihvatio ponudu.' }; }
+  if (r.get(ADMIN_ONLY_FIELDS.otv_upitnik_datum)) { return { status: 'error', message: 'Upitnik je već popunjen.' }; }
+  var tok = String(r.get(ADMIN_ONLY_FIELDS.token_potvrda_ponude) || '');
+  if (!tok) { return { status: 'error', message: 'Ponuda nema poveznicu (token) — kratki upitnik se ne može pripremiti.' }; }
+  var link = OTV_UPITNIK_STRANICA_URL_ + '?ponuda=' + encodeURIComponent(tok) + '&kratki=1';
+  var primatelj = String(r.get(ADMIN_ONLY_FIELDS.otv_primatelj) || '').trim();
+  if (!samoLink) {
+    if (!EMAIL_REGEX_.test(primatelj)) { return { status: 'error', message: 'Mail primatelja nije ispravan.' }; }
+    var bp = otvBrojPonude_(r), nazivTxt = String(r.get('Naziv tvrtke'));
+    var html = otvPopuniTagove_(otvKratkiPredlozak_(), { BANNER_URL: OTV_BANNER_PODSJETNIK_, NAZIV_FIRME: otvHtmlEsc_(nazivTxt), IME_FIRME: otvHtmlEsc_(nazivTxt), BROJ_PONUDE: otvHtmlEsc_(bp.broj), LINK_UPITNIK: link });
+    var predmet = otvPopuniTagove_(OTV_PREDMET_KRATKI_, { BROJ_PONUDE: bp.broj, NAZIV_FIRME: nazivTxt, IME_FIRME: nazivTxt });
+    try {
+      var opcije = { htmlBody: html };
+      if (kopijaSebi) { opcije.bcc = adminMailKopije_(); }
+      posaljiMail_(primatelj, predmet, skiniHtmlTagoveZaFallback_(html), opcije);
+    } catch (err) { return { status: 'error', message: 'Slanje nije uspjelo: ' + err.message }; }
+    r.set(ADMIN_ONLY_FIELDS.otv_podsjetnik_datum, new Date());
+    r.set(ADMIN_ONLY_FIELDS.otv_podsjetnik_broj, (parseInt(r.get(ADMIN_ONLY_FIELDS.otv_podsjetnik_broj), 10) || 0) + 1);
+  }
+  if (!r.get(ADMIN_ONLY_FIELDS.kratki_upitnik)) { r.set(ADMIN_ONLY_FIELDS.kratki_upitnik, new Date()); }
+  try { r.set(ADMIN_ONLY_FIELDS.pods_up_plan, 'ISKLJ'); } catch (ePl) { /* stupac plana možda još ne postoji */ }
+  return { status: 'ok', poslanoNa: samoLink ? '' : primatelj, link: link };
+}
+
 // v182: standardna kartica ponude (Prebaci u nove klijente / Prebaci u arhivu) radi i nad otvorenom ponudom — redak tada postaje običan 'Interes'.
 function otvPrebaciTipAkoOtvorena_(sheet, header, rowIndex, kamo) {
   var tipIx = header.indexOf('Tip');
@@ -23906,7 +23949,8 @@ function otvPonudaUpitnikInfo(tok) {
     return { status: 'error', code: 'nije_potvrdjeno', message: 'Upitnik se otvara nakon što prihvatite ponudu. Otvorite poveznicu "Prihvati ponudu" iz našeg e-maila.' };
   }
   var popunjen = !!row[h.indexOf(ADMIN_ONLY_FIELDS.otv_upitnik_datum)];
-  return { status: 'ok', popunjen: popunjen, naziv: String(row[h.indexOf('Naziv tvrtke')] || ''), oib: String(row[h.indexOf('OIB')] || ''),
+  var kratkiIx_ = h.indexOf(ADMIN_ONLY_FIELDS.kratki_upitnik);
+  return { status: 'ok', popunjen: popunjen, kratki: kratkiIx_ !== -1 && !!row[kratkiIx_], naziv: String(row[h.indexOf('Naziv tvrtke')] || ''), oib: String(row[h.indexOf('OIB')] || ''),
     email: String(row[h.indexOf(ADMIN_ONLY_FIELDS.otv_primatelj)] || ''), broj: otvBrojPonude_({ get: function(l) { var i = h.indexOf(l); return i === -1 ? '' : row[i]; } }).broj };
 }
 
@@ -23924,6 +23968,16 @@ function otvPonudaSpremiUpitnik(data) {
   if (row[h.indexOf(ADMIN_ONLY_FIELDS.otv_upitnik_datum)]) { return { status: 'error', code: 'vec_popunjeno', message: 'Upitnik je već popunjen. Hvala!' }; }
   // v363: BRZI UPITNIK — uz ispravnu lozinku obavezna su samo osnovna polja
   var brzi_ = false;
+  // v381: KRATKI UPITNIK — samo ako ga je Saša za ovu ponudu uključio (dopisivanje u link ništa ne otključava)
+  if (data.kratki_upitnik !== undefined && data.brzi_lozinka === undefined) {
+    delete data.kratki_upitnik;
+    var kIx_ = h.indexOf(ADMIN_ONLY_FIELDS.kratki_upitnik);
+    if (kIx_ === -1 || !row[kIx_]) { return { status: 'error', message: 'Za ovu ponudu kratki upitnik nije uključen — molimo ispunite puni upitnik.' }; }
+    var nedostK_ = brziNedostaje_(data);
+    if (nedostK_.length) { return { status: 'error', message: 'Obavezno je: ' + nedostK_.join(', ') + '.' }; }
+    brzi_ = true;
+  }
+  delete data.kratki_upitnik;
   if (data.brzi_lozinka !== undefined) {
     var lozB_ = String(data.brzi_lozinka || ''); delete data.brzi_lozinka;
     if (!brziLozinkaIspravna_(lozB_)) { return { status: 'error', message: 'Lozinka za brzi unos nije ispravna — upitnik nije spremljen.' }; }
