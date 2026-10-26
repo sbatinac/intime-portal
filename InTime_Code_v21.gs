@@ -9071,6 +9071,8 @@ function doPost(e) {
       result = otvPonudePonovi(data.token, data.rowIndex, data.noviMail, data.kopijaSebi);
     } else if (data.action === 'otvPonudeNovaVerzija') {
       result = otvPonudeNovaVerzija(data.token, data.rowIndex, data.rokDana);
+    } else if (data.action === 'adminPrihvatiUImeKlijenta') {
+      result = adminPrihvatiUImeKlijenta(data.token, data.rowIndex, data.imeOsobe, data.funkcijaOsobe);
     } else if (data.action === 'otvPonudeKratkiUpitnik') {
       result = otvPonudeKratkiUpitnik(data.token, data.rowIndex, data.kopijaSebi, data.samoLink);
     } else if (data.action === 'otvPonudePodsjetnik') {
@@ -9755,7 +9757,8 @@ var ADMIN_ONLY_FIELDS = {
   // IZVOR KONTAKTA (16.10.2026., Sašin zahtjev): kako je Saša došao do firme (Info In Time, Hladni poziv, Preporuka, Pronašao na terenu…).
   // Ručno se bira na pismu namjere, otvorenoj ponudi, starom klijentu ili na kartici; ako je prazno a firma je odgovorila na pismo, nasljeđuje se s pisma.
   izvor_kontakta: 'Izvor kontakta (admin)',
-  kratki_upitnik: 'Kratki upitnik - dopušten (admin)',   // v381: datum kad je Saša klijentu dopustio/poslao kratki upitnik (samo osnovni podaci)
+  kratki_upitnik: 'Kratki upitnik - dopušten (admin)',
+  prihvat_admin: 'Prihvat unio admin u ime klijenta (admin)',   // v383: Saša prihvatio ponudu u ime klijenta (bez obavijesti klijentu)   // v381: datum kad je Saša klijentu dopustio/poslao kratki upitnik (samo osnovni podaci)
   intrix: 'INTRIX (admin)'   // v374: prihvaćena ponuda je u INTRIX-u (prekidač na kartici); poništava se kad ponuda dobije TM broj
   // (30.9.2026., ISPRAVAK ISTI DAN: polje "dokumenti_klijent_pristup" koje je
   // ovdje kratko postojalo — po-klijentu JSON popis mail-priloga — u
@@ -15824,6 +15827,7 @@ function izracunajOcekivanoZaglavljeUpiti_() {
   header.push('Testni kalkulator - broj izračuna (admin)');
   header.push('INTRIX (admin)');   // v374 — na sam kraj (self-healing doda stupac)
   header.push('Kratki upitnik - dopušten (admin)');   // v381
+  header.push('Prihvat unio admin u ime klijenta (admin)');   // v383
   // (30.9.2026., ISPRAVAK ISTI DAN: stupac "Dokumenti uz pristupne podatke
   // (admin, JSON)" koji je ovdje kratko bio dodan uklonjen je zajedno s
   // ADMIN_ONLY_FIELDS.dokumenti_klijent_pristup gore — vidi napomenu ondje.
@@ -23486,6 +23490,37 @@ function otvPonudePodsjetnik(token, rowIndex, kopijaSebi) {
   r.set(ADMIN_ONLY_FIELDS.otv_podsjetnik_datum, new Date());
   r.set(ADMIN_ONLY_FIELDS.otv_podsjetnik_broj, (parseInt(r.get(ADMIN_ONLY_FIELDS.otv_podsjetnik_broj), 10) || 0) + 1);
   return { status: 'ok', poslanoNa: primatelj };
+}
+
+// v383: PRIHVAT U IME KLIJENTA (Sašin zahtjev 26.10.2026.) — Saša u adminu označi ponudu (obična ili otvorena) prihvaćenom.
+// Bilježi se datum i da je to unio admin; klijent NE dobiva nikakav mail (ni potvrdu, ni upitnik), a automatski podsjetnici na upitnik
+// kod otvorene ponude ostaju isključeni (Saša ih može uključiti ili poslati kratki upitnik). Dokument potvrde na Driveu se stvara kao i inače.
+function adminPrihvatiUImeKlijenta(token, rowIndex, imeOsobe, funkcijaOsobe) {
+  if (!isValidAdminToken_(token)) { return { status: 'error', message: 'Sesija je istekla — prijavite se ponovno.' }; }
+  var r = otvCitajRed_(rowIndex);
+  if (!r) { return { status: 'error', message: 'Redak ne postoji.' }; }
+  var stanje = izracunajStatusPonude_(r.header, r.row);
+  if (stanje !== 'na_cekanju' && stanje !== 'istekla') { return { status: 'error', message: 'Ponuda se može prihvatiti samo dok čeka odgovor ili je istekla (sada: ' + (OPIS_STATUSA_PONUDE_[stanje] || stanje) + ').' }; }
+  if (r.header.indexOf(ADMIN_ONLY_FIELDS.prihvat_admin) === -1) { return { status: 'error', message: 'Tablica još nema stupac za ovaj unos — osvježi admin (Ctrl+F5) i pokušaj ponovno.' }; }
+  var sada = new Date(), tz = Session.getScriptTimeZone();
+  imeOsobe = String(imeOsobe || '').trim(); funkcijaOsobe = String(funkcijaOsobe || '').trim();
+  var ime = imeOsobe || 'Saša Batinac (u ime klijenta)';
+  var funkcija = funkcijaOsobe || 'prihvat unio admin';
+  r.set('Datum prihvaćanja ponude (admin)', sada);
+  r.set('Ime i prezime osobe koja je potvrdila ponudu (admin)', ime);
+  r.set('Funkcija osobe koja je potvrdila ponudu (admin)', funkcija);
+  r.set('IP adresa prilikom potvrde ponude (admin)', 'admin – Saša Batinac');
+  r.set(ADMIN_ONLY_FIELDS.prihvat_admin, 'Saša Batinac, ' + Utilities.formatDate(sada, tz, 'dd.MM.yyyy. HH:mm') + (imeOsobe ? ' (za klijenta: ' + imeOsobe + ')' : ''));
+  if (String(r.get('Tip')) === OTV_TIP_) {
+    try { if (!String(r.get(ADMIN_ONLY_FIELDS.pods_up_plan) || '').trim()) { r.set(ADMIN_ONLY_FIELDS.pods_up_plan, 'ISKLJ'); } } catch (ePl) { /* stupac plana */ }
+  }
+  try {
+    var naziv = String(r.get('Naziv tvrtke') || '').trim() || '(bez naziva)', grad = String(r.get('Mjesto') || '').trim() || '(bez mjesta)';
+    var sifra = String(r.get(ADMIN_ONLY_FIELDS.sifra_ponude) || '').trim(), verz = parseInt(r.get(ADMIN_ONLY_FIELDS.ponuda_verzija), 10) || 1;
+    var dokUrl = stvoriDokumentPotvrdePonude_(naziv, String(r.get('OIB') || '').trim(), grad, ime, funkcija, 'admin – Saša Batinac', sada, sifra ? (sifra + '-P' + verz) : '', '', '', '', r.rowIndex);
+    if (dokUrl) { r.set('Poveznica na dokument potvrde ponude (admin)', dokUrl); }
+  } catch (eDok) { /* dokument potvrde je dodatak */ }
+  return { status: 'ok', datum: Utilities.formatDate(sada, tz, 'dd.MM.yyyy. HH:mm') };
 }
 
 // v381: KRATKI UPITNIK (Sašin zahtjev 26.10.2026.) — za prihvaćenu otvorenu ponudu bez upitnika: klijent dobiva upitnik sa SAMO osnovnim

@@ -671,6 +671,8 @@
   .entry-card.intrix > .entry-card-head:hover{background:linear-gradient(90deg,#d8c0ff 0%,#ece0ff 45%,#fbf8ff 100%) !important;}
   .entry-card.ima-intrix > .entry-card-head{position:relative;padding-bottom:46px;}
   .intrix-prek{position:absolute;right:14px;bottom:8px;z-index:2;padding:6px 22px;border-radius:999px;border:2px solid #9aa3ad;background:#f1f3f5;color:#7d8791;font:inherit;font-size:16px;font-weight:900;letter-spacing:.18em;cursor:pointer;transition:all .25s;}
+  .kart-prihvati-mini{border-color:#2e9e5b !important;color:#2e9e5b !important;}
+  .kart-prihvati-mini:hover{background:#2e9e5b !important;color:#fff !important;}
   .kratki-kart-btn{background:#0b7a4b;color:#fff;border:0;border-radius:999px;padding:3px 12px;font:inherit;font-size:12px;font-weight:800;cursor:pointer;vertical-align:middle;}
   .kratki-kart-btn:hover{background:#086039;}
   .kratki-kart-btn.poslan{background:#e3f4ea;color:#0b7a4b;border:1.5px solid #0b7a4b;}
@@ -5973,6 +5975,38 @@
     }
     o.querySelector('.kr-salji').addEventListener('click', function() { pozovi(false, this); });
     o.querySelector('.kr-link').addEventListener('click', function() { pozovi(true, this); });
+  }
+  // v383: prozor „Prihvati u ime klijenta”
+  function prihvatUImeKlijentaProzor_(entry) {
+    var o = document.createElement('div');
+    o.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:100000;display:flex;align-items:center;justify-content:center;padding:16px;';
+    o.innerHTML = '<div style="background:#fff;border-radius:14px;max-width:520px;width:100%;box-shadow:0 12px 40px rgba(0,0,0,.3);overflow:hidden;font-size:14px;color:#1f2d3d;">' +
+      '<div style="background:#2e9e5b;color:#fff;padding:12px 16px;font-weight:800;font-size:16px;">✍ Prihvati ponudu u ime klijenta</div>' +
+      '<div style="padding:14px 16px;line-height:1.5;"><b>' + esc(fieldVal(entry, 'Naziv tvrtke') || '') + '</b>' + (fieldVal(entry, 'OIB') ? ' · OIB ' + esc(fieldVal(entry, 'OIB')) : '') +
+      '<div style="margin-top:8px;">Ponuda će biti označena kao <b>prihvaćena</b>, uz zapis da si to unio ti i kada. <b>Klijent ne dobiva nikakvu obavijest</b> (ni potvrdu, ni upitnik' + (entry.otvorena ? '; automatski podsjetnici na upitnik ostaju isključeni' : '') + ').</div>' +
+      '<label style="display:block;margin-top:10px;font-weight:700;">Tko je kod klijenta prihvatio (neobavezno)</label><input type="text" class="pu-ime" placeholder="npr. Ivo Ivić" style="width:100%;box-sizing:border-box;padding:8px 10px;border:1px solid #c9d3d1;border-radius:8px;font:inherit;">' +
+      '<label style="display:block;margin-top:8px;font-weight:700;">Funkcija (neobavezno)</label><input type="text" class="pu-fun" placeholder="npr. direktor" style="width:100%;box-sizing:border-box;padding:8px 10px;border:1px solid #c9d3d1;border-radius:8px;font:inherit;">' +
+      '<label style="display:flex;gap:8px;align-items:center;margin-top:12px;font-weight:700;cursor:pointer;"><input type="checkbox" class="pu-potvrda"> Klijent je prihvatio ponudu (telefonom, mailom ili osobno)</label>' +
+      '<div class="pu-st" style="margin-top:8px;font-weight:700;"></div>' +
+      '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;"><button type="button" class="pu-ok" style="background:#2e9e5b;color:#fff;border:0;border-radius:8px;padding:9px 14px;font:inherit;font-weight:800;cursor:pointer;">✍ Prihvati</button>' +
+      '<button type="button" class="pu-x" style="background:#eef1f0;color:#333;border:0;border-radius:8px;padding:9px 14px;font:inherit;font-weight:700;cursor:pointer;">Odustani</button></div></div></div>';
+    document.body.appendChild(o);
+    var st = o.querySelector('.pu-st');
+    function zatvori() { if (o.parentNode) { o.parentNode.removeChild(o); } }
+    o.querySelector('.pu-x').addEventListener('click', zatvori);
+    o.addEventListener('click', function(ev) { if (ev.target === o) { zatvori(); } });
+    o.querySelector('.pu-ok').addEventListener('click', function() {
+      var b = this;
+      if (!o.querySelector('.pu-potvrda').checked) { st.style.color = '#a93226'; st.textContent = 'Označi kvačicu da je klijent prihvatio ponudu.'; return; }
+      b.disabled = true; st.style.color = '#1f2d3d'; st.textContent = 'Spremam…';
+      gasCall({ action: 'adminPrihvatiUImeKlijenta', token: adminToken, rowIndex: entry.rowIndex, imeOsobe: o.querySelector('.pu-ime').value.trim(), funkcijaOsobe: o.querySelector('.pu-fun').value.trim() }).then(function(res) {
+        b.disabled = false;
+        if (handleAuthError(res)) { zatvori(); return; }
+        if (!res || res.status !== 'ok') { st.style.color = '#a93226'; st.textContent = (res && res.message) || 'Nije uspjelo.'; return; }
+        st.style.color = '#2e9e5b'; st.textContent = '✓ Ponuda je prihvaćena ' + res.datum + '. Klijent nije obaviješten.';
+        setTimeout(function() { zatvori(); try { loadEntries(); } catch (eL) {} try { otvStanje_.lista = null; } catch (eO) {} }, 1300);
+      }).catch(function() { b.disabled = false; st.style.color = '#a93226'; st.textContent = 'Nema veze s poslužiteljem — pokušaj ponovno.'; });
+    });
   }
   function intrixAktivan_(e) {
     var f = (e && e.fields) || {};
@@ -20698,13 +20732,28 @@
         }
       }
     } catch (ePonMini) { /* nije kritično */ }
+    // v383: „✍ Prihvati u ime klijenta” — ponuda čeka odgovor ili je istekla (obična i otvorena); klijent ne dobiva obavijest
+    try {
+      var stPrU_ = ponudaStatusSazetak_(entry);
+      if ((stPrU_ === 'na_cekanju' || stPrU_ === 'istekla') && (jePonuda(entry) || entry.otvorena) && !(typeof jeArhiva === 'function' && jeArhiva(entry))) {
+        var tPrU_ = head.querySelector('.entry-card-title');
+        if (tPrU_) {
+          var bPrU_ = document.createElement('button');
+          bPrU_.type = 'button'; bPrU_.className = 'kart-ponovi-mini kart-prihvati-mini'; bPrU_.textContent = '✍ Prihvati u ime klijenta';
+          bPrU_.title = 'Označi ponudu prihvaćenom umjesto klijenta — bilježi se da si to ti napravio i kada; klijent NE dobiva obavijest';
+          bPrU_.addEventListener('click', function(ev) { ev.stopPropagation(); ev.preventDefault(); prihvatUImeKlijentaProzor_(entry); });
+          tPrU_.appendChild(bPrU_);
+        }
+      }
+    } catch (ePrU) { /* nije kritično */ }
     try { var bzK_ = brziZapis_(entry), tB_ = head.querySelector('.entry-card-title'); if (bzK_ && tB_ && !tB_.querySelector('.brzi-cip')) { tB_.insertAdjacentHTML('beforeend', '<span class="brzi-cip" title="Upitnik popunjen brzim unosom (lozinka) ' + esc(bzK_.t) + '">⚡ brzi upitnik</span>'); } } catch (eBzK) {}
     // v354: prihvaćena ponuda (obična ili otvorena) — plavo + „✅ PRIHVAĆENA datum”; u Klijentima i Arhivi se ne boja
     try {
       if (ponudaStatusSazetak_(entry) === 'potvrdjena' && !(typeof jeArhiva === 'function' && jeArhiva(entry)) && !(!entry.otvorena && typeof jeOtvorenKlijent === 'function' && jeOtvorenKlijent(entry))) {
         card.classList.add('prihv');
         var dPr_ = String(fieldVal(entry, 'Datum prihvaćanja ponude (admin)') || ''), tP_ = head.querySelector('.entry-card-title');
-        if (tP_) { tP_.insertAdjacentHTML('beforeend', '<span class="rok-cip prh" title="Klijent je prihvatio ponudu">✅ PRIHVAĆENA' + (dPr_ ? ' ' + esc(dPr_.replace(/\.\s*\d{1,2}:\d{2}.*$/, '.').replace(/^(\d{2}\.\d{2}\.)\d{4}\.$/, '$1')) : '') + '</span>'); }
+        var prAdm_ = String(fieldVal(entry, 'Prihvat unio admin u ime klijenta (admin)') || '');
+        if (tP_) { tP_.insertAdjacentHTML('beforeend', '<span class="rok-cip prh" title="' + (prAdm_ ? 'Prihvat unio admin u ime klijenta: ' + esc(prAdm_) : 'Klijent je prihvatio ponudu') + '">✅ PRIHVAĆENA' + (prAdm_ ? ' ✍ (Saša)' : '') + (dPr_ ? ' ' + esc(dPr_.replace(/\.\s*\d{1,2}:\d{2}.*$/, '.').replace(/^(\d{2}\.\d{2}\.)\d{4}\.$/, '$1')) : '') + '</span>'); }
         rokPokreni_();
         // v374: prekidač INTRIX (samo prihvaćene ponude) — uključen: ljubičasta kartica + ljubičasti broj na gumbu; dodjelom TM broja se sam gasi
         if (tP_ && !String(fieldVal(entry, 'Identifikacijski TM broj klijenta (admin)') || '').trim()) {
