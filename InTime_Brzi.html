@@ -214,6 +214,12 @@
   .boje button.on{box-shadow:0 0 0 3px var(--ink);}
   .boje button.on::after{content:"✓";color:#fff;font-size:16px;font-weight:900;text-shadow:0 0 3px rgba(0,0,0,.6);}
   .mala-nap{font-size:12.5px;color:var(--muted);margin:4px 0 0;}
+  /* v404: prihvaćene otvorene ponude bez podataka */
+  #otvBezKartica{border:2px solid #e67e22;background:#fff6ec;}
+  #otvBezKartica.nula{border-color:var(--line);background:#fff;}
+  #otvBezKartica .ob-n{font-size:30px;font-weight:900;color:#d35400;line-height:1;}
+  #otvBezKartica.nula .ob-n{color:var(--muted);}
+  .ob-stavka .ob-kr{display:inline-block;font-size:12px;font-weight:700;padding:2px 8px;border-radius:999px;background:#ede7ff;color:#5b21b6;margin-left:6px;}
 </style>
 </head>
 <body>
@@ -249,6 +255,7 @@
       <button type="button" class="kartica" id="bsKartica" hidden style="width:100%;text-align:left;background:#f2faff;border:2px solid #2fb1ee;color:var(--ink);font-weight:400;"></button>
       <button type="button" class="sec" style="width:100%;margin:0 0 12px;text-align:left;" id="gumbLogPodaci">📋 Osnovni logistički podaci klijenata</button>
       <div class="brojke" id="brojke"></div>
+      <button type="button" class="kartica" id="otvBezKartica" hidden style="width:100%;text-align:left;font-weight:400;color:var(--ink);"></button>
       <h2>⏰ Podsjetnici za danas i zakašnjeli</h2>
       <div id="dospjeli"></div>
       <h2 id="klijentiNaslov">🆕 Zadnji klijenti</h2>
@@ -317,6 +324,14 @@
       <div id="listaFilter" class="seg" style="flex-wrap:wrap;" hidden></div>
       <div class="poruka" id="listaSazetak"></div>
       <div id="listaSadrzaj"></div>
+    </section>
+
+    <!-- v404: OTVORENE PONUDE PRIHVAĆENE, PODACI NISU STIGLI → KRATKI UPITNIK -->
+    <section class="ekran" id="ekran-otvbez">
+      <button type="button" class="mali sec" data-ekran-natrag="pocetna">← Natrag</button>
+      <div class="kartica" style="margin-top:10px;font-size:14px;color:var(--muted);">Klijent je prihvatio otvorenu ponudu, a upitnik s podacima još nije stigao. <b>⚡ Kratki upitnik</b> mu šalje kraći upitnik (samo osnovni podaci) i <b>gasi automatske podsjetnike</b> za dugi upitnik.</div>
+      <div class="poruka" id="obSazetak"></div>
+      <div id="obLista"></div>
     </section>
 
     <!-- ANKETE KVALITETE -->
@@ -498,14 +513,15 @@
   }
 
   // ---------- NAVIGACIJA ----------
-  var NASLOVI = { problemi:'Problemi klijenata', problemnovi:'Novi problem', pocetna:'Početna', klijent:'Klijent', pismo:'Pismo namjere', imenik:'Imenik', trazi:'Traži', biljeske:'Podsjetnici', ankete:'Ankete kvalitete', odbijenice:'Nisu zainteresirani', lista:'Popis', logpod:'Logistički podaci', raskid:'Raskid suradnje', raskidposalji:'Raskid — pošalji mail' };
+  var NASLOVI = { otvbez:'Prihvaćene — čekaju podatke', problemi:'Problemi klijenata', problemnovi:'Novi problem', pocetna:'Početna', klijent:'Klijent', pismo:'Pismo namjere', imenik:'Imenik', trazi:'Traži', biljeske:'Podsjetnici', ankete:'Ankete kvalitete', odbijenice:'Nisu zainteresirani', lista:'Popis', logpod:'Logistički podaci', raskid:'Raskid suradnje', raskidposalji:'Raskid — pošalji mail' };
   function idiNa(ekran){
     Array.prototype.forEach.call(document.querySelectorAll('.ekran'), function(e){ e.classList.toggle('aktivan', e.id === 'ekran-' + ekran); });
-    var navEkran = (ekran === 'ankete' || ekran === 'odbijenice' || ekran === 'lista' || ekran === 'logpod' || ekran === 'raskid' || ekran === 'problemi' || ekran === 'problemnovi') ? 'pocetna' : ekran;
+    var navEkran = (ekran === 'ankete' || ekran === 'odbijenice' || ekran === 'lista' || ekran === 'logpod' || ekran === 'raskid' || ekran === 'problemi' || ekran === 'problemnovi' || ekran === 'otvbez') ? 'pocetna' : ekran;
     Array.prototype.forEach.call(document.querySelectorAll('nav button'), function(b){ b.classList.toggle('aktivan', b.getAttribute('data-ekran') === navEkran); });
     $('zagNaslov').textContent = NASLOVI[ekran] || '';
     window.scrollTo(0, 0);
-    if (ekran === 'pocetna') { ucitajPregled(); ucitajBattleships(); }
+    if (ekran === 'pocetna') { ucitajPregled(); ucitajBattleships(); ucitajOtvBez(); }
+    if (ekran === 'otvbez') { ucitajOtvBez(true); }
     if (ekran === 'biljeske') { ucitajBiljeske(); }
     if (ekran === 'pismo') { ucitajPismoStanje(); }
     if (ekran === 'ankete') { ucitajAnkete(); }
@@ -840,6 +856,55 @@
   $('gumbOsvjezi').addEventListener('click', function(){
     if (sviMod) { postaviSviMod(false); }
     ucitajPregled();
+  });
+
+
+  // ---------- v404: OTVORENE PONUDE PRIHVAĆENE, PODACI NISU STIGLI → KRATKI UPITNIK ----------
+  var obPodaci = [];
+  function ucitajOtvBez(zaEkran){
+    if (zaEkran) { $('obSazetak').textContent = 'Učitavam…'; $('obLista').innerHTML = ''; }
+    api({ action:'brziOtvBezPodataka', token: token }).then(function(res){
+      var k = $('otvBezKartica');
+      if (!res || res.status !== 'ok') { k.hidden = true; if (zaEkran) { $('obSazetak').className = 'poruka err'; $('obSazetak').textContent = (res && res.message) || 'Učitavanje nije uspjelo (je li objavljen novi Code.gs?).'; } return; }
+      obPodaci = res.lista || [];
+      var n = obPodaci.length;
+      k.className = 'kartica' + (n ? '' : ' nula');
+      k.innerHTML = '<div style="display:flex;align-items:center;gap:12px;"><span class="ob-n">' + n + '</span><span><b>Prihvaćene otvorene ponude</b><br><span style="font-size:13px;color:var(--muted);">podaci (upitnik) nisu stigli' + (n ? ' — dodirni za ⚡ kratki upitnik' : '') + '</span></span></div>';
+      k.hidden = false;
+      if (zaEkran) { iscrtajOtvBez(); }
+    }).catch(function(e){ if (zaEkran && !(e && e.message === 'auth')) { $('obSazetak').className = 'poruka err'; $('obSazetak').textContent = 'Nema veze s poslužiteljem.'; } });
+  }
+  function iscrtajOtvBez(){
+    $('obSazetak').className = 'poruka';
+    $('obSazetak').textContent = obPodaci.length ? obPodaci.length + ' ponuda čeka podatke.' : '✓ Nema prihvaćenih ponuda koje čekaju podatke.';
+    $('obLista').innerHTML = obPodaci.map(function(o, i){
+      return '<div class="stavka ob-stavka"><div class="naslov">' + esc(o.naziv || '(bez naziva)') + (o.kratki ? '<span class="ob-kr">⚡ kratki poslan ' + esc(o.kratki) + '</span>' : '') + '</div>' +
+        '<div class="pod">' + esc([o.broj ? 'Ponuda ' + o.broj : '', o.mail].filter(Boolean).join(' · ')) + '</div>' +
+        '<div class="pod">' + (o.podsjetnika ? 'Poslano podsjetnika: ' + o.podsjetnika + (o.zadnjiPodsjetnik ? ' (zadnji ' + esc(o.zadnjiPodsjetnik) + ')' : '') : 'Podsjetnici još nisu slani') + '</div>' +
+        '<div class="akcije">' + (o.mail ? '<a class="gumb sec" href="mailto:' + esc(o.mail) + '">✉ Mail</a>' : '') +
+        '<button type="button" class="mali" data-obkr="' + i + '">⚡ ' + (o.kratki ? 'Pošalji ponovno' : 'Kratki upitnik') + '</button>' +
+        '<button type="button" class="mali sec" data-oblink="' + i + '">🔗 Samo link</button></div><div class="poruka" id="obPor' + i + '"></div></div>';
+    }).join('');
+  }
+  $('otvBezKartica').addEventListener('click', function(){ idiNa('otvbez'); });
+  $('obLista').addEventListener('click', function(ev){
+    var b = ev.target.closest('[data-obkr],[data-oblink]'); if (!b) { return; }
+    var samoLink = b.hasAttribute('data-oblink'), i = +(b.getAttribute(samoLink ? 'data-oblink' : 'data-obkr')), o = obPodaci[i], por = $('obPor' + i);
+    if (!o) { return; }
+    if (!samoLink && !confirm('Poslati kratki upitnik firmi „' + o.naziv + '” na ' + (o.mail || '(nema maila)') + '?\n\nAutomatski podsjetnici za dugi upitnik se gase.')) { return; }
+    b.disabled = true; por.className = 'poruka'; por.textContent = samoLink ? 'Pripremam link…' : 'Šaljem…';
+    api({ action:'brziOtvKratkiUpitnik', token: token, rowIndex: o.rowIndex, samoLink: samoLink }).then(function(res){
+      b.disabled = false;
+      if (!res || res.status !== 'ok') { por.className = 'poruka err'; por.textContent = (res && res.message) || 'Nije uspjelo.'; return; }
+      if (samoLink) {
+        por.className = 'poruka ok'; por.innerHTML = 'Link (podsjetnici za dugi upitnik ugašeni):<br><a href="' + esc(res.link) + '" target="_blank" style="word-break:break-all;">' + esc(res.link) + '</a>';
+        if (navigator.share) { navigator.share({ title: 'Kratki upitnik — In Time', text: 'Molimo popunite kratki upitnik:', url: res.link }).catch(function(){}); }
+        else { try { navigator.clipboard.writeText(res.link).then(function(){ por.innerHTML += '<br>✓ Kopirano'; }).catch(function(){}); } catch (e) {} }
+      } else {
+        por.className = 'poruka ok'; por.textContent = '✓ Kratki upitnik poslan na ' + res.poslanoNa + '. Podsjetnici za dugi upitnik su ugašeni.';
+        setTimeout(function(){ ucitajOtvBez(true); }, 2500);
+      }
+    }).catch(function(e){ b.disabled = false; if (e && e.message === 'auth') { return; } por.className = 'poruka err'; por.textContent = 'Nema veze s poslužiteljem.'; });
   });
 
   // ---------- KLIJENT ----------

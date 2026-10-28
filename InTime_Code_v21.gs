@@ -8771,6 +8771,10 @@ function doPost(e) {
       result = adminBrziPromijeniPin(data.token, data.noviPin);
     } else if (data.action === 'brziPregled') {
       result = brziPregled(data.token);
+    } else if (data.action === 'brziOtvBezPodataka') {
+      result = brziOtvBezPodataka(data.token);
+    } else if (data.action === 'brziOtvKratkiUpitnik') {
+      result = brziOtvKratkiUpitnik(data.token, data.rowIndex, data.samoLink);
     } else if (data.action === 'brziImenikLista') {
       result = brziImenikLista(data.token);
     } else if (data.action === 'brziAnketeLista') {
@@ -21591,7 +21595,7 @@ function adminPogodciOznaciVidjeno(token, ms) {
 // v371: UBRZANJE — izračun pogodaka (8–11 s) pamti se 10 min; briše se čim bilo koja radnja koja nije čisto čitanje
 // prođe kroz doPost (novi upit, pismo, ponuda, prebacivanje…), pa novi pogodak stiže odmah kao i prije.
 var POGODCI_KES_KLJUC_ = 'pogodci_v371', POGODCI_KES_SEK_ = 600;
-var CISTA_CITANJA_RE_ = /(List|Lista|Get|Status|Povijest|Sazetak|Pogodci|Stanje|Info|Provjera|Statistika|BezOdgovora|Evidencija)$|^(adminUcitajPocetno|adminBrowseSustavFolder|adminRevizijeKlijenti|adminIzvoriKontakta|trackVisit|adminLogin)$|^(adminDohvati|adminList|adminGet|gorivoDohvati)/;
+var CISTA_CITANJA_RE_ = /(List|Lista|Get|Status|Povijest|Sazetak|Pogodci|Stanje|Info|Provjera|Statistika|BezOdgovora|BezPodataka|Evidencija)$|^(adminUcitajPocetno|adminBrowseSustavFolder|adminRevizijeKlijenti|adminIzvoriKontakta|trackVisit|adminLogin)$|^(adminDohvati|adminList|adminGet|gorivoDohvati)/;
 function pogodciKesObrisi_() { try { CacheService.getScriptCache().remove(POGODCI_KES_KLJUC_); } catch (e) { /* nije kritično */ } }
 function adminPismaPogodci(token) {
   if (!isValidAdminToken_(token)) { return pismaAuthGreska_(); }
@@ -23773,6 +23777,37 @@ function otvKratkiPredlozak_() {
 }
 function otvPonudeKratkiUpitnik(token, rowIndex, kopijaSebi, samoLink) {
   if (!isValidAdminToken_(token)) { return { status: 'error', message: 'Sesija je istekla — prijavite se ponovno.' }; }
+  return otvKratkiIzvrsi_(rowIndex, kopijaSebi, samoLink);
+}
+// v404: mobilna aplikacija (In Time Brzi) — prihvaćene otvorene ponude kojima podaci (upitnik) još nisu stigli + kratki upitnik
+function brziOtvBezPodataka(token) {
+  if (!isValidBrziToken_(token)) { return brziAuthGreska_(); }
+  var sheet = getOrCreateUpitiSheet(), lastRow = sheet.getLastRow();
+  if (lastRow < 2) { return { status: 'ok', lista: [] }; }
+  var ocek = izracunajOcekivanoZaglavljeUpiti_();
+  var lastCol = Math.min(sheet.getLastColumn(), ocek.length);
+  var podaci = sheet.getRange(1, 1, lastRow, lastCol).getValues(), header = podaci[0];
+  var ix = function(l) { return header.indexOf(l); };
+  var iTip = ix('Tip'), iNaz = ix('Naziv tvrtke'), iUp = ix(ADMIN_ONLY_FIELDS.otv_upitnik_datum), iPreb = ix(ADMIN_ONLY_FIELDS.otv_prebaceno_datum),
+      iPrim = ix(ADMIN_ONLY_FIELDS.otv_primatelj), iKr = ix(ADMIN_ONLY_FIELDS.kratki_upitnik), iPd = ix(ADMIN_ONLY_FIELDS.otv_podsjetnik_datum), iPb = ix(ADMIN_ONLY_FIELDS.otv_podsjetnik_broj);
+  var lista = [];
+  for (var i = 1; i < podaci.length; i++) {
+    var row = podaci[i];
+    if (iTip === -1 || String(row[iTip]) !== OTV_TIP_) { continue; }
+    if ((iUp !== -1 && row[iUp]) || (iPreb !== -1 && row[iPreb])) { continue; }
+    if (izracunajStatusPonude_(header, row) !== 'potvrdjena') { continue; }
+    var r = { get: function(l) { var k = header.indexOf(l); return k === -1 ? '' : this.row[k]; }, row: row };
+    var bp = { broj: '' }; try { bp = otvBrojPonude_(r); } catch (eBp) {}
+    lista.push({ rowIndex: i + 1, naziv: String(iNaz !== -1 ? row[iNaz] : ''), broj: bp.broj, mail: String(iPrim !== -1 ? row[iPrim] : ''),
+      kratki: iKr !== -1 && row[iKr] ? otvDatumPrikaz_(row[iKr]) || 'da' : '', zadnjiPodsjetnik: iPd !== -1 ? otvDatumPrikaz_(row[iPd]) : '', podsjetnika: iPb !== -1 ? (parseInt(row[iPb], 10) || 0) : 0 });
+  }
+  return { status: 'ok', lista: lista };
+}
+function brziOtvKratkiUpitnik(token, rowIndex, samoLink) {
+  if (!isValidBrziToken_(token)) { return brziAuthGreska_(); }
+  return otvKratkiIzvrsi_(rowIndex, false, !!samoLink);
+}
+function otvKratkiIzvrsi_(rowIndex, kopijaSebi, samoLink) {
   var r = otvCitajRed_(rowIndex);
   if (!r || String(r.get('Tip')) !== OTV_TIP_) { return { status: 'error', message: 'Redak nije otvorena ponuda.' }; }
   if (izracunajStatusPonude_(r.header, r.row) !== 'potvrdjena') { return { status: 'error', message: 'Kratki upitnik ima smisla tek nakon što je klijent prihvatio ponudu.' }; }
