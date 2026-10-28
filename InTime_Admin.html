@@ -2485,6 +2485,21 @@
   .kp-bs-tekst{display:flex;flex-direction:column;flex:1;min-width:0;}
   .kp-bs-naslov{font-size:17px;font-weight:900;letter-spacing:.08em;color:#fff;}
   .kp-bs-status{font-size:13px;color:#cfe4f7;font-weight:600;}
+  /* v385: plutajuća tipka Battleships (lijevo) */
+  #bs-plutajuci{position:fixed;left:0;top:50%;transform:translateY(-50%);z-index:9000;display:flex;align-items:stretch;}
+  #bs-plutajuci[hidden]{display:none;}
+  #bs-plutajuci .bsp-gumb{display:flex;align-items:center;gap:8px;padding:10px 12px 10px 10px;border:2px solid #0b2a4a;border-left:0;border-radius:0 14px 14px 0;background:linear-gradient(135deg,#0b2a4a 0%,#14578f 100%);color:#fff;font:inherit;cursor:pointer;box-shadow:0 4px 14px rgba(11,42,74,.45);text-align:left;}
+  #bs-plutajuci .bsp-gumb:hover{background:linear-gradient(135deg,#0e3560 0%,#1b6bb0 100%);}
+  #bs-plutajuci .bsp-ikona{font-size:24px;}
+  #bs-plutajuci .bsp-tekst{display:flex;flex-direction:column;line-height:1.15;}
+  #bs-plutajuci .bsp-tekst b{font-size:13px;color:#ffd75e;}
+  #bs-plutajuci .bsp-tekst small{font-size:10.5px;color:#cfe3f7;}
+  #bs-plutajuci .bsp-pod{align-self:center;margin-left:4px;width:30px;height:30px;border-radius:50%;border:2px solid #0b2a4a;background:#fff;color:#0b2a4a;font-size:15px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.25);}
+  #bs-plutajuci .bsp-izbor{position:absolute;left:8px;top:calc(100% + 6px);background:#fff;border:1px solid #c9d6e4;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.25);padding:10px;display:grid;grid-template-columns:repeat(3,auto);gap:6px;min-width:250px;}
+  #bs-plutajuci .bsp-izbor[hidden]{display:none;}
+  #bs-plutajuci .bsp-izbor-nasl{grid-column:1/-1;font-size:12px;font-weight:800;color:#0b2a4a;}
+  #bs-plutajuci .bsp-izbor button{border:1px solid #c9d6e4;background:#f4f8fc;color:#0b2a4a;border-radius:8px;padding:6px 8px;font:inherit;font-size:12px;font-weight:700;cursor:pointer;}
+  #bs-plutajuci .bsp-izbor button.akt{background:#14578f;color:#fff;border-color:#14578f;}
   .kp-bs-klik{font-size:13px;font-weight:800;color:#ffd75e;white-space:nowrap;}
   .kp-bs-gumb.radi .kp-bs-ikona{animation:kpBsLjulja 1s ease-in-out infinite;}
   .kp-bs-gumb.nova{border-color:#ffd75e;box-shadow:0 0 0 3px rgba(255,215,94,.55),0 3px 10px rgba(11,42,74,.35);}
@@ -12911,11 +12926,49 @@
   }
   var POGODCI_RUCNA_ = false;
   // dok je admin otvoren (na bilo kojoj kartici ili u drugom prozoru preglednika) svake 3 min (v314; prije 60 s) provjerava ima li novog pogotka — čim se pojavi, upali se animacija
+  // v385: koliko često se automatski provjerava Battleships — bira se na plutajućoj tipki 🚢 (vrijedi za ovo računalo)
+  var BS_INTERVALI_ = [[30000, '30 s'], [60000, '1 min'], [180000, '3 min (zadano)'], [300000, '5 min'], [600000, '10 min'], [900000, '15 min'], [1800000, '30 min'], [3600000, '1 h'], [10800000, '3 h'], [21600000, '6 h'], [43200000, '12 h'], [86400000, '1× dnevno']];
+  function bsIntervalMs_() { var v = 180000; try { v = parseInt(localStorage.getItem('intime_bs_interval_ms'), 10) || 180000; } catch (e) {} return BS_INTERVALI_.some(function(x) { return x[0] === v; }) ? v : 180000; }
+  function bsIntervalNaziv_(ms) { for (var i = 0; i < BS_INTERVALI_.length; i++) { if (BS_INTERVALI_[i][0] === ms) { return BS_INTERVALI_[i][1].replace(' (zadano)', ''); } } return '3 min'; }
+  var BS_SLJEDECA_ = 0;
   function pogodciPokreniPracenje_() {
     if (pogodciPoll_) { return; }
-    pogodciPoll_ = setInterval(function() { pogodciProvjeriNove_(); }, 180000);
+    var ms = bsIntervalMs_();
+    POGODCI_MIN_RAZMAK_MS_ = Math.min(90000, ms - 2000);
+    BS_SLJEDECA_ = Date.now() + ms;
+    pogodciPoll_ = setInterval(function() { BS_SLJEDECA_ = Date.now() + ms; pogodciProvjeriNove_(); }, ms);
+    try { bsPlutajuciIscrtaj_(); } catch (eBp) {}
   }
-  function pogodciZaustaviPracenje_() { if (pogodciPoll_) { clearInterval(pogodciPoll_); pogodciPoll_ = null; } }
+  function pogodciZaustaviPracenje_() { if (pogodciPoll_) { clearInterval(pogodciPoll_); pogodciPoll_ = null; } try { var bp = document.getElementById('bs-plutajuci'); if (bp) { bp.hidden = true; } } catch (eBz) {} }
+  function bsPostaviInterval_(ms) {
+    try { localStorage.setItem('intime_bs_interval_ms', String(ms)); } catch (e) {}
+    if (pogodciPoll_) { clearInterval(pogodciPoll_); pogodciPoll_ = null; }
+    pogodciPokreniPracenje_();
+  }
+  function bsPlutajuciIscrtaj_() {
+    var el = document.getElementById('bs-plutajuci');
+    if (!el) {
+      el = document.createElement('div'); el.id = 'bs-plutajuci';
+      el.innerHTML = '<button type="button" class="bsp-gumb" title="Odmah provjeri Battleships (tko se javio, potpisao, postao klijent…)"><span class="bsp-ikona">🚢</span><span class="bsp-tekst"><b>Provjeri</b><small class="bsp-int"></small><small class="bsp-odbr"></small></span></button>' +
+        '<button type="button" class="bsp-pod" title="Koliko često da se automatski provjerava">⚙</button>' +
+        '<div class="bsp-izbor" hidden><div class="bsp-izbor-nasl">Automatska provjera svakih:</div>' + BS_INTERVALI_.map(function(x) { return '<button type="button" data-ms="' + x[0] + '">' + x[1] + '</button>'; }).join('') + '</div>';
+      document.body.appendChild(el);
+      el.querySelector('.bsp-gumb').addEventListener('click', function() { try { pogodakRucnaProvjera_(); } catch (e) {} BS_SLJEDECA_ = Date.now() + bsIntervalMs_(); });
+      el.querySelector('.bsp-pod').addEventListener('click', function(ev) { ev.stopPropagation(); var iz = el.querySelector('.bsp-izbor'); iz.hidden = !iz.hidden; });
+      Array.prototype.forEach.call(el.querySelectorAll('.bsp-izbor [data-ms]'), function(b) { b.addEventListener('click', function() { bsPostaviInterval_(parseInt(b.getAttribute('data-ms'), 10)); el.querySelector('.bsp-izbor').hidden = true; bsPlutajuciIscrtaj_(); }); });
+      document.addEventListener('click', function(ev) { if (!el.contains(ev.target)) { var iz = el.querySelector('.bsp-izbor'); if (iz) { iz.hidden = true; } } });
+      setInterval(function() {
+        var o = el.querySelector('.bsp-odbr'); if (!o || el.hidden) { return; }
+        var r = Math.max(0, Math.round((BS_SLJEDECA_ - Date.now()) / 1000));
+        var h = Math.floor(r / 3600), m = Math.floor(r % 3600 / 60), sec = r % 60;
+        o.textContent = POGODCI_U_TIJEKU_ ? 'provjeravam…' : ('sljedeća za ' + (h ? h + ' h ' : '') + (h || m ? m + ' min ' : '') + (h ? '' : sec + ' s'));
+      }, 1000);
+    }
+    el.hidden = !adminToken;
+    var ms = bsIntervalMs_();
+    el.querySelector('.bsp-int').textContent = 'svakih ' + bsIntervalNaziv_(ms);
+    Array.prototype.forEach.call(el.querySelectorAll('.bsp-izbor [data-ms]'), function(b) { b.classList.toggle('akt', parseInt(b.getAttribute('data-ms'), 10) === ms); });
+  }
   document.addEventListener('visibilitychange', function() {
     if (!document.hidden) { document.title = pogodciNaslov_; if (adminToken) { pogodciProvjeriNove_(); } }
   });
