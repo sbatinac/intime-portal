@@ -13332,12 +13332,25 @@
   function bsIntervalMs_() { var v = 900000; try { v = parseInt(localStorage.getItem('intime_bs_interval_ms'), 10) || 900000; } catch (e) {} return BS_INTERVALI_.some(function(x) { return x[0] === v; }) ? v : 900000; }   // v386: zadano 15 min
   function bsIntervalNaziv_(ms) { for (var i = 0; i < BS_INTERVALI_.length; i++) { if (BS_INTERVALI_[i][0] === ms) { return BS_INTERVALI_[i][1].replace(' (zadano)', ''); } } return '15 min'; }
   var BS_SLJEDECA_ = 0;
+  // v402: AUTOMATSKO OSVJEŽAVANJE CIJELOG ADMINA (ponude, otvorene ponude, pločice „Danas čeka tebe”, popis „nazvati”) — uz Battleships interval
+  // i pri povratku na tab; najviše svake 2 minute (popis je težak za poslužitelj), ne dok traje spremanje.
+  var AUTO_OSVJ_ZADNJE_ = 0;
+  function adminAutoOsvjezi_() {
+    if (!adminToken || document.hidden && !AUTO_OSVJ_I_SKRIVENO_) { return; }
+    if (Date.now() - AUTO_OSVJ_ZADNJE_ < 120000) { return; }
+    if (typeof ZAPISI_U_TIJEKU_ !== 'undefined' && ZAPISI_U_TIJEKU_ > 0) { return; }
+    AUTO_OSVJ_ZADNJE_ = Date.now();
+    try { loadEntries(); } catch (e1) {}
+    try { pbUcitaj_(); } catch (e2) {}
+    try { otvStanje_.lista = null; } catch (e3) {}
+  }
+  var AUTO_OSVJ_I_SKRIVENO_ = true;   // i kad je prozor u pozadini (npr. admin na televizoru) — osvježava se svejedno
   function pogodciPokreniPracenje_() {
     if (pogodciPoll_) { return; }
     var ms = bsIntervalMs_();
     POGODCI_MIN_RAZMAK_MS_ = Math.min(90000, ms - 2000);
     BS_SLJEDECA_ = Date.now() + ms;
-    pogodciPoll_ = setInterval(function() { BS_SLJEDECA_ = Date.now() + ms; pogodciProvjeriNove_(); }, ms);
+    pogodciPoll_ = setInterval(function() { BS_SLJEDECA_ = Date.now() + ms; pogodciProvjeriNove_(); adminAutoOsvjezi_(); }, ms);   // v402: osvježava i ponude/pločice
     try { bsPlutajuciIscrtaj_(); } catch (eBp) {}
   }
   function pogodciZaustaviPracenje_() { if (pogodciPoll_) { clearInterval(pogodciPoll_); pogodciPoll_ = null; } try { var bp = document.getElementById('bs-plutajuci'); if (bp) { bp.hidden = true; } } catch (eBz) {} }
@@ -13350,9 +13363,9 @@
     var el = document.getElementById('bs-plutajuci');
     if (!el) {
       el = document.createElement('div'); el.id = 'bs-plutajuci';
-      el.innerHTML = '<button type="button" class="bsp-gumb" title="Odmah provjeri Battleships (tko se javio, potpisao, postao klijent…)"><span class="bsp-ikona">🚢</span><span class="bsp-tekst"><b>Provjeri</b><small class="bsp-int"></small><small class="bsp-odbr"></small></span></button>' +
+      el.innerHTML = '<button type="button" class="bsp-gumb" title="Odmah provjeri Battleships (tko se javio, potpisao, postao klijent…)"><span class="bsp-ikona">🚢</span><span class="bsp-tekst"><b>Provjeri</b><small class="bsp-int"></small><small style="opacity:.85;">osvježava sve</small><small class="bsp-odbr"></small></span></button>' +
         '<button type="button" class="bsp-pod" title="Koliko često da se automatski provjerava">⚙</button>' +
-        '<div class="bsp-izbor" hidden><div class="bsp-izbor-nasl">Automatska provjera svakih:</div>' + BS_INTERVALI_.map(function(x) { return '<button type="button" data-ms="' + x[0] + '">' + x[1] + '</button>'; }).join('') + '</div>';
+        '<div class="bsp-izbor" hidden><div class="bsp-izbor-nasl">Automatsko osvježavanje (Battleships + ponude + pločice) svakih:<div style="font-weight:600;color:#5b6664;font-size:11px;">ponude i pločice najviše svake 2 min</div></div>' + BS_INTERVALI_.map(function(x) { return '<button type="button" data-ms="' + x[0] + '">' + x[1] + '</button>'; }).join('') + '</div>';
       document.body.appendChild(el);
       el.querySelector('.bsp-gumb').addEventListener('click', function() { try { pogodakRucnaProvjera_(); } catch (e) {} BS_SLJEDECA_ = Date.now() + bsIntervalMs_(); });
       el.querySelector('.bsp-pod').addEventListener('click', function(ev) { ev.stopPropagation(); var iz = el.querySelector('.bsp-izbor'); iz.hidden = !iz.hidden; });
@@ -13371,7 +13384,7 @@
     Array.prototype.forEach.call(el.querySelectorAll('.bsp-izbor [data-ms]'), function(b) { b.classList.toggle('akt', parseInt(b.getAttribute('data-ms'), 10) === ms); });
   }
   document.addEventListener('visibilitychange', function() {
-    if (!document.hidden) { document.title = pogodciNaslov_; if (adminToken) { pogodciProvjeriNove_(); } }
+    if (!document.hidden) { document.title = pogodciNaslov_; if (adminToken) { pogodciProvjeriNove_(); adminAutoOsvjezi_(); } }   // v402
   });
 
   // ============================================================
