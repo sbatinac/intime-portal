@@ -5938,10 +5938,30 @@
   // v373: ista logika za Ponude i Otvorene ponude — veliki broj = čeka odgovor; malo: žuto prihvaćene, crveno odbijene, sivo ukupno u kartici
   // v374: INTRIX je aktivan dok ponuda nema TM broj (dodjelom TM broja se sam poništava)
   function formatirajSadaHr_() { var d = new Date(); function p2(n) { return (n < 10 ? '0' : '') + n; } return p2(d.getDate()) + '.' + p2(d.getMonth() + 1) + '.' + d.getFullYear() + '. ' + p2(d.getHours()) + ':' + p2(d.getMinutes()); }
+  // v388: isti prikaz (popis ispod) i za kućice „Danas čeka tebe”: čeka odgovor, rok ističe u 48 h, otvorene prihvaćene bez podataka
+  var POSEBNI_VRSTA_ = 'intrix';
+  var POSEBNI_NASLOVI_ = { intrix: ['INTRIX', 'ponude koje čekaju odobrenje', 'linear-gradient(90deg,#5b1fc7,#7b2ff7 60%,#9d5cff)'],
+    ceka: ['ČEKA ODGOVOR', 'poslane ponude koje čekaju odgovor klijenta', 'linear-gradient(90deg,#3730a3,#4f46e5 60%,#818cf8)'],
+    istice: ['ROK ISTJEČE', 'ponude kojima rok ističe u 48 h', 'linear-gradient(90deg,#991b1b,#c0392b 60%,#ef6b5b)'],
+    otvBez: ['PODACI NISU STIGLI', 'otvorene ponude prihvaćene, a upitnik nije popunjen', 'linear-gradient(90deg,#9a3412,#e65100 60%,#ff9e4f)'] };
+  function posebniPasuje_(e, vrsta) {
+    var st = ponudaStatusSazetak_(e);
+    if (vrsta === 'intrix') { return st === 'potvrdjena' && intrixAktivan_(e); }
+    if (vrsta === 'ceka') { return st === 'na_cekanju'; }
+    if (vrsta === 'istice') { if (st !== 'na_cekanju') { return false; } var ist = parsirajHrvatskiDatumSazetak_(fieldVal(e, 'Datum isteka ponude (admin)')); return !!(ist && ist.getTime() - Date.now() <= 48 * 3600000); }
+    if (vrsta === 'otvBez') { return e.status === 'Otvorena' && st === 'potvrdjena' && !fieldVal(e, 'Otvorena ponuda - datum popunjenog upitnika (admin)'); }
+    return false;
+  }
+  function posebniOtvori_(vrsta) {
+    POSEBNI_VRSTA_ = vrsta || 'intrix';
+    switchTab('Intrix');
+    var l = document.getElementById('entries-list');
+    if (l) { window.scrollTo({ top: l.getBoundingClientRect().top + window.pageYOffset - 20, behavior: 'smooth' }); }
+  }
   function intrixListaZaPrikaz_() {
-    var out = [];
+    var out = [], vrsta = POSEBNI_VRSTA_;
     (allEntries || []).forEach(function(e) {
-      if (ponudaStatusSazetak_(e) !== 'potvrdjena' || !intrixAktivan_(e)) { return; }
+      if (!posebniPasuje_(e, vrsta)) { return; }
       if (e.status === 'Otvorena') {
         if (fieldVal(e, 'Otvorena ponuda - datum prebacivanja (admin)')) { return; }
         var f = e.fields; if (!f['Datum prebacivanja u ponude (admin)']) { f['Datum prebacivanja u ponude (admin)'] = f['Timestamp'] || ''; }
@@ -5952,11 +5972,7 @@
     });
     return out;
   }
-  function intrixOtvoriPrikaz_() {
-    switchTab('Intrix');
-    var l = document.getElementById('entries-list');
-    if (l) { window.scrollTo({ top: l.getBoundingClientRect().top + window.pageYOffset - 20, behavior: 'smooth' }); }
-  }
+  function intrixOtvoriPrikaz_() { posebniOtvori_('intrix'); }
   // v382: prozor „Kratki upitnik” s kartice ponude (isti poziv kao u Otvorene ponude → Evidencija poslanih)
   function kratkiUpitnikProzor_(entry, gumb) {
     var mail = fieldVal(entry, 'Otvorena ponuda - mail primatelja (admin)') || fieldVal(entry, 'Email kontakt osobe') || '';
@@ -6232,12 +6248,14 @@
       var ixLista_ = intrixListaZaPrikaz_();
       var ixGlava_ = document.createElement('div');
       ixGlava_.className = 'ix-prikaz-glava';
-      ixGlava_.innerHTML = '<span><b>INTRIX</b> — ponude koje čekaju odobrenje: <b>' + ixLista_.length + '</b></span><button type="button" class="ix-prikaz-x">✕ Zatvori</button>';
+      var ixN_ = POSEBNI_NASLOVI_[POSEBNI_VRSTA_] || POSEBNI_NASLOVI_.intrix;
+      ixGlava_.style.background = ixN_[2];
+      ixGlava_.innerHTML = '<span><b>' + ixN_[0] + '</b> — ' + ixN_[1] + ': <b>' + ixLista_.length + '</b></span><button type="button" class="ix-prikaz-x">✕ Zatvori</button>';
       ixGlava_.querySelector('.ix-prikaz-x').addEventListener('click', function() { switchTab('Ponude'); });
       container.appendChild(ixGlava_);
       if (!ixLista_.length) {
         var ixPrazno_ = document.createElement('div'); ixPrazno_.className = 'empty-hint';
-        ixPrazno_.textContent = 'Trenutno nijedna ponuda nije u INTRIX-u.';
+        ixPrazno_.textContent = POSEBNI_VRSTA_ === 'intrix' ? 'Trenutno nijedna ponuda nije u INTRIX-u.' : 'Trenutno nema takvih ponuda.';
         container.appendChild(ixPrazno_); return;
       }
       ixLista_.forEach(function(x) {
@@ -30015,6 +30033,7 @@
   }
   function kpIdiNaKarticu_(tab) {
     if (tab === 'Intrix') { intrixOtvoriPrikaz_(); return; }
+    if (String(tab).indexOf('Popis:') === 0) { posebniOtvori_(String(tab).slice(6)); return; }
     switchTab(tab);
     var b = document.querySelector('#dashboard .tabs .tab-btn.active');
     if (b) { window.scrollTo({ top: b.getBoundingClientRect().top + window.pageYOffset - 20, behavior: 'smooth' }); }
@@ -30063,9 +30082,9 @@
       var probl = stProb ? (parseInt(stProb.textContent, 10) || 0) : 0;
       var kar = [
         { n: bezPonude, kl: 'plav', l: 'zainteresirani čekaju ponudu (još im nije poslana)', a: 'Otvori Zainteresirane →', tab: 'Interes' },
-        { n: cekaOdg.ponude + cekaOdg.otvorene, kl: 'ind', info: true, l: 'poslanih ponuda čeka odgovor klijenta' + (cekaOdg.otvorene ? ' (Ponude: ' + cekaOdg.ponude + ', Otvorene: ' + cekaOdg.otvorene + ')' : ''), a: 'Otvori Ponude →', tab: (cekaOdg.ponude || !cekaOdg.otvorene) ? 'Ponude' : 'Otvorene' },
-        { n: istice, kl: 'crv', l: 'ponude kojima rok ističe u 48 h' + (isticeOtv ? ' (od toga ' + isticeOtv + ' otvorenih)' : '') + (isteklo ? ' (+ ' + isteklo + ' već isteklo)' : ''), a: (isticeOtv && isticeOtv === istice) ? 'Otvorene ponude →' : 'Otvori Ponude →', tab: (isticeOtv && isticeOtv === istice) ? 'Otvorene' : 'Ponude' },
-        { n: otvBez, kl: 'nar', l: 'otvorene ponude prihvaćene, a podaci (upitnik) nisu stigli', a: 'Otvorene ponude →', tab: 'Otvorene' },
+        { n: cekaOdg.ponude + cekaOdg.otvorene, kl: 'ind', info: true, l: 'poslanih ponuda čeka odgovor klijenta' + (cekaOdg.otvorene ? ' (Ponude: ' + cekaOdg.ponude + ', Otvorene: ' + cekaOdg.otvorene + ')' : ''), a: 'Prikaži popis →', tab: 'Popis:ceka' },
+        { n: istice, kl: 'crv', l: 'ponude kojima rok ističe u 48 h' + (isticeOtv ? ' (od toga ' + isticeOtv + ' otvorenih)' : '') + (isteklo ? ' (+ ' + isteklo + ' već isteklo)' : ''), a: 'Prikaži popis →', tab: 'Popis:istice' },
+        { n: otvBez, kl: 'nar', l: 'otvorene ponude prihvaćene, a podaci (upitnik) nisu stigli', a: 'Prikaži popis →', tab: 'Popis:otvBez' },
         { n: stariCeka.length, kl: 'ind', l: 'stari klijenti čekaju upitnik' + (stariNijePos ? ' (' + stariNijePos + ' još nije poslano)' : ''), a: 'Unos starih klijenata →', tab: 'Stari' },
         { n: probl, kl: 'zel', l: 'otvoreni problemi klijenata', a: 'Servis klijenata →', tab: 'Problemi' },
         { n: ixPon + ixOtv, kl: 'ljub', info: true, l: 'ponuda čeka odobrenje u INTRIX-u' + (ixOtv && ixPon ? ' (Ponude: ' + ixPon + ', Otvorene: ' + ixOtv + ')' : ''), a: 'Prikaži INTRIX ponude →', tab: 'Intrix' }
