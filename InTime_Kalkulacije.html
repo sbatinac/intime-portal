@@ -212,6 +212,43 @@ document.getElementById('odjavaGumb').addEventListener('click', function() {
 });
 
 // ---------- KALKULACIJE (iz admin sučelja, bez arhive; 2–5 kalkulatora po korisniku) ----------
+
+  // v391: PDF USPOREDBE — svi izračuni iz Kalkulacija u jednom PDF-u (podaci o pošiljci, ukupno po izračunu, razlika prema Izračunu 1, obračun svakog)
+  function kalkUsporedbaPdf_(slotovi, gumb) {
+    var esc_ = function(t) { return String(t == null ? '' : t).replace(/[&<>"]/g, function(c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
+    var eur = function(v) { return v == null ? '—' : v.toLocaleString('hr-HR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' EUR'; };
+    var s = [];
+    slotovi.forEach(function(sl, i) { try { var w = sl.iframeEl.contentWindow; if (w && typeof w.kalkPdfSazetak_ === 'function') { var x = w.kalkPdfSazetak_(); x.br = i + 1; s.push(x); } } catch (e) { /* iframe još nije učitan */ } });
+    var w1 = null; try { w1 = slotovi[0].iframeEl.contentWindow; } catch (e) {}
+    if (!s.length || !s[0].ok || !w1 || typeof w1.kalkPdfIzHtml_ !== 'function') { alert('Prvo u Kalkulatoru 1 upiši podatke o pošiljci i izračunaj cijenu.'); return; }
+    var sada = new Date(), p2 = function(n) { return (n < 10 ? '0' : '') + n; };
+    var dat = p2(sada.getDate()) + '.' + p2(sada.getMonth() + 1) + '.' + sada.getFullYear() + '. ' + p2(sada.getHours()) + ':' + p2(sada.getMinutes());
+    var baza = s[0].ukupno;
+    var kratkiCj = function(t) { t = String(t || '').replace(/^Učitan[a-z ]*?:\s*/i, '').replace(/\s*—\s*\d+ kategorij.*$/i, '').replace(/\s*\(\d+ kategorij[^)]*\)\.?/i, '').trim(); return t.length > 70 ? t.slice(0, 70) + '…' : t; };
+    var naslov = function(t) { return '<div style="font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:#4d148c;margin:12px 0 6px;">' + t + '</div>'; };
+    var h = '<div style="font-family:Arial,Helvetica,sans-serif;color:#1f2d2b;width:720px;padding:24px 30px;background:#fff;">' +
+      '<div style="display:flex;justify-content:space-between;align-items:flex-end;border-bottom:3px solid #4d148c;padding-bottom:10px;margin-bottom:12px;"><div><div style="font-size:22px;font-weight:800;color:#4d148c;">IN TIME d.o.o.</div><div style="font-size:11px;color:#ff6200;font-weight:700;">Licensee of FedEx</div></div><div style="text-align:right;font-size:11.5px;color:#5b6664;">Izrađeno: <b>' + dat + '</b></div></div>' +
+      '<div style="font-size:18px;font-weight:800;margin:0 0 6px;">Usporedba izračuna cijene dostave</div>';
+    if (s[0].podaci.length) {
+      h += naslov('Podaci o pošiljci (isti za sve izračune)') + '<table style="width:100%;border-collapse:collapse;font-size:12px;">' + s[0].podaci.map(function(r, i) { return '<tr style="background:' + (i % 2 ? '#fff' : '#f6f3fb') + ';"><td style="padding:4px 8px;color:#5b6664;width:45%;">' + esc_(r[0]) + '</td><td style="padding:4px 8px;font-weight:700;">' + esc_(r[1]) + '</td></tr>'; }).join('') + '</table>';
+    }
+    h += naslov('Usporedba ukupnih iznosa') + '<table class="kpdf-blok" style="width:100%;border-collapse:collapse;font-size:12.5px;"><tr style="background:#4d148c;color:#fff;"><th style="padding:6px 8px;text-align:left;">Izračun</th><th style="padding:6px 8px;text-align:left;">Cjenik</th><th style="padding:6px 8px;text-align:right;">Ukupno</th><th style="padding:6px 8px;text-align:right;">Razlika prema Izračunu 1</th></tr>' +
+      s.map(function(x, i) {
+        var raz = '—', boja = '#1f2d2b';
+        if (i > 0 && x.ukupno != null && baza != null) { var d = Math.round((x.ukupno - baza) * 100) / 100; var pct = baza ? (d / baza * 100) : 0; raz = (d > 0 ? '+' : (d < 0 ? '−' : '')) + eur(Math.abs(d)) + ' (' + (d > 0 ? '+' : (d < 0 ? '−' : '')) + Math.abs(pct).toLocaleString('hr-HR', { maximumFractionDigits: 1 }) + ' %)'; boja = d > 0 ? '#c0392b' : (d < 0 ? '#1e8449' : '#1f2d2b'); }
+        return '<tr style="background:' + (i % 2 ? '#fff' : '#f6f3fb') + ';"><td style="padding:6px 8px;font-weight:800;">Izračun ' + x.br + (i === 0 ? ' (glavni)' : '') + '</td><td style="padding:6px 8px;font-size:11.5px;">' + esc_(kratkiCj(x.cjenik)) + (x.napomene.length ? '<div style="color:#b45309;font-size:10.5px;">✏️ ' + esc_(x.napomene.join('; ')) + '</div>' : '') + '</td><td style="padding:6px 8px;text-align:right;font-weight:800;white-space:nowrap;">' + eur(x.ukupno) + '</td><td style="padding:6px 8px;text-align:right;font-weight:800;color:' + boja + ';white-space:nowrap;">' + raz + '</td></tr>';
+      }).join('') + '</table>';
+    s.forEach(function(x, i) {
+      h += '<div class="kpdf-blok">' + naslov('Obračun — Izračun ' + x.br + (x.cjenik ? ' · ' + esc_(kratkiCj(x.cjenik)) : '')) +
+        (x.ok ? '<table class="kalk-pdf-obracun" style="width:100%;border-collapse:collapse;font-size:12px;">' + x.tablica + '</table>' : '<div style="font-size:12px;color:#a93226;">' + esc_(x.upozorenje || 'Nema izračuna.') + '</div>') + '</div>';
+    });
+    h += '<div style="margin-top:18px;padding-top:8px;border-top:1px solid #e3e6e5;font-size:10.5px;color:#7a8583;line-height:1.5;">Informativna usporedba prema cjenicima i uvjetima u kalkulatoru IN TIME d.o.o. na dan izrade. Zelena razlika = jeftinije od Izračuna 1, crvena = skuplje.<br>IN TIME d.o.o. · in-time.hr</div>' +
+      '<style>.kalk-pdf-obracun td{padding:5px 8px;border-bottom:1px solid #eceef0;}.kalk-pdf-obracun td:last-child{text-align:right;white-space:nowrap;}.kalk-pdf-obracun tr.sub td{font-size:10.5px;color:#6b7472;}.kalk-pdf-obracun tr.total-row td{font-weight:800;font-size:13px;background:#4d148c;color:#fff;border:0;}</style></div>';
+    var ime = 'InTime_usporedba_izracuna_' + sada.getFullYear() + p2(sada.getMonth() + 1) + p2(sada.getDate()) + '_' + p2(sada.getHours()) + p2(sada.getMinutes()) + '.pdf';
+    var staro = gumb ? gumb.textContent : '';
+    if (gumb) { gumb.disabled = true; gumb.textContent = 'Pripremam PDF…'; }
+    w1.kalkPdfIzHtml_(h, ime).then(function() { if (gumb) { gumb.disabled = false; gumb.textContent = staro; } }).catch(function() { if (gumb) { gumb.disabled = false; gumb.textContent = staro; } alert('PDF nije uspio — pokušaj ponovno.'); });
+  }
   function buildKalkulatorUsporedbaPanel_() {
     var wrap = document.createElement('div');
     wrap.className = 'faq-admin-card';
@@ -225,6 +262,7 @@ document.getElementById('odjavaGumb').addEventListener('click', function() {
       '<div class="faq-admin-card-actions" style="margin-bottom:10px;">' +
         '<button type="button" class="btn btn-small" id="kalkUsporedbaDodajBtn">+ Dodaj kalkulator za usporedbu</button> ' +
         '<button type="button" class="btn btn-outline btn-small" id="kalkUsporedbaFsBtn">⛶ Proširi na cijelu stranicu</button>' +
+        ' <button type="button" class="btn btn-small" id="kalkUsporedbaPdfBtn" style="background:#4d148c;">📄 PDF usporedbe</button>' +
         '<label style="margin-left:10px;font-size:12.5px;font-weight:700;cursor:pointer;"><input type="checkbox" id="kalkUsporedbaOdstupanjaChk" checked> Prikaži odstupanja od Kalkulatora 1</label>' +
       '</div>' +
         '<div id="kalkUsporedbaKazalo" style="display:flex;gap:14px;flex-wrap:wrap;align-items:center;margin:0 0 10px;font-size:12px;font-weight:700;">' +
@@ -242,6 +280,7 @@ document.getElementById('odjavaGumb').addEventListener('click', function() {
     // raširiti na cijelu stranicu"): prebacivanje CSS klase na istu karticu
     // (position:fixed preko cijelog prozora). Iframeovi se NE premještaju u
     // DOM-u niti ponovno učitavaju, pa učitani cjenici i uneseni podaci ostaju.
+    wrap.querySelector('#kalkUsporedbaPdfBtn').addEventListener('click', function() { kalkUsporedbaPdf_(slotovi_, this); });
     var fsBtn_ = wrap.querySelector('#kalkUsporedbaFsBtn');
     function postaviFs_(uklj) {
       wrap.classList.toggle('kalk-usporedba-fs', !!uklj);

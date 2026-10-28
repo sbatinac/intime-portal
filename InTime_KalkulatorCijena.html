@@ -4350,8 +4350,11 @@ function ucitajZivDodatakNaGorivo_(){
       if(aktivni && isFinite(aktivni.postotak)){ noviPostotak = aktivni.postotak; }
     }
     if(noviPostotak != null && isFinite(noviPostotak)){
-      input.value = noviPostotak;
-      input.dispatchEvent(new Event('input', { bubbles: true }));
+      window.KALK_GORIVO_AUTO_ = noviPostotak;   // v391: važeći postotak (za „vrati” kod ručne promjene u Kalkulacijama)
+      if(!window.KALK_GORIVO_RUCNO_){
+        input.value = noviPostotak;
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+      }
     }
     gorivoPrikaziTrend_({
       dizel: gorivoIzracunajDnevniTrend_(res.cijene, 'eurodizel'),
@@ -5175,7 +5178,7 @@ function kalkPdfHtml_(){
     (podaci.length ? '<div style="font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:#4d148c;margin:6px 0 6px;">Podaci o pošiljci</div>' +
       '<table style="width:100%;border-collapse:collapse;font-size:12.5px;margin-bottom:14px;">' + podaci.map(function(r, i){ return '<tr style="background:' + (i % 2 ? '#fff' : '#f6f3fb') + ';"><td style="padding:5px 8px;color:#5b6664;width:45%;">' + kalkPdfEsc_(r[0]) + '</td><td style="padding:5px 8px;font-weight:700;">' + kalkPdfEsc_(r[1]) + '</td></tr>'; }).join('') + '</table>' : '') +
     '<div style="font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:#4d148c;margin:6px 0 6px;">Obračun</div>' +
-    ((typeof KALK_UREDI_ !== 'undefined' && KALK_UREDI_ && Object.keys(KALK_PROMJENE_).length) ? '<div style="margin:0 0 6px;padding:6px 10px;background:#fff3b0;border:1px solid #e0a400;border-radius:6px;font-size:11.5px;">✏️ Izračun s ručno promijenjenim cijenama u cjeniku (' + Object.keys(KALK_PROMJENE_).length + ').</div>' : '') +
+    (kalkPdfNapomene_().length ? '<div style="margin:0 0 6px;padding:6px 10px;background:#fff3b0;border:1px solid #e0a400;border-radius:6px;font-size:11.5px;">✏️ Izračun s ručnim izmjenama: ' + kalkPdfEsc_(kalkPdfNapomene_().join('; ')) + '.</div>' : '') +
     '<table class="kalk-pdf-obracun" style="width:100%;border-collapse:collapse;font-size:12.5px;">' + tablica + '</table>' +
     (upoz.trim() ? '<div style="margin-top:10px;padding:8px 10px;background:#fff6e5;border:1px solid #f0c36d;border-radius:6px;font-size:11.5px;">' + kalkPdfEsc_(upoz.trim()) + '</div>' : '') +
     '<div style="margin-top:22px;padding-top:10px;border-top:1px solid #e3e6e5;font-size:10.5px;color:#7a8583;line-height:1.5;">Informativni izračun prema cjeniku i uvjetima u kalkulatoru IN TIME d.o.o. na dan izrade. Konačna cijena utvrđuje se pri obračunu pošiljke.<br>IN TIME d.o.o. · in-time.hr</div>' +
@@ -5185,6 +5188,28 @@ function kalkPdfHtml_(){
 function kalkUcitajSkriptu_(src){
   return new Promise(function(ok, ne){ var s = document.createElement('script'); s.src = src; s.onload = ok; s.onerror = ne; document.head.appendChild(s); });
 }
+// v391: zajednički „HTML → PDF” (koristi ga i PDF usporedbe iz Kalkulacija — roditeljska stranica zove ovo u Kalkulatoru 1)
+window.kalkPdfIzHtml_ = function(html, ime){
+  var pdfUcitan = window.html2pdf ? Promise.resolve() : kalkUcitajSkriptu_('https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js');
+  return pdfUcitan.then(function(){
+    return window.html2pdf().set({ margin: [8, 8, 8, 8], filename: ime, image: { type: 'jpeg', quality: 0.96 }, html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff', scrollX: 0, scrollY: 0 }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }, pagebreak: { mode: ['css', 'legacy'], avoid: ['.kpdf-blok', 'tr'] } })
+      .from(html, 'string').save();
+  });
+};
+// v391: sažetak za PDF usporedbe (podaci, obračun, ukupno, napomene)
+function kalkPdfNapomene_(){
+  var n = [];
+  try{ if(typeof KALK_PROMJENE_ !== 'undefined' && Object.keys(KALK_PROMJENE_).length){ n.push('ručno promijenjene cijene u cjeniku: ' + Object.keys(KALK_PROMJENE_).length); } }catch(e){}
+  try{ if(window.KALK_GORIVO_RUCNO_){ var g = parseFloat(document.getElementById('dodatakGorivoPct').value) || 0; n.push('dodatak na gorivo ručno ' + g.toLocaleString('hr-HR', {minimumFractionDigits:2, maximumFractionDigits:2}) + ' %' + (window.KALK_GORIVO_AUTO_ != null ? ' (važeći ' + Number(window.KALK_GORIVO_AUTO_).toLocaleString('hr-HR', {minimumFractionDigits:2, maximumFractionDigits:2}) + ' %)' : '')); } }catch(e2){}
+  return n;
+}
+window.kalkPdfSazetak_ = function(){
+  try{ if(typeof izracunaj === 'function'){ izracunaj(); } }catch(eI){}
+  var tb = document.getElementById('breakdownTable'), html = tb ? tb.innerHTML : '';
+  var uk = null, tr = tb ? tb.querySelector('tr.total-row td:last-child') : null;
+  if(tr){ var v = parseFloat(String(tr.textContent).replace(/[^\d,.-]/g, '').replace(/\./g, '').replace(',', '.')); if(isFinite(v)){ uk = v; } }
+  return { ok: !!html.trim(), podaci: kalkPdfPodaci_(), tablica: html, ukupno: uk, cjenik: ((document.getElementById('cjenikStatus') || {}).textContent || '').trim(), naziv: window.KALK_PDF_NAZIV_ || '', napomene: kalkPdfNapomene_(), upozorenje: ((document.getElementById('warnBox') || {}).innerText || '').trim() };
+};
 function kalkIzracunPdf_(){
   var st = document.getElementById('kalkPdfStatus'), g = document.getElementById('kalkPdfGumb');
   try{ if(typeof izracunaj === 'function'){ izracunaj(); } }catch(eI){}
@@ -5195,11 +5220,7 @@ function kalkIzracunPdf_(){
   var ime = 'InTime_izracun_' + (naziv ? naziv + '_' : '') + sada.getFullYear() + p2(sada.getMonth() + 1) + p2(sada.getDate()) + '_' + p2(sada.getHours()) + p2(sada.getMinutes()) + '.pdf';
   if(g){ g.disabled = true; } if(st){ st.textContent = 'Pripremam PDF…'; }
   var gotovo = function(t){ if(g){ g.disabled = false; } if(st){ st.textContent = t || ''; } };
-  var pdfUcitan = window.html2pdf ? Promise.resolve() : kalkUcitajSkriptu_('https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js');
-  pdfUcitan.then(function(){
-    return window.html2pdf().set({ margin: [8, 8, 8, 8], filename: ime, image: { type: 'jpeg', quality: 0.96 }, html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff', scrollX: 0, scrollY: 0 }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } })
-      .from(kalkPdfHtml_(), 'string').save().then(function(){ gotovo('✓ PDF je preuzet: ' + ime); });
-  }).catch(function(){
+  kalkPdfIzHtml_(kalkPdfHtml_(), ime).then(function(){ gotovo('✓ PDF je preuzet: ' + ime); }).catch(function(){
     // rezerva: prozor za ispis → „Spremi kao PDF”
     try{
       var w = window.open('', '_blank');
@@ -5278,6 +5299,26 @@ if(KALK_UREDI_ && typeof renderCjenikTable === 'function'){
     inp.addEventListener('keydown', function(e){ if(e.key === 'Enter'){ e.preventDefault(); spremi(true); } else if(e.key === 'Escape'){ spremi(false); } });
     inp.addEventListener('blur', function(){ spremi(true); });
   });
+}
+
+// ---------- v391: RUČNI DODATAK NA GORIVO — samo u Kalkulacijama (?kalk_uredi=1), samo za trenutni izračun ----------
+if(typeof KALK_UREDI_ !== 'undefined' && KALK_UREDI_){
+  (function(){
+    var inp = document.getElementById('dodatakGorivoPct'); if(!inp){ return; }
+    inp.disabled = false; inp.title = 'Ručna promjena vrijedi samo za ovaj izračun';
+    var info = document.createElement('div'); info.id = 'kalkGorivoRucnoInfo';
+    info.style.cssText = 'margin-top:6px;font-size:12px;color:#5a4300;';
+    inp.parentNode.insertBefore(info, inp.nextSibling);
+    function osvjezi(){
+      var r = !!window.KALK_GORIVO_RUCNO_;
+      inp.style.background = r ? '#fff3b0' : ''; inp.style.borderColor = r ? '#e0a400' : ''; inp.style.fontWeight = r ? '800' : '';
+      info.innerHTML = r ? ('✏️ Ručno (samo za ovaj izračun)' + (window.KALK_GORIVO_AUTO_ != null ? ' · važeći ' + String(window.KALK_GORIVO_AUTO_).replace('.', ',') + ' %' : '') + ' <button type="button" id="kalkGorivoVrati" style="margin-left:6px;background:#fff;border:1.5px solid #b45309;color:#b45309;border-radius:6px;padding:1px 8px;font:inherit;font-weight:700;cursor:pointer;">↺ Vrati</button>') : '✏️ Postotak možeš ručno promijeniti — vrijedi samo za ovaj izračun.';
+      var vb = document.getElementById('kalkGorivoVrati');
+      if(vb){ vb.addEventListener('click', function(){ window.KALK_GORIVO_RUCNO_ = false; if(window.KALK_GORIVO_AUTO_ != null){ inp.value = window.KALK_GORIVO_AUTO_; } osvjezi(); try{ izracunaj(); }catch(e){} }); }
+    }
+    inp.addEventListener('input', function(ev){ if(ev.isTrusted){ window.KALK_GORIVO_RUCNO_ = true; osvjezi(); } });
+    osvjezi();
+  })();
 }
 </script>
 
