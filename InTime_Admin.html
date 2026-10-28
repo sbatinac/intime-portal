@@ -2400,6 +2400,10 @@
   .pb-zvao-dat{font-size:11px;color:#1e8449;font-weight:700;white-space:nowrap;}
   .pb-tablica tr.pb-nazvan td{background:#eef8f1 !important;color:#5b6664;}
   .pb-mob-unos{display:inline-flex;gap:4px;}
+  a.kontakt-link{color:#0a5f8c;font-weight:700;text-decoration:none;border-bottom:1px dotted currentColor;}
+  a.kontakt-link:hover{color:#ff6200;}
+  a.kontakt-mini{display:inline-block;margin-left:6px;padding:2px 7px;border-radius:6px;background:#eef6fb;border:1px solid #bcd7ea;text-decoration:none;font-size:13px;vertical-align:middle;}
+  a.kontakt-mini:hover{background:#d6ebf8;}
   .pb-ponovi{border:1.5px solid #4d148c;background:#fff;color:#4d148c;border-radius:8px;padding:4px 10px;font:inherit;font-size:12px;font-weight:800;cursor:pointer;white-space:nowrap;}
   .pb-ponovi:hover{background:#4d148c;color:#fff;}
   .pb-st{display:flex;gap:4px;}
@@ -6119,7 +6123,7 @@
       lista.map(function(x, i) {
         var dana = Math.floor((sada - x.ms) / 86400000);
         var tel = x.mobitel ? '<a href="tel:' + esc(x.mobitel) + '" class="pb-tel">' + esc(x.mobitel) + '</a> <button type="button" class="pb-mob-uredi" title="Promijeni broj">✎</button>' : '<span class="pb-mob-unos"><input type="tel" class="pb-mob-inp" placeholder="upiši broj"><button type="button" class="pb-mob-spremi">💾</button></span>';
-        return '<tr data-oib="' + esc(x.oib) + '" class="' + (x.nazvan ? 'pb-nazvan' : '') + (x.ishod ? ' pb-is-' + x.ishod : '') + '"><td>' + (i + 1) + '</td><td><label class="pb-zvao"><input type="checkbox" class="pb-zvao-cb"' + (x.nazvan ? ' checked' : '') + '><span class="pb-zvao-dat">' + pbZvaoTekst_(x) + '</span></label></td><td>' + pbStatusHtml_(x) + '</td><td><b>' + esc(x.naziv) + '</b><div style="font-size:11px;color:#6b7472;">OIB ' + esc(x.oib) + (x.pisama > 1 ? ' · pisama: ' + x.pisama : '') + '</div></td><td>' + tel + '</td><td>' + esc(x.osoba || '') + '</td><td style="white-space:nowrap;">' + esc(x.datum) + '</td><td style="white-space:nowrap;font-weight:800;color:' + (dana >= 14 ? '#c0392b' : (dana >= 7 ? '#b45309' : '#1f2d3d')) + ';">' + dana + ' d</td><td><button type="button" class="pb-ponovi" title="Pošalji isto pismo ponovno (npr. kad kažu da ga nisu dobili)">↻ Ponovi pismo</button></td><td style="font-size:12px;">' + esc(x.email) + '</td><td>' + esc(x.grad || '') + '</td><td style="font-size:12px;">' + esc(x.kampanja || '') + (x.izvor ? '<div style="color:#6b7472;">📍 ' + esc(x.izvor) + '</div>' : '') + '</td></tr>';
+        return '<tr data-oib="' + esc(x.oib) + '" class="' + (x.nazvan ? 'pb-nazvan' : '') + (x.ishod ? ' pb-is-' + x.ishod : '') + '"><td>' + (i + 1) + '</td><td><label class="pb-zvao"><input type="checkbox" class="pb-zvao-cb"' + (x.nazvan ? ' checked' : '') + '><span class="pb-zvao-dat">' + pbZvaoTekst_(x) + '</span></label></td><td>' + pbStatusHtml_(x) + '</td><td><b>' + esc(x.naziv) + '</b><div style="font-size:11px;color:#6b7472;">OIB ' + esc(x.oib) + (x.pisama > 1 ? ' · pisama: ' + x.pisama : '') + '</div></td><td>' + tel + '</td><td>' + esc(x.osoba || '') + '</td><td style="white-space:nowrap;">' + esc(x.datum) + '</td><td style="white-space:nowrap;font-weight:800;color:' + (dana >= 14 ? '#c0392b' : (dana >= 7 ? '#b45309' : '#1f2d3d')) + ';">' + dana + ' d</td><td><button type="button" class="pb-ponovi" title="Pošalji isto pismo ponovno (npr. kad kažu da ga nisu dobili)">↻ Ponovi pismo</button></td><td style="font-size:12px;">' + kontaktMailHtml_(x.email) + '</td><td>' + esc(x.grad || '') + '</td><td style="font-size:12px;">' + esc(x.kampanja || '') + (x.izvor ? '<div style="color:#6b7472;">📍 ' + esc(x.izvor) + '</div>' : '') + '</td></tr>';
       }).join('') + '</tbody></table></div>';
     container.appendChild(t);
     // v396: kvačica „nazvao” (bilježi datum i vrijeme) i ručni unos mobitela
@@ -6278,6 +6282,39 @@
       }).catch(function() { b.disabled = false; st.style.color = '#a93226'; st.textContent = 'Nema veze s poslužiteljem — pokušaj ponovno.'; });
     });
   }
+  // v400: AKTIVNI KONTAKTI — e-mail i telefon klikom (mailto: / tel: → na računalu otvara mail program ili aplikaciju za pozive, npr. Phone Link / Teams)
+  var KONTAKT_MAIL_RE_ = /^[^\s@,;<>]+@[^\s@,;<>]+\.[^\s@,;<>]{2,}$/;
+  function kontaktTelBroj_(t) { var d = String(t || '').replace(/[^\d+]/g, ''); if (d.indexOf('00') === 0) { d = '+' + d.slice(2); } return d; }
+  function kontaktJeTel_(t) { t = String(t || '').trim(); return /^\+?[\d\s\/\-()]{6,22}$/.test(t) && kontaktTelBroj_(t).replace('+', '').length >= 6; }
+  function kontaktMailHtml_(m) {
+    return String(m || '').split(/\s*[,;]\s*/).map(function(x) { x = x.trim(); return KONTAKT_MAIL_RE_.test(x) ? '<a class="kontakt-link" href="mailto:' + esc(x) + '" onclick="event.stopPropagation()" title="Napiši mail">' + esc(x) + '</a>' : esc(x); }).join(', ');
+  }
+  function kontaktTelHtml_(t) {
+    return kontaktJeTel_(t) ? '<a class="kontakt-link" href="tel:' + esc(kontaktTelBroj_(t)) + '" onclick="event.stopPropagation()" title="Nazovi">📞 ' + esc(String(t).trim()) + '</a>' : esc(t);
+  }
+  // podaci u tablici kartice (td.v): tekst → poveznica; polje za upis → mala tipka ✉ / 📞 uz njega
+  function kontaktPoveziCelije_(root) {
+    Array.prototype.forEach.call((root || document).querySelectorAll('td.v:not([data-kontakt])'), function(td) {
+      td.setAttribute('data-kontakt', '1');
+      var tr_ = td.parentElement, lbl_ = (tr_ && tr_.cells && tr_.cells[0] && tr_.cells[0] !== td) ? tr_.cells[0].textContent : '';
+      var telRed_ = /mob|telefon|tel\.|gsm|broj za poziv|kontakt broj/i.test(lbl_);   // telefon samo u redovima koji su stvarno telefon (ne OIB, datum…)
+      var inp = td.querySelector('input[type=text],input[type=email],input[type=tel],input:not([type])');
+      if (inp) {
+        var b = document.createElement('a'); b.className = 'kontakt-mini'; b.style.display = 'none'; b.onclick = function(ev) { ev.stopPropagation(); };
+        var osvjezi = function() { var v = inp.value.trim(); if (KONTAKT_MAIL_RE_.test(v)) { b.href = 'mailto:' + v; b.textContent = '✉'; b.title = 'Napiši mail'; b.style.display = ''; } else if (telRed_ && kontaktJeTel_(v)) { b.href = 'tel:' + kontaktTelBroj_(v); b.textContent = '📞'; b.title = 'Nazovi'; b.style.display = ''; } else { b.style.display = 'none'; } };
+        inp.insertAdjacentElement('afterend', b); inp.addEventListener('input', osvjezi); osvjezi();
+        return;
+      }
+      if (td.children.length) { return; }
+      var t = td.textContent.trim();
+      if (KONTAKT_MAIL_RE_.test(t)) { td.innerHTML = kontaktMailHtml_(t); }
+      else if (telRed_ && kontaktJeTel_(t)) { td.innerHTML = kontaktTelHtml_(t); }
+    });
+  }
+  (function() {
+    var tajmer = null;
+    try { new MutationObserver(function() { if (tajmer) { return; } tajmer = setTimeout(function() { tajmer = null; try { kontaktPoveziCelije_(document); } catch (e) {} }, 250); }).observe(document.body, { childList: true, subtree: true }); } catch (eMo) {}
+  })();
   function intrixAktivan_(e) {
     var f = (e && e.fields) || {};
     return !!String(f['INTRIX (admin)'] || '').trim() && !String(f['Identifikacijski TM broj klijenta (admin)'] || '').trim();
@@ -20996,7 +21033,7 @@
     // radi lakšeg uočavanja eventualne greške u unosu.
     var subParts = [];
     if (oib) { subParts.push('OIB: ' + esc(oib)); }
-    if (mail) { subParts.push('Mail: ' + esc(mail)); }
+    if (mail) { subParts.push('Mail: ' + kontaktMailHtml_(mail)); }
     if (datumDio) { subParts.push('Datum unosa: ' + esc(datumDio)); }
     if (vrijemeDio) { subParts.push('Vrijeme: ' + esc(vrijemeDio)); }
     if (trajanje) { subParts.push('Trajanje popunjavanja: ' + esc(trajanje)); }
@@ -21023,7 +21060,7 @@
           subParts.push('<button type="button" class="kratki-kart-btn' + (krDat_ ? ' poslan' : '') + '" title="' + (krDat_ ? 'Kratki upitnik je uključen ' + esc(krDat_) + ' — klik za ponovno slanje ili kopiranje linka' : 'Pošalji klijentu kratki upitnik (samo osnovni podaci)') + '">📝 Kratki upitnik' + (krDat_ ? ' ✓' : '') + '</button>');
         }
       } catch (eKrB_) { /* nije kritično */ }
-      if (mobitel) { subParts.push('Mobitel: ' + esc(mobitel)); }
+      if (mobitel) { subParts.push('Mobitel: ' + kontaktTelHtml_(mobitel)); }
     } else {
       var tel = fieldVal(entry, 'Telefon (odbijenica)');
       var razlog = fieldVal(entry, 'Razlog (odbijenica)');
@@ -21475,7 +21512,7 @@
     // Svaka stavka ima oblik "Naziv kategorije: podatak" (isto kao gore).
     var subParts = [];
     if (oib) { subParts.push('OIB: ' + esc(oib)); }
-    if (email) { subParts.push('Mail: ' + esc(email)); }
+    if (email) { subParts.push('Mail: ' + kontaktMailHtml_(email)); }
     if (datumDio) { subParts.push('Datum unosa: ' + esc(datumDio)); }
     if (vrijemeDio) { subParts.push('Vrijeme: ' + esc(vrijemeDio)); }
     if (trajanje) { subParts.push('Trajanje popunjavanja: ' + esc(trajanje)); }
