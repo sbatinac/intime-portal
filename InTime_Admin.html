@@ -2400,6 +2400,11 @@
   .pb-zvao-dat{font-size:11px;color:#1e8449;font-weight:700;white-space:nowrap;}
   .pb-tablica tr.pb-nazvan td{background:#eef8f1 !important;color:#5b6664;}
   .pb-mob-unos{display:inline-flex;gap:4px;}
+  .kp-pe-gumb{margin-left:auto;float:right;border:1.5px solid #8b5cf6;background:rgba(139,92,246,.15);color:#e9ddff;border-radius:999px;padding:3px 12px;font:inherit;font-size:12px;font-weight:800;cursor:pointer;}
+  .kp-pe-gumb:hover{background:#8b5cf6;color:#fff;}
+  .pe-tablica tr.pe-proc-red td{color:#7a8583;font-style:italic;}
+  .pe-brisi{border:1px solid #f0c4bf;background:#fff;border-radius:6px;cursor:pointer;padding:2px 6px;}
+  .pe-brisi:hover{background:#fdecea;}
   a.kontakt-link{color:#0a5f8c;font-weight:700;text-decoration:none;border-bottom:1px dotted currentColor;}
   a.kontakt-link:hover{color:#ff6200;}
   a.kontakt-mini{display:inline-block;margin-left:6px;padding:2px 7px;border-radius:6px;background:#eef6fb;border:1px solid #bcd7ea;text-decoration:none;font-size:13px;vertical-align:middle;}
@@ -3779,7 +3784,7 @@
   function handleLogout() {
     adminToken = null;
     try { pogodciZaustaviPracenje_(); } catch (e) {}
-    kesObrisiSve_(); KES_PRIKAZAN_ = false; kesTraka_(''); PB_LISTA_ = null;   // v393 / v395
+    kesObrisiSve_(); KES_PRIKAZAN_ = false; kesTraka_(''); PB_LISTA_ = null; PE_PODACI_ = null;   // v393 / v395 / v401
     try { sessionStorage.removeItem('intime_admin_token'); sessionStorage.removeItem('intime_video_off'); sessionStorage.removeItem('intime_brzo_ok'); } catch (e) {}
     try { document.querySelectorAll('.brzo-gumb').forEach(function(g) { g.remove(); }); } catch (e3) {}
     document.getElementById('dashboard').hidden = true;
@@ -6178,6 +6183,66 @@
       veziUnos();
     });
   }
+  // v401: EVIDENCIJA PODSJETNIKA (prikaz ispod „Danas čeka tebe”) — filtri, brisanje pojedinačno ili označenih
+  var PE_PODACI_ = null, PE_UCITAVA_ = false, PE_FILTAR_ = { vrsta: '', dana: 30, procjena: false };
+  function peUcitaj_() {
+    if (PE_UCITAVA_) { return; }
+    PE_UCITAVA_ = true;
+    gasCall({ action: 'adminPodsjetniciEvidencija', token: adminToken }).then(function(res) {
+      PE_UCITAVA_ = false;
+      if (handleAuthError(res)) { return; }
+      PE_PODACI_ = (res && res.status === 'ok') ? res : { greska: (res && res.message) || 'Učitavanje nije uspjelo.' };
+      if (activeTab === 'Intrix' && POSEBNI_VRSTA_ === 'podsEvid') { renderEntries(); }
+    }).catch(function() { PE_UCITAVA_ = false; PE_PODACI_ = { greska: 'Nema veze s poslužiteljem.' }; if (activeTab === 'Intrix' && POSEBNI_VRSTA_ === 'podsEvid') { renderEntries(); } });
+  }
+  function peIscrtaj_(container) {
+    var glava = document.createElement('div'); glava.className = 'ix-prikaz-glava'; glava.style.background = 'linear-gradient(90deg,#4d148c,#6d28d9 60%,#8b5cf6)';
+    var f = PE_FILTAR_;
+    var sel = function(cls, opcije, v) { return '<select class="' + cls + '" style="padding:5px 8px;border-radius:8px;border:0;font:inherit;font-weight:700;">' + opcije.map(function(o) { return '<option value="' + o[0] + '"' + (String(o[0]) === String(v) ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('') + '</select>'; };
+    glava.innerHTML = '<span><b>📋 EVIDENCIJA PODSJETNIKA</b></span><span style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">' +
+      sel('pe-vrsta', [['', 'sve vrste'], ['Podsjetnik na ponudu', 'na ponudu'], ['Podsjetnik na upitnik', 'na upitnik'], ['Kratki upitnik', 'kratki upitnik']], f.vrsta) +
+      sel('pe-dana', [[7, 'zadnjih 7 dana'], [30, 'zadnjih 30 dana'], [90, 'zadnjih 90 dana'], [0, 'sve']], f.dana) +
+      '<label style="font-size:12.5px;font-weight:700;cursor:pointer;"><input type="checkbox" class="pe-proc"' + (f.procjena ? ' checked' : '') + '> i procjena (prije evidencije)</label>' +
+      '<button type="button" class="ix-prikaz-x pe-osvjezi">⟳ Osvježi</button><button type="button" class="ix-prikaz-x pe-x">✕ Zatvori</button></span>';
+    container.appendChild(glava);
+    glava.querySelector('.pe-vrsta').addEventListener('change', function() { f.vrsta = this.value; renderEntries(); });
+    glava.querySelector('.pe-dana').addEventListener('change', function() { f.dana = parseInt(this.value, 10) || 0; renderEntries(); });
+    glava.querySelector('.pe-proc').addEventListener('change', function() { f.procjena = this.checked; renderEntries(); });
+    glava.querySelector('.pe-osvjezi').addEventListener('click', function() { this.disabled = true; this.textContent = 'Osvježavam…'; PE_PODACI_ = null; peUcitaj_(); });
+    glava.querySelector('.pe-x').addEventListener('click', function() { switchTab('Ponude'); });
+    if (!PE_PODACI_) { var u = document.createElement('div'); u.className = 'empty-hint'; u.textContent = 'Učitavam evidenciju…'; container.appendChild(u); peUcitaj_(); return; }
+    if (PE_PODACI_.greska) { var g = document.createElement('div'); g.className = 'empty-hint'; g.textContent = PE_PODACI_.greska; container.appendChild(g); return; }
+    var gr = f.dana ? Date.now() - f.dana * 86400000 : 0;
+    var lista = (PE_PODACI_.lista || []).concat(f.procjena ? (PE_PODACI_.procjena || []) : []).filter(function(x) { return (!f.vrsta || x.vrsta === f.vrsta) && (!gr || x.ms >= gr); }).sort(function(a, b) { return b.ms - a.ms; });
+    if (!lista.length) { var pr = document.createElement('div'); pr.className = 'empty-hint'; pr.textContent = (PE_PODACI_.lista || []).length ? 'Nema podsjetnika za odabrane filtre.' : 'Evidencija je prazna — podsjetnici se upisuju od ove verzije nadalje.'; container.appendChild(pr); return; }
+    var t = document.createElement('div');
+    t.innerHTML = '<div style="display:flex;gap:8px;align-items:center;margin:0 0 8px;"><button type="button" class="pe-brisi-oz" disabled style="border:1.5px solid #c0392b;background:#fff;color:#c0392b;border-radius:8px;padding:5px 12px;font:inherit;font-weight:800;cursor:pointer;">🗑 Obriši označene</button><span class="pe-st" style="font-weight:700;font-size:13px;"></span><span style="margin-left:auto;font-size:12.5px;color:#5b6664;">Ukupno: <b>' + lista.length + '</b></span></div>' +
+      '<div style="overflow-x:auto;"><table class="pb-tablica pe-tablica"><thead><tr><th><input type="checkbox" class="pe-sve" title="Označi sve"></th><th>Datum i vrijeme</th><th>Vrsta</th><th>Firma</th><th>Broj ponude</th><th>Primatelj</th><th>Ishod</th><th>Način</th><th></th></tr></thead><tbody>' +
+      lista.map(function(x) {
+        var proc = x.nacin === 'procjena';
+        return '<tr data-id="' + esc(x.id) + '"' + (proc ? ' class="pe-proc-red"' : '') + '><td>' + (proc ? '' : '<input type="checkbox" class="pe-cb">') + '</td><td style="white-space:nowrap;">' + esc(x.datum) + '</td><td>' + esc(x.vrsta) + '</td><td><b>' + esc(x.naziv) + '</b>' + (x.oib ? '<div style="font-size:11px;color:#6b7472;">OIB ' + esc(x.oib) + '</div>' : '') + '</td><td>' + esc(x.broj || '') + '</td><td style="font-size:12px;">' + (x.primatelj ? kontaktMailHtml_(x.primatelj) : '—') + '</td><td>' + (proc ? '<span style="color:#6b7472;">?</span>' : (x.ok ? '<span style="color:#1e8449;font-weight:800;">✓ poslano</span>' : '<span style="color:#c0392b;font-weight:800;" title="' + esc(x.poruka) + '">✗ nije uspjelo</span>')) + '</td><td style="font-size:12px;">' + (proc ? 'procjena (samo dan)' : esc(x.nacin)) + '</td><td>' + (proc ? '' : '<button type="button" class="pe-brisi" title="Obriši ovaj zapis">🗑</button>') + '</td></tr>';
+      }).join('') + '</tbody></table></div>';
+    container.appendChild(t);
+    var st = t.querySelector('.pe-st'), bOz = t.querySelector('.pe-brisi-oz');
+    var oznaceni = function() { return Array.prototype.map.call(t.querySelectorAll('.pe-cb:checked'), function(c) { return c.closest('tr').getAttribute('data-id'); }); };
+    var azur = function() { var n = oznaceni().length; bOz.disabled = !n; bOz.textContent = '🗑 Obriši označene' + (n ? ' (' + n + ')' : ''); };
+    t.querySelector('.pe-sve').addEventListener('change', function() { var on = this.checked; Array.prototype.forEach.call(t.querySelectorAll('.pe-cb'), function(c) { c.checked = on; }); azur(); });
+    Array.prototype.forEach.call(t.querySelectorAll('.pe-cb'), function(c) { c.addEventListener('change', azur); });
+    var brisi = function(ids) {
+      if (!ids.length) { return; }
+      if (!confirm('Obrisati ' + (ids.length === 1 ? 'ovaj zapis' : ids.length + ' zapisa') + ' iz evidencije podsjetnika? Ovo briše samo zapis u evidenciji, ne mijenja ponude ni podsjetnike.')) { return; }
+      st.style.color = '#1f2d3d'; st.textContent = 'Brišem…'; bOz.disabled = true;
+      gasCall({ action: 'adminPodsjetniciEvidencijaBrisi', token: adminToken, ids: ids }).then(function(res) {
+        if (handleAuthError(res)) { return; }
+        if (!res || res.status !== 'ok') { st.style.color = '#a93226'; st.textContent = (res && res.message) || 'Brisanje nije uspjelo.'; azur(); return; }
+        var skup = {}; ids.forEach(function(x) { skup[x] = true; });
+        PE_PODACI_.lista = (PE_PODACI_.lista || []).filter(function(x) { return !skup[x.id]; });
+        renderEntries();
+      }).catch(function() { st.style.color = '#a93226'; st.textContent = 'Nema veze s poslužiteljem.'; azur(); });
+    };
+    bOz.addEventListener('click', function() { brisi(oznaceni()); });
+    Array.prototype.forEach.call(t.querySelectorAll('.pe-brisi'), function(b) { b.addEventListener('click', function() { brisi([b.closest('tr').getAttribute('data-id')]); }); });
+  }
   // v388: isti prikaz (popis ispod) i za kućice „Danas čeka tebe”: čeka odgovor, rok ističe u 48 h, otvorene prihvaćene bez podataka
   var POSEBNI_VRSTA_ = 'intrix';
   var POSEBNI_NASLOVI_ = { intrix: ['INTRIX', 'ponude koje čekaju odobrenje', 'linear-gradient(90deg,#5b1fc7,#7b2ff7 60%,#9d5cff)'],
@@ -6520,6 +6585,7 @@
 
     // v380: INTRIX prikaz — sve prihvaćene ponude u INTRIX-u, i iz Ponuda i iz Otvorenih ponuda, na jednom mjestu
     if (activeTab === 'Intrix' && POSEBNI_VRSTA_ === 'pismaBez') { pbIscrtaj_(container); return; }   // v395
+    if (activeTab === 'Intrix' && POSEBNI_VRSTA_ === 'podsEvid') { peIscrtaj_(container); return; }   // v401
     if (activeTab === 'Intrix') {
       var ixLista_ = intrixListaZaPrikaz_();
       var ixGlava_ = document.createElement('div');
@@ -30425,7 +30491,7 @@
       var box = document.getElementById('kp-danas');
       if (box) {
         var ukupno = kar.reduce(function(z, k) { return z + (k.info ? 0 : k.n); }, 0);
-        box.innerHTML = '<h3>📌 Danas čeka tebe<small>klik na kućicu vodi na pravu karticu</small></h3><div class="kp-danas-mreza">' +
+        box.innerHTML = '<h3>📌 Danas čeka tebe<small>klik na kućicu vodi na pravu karticu</small><button type="button" class="kp-pe-gumb" onclick="posebniOtvori_(\'podsEvid\')" title="Svi poslani podsjetnici (na ponudu, na upitnik, kratki upitnik)">📋 Evidencija podsjetnika</button></h3><div class="kp-danas-mreza">' +
           kar.map(function(k, i) { return '<div class="kp-d ' + k.kl + (k.n ? '' : ' nula') + '" data-i="' + i + '"><div class="n">' + k.n + '</div><div class="l">' + esc(k.l) + '</div><div class="a">' + esc(k.a) + '</div></div>'; }).join('') +
           '</div>' + (ukupno === 0 ? '<div class="kp-danas-ok">✓ Sve je čisto — ništa ne čeka.</div>' : '');
         Array.prototype.forEach.call(box.querySelectorAll('.kp-d'), function(el) { el.addEventListener('click', function() { kpIdiNaKarticu_(kar[parseInt(el.getAttribute('data-i'), 10)].tab); }); });
