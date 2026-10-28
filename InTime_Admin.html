@@ -6055,6 +6055,7 @@
       if (cb) { cb(); }
     }).catch(function() { PB_UCITAVA_ = false; });
   }
+  function pbZvaoTekst_(x) { if (!x.nazvan) { return x.poziva ? esc(x.poziva + '× zvano') : ''; } return esc((x.poziva > 1 ? x.poziva + '× · zadnji ' : '') + x.nazvan); }   // v398
   function pbStatusHtml_(x) {
     var b = function(k, ikona, tekst) { return '<button type="button" class="pb-st-b pb-st-' + k + (x.ishod === k ? ' akt' : '') + '" data-is="' + k + '" title="' + tekst + (x.ishod === k ? ' (klik = poništi)' : '') + '">' + ikona + '</button>'; };
     var opis = { ne: 'nisu zainteresirani · arhivirano', mozda: 'možda', da: 'zainteresirani' }[x.ishod || ''] || '';
@@ -6081,7 +6082,7 @@
       lista.map(function(x, i) {
         var dana = Math.floor((sada - x.ms) / 86400000);
         var tel = x.mobitel ? '<a href="tel:' + esc(x.mobitel) + '" class="pb-tel">' + esc(x.mobitel) + '</a> <button type="button" class="pb-mob-uredi" title="Promijeni broj">✎</button>' : '<span class="pb-mob-unos"><input type="tel" class="pb-mob-inp" placeholder="upiši broj"><button type="button" class="pb-mob-spremi">💾</button></span>';
-        return '<tr data-oib="' + esc(x.oib) + '" class="' + (x.nazvan ? 'pb-nazvan' : '') + (x.ishod ? ' pb-is-' + x.ishod : '') + '"><td>' + (i + 1) + '</td><td><label class="pb-zvao"><input type="checkbox" class="pb-zvao-cb"' + (x.nazvan ? ' checked' : '') + '><span class="pb-zvao-dat">' + (x.nazvan ? esc(x.nazvan) : '') + '</span></label></td><td>' + pbStatusHtml_(x) + '</td><td><b>' + esc(x.naziv) + '</b><div style="font-size:11px;color:#6b7472;">OIB ' + esc(x.oib) + (x.pisama > 1 ? ' · pisama: ' + x.pisama : '') + '</div></td><td>' + tel + '</td><td>' + esc(x.osoba || '') + '</td><td style="white-space:nowrap;">' + esc(x.datum) + '</td><td style="white-space:nowrap;font-weight:800;color:' + (dana >= 14 ? '#c0392b' : (dana >= 7 ? '#b45309' : '#1f2d3d')) + ';">' + dana + ' d</td><td style="font-size:12px;">' + esc(x.email) + '</td><td>' + esc(x.grad || '') + '</td><td style="font-size:12px;">' + esc(x.kampanja || '') + (x.izvor ? '<div style="color:#6b7472;">📍 ' + esc(x.izvor) + '</div>' : '') + '</td></tr>';
+        return '<tr data-oib="' + esc(x.oib) + '" class="' + (x.nazvan ? 'pb-nazvan' : '') + (x.ishod ? ' pb-is-' + x.ishod : '') + '"><td>' + (i + 1) + '</td><td><label class="pb-zvao"><input type="checkbox" class="pb-zvao-cb"' + (x.nazvan ? ' checked' : '') + '><span class="pb-zvao-dat">' + pbZvaoTekst_(x) + '</span></label></td><td>' + pbStatusHtml_(x) + '</td><td><b>' + esc(x.naziv) + '</b><div style="font-size:11px;color:#6b7472;">OIB ' + esc(x.oib) + (x.pisama > 1 ? ' · pisama: ' + x.pisama : '') + '</div></td><td>' + tel + '</td><td>' + esc(x.osoba || '') + '</td><td style="white-space:nowrap;">' + esc(x.datum) + '</td><td style="white-space:nowrap;font-weight:800;color:' + (dana >= 14 ? '#c0392b' : (dana >= 7 ? '#b45309' : '#1f2d3d')) + ';">' + dana + ' d</td><td style="font-size:12px;">' + esc(x.email) + '</td><td>' + esc(x.grad || '') + '</td><td style="font-size:12px;">' + esc(x.kampanja || '') + (x.izvor ? '<div style="color:#6b7472;">📍 ' + esc(x.izvor) + '</div>' : '') + '</td></tr>';
       }).join('') + '</tbody></table></div>';
     container.appendChild(t);
     // v396: kvačica „nazvao” (bilježi datum i vrijeme) i ručni unos mobitela
@@ -6091,7 +6092,7 @@
       gasCall(Object.assign({ action: 'adminPismoNazvan', token: adminToken, oib: oib, naziv: x.naziv }, podaci)).then(function(res) {
         if (handleAuthError(res)) { return; }
         if (!res || res.status !== 'ok') { alert((res && res.message) || 'Spremanje nije uspjelo.'); gotovo(false); return; }
-        x.nazvan = res.nazvan || ''; x.mobitel = res.mobitel || x.mobitel; if (res.ishod !== undefined) { x.ishod = res.ishod; x.ishodDatum = res.ishodDatum; } kesSpremi_('pismaBez', PB_LISTA_); gotovo(true); try { osvjeziKomandnuPlocu_(); } catch (e) {}
+        x.nazvan = res.nazvan || ''; x.mobitel = res.mobitel || x.mobitel; if (res.ishod !== undefined) { x.ishod = res.ishod; x.ishodDatum = res.ishodDatum; } if (res.poziva !== undefined) { x.poziva = res.poziva; } kesSpremi_('pismaBez', PB_LISTA_); gotovo(true); try { osvjeziKomandnuPlocu_(); } catch (e) {}
       }).catch(function() { alert('Nema veze s poslužiteljem — pokušaj ponovno.'); gotovo(false); });
     };
     Array.prototype.forEach.call(t.querySelectorAll('tr[data-oib]'), function(tr) {
@@ -6099,9 +6100,15 @@
       var cb = tr.querySelector('.pb-zvao-cb');
       cb.addEventListener('change', function() {
         var uklj = cb.checked; cb.disabled = true;
-        spremi(oib, { nazvan: uklj }, function(ok) { cb.disabled = false; if (!ok) { cb.checked = !uklj; return; } var x = nadji(oib); tr.classList.toggle('pb-nazvan', !!x.nazvan); tr.querySelector('.pb-zvao-dat').textContent = x.nazvan || ''; });
+        spremi(oib, { nazvan: uklj }, function(ok) { cb.disabled = false; if (!ok) { cb.checked = !uklj; return; } var x = nadji(oib); tr.classList.toggle('pb-nazvan', !!x.nazvan); tr.querySelector('.pb-zvao-dat').textContent = pbZvaoTekst_(x).replace(/&amp;/g, '&'); });
       });
       var celija = tr.cells[4];
+      // v398: klik na broj = poziv → odmah se bilježi novi datum i brojač poziva
+      celija.addEventListener('click', function(ev) {
+        var a = ev.target.closest && ev.target.closest('a.pb-tel'); if (!a) { return; }
+        var cb2 = tr.querySelector('.pb-zvao-cb');
+        spremi(oib, { nazvan: true }, function(ok) { if (!ok) { return; } var x = nadji(oib); cb2.checked = true; tr.classList.add('pb-nazvan'); tr.querySelector('.pb-zvao-dat').textContent = pbZvaoTekst_(x).replace(/&amp;/g, '&'); });
+      });
       Array.prototype.forEach.call(tr.querySelectorAll('.pb-st-b'), function(b) {
         b.addEventListener('click', function() {
           var x = nadji(oib), novi = b.getAttribute('data-is'); if (x.ishod === novi) { novi = ''; }
