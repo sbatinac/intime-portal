@@ -3830,7 +3830,7 @@ function izracunaj(){
   warnBox.innerHTML = '';
   let warnings = [];
 
-  const tezinaInput = parseFloat(document.getElementById('tezina').value);
+  const tezinaInput = (typeof kalkRucnaVagana_ === 'function' && kalkRucnaVagana_()) || parseFloat(document.getElementById('tezina').value);   // v392: ručna vagana težina (Kalkulacije)
   if(!tezinaInput || tezinaInput <= 0){
     warnBox.innerHTML = '<div class="warn">Unesite težinu pošiljke (kg) da bi se izračunala cijena.</div>';
     document.getElementById('rezultat').classList.add('show');
@@ -3854,7 +3854,7 @@ function izracunaj(){
   }
 
   const bezVol = document.getElementById('bezVolumena').checked;
-  const paletaKg = getPaletaTezina();
+  const paletaKg = (typeof kalkRucnoAktivno_ === 'function' && kalkRucnoAktivno_()) ? 0 : getPaletaTezina();
   const stvarnaTezina = r2(tezinaInput + paletaKg);
 
   // volumenska težina
@@ -3875,6 +3875,8 @@ function izracunaj(){
       }
     }
   }
+  // v392: ručna volumenska težina (Kalkulacije) — zamjenjuje izračun iz dimenzija koleta
+  if(!bezVol && typeof kalkRucnaVol_ === 'function' && kalkRucnaVol_() > 0){ volKg = kalkRucnaVol_(); billKg = Math.max(stvarnaTezina, volKg); }
 
   const zonaKey = selectedZona.toLowerCase(); // z1/z2/z3
   const zonaLabel = {z1:'Zona 1', z2:'Zona 2', z3:'Zona 3'}[zonaKey] || selectedZona;
@@ -4905,11 +4907,13 @@ window.kalkSinhroIzvezi_ = function(){
     brojKoletaStvarni: v('brojKoletaStvarni'),
     iskazanaVrijednost: v('dop_vrijednost_iznos'),
     otkupninaIznos: v('dop_otkupnina_iznos'),
-    pdv: !!(document.getElementById('pdvToggle') && document.getElementById('pdvToggle').checked)
+    pdv: !!(document.getElementById('pdvToggle') && document.getElementById('pdvToggle').checked),
+    rucnaTez: (window.KALK_RUCNA_TEZ_ ? JSON.parse(JSON.stringify(window.KALK_RUCNA_TEZ_)) : null)
   };
 };
 window.kalkSinhroUvezi_ = function(snap){
   if(!snap){ return; }
+  if(snap.rucnaTez && window.KALK_RUCNA_TEZ_){ window.KALK_RUCNA_TEZ_ = snap.rucnaTez; try{ kalkRucnaUiPostavi_(); }catch(eRt){} }   // v392
   var el;
   // 1) datum (sezonski dodatak ovisi o njemu)
   el = document.getElementById('datum');
@@ -5200,6 +5204,7 @@ window.kalkPdfIzHtml_ = function(html, ime){
 function kalkPdfNapomene_(){
   var n = [];
   try{ if(typeof KALK_PROMJENE_ !== 'undefined' && Object.keys(KALK_PROMJENE_).length){ n.push('ručno promijenjene cijene u cjeniku: ' + Object.keys(KALK_PROMJENE_).length); } }catch(e){}
+  try{ if(typeof kalkRucnoAktivno_ === 'function' && kalkRucnoAktivno_()){ n.push('težine unesene ručno (bez koleta)'); } }catch(e3){}
   try{ if(window.KALK_GORIVO_RUCNO_){ var g = parseFloat(document.getElementById('dodatakGorivoPct').value) || 0; n.push('dodatak na gorivo ručno ' + g.toLocaleString('hr-HR', {minimumFractionDigits:2, maximumFractionDigits:2}) + ' %' + (window.KALK_GORIVO_AUTO_ != null ? ' (važeći ' + Number(window.KALK_GORIVO_AUTO_).toLocaleString('hr-HR', {minimumFractionDigits:2, maximumFractionDigits:2}) + ' %)' : '')); } }catch(e2){}
   return n;
 }
@@ -5318,6 +5323,43 @@ if(typeof KALK_UREDI_ !== 'undefined' && KALK_UREDI_){
     }
     inp.addEventListener('input', function(ev){ if(ev.isTrusted){ window.KALK_GORIVO_RUCNO_ = true; osvjezi(); } });
     osvjezi();
+  })();
+}
+
+// ---------- v392: RUČNI UNOS VAGANE I VOLUMENSKE TEŽINE (bez koleta) — samo Kalkulacije (?kalk_uredi=1) ----------
+window.KALK_RUCNA_TEZ_ = (typeof KALK_UREDI_ !== 'undefined' && KALK_UREDI_) ? { on: false, vagana: '', vol: '' } : null;
+function kalkRucnoAktivno_(){ return !!(window.KALK_RUCNA_TEZ_ && window.KALK_RUCNA_TEZ_.on); }
+function kalkBroj_(t){ var v = parseFloat(String(t || '').replace(',', '.')); return isFinite(v) && v > 0 ? v : 0; }
+function kalkRucnaVagana_(){ return kalkRucnoAktivno_() ? kalkBroj_(window.KALK_RUCNA_TEZ_.vagana) : 0; }
+function kalkRucnaVol_(){ return kalkRucnoAktivno_() ? kalkBroj_(window.KALK_RUCNA_TEZ_.vol) : 0; }
+function kalkRucnaUiPostavi_(){
+  var b = document.getElementById('kalkRucnaTezBlok'); if(!b || !window.KALK_RUCNA_TEZ_){ return; }
+  var t = window.KALK_RUCNA_TEZ_;
+  b.querySelector('#kalkRucnaTezChk').checked = !!t.on;
+  b.querySelector('#kalkRucnaTezPolja').style.display = t.on ? '' : 'none';
+  b.querySelector('#kalkRucnaVagana').value = t.vagana || '';
+  b.querySelector('#kalkRucnaVol').value = t.vol || '';
+  var dim = document.getElementById('dimFieldsWrap'); if(dim){ dim.style.opacity = t.on ? '.35' : ''; dim.style.pointerEvents = t.on ? 'none' : ''; }
+}
+if(window.KALK_RUCNA_TEZ_){
+  (function(){
+    var anchor = document.getElementById('dimFieldsWrap'); if(!anchor){ return; }
+    var b = document.createElement('div'); b.id = 'kalkRucnaTezBlok';
+    b.style.cssText = 'margin:0 0 12px;padding:10px 12px;border:2px dashed #e0a400;background:#fffbea;border-radius:10px;';
+    b.innerHTML = '<label style="display:flex;gap:8px;align-items:center;font-weight:800;color:#5a4300;cursor:pointer;"><input type="checkbox" id="kalkRucnaTezChk"> ✏️ Ručni unos težina (bez upisa koleta)</label>' +
+      '<div id="kalkRucnaTezPolja" style="display:none;margin-top:8px;">' +
+        '<div class="row" style="gap:10px;">' +
+          '<div class="field" style="flex:1 1 160px;"><label>Vagana (stvarna) težina (kg)</label><input type="text" inputmode="decimal" id="kalkRucnaVagana" placeholder="npr. 125,5"></div>' +
+          '<div class="field" style="flex:1 1 160px;"><label>Volumenska težina (kg)</label><input type="text" inputmode="decimal" id="kalkRucnaVol" placeholder="npr. 180"></div>' +
+        '</div>' +
+        '<div style="font-size:12px;color:#5a4300;margin-top:4px;">Obračunava se veća od dvije težine. Volumensku možeš ostaviti praznu. Koleti i dimenzije se tada ne koriste. Vrijedi samo za ovaj izračun.</div>' +
+      '</div>';
+    anchor.parentNode.insertBefore(b, anchor);
+    var osvjezi = function(){ kalkRucnaUiPostavi_(); try{ izracunaj(); }catch(e){} try{ if(typeof scheduleLiveIzracunaj === 'function'){ scheduleLiveIzracunaj(); } }catch(e2){} };
+    b.querySelector('#kalkRucnaTezChk').addEventListener('change', function(){ window.KALK_RUCNA_TEZ_.on = this.checked; osvjezi(); });
+    b.querySelector('#kalkRucnaVagana').addEventListener('input', function(){ window.KALK_RUCNA_TEZ_.vagana = this.value; osvjezi(); });
+    b.querySelector('#kalkRucnaVol').addEventListener('input', function(){ window.KALK_RUCNA_TEZ_.vol = this.value; osvjezi(); });
+    kalkRucnaUiPostavi_();
   })();
 }
 </script>
