@@ -8819,6 +8819,8 @@ function doPost(e) {
       result = adminKampanjaNacrtUcitaj(data.token, data.id);
     } else if (data.action === 'adminKampanjaNacrtBrisi') {
       result = adminKampanjaNacrtBrisi(data.token, data.id);
+    } else if (data.action === 'adminPismoPonovi') {
+      result = adminPismoPonovi(data.token, data.oib, data.email, data.predlozakId);
     } else if (data.action === 'adminPismoNazvan') {
       result = adminPismoNazvan(data.token, data.oib, data.nazvan, data.mobitel, data.naziv, data.ishod);   // nazvan: true = (novi) poziv, false = makni oznaku
     } else if (data.action === 'adminPismaBezOdgovora') {
@@ -20603,6 +20605,28 @@ function adminPismoNazvan(token, oib, nazvan, mobitel, naziv, ishod) {
     var tz = Session.getScriptTimeZone(), f = function(v) { return (v instanceof Date) ? Utilities.formatDate(v, tz, 'dd.MM.yyyy. HH:mm') : String(v || ''); };
     return { status: 'ok', nazvan: f(stari[1]), mobitel: String(stari[2] || ''), ishod: String(stari[5] || ''), ishodDatum: f(stari[6]), poziva: broj };
   } finally { lock.releaseLock(); }
+}
+// v399: PONOVI PISMO NAMJERE — isto pismo (podaci iz zadnjeg poslanog pisma toj firmi) ponovno, po želji na drugi e-mail i s odabranim predloškom
+function adminPismoPonovi(token, oib, email, predlozakId) {
+  if (!isValidAdminToken_(token)) { return pismaAuthGreska_(); }
+  oib = oibNorm_(oib);
+  if (oib.length !== 11) { return { status: 'error', message: 'Neispravan OIB.' }; }
+  var sheet = getOrCreatePismaSheet_(), last = sheet.getLastRow(), zadnji = null, zadMs = -1;
+  if (last >= 2) {
+    var sirina = Math.min(Math.max(sheet.getLastColumn(), PISMA_HEADER_.length), 16);
+    sheet.getRange(2, 1, last - 1, sirina).getValues().forEach(function(r) {
+      if (String(r[9]) !== 'Poslano' || oibNorm_(r[4]) !== oib) { return; }
+      var d = (r[10] instanceof Date) ? r[10].getTime() : 0;
+      if (d >= zadMs) { zadMs = d; zadnji = r; }
+    });
+  }
+  if (!zadnji) { return { status: 'error', message: 'Za ovu firmu nije pronađeno poslano pismo.' }; }
+  var mob = '';
+  try { var pz = pismaPoziviMapa_()[oib]; if (pz && pz.mobitel) { mob = pz.mobitel; } } catch (e) {}
+  var ulaz = { oib: oib, naziv: zadnji[5], email: String(email || zadnji[6] || '').trim(), grad: zadnji[7], osoba: zadnji[8], posta: zadnji[12], adresa: zadnji.length > 13 ? zadnji[13] : '', izvorKontakta: zadnji.length > 14 ? zadnji[14] : '', mobitel: mob || (zadnji.length > 15 ? zadnji[15] : '') };
+  var res = pismaPosaljiRucno_(ulaz, true, predlozakId, 'Ponovljeno pismo');
+  if (res && res.status === 'ok') { res.poslanoNa = ulaz.email; res.datum = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'dd.MM.yyyy. HH:mm'); }
+  return res;
 }
 function adminPismaBezOdgovora(token) {
   if (!isValidAdminToken_(token)) { return pismaAuthGreska_(); }

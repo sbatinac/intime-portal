@@ -2400,6 +2400,8 @@
   .pb-zvao-dat{font-size:11px;color:#1e8449;font-weight:700;white-space:nowrap;}
   .pb-tablica tr.pb-nazvan td{background:#eef8f1 !important;color:#5b6664;}
   .pb-mob-unos{display:inline-flex;gap:4px;}
+  .pb-ponovi{border:1.5px solid #4d148c;background:#fff;color:#4d148c;border-radius:8px;padding:4px 10px;font:inherit;font-size:12px;font-weight:800;cursor:pointer;white-space:nowrap;}
+  .pb-ponovi:hover{background:#4d148c;color:#fff;}
   .pb-st{display:flex;gap:4px;}
   .pb-st-b{width:30px;height:30px;border-radius:8px;border:2px solid #d5dde5;background:#fff;cursor:pointer;font-size:14px;opacity:.55;padding:0;}
   .pb-st-b:hover{opacity:1;}
@@ -6056,6 +6058,41 @@
     }).catch(function() { PB_UCITAVA_ = false; });
   }
   function pbZvaoTekst_(x) { if (!x.nazvan) { return x.poziva ? esc(x.poziva + '× zvano') : ''; } return esc((x.poziva > 1 ? x.poziva + '× · zadnji ' : '') + x.nazvan); }   // v398
+  // v399: prozor „Ponovi pismo namjere” — isti sadržaj, po želji drugi e-mail i predložak
+  function pbPonoviProzor_(x, nakon) {
+    if (!x) { return; }
+    var o = document.createElement('div');
+    o.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:100000;display:flex;align-items:center;justify-content:center;padding:16px;';
+    o.innerHTML = '<div style="background:#fff;border-radius:14px;max-width:520px;width:100%;box-shadow:0 12px 40px rgba(0,0,0,.3);overflow:hidden;font-size:14px;color:#1f2d3d;">' +
+      '<div style="background:#4d148c;color:#fff;padding:12px 16px;font-weight:800;font-size:16px;">↻ Ponovi pismo namjere — ' + esc(x.naziv) + '</div>' +
+      '<div style="padding:14px 16px;line-height:1.5;">Zadnje pismo poslano: <b>' + esc(x.datum) + '</b>' + (x.pisama > 1 ? ' (ukupno ' + x.pisama + ')' : '') +
+      '<label style="display:block;margin-top:10px;font-weight:700;">E-mail primatelja</label><input type="email" class="pp-mail" value="' + esc(x.email) + '" style="width:100%;box-sizing:border-box;padding:8px 10px;border:1px solid #c9d3d1;border-radius:8px;font:inherit;">' +
+      '<label style="display:block;margin-top:8px;font-weight:700;">Predložak</label><select class="pp-tpl" style="width:100%;box-sizing:border-box;padding:8px 10px;border:1px solid #c9d3d1;border-radius:8px;font:inherit;"><option value="zadano">Zadani predložak</option></select>' +
+      kopijaAdminHtml_('pp-kop-red', 'pp-kop') +
+      '<div class="pp-st" style="margin-top:8px;font-weight:700;"></div>' +
+      '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;"><button type="button" class="pp-ok" style="background:#4d148c;color:#fff;border:0;border-radius:8px;padding:9px 14px;font:inherit;font-weight:800;cursor:pointer;">✉ Pošalji ponovno</button>' +
+      '<button type="button" class="pp-x" style="background:#eef1f0;color:#333;border:0;border-radius:8px;padding:9px 14px;font:inherit;font-weight:700;cursor:pointer;">Odustani</button></div></div></div>';
+    document.body.appendChild(o);
+    var st = o.querySelector('.pp-st'), sel = o.querySelector('.pp-tpl');
+    function zatvori() { if (o.parentNode) { o.parentNode.removeChild(o); } }
+    o.querySelector('.pp-x').addEventListener('click', zatvori);
+    o.addEventListener('click', function(ev) { if (ev.target === o) { zatvori(); } });
+    gasCall({ action: 'adminPismaPostavke', token: adminToken }).then(function(res) {
+      if (res && res.status === 'ok' && Array.isArray(res.popis)) { sel.innerHTML = res.popis.map(function(t) { return '<option value="' + esc(t.id) + '">' + esc(t.naziv) + '</option>'; }).join(''); }
+    }).catch(function() {});
+    o.querySelector('.pp-ok').addEventListener('click', function() {
+      var b = this, mail = o.querySelector('.pp-mail').value.trim();
+      if (!/^[^\s@,;]+@[^\s@,;]+\.[^\s@,;]{2,}$/.test(mail)) { st.style.color = '#a93226'; st.textContent = 'Upiši ispravnu e-mail adresu.'; return; }
+      b.disabled = true; st.style.color = '#1f2d3d'; st.textContent = 'Šaljem…';
+      gasCall({ action: 'adminPismoPonovi', token: adminToken, oib: x.oib, email: mail, predlozakId: sel.value, kopijaAdminu: !!o.querySelector('.pp-kop:checked') }).then(function(res) {
+        b.disabled = false;
+        if (handleAuthError(res)) { zatvori(); return; }
+        if (!res || res.status !== 'ok') { st.style.color = '#a93226'; st.textContent = (res && res.message) || 'Slanje nije uspjelo.'; return; }
+        st.style.color = '#1e8449'; st.textContent = '✓ Pismo je ponovno poslano na ' + res.poslanoNa + '.';
+        setTimeout(function() { zatvori(); if (nakon) { nakon(); } }, 1400);
+      }).catch(function() { b.disabled = false; st.style.color = '#a93226'; st.textContent = 'Nema veze s poslužiteljem — pokušaj ponovno.'; });
+    });
+  }
   function pbStatusHtml_(x) {
     var b = function(k, ikona, tekst) { return '<button type="button" class="pb-st-b pb-st-' + k + (x.ishod === k ? ' akt' : '') + '" data-is="' + k + '" title="' + tekst + (x.ishod === k ? ' (klik = poništi)' : '') + '">' + ikona + '</button>'; };
     var opis = { ne: 'nisu zainteresirani · arhivirano', mozda: 'možda', da: 'zainteresirani' }[x.ishod || ''] || '';
@@ -6078,11 +6115,11 @@
     if (!lista.length) { var pr = document.createElement('div'); pr.className = 'empty-hint'; pr.textContent = 'Nema pisama bez odgovora za odabrano razdoblje.'; container.appendChild(pr); return; }
     var sada = Date.now();
     var t = document.createElement('div');
-    t.innerHTML = '<div style="overflow-x:auto;"><table class="pb-tablica"><thead><tr><th>#</th><th>📞 Nazvao</th><th>Status</th><th>Firma</th><th>📱 Mobitel</th><th>Kontakt osoba</th><th>Poslano</th><th>Prošlo</th><th>E-mail</th><th>Grad</th><th>Kampanja</th></tr></thead><tbody>' +
+    t.innerHTML = '<div style="overflow-x:auto;"><table class="pb-tablica"><thead><tr><th>#</th><th>📞 Nazvao</th><th>Status</th><th>Firma</th><th>📱 Mobitel</th><th>Kontakt osoba</th><th>Poslano</th><th>Prošlo</th><th></th><th>E-mail</th><th>Grad</th><th>Kampanja</th></tr></thead><tbody>' +
       lista.map(function(x, i) {
         var dana = Math.floor((sada - x.ms) / 86400000);
         var tel = x.mobitel ? '<a href="tel:' + esc(x.mobitel) + '" class="pb-tel">' + esc(x.mobitel) + '</a> <button type="button" class="pb-mob-uredi" title="Promijeni broj">✎</button>' : '<span class="pb-mob-unos"><input type="tel" class="pb-mob-inp" placeholder="upiši broj"><button type="button" class="pb-mob-spremi">💾</button></span>';
-        return '<tr data-oib="' + esc(x.oib) + '" class="' + (x.nazvan ? 'pb-nazvan' : '') + (x.ishod ? ' pb-is-' + x.ishod : '') + '"><td>' + (i + 1) + '</td><td><label class="pb-zvao"><input type="checkbox" class="pb-zvao-cb"' + (x.nazvan ? ' checked' : '') + '><span class="pb-zvao-dat">' + pbZvaoTekst_(x) + '</span></label></td><td>' + pbStatusHtml_(x) + '</td><td><b>' + esc(x.naziv) + '</b><div style="font-size:11px;color:#6b7472;">OIB ' + esc(x.oib) + (x.pisama > 1 ? ' · pisama: ' + x.pisama : '') + '</div></td><td>' + tel + '</td><td>' + esc(x.osoba || '') + '</td><td style="white-space:nowrap;">' + esc(x.datum) + '</td><td style="white-space:nowrap;font-weight:800;color:' + (dana >= 14 ? '#c0392b' : (dana >= 7 ? '#b45309' : '#1f2d3d')) + ';">' + dana + ' d</td><td style="font-size:12px;">' + esc(x.email) + '</td><td>' + esc(x.grad || '') + '</td><td style="font-size:12px;">' + esc(x.kampanja || '') + (x.izvor ? '<div style="color:#6b7472;">📍 ' + esc(x.izvor) + '</div>' : '') + '</td></tr>';
+        return '<tr data-oib="' + esc(x.oib) + '" class="' + (x.nazvan ? 'pb-nazvan' : '') + (x.ishod ? ' pb-is-' + x.ishod : '') + '"><td>' + (i + 1) + '</td><td><label class="pb-zvao"><input type="checkbox" class="pb-zvao-cb"' + (x.nazvan ? ' checked' : '') + '><span class="pb-zvao-dat">' + pbZvaoTekst_(x) + '</span></label></td><td>' + pbStatusHtml_(x) + '</td><td><b>' + esc(x.naziv) + '</b><div style="font-size:11px;color:#6b7472;">OIB ' + esc(x.oib) + (x.pisama > 1 ? ' · pisama: ' + x.pisama : '') + '</div></td><td>' + tel + '</td><td>' + esc(x.osoba || '') + '</td><td style="white-space:nowrap;">' + esc(x.datum) + '</td><td style="white-space:nowrap;font-weight:800;color:' + (dana >= 14 ? '#c0392b' : (dana >= 7 ? '#b45309' : '#1f2d3d')) + ';">' + dana + ' d</td><td><button type="button" class="pb-ponovi" title="Pošalji isto pismo ponovno (npr. kad kažu da ga nisu dobili)">↻ Ponovi pismo</button></td><td style="font-size:12px;">' + esc(x.email) + '</td><td>' + esc(x.grad || '') + '</td><td style="font-size:12px;">' + esc(x.kampanja || '') + (x.izvor ? '<div style="color:#6b7472;">📍 ' + esc(x.izvor) + '</div>' : '') + '</td></tr>';
       }).join('') + '</tbody></table></div>';
     container.appendChild(t);
     // v396: kvačica „nazvao” (bilježi datum i vrijeme) i ručni unos mobitela
@@ -6103,6 +6140,7 @@
         spremi(oib, { nazvan: uklj }, function(ok) { cb.disabled = false; if (!ok) { cb.checked = !uklj; return; } var x = nadji(oib); tr.classList.toggle('pb-nazvan', !!x.nazvan); tr.querySelector('.pb-zvao-dat').textContent = pbZvaoTekst_(x).replace(/&amp;/g, '&'); });
       });
       var celija = tr.cells[4];
+      tr.querySelector('.pb-ponovi').addEventListener('click', function() { pbPonoviProzor_(nadji(oib), function() { pbUcitaj_(); }); });
       // v398: klik na broj = poziv → odmah se bilježi novi datum i brojač poziva
       celija.addEventListener('click', function(ev) {
         var a = ev.target.closest && ev.target.closest('a.pb-tel'); if (!a) { return; }
