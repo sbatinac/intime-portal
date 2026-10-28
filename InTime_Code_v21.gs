@@ -8819,8 +8819,10 @@ function doPost(e) {
       result = adminKampanjaNacrtUcitaj(data.token, data.id);
     } else if (data.action === 'adminKampanjaNacrtBrisi') {
       result = adminKampanjaNacrtBrisi(data.token, data.id);
+    } else if (data.action === 'adminPismaBezOdgovora') {
+      result = adminPismaBezOdgovora(data.token);
     } else if (data.action === 'adminPismoPosalji') {
-      result = adminPismoPosalji(data.token, data.oib, data.naziv, data.email, data.grad, data.osoba, data.potvrdiDuplikat, data.predlozakId, data.posta, data.adresa, data.izvorKontakta);
+      result = adminPismoPosalji(data.token, data.oib, data.naziv, data.email, data.grad, data.osoba, data.potvrdiDuplikat, data.predlozakId, data.posta, data.adresa, data.izvorKontakta, data.mobitel);
     } else if (data.action === 'adminKampanjaExcelCitaj') {
       result = adminKampanjaExcelCitaj(data.token, data.base64Data, data.filename);
     } else if (data.action === 'adminKampanjaStart') {
@@ -19846,6 +19848,7 @@ function testDoc() {
 var PISMA_SHEET_NAME_ = 'InTime_Pisma_Kampanje';
 var PISMA_HEADER_ = ['ID kampanje', 'Naziv kampanje', 'Datum kreiranja', 'Izvor', 'OIB', 'Naziv firme', 'E-mail', 'Grad', 'Ime i prezime', 'Status', 'Datum slanja', 'Poruka', 'Poštanski broj'];
 var PISMA_IZVOR_KONT_NAZIV_ = 'Izvor kontakta';   // 15. stupac (16.10.2026.): kako je Saša došao do firme — za ručna pisma bira se, za kampanje dolazi iz stupca „Izvor“ u Excelu
+var PISMA_MOBITEL_NAZIV_ = 'Mobitel';   // v395: 16. stupac — broj mobitela firme (ručna pisma i kampanje), za „nazvati”
 var PISMA_ADRESA_NAZIV_ = 'Adresa';   // 14. stupac, samo za ručna pisma (PISMA_HEADER_ ostaje 13 stupaca da kampanje ostanu nepromijenjene)
 var PISMA_POSTAVKE_KEY_ = 'PISMA_POSTAVKE';
 var PISMA_LINK_GLAVNA_DEFAULT_ = '';
@@ -20264,11 +20267,13 @@ function pismaPosaljiMail_(podaci, postavke) {
   posaljiMail_(podaci.email, predmet, plain, opts);   // kroz središnju funkciju: vrijedi automatska i ručna kopija administratoru
 }
 
+function pismaMobitel_(v) { var t = String(v == null ? '' : v).replace(/[^\d+]/g, ''); if (t.indexOf('00') === 0) { t = '+' + t.slice(2); } return t.slice(0, 20); }
 function pismaValidirajRed_(r) {
   var oib = String(r.oib || '').replace(/\s+/g, '');
   var naziv = String(r.naziv || '').replace(/[\r\n]+/g, ' ').trim();
   var email = String(r.email || '').trim().toLowerCase();
   var out = { oib: oib, naziv: naziv, email: email, grad: String(r.grad || '').replace(/[\r\n]+/g, ' ').trim(), osoba: String(r.osoba || '').replace(/[\r\n]+/g, ' ').trim(), posta: String(r.posta || '').replace(/[\r\n\s]+/g, ' ').trim().slice(0, 10), adresa: String(r.adresa || '').replace(/[\r\n]+/g, ' ').trim().slice(0, 200), izvorKontakta: izvorKontaktaOcisti_(r.izvorKontakta), greska: '' };
+  out.mobitel = pismaMobitel_(r.mobitel);   // v395
   if (!naziv) { out.greska = 'nedostaje naziv firme'; }
   else if (!email || !/^[^\s@,;]+@[^\s@,;]+\.[^\s@,;]{2,}$/.test(email)) { out.greska = 'neispravan e-mail'; }
   else if (!oib) { out.greska = 'nedostaje OIB'; }
@@ -20278,7 +20283,7 @@ function pismaValidirajRed_(r) {
 
 // ---- NACRTI pisama namjere (12.10.2026.): ručno upisani podaci koji još NISU poslani — ostaju spremljeni sa statusom "nije poslano". ----
 var PISMA_NACRTI_SHEET_NAME_ = 'InTime_Pisma_Nacrti';
-var PISMA_NACRTI_HEADER_ = ['ID', 'Datum spremanja', 'OIB', 'Naziv', 'E-mail', 'Adresa', 'Poštanski broj', 'Grad', 'Osoba', 'Predložak', 'Status', 'Izvor kontakta'];
+var PISMA_NACRTI_HEADER_ = ['ID', 'Datum spremanja', 'OIB', 'Naziv', 'E-mail', 'Adresa', 'Poštanski broj', 'Grad', 'Osoba', 'Predložak', 'Status', 'Izvor kontakta', 'Mobitel'];
 function getOrCreatePismaNacrtiSheet_() {
   var files = dohvatiDatoteke_(PISMA_NACRTI_SHEET_NAME_);
   var ss = files.hasNext() ? SpreadsheetApp.open(files.next()) : SpreadsheetApp.create(PISMA_NACRTI_SHEET_NAME_);
@@ -20289,8 +20294,9 @@ function getOrCreatePismaNacrtiSheet_() {
     sheet.setFrozenRows(1);
     sheet.getRange(2, 3, sheet.getMaxRows() - 1, 1).setNumberFormat('@');
     sheet.getRange(2, 7, sheet.getMaxRows() - 1, 1).setNumberFormat('@');
-  } else if (String(sheet.getRange(1, 12).getValue() || '').trim() !== PISMA_NACRTI_HEADER_[11]) {
-    sheet.getRange(1, 12).setValue(sheetSig_(PISMA_NACRTI_HEADER_[11])); sheet.getRange(1, 12).setFontWeight('bold');
+  } else {
+    if (String(sheet.getRange(1, 12).getValue() || '').trim() !== PISMA_NACRTI_HEADER_[11]) { sheet.getRange(1, 12).setValue(sheetSig_(PISMA_NACRTI_HEADER_[11])); sheet.getRange(1, 12).setFontWeight('bold'); }
+    if (String(sheet.getRange(1, 13).getValue() || '').trim() !== PISMA_NACRTI_HEADER_[12]) { sheet.getRange(1, 13).setValue(sheetSig_(PISMA_NACRTI_HEADER_[12])); sheet.getRange(1, 13).setFontWeight('bold'); sheet.getRange(2, 13, Math.max(sheet.getMaxRows() - 1, 1), 1).setNumberFormat('@'); }   // v395
   }
   return sheet;
 }
@@ -20312,7 +20318,7 @@ function adminPismaNacrtSpremi(token, n) {
       for (var i = 0; i < ids.length; i++) { if (String(ids[i][0]) === id) { red = i + 2; break; } }
     }
     if (!red) { id = 'N-' + new Date().getTime(); red = last + 1; }
-    sheet.getRange(red, 1, 1, PISMA_NACRTI_HEADER_.length).setValues([sheetSigRed_([id, sada].concat(vr).concat(['nije poslano', izvorKontaktaOcisti_(n.izvorKontakta)]))]);
+    sheet.getRange(red, 1, 1, PISMA_NACRTI_HEADER_.length).setValues([sheetSigRed_([id, sada].concat(vr).concat(['nije poslano', izvorKontaktaOcisti_(n.izvorKontakta), pismaMobitel_(n.mobitel)]))]);
     return { status: 'ok', id: id, datum: sada };
   } finally { lock.releaseLock(); }
 }
@@ -20324,7 +20330,7 @@ function adminPismaNacrtiLista(token) {
   if (last >= 2) {
     sheet.getRange(2, 1, last - 1, PISMA_NACRTI_HEADER_.length).getValues().forEach(function(r) {
       if (!r[0]) { return; }
-      out.push({ id: String(r[0]), datum: String(r[1] || ''), oib: String(r[2] || ''), naziv: String(r[3] || ''), email: String(r[4] || ''), adresa: String(r[5] || ''), posta: String(r[6] || ''), grad: String(r[7] || ''), osoba: String(r[8] || ''), predlozakId: String(r[9] || ''), status: String(r[10] || 'nije poslano'), izvorKontakta: String(r[11] || '') });
+      out.push({ id: String(r[0]), datum: String(r[1] || ''), oib: String(r[2] || ''), naziv: String(r[3] || ''), email: String(r[4] || ''), adresa: String(r[5] || ''), posta: String(r[6] || ''), grad: String(r[7] || ''), osoba: String(r[8] || ''), predlozakId: String(r[9] || ''), status: String(r[10] || 'nije poslano'), izvorKontakta: String(r[11] || '') , mobitel: String(r[12] || '')});
     });
   }
   out.reverse();
@@ -20430,7 +20436,7 @@ function adminKampanjaNacrtSpremi(token, n) {
   if (!naziv && !redci.length) { return { status: 'error', message: 'Upiši naziv kampanje ili učitaj popis (Excel) da bi se nacrt spremio.' }; }
   var kompakt = redci.map(function(r) {
     r = r || {};
-    return [pismaNacrtTxt_(r.red, 10), pismaNacrtTxt_(r.oib, 20), pismaNacrtTxt_(r.naziv, 200), pismaNacrtTxt_(r.email, 200), pismaNacrtTxt_(r.posta, 20), pismaNacrtTxt_(r.grad, 100), pismaNacrtTxt_(r.osoba, 200), pismaNacrtTxt_(r.greska, 200), pismaNacrtTxt_(r.izvorKontakta, 80)];
+    return [pismaNacrtTxt_(r.red, 10), pismaNacrtTxt_(r.oib, 20), pismaNacrtTxt_(r.naziv, 200), pismaNacrtTxt_(r.email, 200), pismaNacrtTxt_(r.posta, 20), pismaNacrtTxt_(r.grad, 100), pismaNacrtTxt_(r.osoba, 200), pismaNacrtTxt_(r.greska, 200), pismaNacrtTxt_(r.izvorKontakta, 80), pismaNacrtTxt_(r.mobitel, 20)];
   });
   var json = JSON.stringify(kompakt);
   if (json.length > KAMPANJE_NACRTI_CHUNKS_ * KAMPANJE_NACRTI_CHUNK_LEN_) {
@@ -20475,7 +20481,7 @@ function adminKampanjaNacrtUcitaj(token, id) {
   for (var i = 0; i < KAMPANJE_NACRTI_CHUNKS_; i++) { json += String(r[7 + i] || ''); }
   var redci = [];
   try {
-    redci = JSON.parse(json || '[]').map(function(a) { return { red: a[0], oib: a[1], naziv: a[2], email: a[3], posta: a[4], grad: a[5], osoba: a[6], greska: a[7], izvorKontakta: a[8] || '' }; });
+    redci = JSON.parse(json || '[]').map(function(a) { return { red: a[0], oib: a[1], naziv: a[2], email: a[3], posta: a[4], grad: a[5], osoba: a[6], greska: a[7], izvorKontakta: a[8] || '', mobitel: a[9] || '' }; });
   } catch (e) { return { status: 'error', message: 'Nacrt je oštećen i ne može se učitati.' }; }
   return { status: 'ok', id: String(r[0]), naziv: String(r[2] || ''), predlozakId: String(r[3] || ''), redci: redci };
 }
@@ -20493,7 +20499,7 @@ function getOrCreatePismaSheet_() {
   var ss = files.hasNext() ? SpreadsheetApp.open(files.next()) : SpreadsheetApp.create(PISMA_SHEET_NAME_);
   var sheet = ss.getSheets()[0];
   var prviPut = (sheet.getLastRow() === 0);
-  var hKljuc = zaglavljeKljuc_('pisma', ss.getId(), PISMA_HEADER_.concat([PISMA_ADRESA_NAZIV_, PISMA_IZVOR_KONT_NAZIV_]));
+  var hKljuc = zaglavljeKljuc_('pisma', ss.getId(), PISMA_HEADER_.concat([PISMA_ADRESA_NAZIV_, PISMA_IZVOR_KONT_NAZIV_, PISMA_MOBITEL_NAZIV_]));
   if (prviPut) {
     sheet.appendRow(PISMA_HEADER_);
     sheet.getRange(1, 1, 1, PISMA_HEADER_.length).setFontWeight('bold');
@@ -20515,6 +20521,11 @@ function getOrCreatePismaSheet_() {
     if (String(sheet.getRange(1, 15).getValue() || '').trim() !== PISMA_IZVOR_KONT_NAZIV_) {
       sheet.getRange(1, 15).setValue(sheetSig_(PISMA_IZVOR_KONT_NAZIV_));
       sheet.getRange(1, 15).setFontWeight('bold');
+    }
+    if (String(sheet.getRange(1, 16).getValue() || '').trim() !== PISMA_MOBITEL_NAZIV_) {
+      sheet.getRange(1, 16).setValue(sheetSig_(PISMA_MOBITEL_NAZIV_));
+      sheet.getRange(1, 16).setFontWeight('bold');
+      sheet.getRange(2, 16, Math.max(sheet.getMaxRows() - 1, 1), 1).setNumberFormat('@');
     }
     zaglavljeOznaci_(hKljuc);
   }
@@ -20547,9 +20558,39 @@ function adminPismoTest(token, testMail, predlozakId) {
 }
 
 // Ručni unos jedne firme + ODMAH slanje. potvrdiDuplikat: dopušta ponovno slanje na već poslanu adresu.
-function adminPismoPosalji(token, oib, naziv, email, grad, osoba, potvrdiDuplikat, predlozakId, posta, adresa, izvorKontakta) {
+// v395: PISMA NAMJERE BEZ ODGOVORA — firme kojima je pismo poslano, a nisu se javile (nema pogotka u Battleships: pozitivan/negativan/direktni/brzi/klijent).
+// Jedan redak po OIB-u (zadnje poslano pismo). Filtriranje po broju dana od slanja radi admin.
+function adminPismaBezOdgovora(token) {
   if (!isValidAdminToken_(token)) { return pismaAuthGreska_(); }
-  return pismaPosaljiRucno_({ oib: oib, naziv: naziv, email: email, grad: grad, osoba: osoba, posta: posta, adresa: adresa, izvorKontakta: izvorKontakta }, potvrdiDuplikat, predlozakId, 'Ručno pismo');
+  try {
+    var sheet = getOrCreatePismaSheet_(), last = sheet.getLastRow(), tz = Session.getScriptTimeZone();
+    var javili = {};
+    try {
+      var bs = battleSheet_(), bl = bs.getLastRow();
+      if (bl >= 2) { bs.getRange(2, 3, bl - 1, 3).getValues().forEach(function(r) { var v = String(r[2]); if (v === 'POZITIVAN' || v === 'NEGATIVAN' || v === 'DIREKTNI' || v === 'BRZI' || v === 'KLIJENT' || v === 'OTV_KLIJENT' || v === 'OTV_UPITNIK') { javili[oibNorm_(r[0])] = true; } }); }
+    } catch (eB) { /* bez evidencije pogodaka — prikazuju se sva pisma */ }
+    var poOib = {};
+    if (last >= 2) {
+      var sirina = Math.min(Math.max(sheet.getLastColumn(), PISMA_HEADER_.length), 16);
+      sheet.getRange(2, 1, last - 1, sirina).getValues().forEach(function(r) {
+        if (String(r[9]) !== 'Poslano') { return; }
+        var oib = oibNorm_(r[4]); if (oib.length !== 11 || javili[oib]) { return; }
+        var d = (r[10] instanceof Date) ? r[10] : ((r[2] instanceof Date) ? r[2] : null); if (!d) { return; }
+        var st = poOib[oib];
+        var x = { oib: oib, naziv: String(r[5] || ''), email: String(r[6] || ''), grad: String(r[7] || ''), osoba: String(r[8] || ''), mobitel: String(sirina >= 16 ? (r[15] || '') : ''),
+          kampanja: String(r[3]) === 'Ručno' ? 'Pojedinačno pismo' : String(r[1] || ''), izvor: String(sirina >= 15 ? (r[14] || '') : ''), ms: d.getTime(), datum: Utilities.formatDate(d, tz, 'dd.MM.yyyy. HH:mm'), pisama: 1 };
+        if (st) { x.pisama = st.pisama + 1; if (!x.mobitel) { x.mobitel = st.mobitel; } if (st.ms > x.ms) { st.pisama = x.pisama; if (!st.mobitel) { st.mobitel = x.mobitel; } return; } }
+        poOib[oib] = x;
+      });
+    }
+    var lista = Object.keys(poOib).map(function(k) { return poOib[k]; }).sort(function(a, b) { return a.ms - b.ms; });
+    return { status: 'ok', lista: lista };
+  } catch (err) { return { status: 'error', message: 'Popis nije uspio: ' + err.message }; }
+}
+
+function adminPismoPosalji(token, oib, naziv, email, grad, osoba, potvrdiDuplikat, predlozakId, posta, adresa, izvorKontakta, mobitel) {
+  if (!isValidAdminToken_(token)) { return pismaAuthGreska_(); }
+  return pismaPosaljiRucno_({ oib: oib, naziv: naziv, email: email, grad: grad, osoba: osoba, posta: posta, adresa: adresa, izvorKontakta: izvorKontakta, mobitel: mobitel }, potvrdiDuplikat, predlozakId, 'Ručno pismo');
 }
 
 // Zajednička jezgra pojedinačnog slanja (admin + mobilna verzija). nazivZapisa: 'Ručno pismo' ili 'Ručno pismo (mobitel)'.
@@ -20566,7 +20607,7 @@ function pismaPosaljiRucno_(ulaz, potvrdiDuplikat, predlozakId, nazivZapisa) {
     var postavke = pismaPostavke_(predlozakId);
     var status = 'Poslano', poruka = '';
     try { pismaPosaljiMail_(p, postavke); } catch (err) { status = 'Greška'; poruka = String(err && err.message || err); }
-    sheet.appendRow(sheetSigRed_([Utilities.getUuid().slice(0, 8), nazivZapisa || 'Ručno pismo', new Date(), 'Ručno', p.oib, p.naziv, p.email, p.grad, p.osoba, status, new Date(), poruka, p.posta, p.adresa, p.izvorKontakta]));
+    sheet.appendRow(sheetSigRed_([Utilities.getUuid().slice(0, 8), nazivZapisa || 'Ručno pismo', new Date(), 'Ručno', p.oib, p.naziv, p.email, p.grad, p.osoba, status, new Date(), poruka, p.posta, p.adresa, p.izvorKontakta, p.mobitel]));
     if (status !== 'Poslano') { return { status: 'error', message: 'Slanje nije uspjelo: ' + poruka }; }
     return { status: 'ok', kvota: pismaKvota_() };
   } finally { lock.releaseLock(); }
@@ -21425,7 +21466,7 @@ function adminPogodciOznaciVidjeno(token, ms) {
 // v371: UBRZANJE — izračun pogodaka (8–11 s) pamti se 10 min; briše se čim bilo koja radnja koja nije čisto čitanje
 // prođe kroz doPost (novi upit, pismo, ponuda, prebacivanje…), pa novi pogodak stiže odmah kao i prije.
 var POGODCI_KES_KLJUC_ = 'pogodci_v371', POGODCI_KES_SEK_ = 600;
-var CISTA_CITANJA_RE_ = /(List|Lista|Get|Status|Povijest|Sazetak|Pogodci|Stanje|Info|Provjera|Statistika)$|^(adminUcitajPocetno|adminBrowseSustavFolder|adminRevizijeKlijenti|adminIzvoriKontakta|trackVisit|adminLogin)$|^(adminDohvati|adminList|adminGet|gorivoDohvati)/;
+var CISTA_CITANJA_RE_ = /(List|Lista|Get|Status|Povijest|Sazetak|Pogodci|Stanje|Info|Provjera|Statistika|BezOdgovora)$|^(adminUcitajPocetno|adminBrowseSustavFolder|adminRevizijeKlijenti|adminIzvoriKontakta|trackVisit|adminLogin)$|^(adminDohvati|adminList|adminGet|gorivoDohvati)/;
 function pogodciKesObrisi_() { try { CacheService.getScriptCache().remove(POGODCI_KES_KLJUC_); } catch (e) { /* nije kritično */ } }
 function adminPismaPogodci(token) {
   if (!isValidAdminToken_(token)) { return pismaAuthGreska_(); }
@@ -21454,10 +21495,11 @@ function adminKampanjaExcelCitaj(token, base64Data, filename) {
     if (lastRow < 2) { return { status: 'error', message: 'Tablica je prazna (treba zaglavlje i barem jedan redak).' }; }
     var vals = sh.getRange(1, 1, lastRow, lastCol).getDisplayValues();
     var norm = function(s) { return brziNormaliziraj_(s).replace(/[^a-z0-9]/g, ''); };
-    var idx = { oib: -1, naziv: -1, email: -1, grad: -1, osoba: -1, posta: -1, izvor: -1 };
+    var idx = { oib: -1, naziv: -1, email: -1, grad: -1, osoba: -1, posta: -1, izvor: -1, mobitel: -1 };
     vals[0].forEach(function(h, c) {
       var n = norm(h);
       if (n === 'oib') { idx.oib = c; }
+      else if (n.indexOf('mob') === 0 || n.indexOf('telefon') === 0 || n === 'tel' || n === 'gsm' || n.indexOf('brojmob') === 0) { if (idx.mobitel < 0) { idx.mobitel = c; } }   // v395
       else if (n.indexOf('izvor') === 0) { if (idx.izvor < 0) { idx.izvor = c; } }
       else if (n.indexOf('postan') === 0 || n === 'pbr' || n === 'zip' || n === 'postcode') { idx.posta = c; }
       else if (n.indexOf('naziv') === 0 || n.indexOf('firma') !== -1 || n.indexOf('tvrtka') !== -1) { if (idx.naziv < 0) { idx.naziv = c; } }
@@ -21472,7 +21514,7 @@ function adminKampanjaExcelCitaj(token, base64Data, filename) {
       var r = vals[i];
       if (r.every(function(x) { return !String(x).trim(); })) { continue; }
       var g = function(k) { return idx[k] >= 0 ? r[idx[k]] : ''; };
-      var p = pismaValidirajRed_({ oib: g('oib'), naziv: g('naziv'), email: g('email'), grad: g('grad'), osoba: g('osoba'), posta: g('posta'), izvorKontakta: g('izvor') });
+      var p = pismaValidirajRed_({ oib: g('oib'), naziv: g('naziv'), email: g('email'), grad: g('grad'), osoba: g('osoba'), posta: g('posta'), izvorKontakta: g('izvor'), mobitel: g('mobitel') });
       p.red = i + 1;
       if (!p.greska && viden[p.email]) { p.greska = 'duplikat u tablici'; }
       if (!p.greska && poslani[p.email]) { p.greska = 'već poslano ranije'; p.vecPoslano = true; }
@@ -21528,7 +21570,7 @@ function adminKampanjaStart(token, naziv, redci, predlozakId) {
     var sheet = getOrCreatePismaSheet_();
     var poslani = pismaPoslaniEmailovi_(sheet);
     var id = 'K' + Utilities.formatDate(new Date(), PISMA_TZ_, 'yyMMdd-HHmm') + '-' + Utilities.getUuid().slice(0, 3);
-    var now = new Date(), viden = {}, red = [], izvoriRed = [], ceka = 0, preskoceno = 0;
+    var now = new Date(), viden = {}, red = [], izvoriRed = [], mobRed = [], ceka = 0, preskoceno = 0;
     redci.slice(0, 2000).forEach(function(r0) {
       var p = pismaValidirajRed_(r0);
       var status = 'Čeka', poruka = '';
@@ -21538,6 +21580,7 @@ function adminKampanjaStart(token, naziv, redci, predlozakId) {
       if (status === 'Čeka') { viden[p.email] = true; ceka++; } else { preskoceno++; }
       red.push([id, nz, now, 'Kampanja', p.oib, p.naziv, p.email, p.grad, p.osoba, status, '', poruka, p.posta]);
       izvoriRed.push([p.izvorKontakta || '']);
+      mobRed.push([p.mobitel || '']);
     });
     if (!ceka) { return { status: 'error', message: 'Nijedan redak nije ispravan za slanje.' }; }
     var prviRed = sheet.getLastRow() + 1;
@@ -21545,6 +21588,7 @@ function adminKampanjaStart(token, naziv, redci, predlozakId) {
     sheet.getRange(prviRed, 13, red.length, 1).setNumberFormat('@');
     sheet.getRange(prviRed, 1, red.length, PISMA_HEADER_.length).setValues(red.map(sheetSigRed_));
     if (izvoriRed.some(function(x) { return x[0]; })) { sheet.getRange(prviRed, 15, izvoriRed.length, 1).setValues(izvoriRed.map(sheetSigRed_)); }
+    if (mobRed.some(function(x) { return x[0]; })) { sheet.getRange(prviRed, 16, mobRed.length, 1).setNumberFormat('@'); sheet.getRange(prviRed, 16, mobRed.length, 1).setValues(mobRed.map(sheetSigRed_)); }   // v395
     pismaKampanjaPredlozakSpremi_(id, predlozakId);
     if (KOPIJA_ADMINU_ZAHTJEV_) { pismaKampanjaKopijaSpremi_(id); }
     pismaTrigerOsiguraj_();

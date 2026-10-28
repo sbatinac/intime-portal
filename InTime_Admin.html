@@ -2391,6 +2391,15 @@
   /* v377: INTRIX kućica — ljubičasta kad ima ponuda u INTRIX-u */
   .kp-d.ljub .n{color:#7b2ff7;}
   .kp-d.zelpr .n{color:#1e8449;}
+  .kp-danas-mreza .kp-d.plpb{grid-column-end:-1;}   /* v395: uvijek dolje desno */
+  .kp-d.plpb .n{color:#3a8fd6;}
+  .kp-d.plpb:not(.nula){border-color:#3a8fd6 !important;box-shadow:0 0 14px rgba(58,143,214,.35) !important;}
+  .pb-tablica{width:100%;border-collapse:collapse;font-size:13px;background:#fff;border-radius:10px;overflow:hidden;}
+  .pb-tablica th{background:#14578f;color:#fff;text-align:left;padding:8px 10px;font-size:12px;white-space:nowrap;}
+  .pb-tablica td{padding:7px 10px;border-bottom:1px solid #e6edf3;vertical-align:top;color:#1f2d3d;}
+  .pb-tablica tr:nth-child(even) td{background:#f6f9fc;}
+  .pb-tel{font-weight:800;color:#14578f;text-decoration:none;white-space:nowrap;}
+  .pb-tel:hover{text-decoration:underline;}
   .kp-d.zelpr:not(.nula){background:linear-gradient(135deg,#14532d 0%,#1e8449 60%,#3fbf7f 100%) !important;border-color:#7ee2a8 !important;box-shadow:0 0 18px rgba(30,132,73,.45) !important;}
   .kp-d.zelpr:not(.nula) .n,.kp-d.zelpr:not(.nula) .l,.kp-d.zelpr:not(.nula) .a{color:#fff !important;text-shadow:none !important;}
   .kp-d.ljub:not(.nula){background:linear-gradient(135deg,#5b1fc7 0%,#7b2ff7 60%,#9d5cff 100%) !important;border-color:#b98cff !important;box-shadow:0 0 18px rgba(123,47,247,.45) !important;}
@@ -3747,7 +3756,7 @@
   function handleLogout() {
     adminToken = null;
     try { pogodciZaustaviPracenje_(); } catch (e) {}
-    kesObrisiSve_(); KES_PRIKAZAN_ = false; kesTraka_('');   // v393
+    kesObrisiSve_(); KES_PRIKAZAN_ = false; kesTraka_(''); PB_LISTA_ = null;   // v393 / v395
     try { sessionStorage.removeItem('intime_admin_token'); sessionStorage.removeItem('intime_video_off'); sessionStorage.removeItem('intime_brzo_ok'); } catch (e) {}
     try { document.querySelectorAll('.brzo-gumb').forEach(function(g) { g.remove(); }); } catch (e3) {}
     document.getElementById('dashboard').hidden = true;
@@ -3764,6 +3773,7 @@
     kopijaAdminUcitaj_();
     izvoriUcitaj_();
     setTimeout(pogodciProvjeriNove_, 20000);   // v314: ne trči s glavnim početnim učitavanjem
+    setTimeout(function() { try { pbUcitaj_(); } catch (ePb) {} }, 12000);   // v395: pisma bez odgovora (kućica „nazvati”)
     pogodciPokreniPracenje_();
     setTimeout(function() { try { var pv = document.createElement('video'); pv.preload = 'auto'; pv.muted = true; pv.src = 'pogodak.mp4'; var pr2 = document.createElement('video'); pr2.preload = 'auto'; pr2.muted = true; pr2.src = 'raskid.mp4'; videoPreducitaj_(VIDEO_SPREMNO_URL_); videoPreducitaj_(VIDEO_PALJBA_URL_); videoPreducitaj_(VIDEO_PONUDA_URL_); } catch (e) { gifPreducitaj_('gif_pogodak.gif'); } }, 4000); // povuci GIF unaprijed da se animacija pokaže odmah
   }
@@ -6008,6 +6018,46 @@
   // v373: ista logika za Ponude i Otvorene ponude — veliki broj = čeka odgovor; malo: žuto prihvaćene, crveno odbijene, sivo ukupno u kartici
   // v374: INTRIX je aktivan dok ponuda nema TM broj (dodjelom TM broja se sam poništava)
   function formatirajSadaHr_() { var d = new Date(); function p2(n) { return (n < 10 ? '0' : '') + n; } return p2(d.getDate()) + '.' + p2(d.getMonth() + 1) + '.' + d.getFullYear() + '. ' + p2(d.getHours()) + ':' + p2(d.getMinutes()); }
+  // v395: PISMA NAMJERE BEZ ODGOVORA — za nazvati (poslužitelj: adminPismaBezOdgovora); filtar „najmanje N dana od slanja”, zadano 7
+  var PB_LISTA_ = null, PB_UCITAVA_ = false;
+  function pbDani_() { var v = 7; try { v = parseInt(localStorage.getItem('intime_pb_dani'), 10); } catch (e) {} return isFinite(v) && v >= 0 ? v : 7; }
+  function pbFiltrirano_() { var d = pbDani_(), gr = Date.now() - d * 86400000; return (PB_LISTA_ || []).filter(function(x) { return x.ms <= gr; }); }
+  function pbUcitaj_(cb) {
+    if (PB_UCITAVA_) { return; }
+    if (!PB_LISTA_) { var k = kesCitaj_('pismaBez'); if (k && Array.isArray(k.d)) { PB_LISTA_ = k.d; } }
+    PB_UCITAVA_ = true;
+    gasCall({ action: 'adminPismaBezOdgovora', token: adminToken }).then(function(res) {
+      PB_UCITAVA_ = false;
+      if (handleAuthError(res)) { return; }
+      if (res && res.status === 'ok') { PB_LISTA_ = res.lista || []; kesSpremi_('pismaBez', PB_LISTA_); }
+      try { osvjeziKomandnuPlocu_(); } catch (e) {}
+      if (activeTab === 'Intrix' && POSEBNI_VRSTA_ === 'pismaBez') { renderEntries(); }
+      if (cb) { cb(); }
+    }).catch(function() { PB_UCITAVA_ = false; });
+  }
+  function pbIscrtaj_(container) {
+    var d = pbDani_(), lista = pbFiltrirano_();
+    var glava = document.createElement('div'); glava.className = 'ix-prikaz-glava'; glava.style.background = 'linear-gradient(90deg,#0f3d5e,#14578f 60%,#3a8fd6)';
+    var opcije = [0, 1, 2, 3, 5, 7, 10, 14, 21, 30, 60].map(function(n) { return '<option value="' + n + '"' + (n === d ? ' selected' : '') + '>' + (n === 0 ? 'sva pisma' : 'najmanje ' + n + (n === 1 ? ' dan' : ' dana') + ' od slanja') + '</option>'; }).join('');
+    glava.innerHTML = '<span><b>📞 NAZVATI</b> — pisma namjere bez odgovora: <b>' + lista.length + '</b></span>' +
+      '<span style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;"><select class="pb-dani" style="padding:5px 8px;border-radius:8px;border:0;font:inherit;font-weight:700;">' + opcije + '</select>' +
+      '<button type="button" class="ix-prikaz-x pb-osvjezi">⟳ Osvježi</button><button type="button" class="ix-prikaz-x pb-x">✕ Zatvori</button></span>';
+    container.appendChild(glava);
+    glava.querySelector('.pb-dani').addEventListener('change', function() { try { localStorage.setItem('intime_pb_dani', this.value); } catch (e) {} renderEntries(); try { osvjeziKomandnuPlocu_(); } catch (e2) {} });
+    glava.querySelector('.pb-osvjezi').addEventListener('click', function() { this.disabled = true; this.textContent = 'Osvježavam…'; pbUcitaj_(); });
+    glava.querySelector('.pb-x').addEventListener('click', function() { switchTab('Pisma'); });
+    if (!PB_LISTA_) { var u = document.createElement('div'); u.className = 'empty-hint'; u.textContent = 'Učitavam popis…'; container.appendChild(u); pbUcitaj_(); return; }
+    if (!lista.length) { var pr = document.createElement('div'); pr.className = 'empty-hint'; pr.textContent = 'Nema pisama bez odgovora za odabrano razdoblje.'; container.appendChild(pr); return; }
+    var sada = Date.now();
+    var t = document.createElement('div');
+    t.innerHTML = '<div style="overflow-x:auto;"><table class="pb-tablica"><thead><tr><th>#</th><th>Firma</th><th>📱 Mobitel</th><th>Kontakt osoba</th><th>Poslano</th><th>Prošlo</th><th>E-mail</th><th>Grad</th><th>Kampanja</th></tr></thead><tbody>' +
+      lista.map(function(x, i) {
+        var dana = Math.floor((sada - x.ms) / 86400000);
+        var tel = x.mobitel ? '<a href="tel:' + esc(x.mobitel) + '" class="pb-tel">' + esc(x.mobitel) + '</a>' : '<span style="color:#9aa3a1;">—</span>';
+        return '<tr><td>' + (i + 1) + '</td><td><b>' + esc(x.naziv) + '</b><div style="font-size:11px;color:#6b7472;">OIB ' + esc(x.oib) + (x.pisama > 1 ? ' · pisama: ' + x.pisama : '') + '</div></td><td>' + tel + '</td><td>' + esc(x.osoba || '') + '</td><td style="white-space:nowrap;">' + esc(x.datum) + '</td><td style="white-space:nowrap;font-weight:800;color:' + (dana >= 14 ? '#c0392b' : (dana >= 7 ? '#b45309' : '#1f2d3d')) + ';">' + dana + ' d</td><td style="font-size:12px;">' + esc(x.email) + '</td><td>' + esc(x.grad || '') + '</td><td style="font-size:12px;">' + esc(x.kampanja || '') + (x.izvor ? '<div style="color:#6b7472;">📍 ' + esc(x.izvor) + '</div>' : '') + '</td></tr>';
+      }).join('') + '</tbody></table></div>';
+    container.appendChild(t);
+  }
   // v388: isti prikaz (popis ispod) i za kućice „Danas čeka tebe”: čeka odgovor, rok ističe u 48 h, otvorene prihvaćene bez podataka
   var POSEBNI_VRSTA_ = 'intrix';
   var POSEBNI_NASLOVI_ = { intrix: ['INTRIX', 'ponude koje čekaju odobrenje', 'linear-gradient(90deg,#5b1fc7,#7b2ff7 60%,#9d5cff)'],
@@ -6316,6 +6366,7 @@
     document.getElementById('select-all-row').hidden = true;
 
     // v380: INTRIX prikaz — sve prihvaćene ponude u INTRIX-u, i iz Ponuda i iz Otvorenih ponuda, na jednom mjestu
+    if (activeTab === 'Intrix' && POSEBNI_VRSTA_ === 'pismaBez') { pbIscrtaj_(container); return; }   // v395
     if (activeTab === 'Intrix') {
       var ixLista_ = intrixListaZaPrikaz_();
       var ixGlava_ = document.createElement('div');
@@ -11407,7 +11458,7 @@
     });
     return wrap;
   }
-  var PISMA_EXCEL_ZAGLAVLJE_ = ['OIB', 'Naziv firme', 'E-mail', 'Grad', 'Poštanski broj', 'Ime i prezime vlasnika', 'Izvor'];
+  var PISMA_EXCEL_ZAGLAVLJE_ = ['OIB', 'Naziv firme', 'E-mail', 'Grad', 'Poštanski broj', 'Ime i prezime vlasnika', 'Izvor', 'Mobitel'];
 
   // Minimalni .xlsx pisac (bez vanjskih biblioteka): ZIP bez kompresije ("store") + inline stringovi.
   function pismaCrc32_(bytes) {
@@ -18755,6 +18806,7 @@
           '<label class="pm-polje">Poštanski broj<input type="text" id="pm-posta" maxlength="10" placeholder="npr. 31000"></label>' +
           '<label class="pm-polje">Grad<input type="text" id="pm-grad"></label>' +
           '<label class="pm-polje">Ime i prezime vlasnika (ili kontakt osobe)<input type="text" id="pm-osoba"></label>' +
+          '<label class="pm-polje">📱 Broj mobitela (za nazvati, neobavezno)<input type="tel" id="pm-mob" placeholder="npr. 091 123 4567"></label>' +
           '<label class="pm-polje">📍 Izvor — kako si došao do firme' + izvorSelectHtml_('pm-izvor', '') + '</label>' +
         '</div>' +
         '<select id="pm-rucno-tpl" hidden></select>' +
@@ -18822,7 +18874,7 @@
       '<div class="pm-pane" data-pane="kampanje" hidden>' +
       // 3. Kampanja
       '<div class="pm-kartica"><div class="pm-glava">📣 Mail kampanja iz Excela<small id="pm-kvota2"></small></div><div class="pm-tijelo">' +
-        '<p class="pm-hint">1) Preuzmi praznu tablicu, popuni je (OIB, naziv firme, e-mail, grad, poštanski broj, ime i prezime vlasnika) i vrati je u okvir ispod. 2) Upiši naziv kampanje i klikni "Pošalji kampanju". Mailovi idu jedan po jedan, u razmaku koji se namješta u Postavkama (zadano 3 sekunde), na sve ispravne adrese; već poslane adrese se preskaču. Slanje se nastavlja na poslužitelju i ako zatvoriš stranicu.</p>' +
+        '<p class="pm-hint">1) Preuzmi praznu tablicu, popuni je (OIB, naziv firme, e-mail, grad, poštanski broj, ime i prezime vlasnika, po želji izvor i broj mobitela) i vrati je u okvir ispod. 2) Upiši naziv kampanje i klikni "Pošalji kampanju". Mailovi idu jedan po jedan, u razmaku koji se namješta u Postavkama (zadano 3 sekunde), na sve ispravne adrese; već poslane adrese se preskaču. Slanje se nastavlja na poslužitelju i ako zatvoriš stranicu.</p>' +
         '<div class="pm-mreza"><label class="pm-polje">Naziv mail kampanje<input type="text" id="pm-kamp-naziv" placeholder="npr. Slavonija — listopad 2026."></label></div>' +
         '<select id="pm-kamp-tpl" hidden></select>' +
         '<div class="pm-drop" id="pm-drop">📂 Povuci Excel (.xlsx) ovdje ili klikni za odabir<input type="file" id="pm-datoteka" accept=".xlsx" style="display:none;"></div>' +
@@ -19397,7 +19449,7 @@
       var naziv = $('pm-kamp-naziv').value.trim();
       if (!naziv && !redciKampanje.length) { status(st, 'Upiši naziv kampanje ili učitaj popis (Excel).', 'greska'); return; }
       b.disabled = true; status(st, 'Spremam…');
-      poziv({ action: 'adminKampanjaNacrtSpremi', nacrt: { id: kampNacrtId || '', naziv: naziv, predlozakId: $('pm-kamp-tpl').value, redci: redciKampanje.map(function(r) { return { red: r.red, oib: r.oib, naziv: r.naziv, email: r.email, posta: r.posta, grad: r.grad, osoba: r.osoba, izvorKontakta: r.izvorKontakta || '', greska: r.greska || '' }; }) } }).then(function(res) {
+      poziv({ action: 'adminKampanjaNacrtSpremi', nacrt: { id: kampNacrtId || '', naziv: naziv, predlozakId: $('pm-kamp-tpl').value, redci: redciKampanje.map(function(r) { return { red: r.red, oib: r.oib, naziv: r.naziv, email: r.email, posta: r.posta, grad: r.grad, osoba: r.osoba, izvorKontakta: r.izvorKontakta || '', mobitel: r.mobitel || '', greska: r.greska || '' }; }) } }).then(function(res) {
         b.disabled = false;
         if (res.status === 'ok') { kampNacrtId = res.id; status(st, '✓ Spremljeno kao „nije poslano“ (' + res.redaka + ' redaka, ' + res.datum + ').', 'ok'); kampNacrtOsvjezi_(); }
         else { status(st, res.message || 'Spremanje nije uspjelo.', 'greska'); }
@@ -19437,13 +19489,13 @@
     // ---- ručno pismo ----
     $('pm-posalji').addEventListener('click', function(potvrdiDup) {
       var dup = (potvrdiDup === true);
-      var p = { oib: $('pm-oib').value.trim(), naziv: $('pm-naziv').value.trim(), email: $('pm-email').value.trim(), adresa: $('pm-adresa').value.trim(), grad: $('pm-grad').value.trim(), posta: $('pm-posta').value.trim(), osoba: $('pm-osoba').value.trim(), izvorKontakta: $('pm-izvor').value === '__novi__' ? '' : $('pm-izvor').value };
+      var p = { oib: $('pm-oib').value.trim(), naziv: $('pm-naziv').value.trim(), email: $('pm-email').value.trim(), adresa: $('pm-adresa').value.trim(), grad: $('pm-grad').value.trim(), posta: $('pm-posta').value.trim(), osoba: $('pm-osoba').value.trim(), mobitel: $('pm-mob').value.trim(), izvorKontakta: $('pm-izvor').value === '__novi__' ? '' : $('pm-izvor').value };
       if (!p.naziv || !/^[^\s@,;]+@[^\s@,;]+\.[^\s@,;]{2,}$/.test(p.email)) { status($('pm-posalji-status'), 'Upiši naziv firme i ispravnu e-mail adresu.', 'greska'); return; }
       if (!/^\d{11}$/.test(p.oib)) { status($('pm-posalji-status'), 'OIB je obavezan i mora imati 11 znamenki.', 'greska'); return; }
       if (!dup && !confirm('Poslati pismo namjere na ' + p.email + ' (predložak: ' + tplNaziv($('pm-rucno-tpl').value) + ')?' + (document.querySelector('.pm-rucno-kopija:checked') ? '\n\n(+ kopija na administratorski mail: ' + ADMIN_MAIL_KOPIJE_ + ')' : ''))) { return; }
       var b = $('pm-posalji'); b.disabled = true; status($('pm-posalji-status'), 'Šaljem…');
       rucnoSlanjeUToku = true; gifPaljbaOtvori_('✉ Šaljem pismo namjere…');
-      poziv({ action: 'adminPismoPosalji', oib: p.oib, naziv: p.naziv, email: p.email, grad: p.grad, posta: p.posta, adresa: p.adresa, osoba: p.osoba, izvorKontakta: p.izvorKontakta, potvrdiDuplikat: dup, predlozakId: $('pm-rucno-tpl').value, kopijaAdminu: !!document.querySelector('.pm-rucno-kopija:checked') }).then(function(res) {
+      poziv({ action: 'adminPismoPosalji', oib: p.oib, naziv: p.naziv, email: p.email, grad: p.grad, posta: p.posta, adresa: p.adresa, osoba: p.osoba, mobitel: p.mobitel || '', izvorKontakta: p.izvorKontakta, potvrdiDuplikat: dup, predlozakId: $('pm-rucno-tpl').value, kopijaAdminu: !!document.querySelector('.pm-rucno-kopija:checked') }).then(function(res) {
         rucnoSlanjeUToku = false; gifPaljbaZatvori_();
         b.disabled = false;
         if (res.status === 'ok') {
@@ -19460,7 +19512,7 @@
     });
     // ---- NACRTI (12.10.2026.): spremljeni, još neposlani podaci — ostaju na poslužitelju sa statusom "nije poslano" ----
     var nacrtId = null, nacrtiPodaci = [];
-    function nacrtIzForme_() { return { id: nacrtId || '', oib: $('pm-oib').value.trim(), naziv: $('pm-naziv').value.trim(), email: $('pm-email').value.trim(), adresa: $('pm-adresa').value.trim(), posta: $('pm-posta').value.trim(), grad: $('pm-grad').value.trim(), osoba: $('pm-osoba').value.trim(), izvorKontakta: $('pm-izvor').value === '__novi__' ? '' : $('pm-izvor').value, predlozakId: $('pm-rucno-tpl').value }; }
+    function nacrtIzForme_() { return { id: nacrtId || '', oib: $('pm-oib').value.trim(), naziv: $('pm-naziv').value.trim(), email: $('pm-email').value.trim(), adresa: $('pm-adresa').value.trim(), posta: $('pm-posta').value.trim(), grad: $('pm-grad').value.trim(), osoba: $('pm-osoba').value.trim(), mobitel: $('pm-mob').value.trim(), izvorKontakta: $('pm-izvor').value === '__novi__' ? '' : $('pm-izvor').value, predlozakId: $('pm-rucno-tpl').value }; }
     function nacrtiIscrtaj_() {
       var box = $('pm-nacrti'); if (!box) { return; }
       if (!nacrtiPodaci.length) { box.innerHTML = ''; return; }
@@ -19491,7 +19543,7 @@
       var n = nacrtiPodaci[parseInt(b.getAttribute('data-i'), 10)]; if (!n) { return; }
       var st = $('pm-nacrt-status');
       if (b.getAttribute('data-nacrt-a') === 'ucitaj') {
-        var m = { 'pm-oib': n.oib, 'pm-naziv': n.naziv, 'pm-email': n.email, 'pm-adresa': n.adresa, 'pm-posta': n.posta, 'pm-grad': n.grad, 'pm-osoba': n.osoba };
+        var m = { 'pm-oib': n.oib, 'pm-naziv': n.naziv, 'pm-email': n.email, 'pm-adresa': n.adresa, 'pm-posta': n.posta, 'pm-grad': n.grad, 'pm-osoba': n.osoba, 'pm-mob': n.mobitel };
         Object.keys(m).forEach(function(id) { $(id).value = m[id] || ''; $(id).dispatchEvent(new Event('input', { bubbles: true })); });
         izvorPostavi_($('pm-izvor'), n.izvorKontakta || '');
         try { if (n.predlozakId && Array.prototype.some.call($('pm-rucno-tpl').options, function(o) { return o.value === n.predlozakId; })) { $('pm-rucno-tpl').value = n.predlozakId; $('pm-rucno-tpl').dispatchEvent(new Event('change', { bubbles: true })); } } catch (e) {}
@@ -19508,7 +19560,7 @@
     nacrtiOsvjezi_();
     function rucnoOcisti_(p) {
       // čisti samo polja koja su još ista kao u poslanom pismu — ako si u međuvremenu već krenuo upisivati novu firmu, to ostaje
-      var m = { 'pm-oib': p.oib, 'pm-naziv': p.naziv, 'pm-email': p.email, 'pm-adresa': p.adresa, 'pm-posta': p.posta, 'pm-grad': p.grad, 'pm-osoba': p.osoba };
+      var m = { 'pm-oib': p.oib, 'pm-naziv': p.naziv, 'pm-email': p.email, 'pm-adresa': p.adresa, 'pm-posta': p.posta, 'pm-grad': p.grad, 'pm-osoba': p.osoba, 'pm-mob': p.mobitel };
       Object.keys(m).forEach(function(id) { if ($(id).value.trim() === String(m[id] || '')) { $(id).value = ''; } });
       if ($('pm-izvor').value === String(p.izvorKontakta || '')) { izvorPostavi_($('pm-izvor'), ''); }
     }
@@ -19516,7 +19568,7 @@
     function slanjeRucno(dup, p) {
       status($('pm-posalji-status'), 'Šaljem…');
       rucnoSlanjeUToku = true; rucnoAzuriraj(); gifPaljbaOtvori_('✉ Šaljem pismo namjere…');
-      poziv({ action: 'adminPismoPosalji', oib: p.oib, naziv: p.naziv, email: p.email, grad: p.grad, posta: p.posta, adresa: p.adresa, osoba: p.osoba, izvorKontakta: p.izvorKontakta, potvrdiDuplikat: true, predlozakId: $('pm-rucno-tpl').value, kopijaAdminu: !!document.querySelector('.pm-rucno-kopija:checked') }).then(function(res) {
+      poziv({ action: 'adminPismoPosalji', oib: p.oib, naziv: p.naziv, email: p.email, grad: p.grad, posta: p.posta, adresa: p.adresa, osoba: p.osoba, mobitel: p.mobitel || '', izvorKontakta: p.izvorKontakta, potvrdiDuplikat: true, predlozakId: $('pm-rucno-tpl').value, kopijaAdminu: !!document.querySelector('.pm-rucno-kopija:checked') }).then(function(res) {
         rucnoSlanjeUToku = false; gifPaljbaZatvori_();
         status($('pm-posalji-status'), res.status === 'ok' ? 'Poslano na ' + p.email + '.' : (res.message || 'Slanje nije uspjelo.'), res.status === 'ok' ? 'ok' : 'greska');
         if (res.status === 'ok') { nacrtPoslan_(); rucnoOcisti_(p); nacrtajPregledOdgodeno(); kvotaPrikaz(res.kvota); osvjeziEvidenciju(); rucnoPotvrdaReset_(); } else { rucnoAzuriraj(); }
@@ -19538,9 +19590,9 @@
       var ok = redciKampanje.filter(function(r) { return !r.greska; }).length, lose = redciKampanje.length - ok;
       var html = '<div style="margin:6px 0;font-size:13px;font-weight:700;"><span class="pm-cip p">Spremno za slanje: ' + ok + '</span>' + (lose ? '<span class="pm-cip g">Preskače se: ' + lose + '</span>' : '') +
         ' <span style="color:#5b6664;font-weight:600;">· trajanje ≈ ' + Math.max(1, Math.ceil(ok * 3 / 60)) + ' min</span></div>' +
-        '<div class="pm-skrol"><table class="pm-tablica"><thead><tr><th>#</th><th>OIB</th><th>Naziv firme</th><th>E-mail</th><th>Pošt. br.</th><th>Grad</th><th>Ime i prezime</th><th>Izvor</th><th>Napomena</th></tr></thead><tbody>' +
+        '<div class="pm-skrol"><table class="pm-tablica"><thead><tr><th>#</th><th>OIB</th><th>Naziv firme</th><th>E-mail</th><th>Pošt. br.</th><th>Grad</th><th>Ime i prezime</th><th>Izvor</th><th>Mobitel</th><th>Napomena</th></tr></thead><tbody>' +
         redciKampanje.slice(0, 500).map(function(r) {
-          return '<tr class="' + (r.greska ? 'lose' : '') + '"><td>' + r.red + '</td><td>' + esc(r.oib) + '</td><td>' + esc(r.naziv) + '</td><td>' + esc(r.email) + '</td><td>' + esc(r.posta) + '</td><td>' + esc(r.grad) + '</td><td>' + esc(r.osoba) + '</td><td>' + esc(r.izvorKontakta || '') + '</td><td>' + esc(r.greska || '✓') + '</td></tr>';
+          return '<tr class="' + (r.greska ? 'lose' : '') + '"><td>' + r.red + '</td><td>' + esc(r.oib) + '</td><td>' + esc(r.naziv) + '</td><td>' + esc(r.email) + '</td><td>' + esc(r.posta) + '</td><td>' + esc(r.grad) + '</td><td>' + esc(r.osoba) + '</td><td>' + esc(r.izvorKontakta || '') + '</td><td>' + esc(r.mobitel || '') + '</td><td>' + esc(r.greska || '✓') + '</td></tr>';
         }).join('') + '</tbody></table></div>' + (redciKampanje.length > 500 ? '<p class="pm-hint">Prikazano prvih 500 redaka od ' + redciKampanje.length + '.</p>' : '') +
         '';
       $('pm-pregled').innerHTML = html;
@@ -19588,7 +19640,7 @@
     function pokreniKampanjuStvarno_(naziv, ok, b) {
       b.disabled = true; status($('pm-kreni-status'), 'Pokrećem…');
       gifPaljbaOtvori_('🚀 Pokrećem kampanju…');
-      poziv({ action: 'adminKampanjaStart', kopijaAdminu: !!document.querySelector('.pm-kamp-kopija:checked'), naziv: naziv, predlozakId: $('pm-kamp-tpl').value, redci: redciKampanje.map(function(r) { return { oib: r.oib, naziv: r.naziv, email: r.email, grad: r.grad, posta: r.posta, osoba: r.osoba, izvorKontakta: r.izvorKontakta || '' }; }) }).then(function(res) {
+      poziv({ action: 'adminKampanjaStart', kopijaAdminu: !!document.querySelector('.pm-kamp-kopija:checked'), naziv: naziv, predlozakId: $('pm-kamp-tpl').value, redci: redciKampanje.map(function(r) { return { oib: r.oib, naziv: r.naziv, email: r.email, grad: r.grad, posta: r.posta, osoba: r.osoba, izvorKontakta: r.izvorKontakta || '', mobitel: r.mobitel || '' }; }) }).then(function(res) {
         if (res.status !== 'ok') { gifPaljbaZatvoriOdmah_(); b.disabled = false; status($('pm-kreni-status'), res.message || 'Pokretanje nije uspjelo.', 'greska'); kampAzuriraj(); return; }
         status($('pm-kreni-status'), '');
         kampanjaZakljucana = true; potvrdjeno['pm-kamp'] = ''; guardiOsvjezi();
@@ -30214,7 +30266,8 @@
         { n: stariCeka.length, kl: 'ind', l: 'stari klijenti čekaju upitnik' + (stariNijePos ? ' (' + stariNijePos + ' još nije poslano)' : ''), a: 'Unos starih klijenata →', tab: 'Stari' },
         { n: probl, kl: 'zel', l: 'otvoreni problemi klijenata', a: 'Servis klijenata →', tab: 'Problemi' },
         { n: prPon + prOtv, kl: 'zelpr', l: 'prihvaćena ponuda — nastaviti postupak' + (prOtv && prPon ? ' (Ponude: ' + prPon + ', Otvorene: ' + prOtv + ')' : ''), a: 'Prikaži popis →', tab: 'Popis:prihv' },
-        { n: ixPon + ixOtv, kl: 'ljub', info: true, l: 'ponuda čeka odobrenje u INTRIX-u' + (ixOtv && ixPon ? ' (Ponude: ' + ixPon + ', Otvorene: ' + ixOtv + ')' : ''), a: 'Prikaži INTRIX ponude →', tab: 'Intrix' }
+        { n: ixPon + ixOtv, kl: 'ljub', info: true, l: 'ponuda čeka odobrenje u INTRIX-u' + (ixOtv && ixPon ? ' (Ponude: ' + ixPon + ', Otvorene: ' + ixOtv + ')' : ''), a: 'Prikaži INTRIX ponude →', tab: 'Intrix' },
+        { n: (PB_LISTA_ ? pbFiltrirano_().length : '…'), kl: 'plpb', info: true, l: 'pisma namjere bez odgovora — nazvati (' + (pbDani_() === 0 ? 'sva' : 'najmanje ' + pbDani_() + ' d od slanja') + ')', a: 'Prikaži popis →', tab: 'Popis:pismaBez' }
       ];
       var box = document.getElementById('kp-danas');
       if (box) {
