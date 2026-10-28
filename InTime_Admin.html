@@ -2470,6 +2470,35 @@
   .kp-l-st{flex:1;text-align:center;}.kp-l-st .n{font-size:22px;font-weight:900;color:#0d2230;}.kp-l-st .l{font-size:12px;color:#4a5a57;}
   .kp-l-st.zadnji{border-left:1px dashed #cfd8d6;}
   .kp-l-str{font-size:12px;font-weight:800;color:#0b7a4b;padding:0 6px;text-align:center;white-space:nowrap;}
+
+  /* v403: TV PRIKAZ */
+  html.tv-mod body > *:not(#tv-ekran):not(#pogodak-sloj):not(#raskid-sloj):not(.vk-sloj):not(#kes-traka):not(script):not(style){display:none !important;}
+  html.tv-mod body{background:radial-gradient(circle at 20% 10%,#10224a 0%,#050b1f 65%) !important;overflow:hidden;}
+  html.tv-mod{background:#050b1f !important;}
+  #tv-ekran{position:fixed;inset:0;z-index:5;background:radial-gradient(circle at 20% 10%,#10224a 0%,#050b1f 65%);padding:2.2vh 2.5vw;box-sizing:border-box;display:flex;flex-direction:column;gap:2vh;color:#e8eefc;font-family:Inter,"Segoe UI",Arial,sans-serif;}
+  #tv-ekran .tv-glava{display:flex;align-items:center;gap:3vw;}
+  #tv-ekran .tv-lijevo{flex:1;}
+  #tv-ekran .tv-naslov{font-size:4.2vh;font-weight:900;letter-spacing:.08em;}
+  #tv-ekran .tv-pod{font-size:2vh;color:#9bb4dd;margin-top:.4vh;}
+  #tv-ekran .tv-desno{text-align:right;}
+  #tv-ekran .tv-sat{font-size:7vh;font-weight:900;line-height:1;letter-spacing:.04em;}
+  #tv-ekran .tv-datum{font-size:2.2vh;color:#9bb4dd;}
+  #tv-ekran .tv-bs{min-width:24vw;}
+  #tv-ekran .tv-bs-n{font-size:4.5vh;font-weight:900;color:#ffd75e;}
+  #tv-ekran .tv-bs-n small{font-size:2.4vh;color:#cfe0f7;}
+  #tv-ekran .tv-bs-traka{height:1.2vh;border-radius:99px;background:rgba(255,255,255,.12);overflow:hidden;margin:.6vh 0;}
+  #tv-ekran .tv-bs-traka i{display:block;height:100%;background:linear-gradient(90deg,#ffd75e,#ff9f1c);}
+  #tv-ekran .tv-bs-l{font-size:1.8vh;color:#9bb4dd;}
+  #tv-ekran #kp-danas{flex:1;min-height:0;display:flex !important;flex-direction:column;margin:0 !important;background:transparent !important;border:0 !important;box-shadow:none !important;padding:0 !important;}
+  #tv-ekran #kp-danas h3{display:none;}
+  #tv-ekran .kp-danas-mreza{grid-template-columns:repeat(5,1fr) !important;gap:1.6vh 1.2vw !important;flex:1;min-height:0;grid-auto-rows:1fr;}
+  #tv-ekran .kp-d{pointer-events:none;padding:2vh 1.2vw !important;border-radius:2vh !important;display:flex;flex-direction:column;justify-content:center;}
+  #tv-ekran .kp-d .n{font-size:9vh !important;line-height:1 !important;}
+  #tv-ekran .kp-d .l{font-size:2.3vh !important;line-height:1.25 !important;margin-top:1vh;}
+  #tv-ekran .kp-d .a{display:none !important;}
+  #tv-ekran .kp-d.nula{opacity:.45;}
+  #tv-ekran .kp-danas-ok{font-size:2.8vh;margin-top:1.2vh;color:#7ee2a8 !important;text-align:center;}
+  #tv-ekran .kp-pe-gumb{display:none !important;}
   /* v378: Brojači u Postavkama — jasan kontrast */
   .set-brojaci .permanent-stat-note{color:#1f2d3d !important;font-size:14px;font-weight:600;background:#fff;border:1px solid #c9daf3;border-radius:8px;padding:10px 12px;margin:0 0 10px;opacity:1 !important;}
   .set-brojaci .permanent-stat-note strong{color:#0d47a1;font-size:18px;}
@@ -2894,6 +2923,36 @@
            U ⚙️ POSTAVKE — "Numeracija" kartica; tok zaštite nepromijenjen.) -->
       <span id="broj-panel-status" class="broj-toggle-label-test" hidden>Testni način uključen — novi unosi dobivaju fiksni testni broj, pravi brojač se ne diže.</span>
     </div>
+    </div>
+    <!-- v403: TV prijava (Sašin zahtjev: kartica u Postavkama s cijelom uputom) -->
+    <div id="tv-kartica" style="border:2px solid #0f172a;background:#eef2ff;border-radius:10px;padding:10px 12px;margin-bottom:14px;">
+      <button type="button" onclick="tvKarticaOtvori_()" style="all:unset;cursor:pointer;display:flex;align-items:center;justify-content:space-between;width:100%;font-weight:800;color:#1e1b4b;font-size:15px;">📺 TV prijava <span id="tv-kartica-strelica">▸</span></button>
+      <p class="settings-hint" style="margin:4px 0 0;">Pločice „Danas čeka tebe” velike na televizoru — same se osvježavaju svake 2 minute.</p>
+      <div id="tv-kartica-tijelo" hidden style="margin-top:10px;font-size:13.5px;line-height:1.5;color:#1f2937;">
+        <b>Što TV prikazuje</b>
+        <ul style="margin:4px 0 8px 18px;padding:0;">
+          <li>samo pločice „Danas čeka tebe” (ponude koje čekaju, ističu, INTRIX, prihvaćene, pisma bez odgovora…), velikim slovima, bez klikanja;</li>
+          <li>sat i datum, Battleships bodove za ovaj mjesec i vrijeme zadnjeg osvježavanja;</li>
+          <li>ista slavlja (videi) kao u adminu kad stigne novi pogodak.</li>
+        </ul>
+        <b>Kako ga uključiti — na TV-u (ili računalu spojenom na TV)</b>
+        <ol style="margin:4px 0 8px 18px;padding:0;">
+          <li>Na TV-u otvori preglednik i upiši adresu: <code id="tv-adresa" style="background:#fff;padding:1px 5px;border-radius:4px;"></code> <button type="button" class="btn btn-outline btn-small" onclick="tvKopirajAdresu_(this)">📋 Kopiraj</button></li>
+          <li>Upiši svoje admin korisničko ime i lozinku i naziv uređaja (npr. „TV ured”) → <b>PRIJAVI TV</b>.</li>
+          <li>Pritisni <b>F11</b> (cijeli zaslon). Gotovo — TV ostaje prijavljen 90 dana, i nakon gašenja.</li>
+        </ol>
+        <b>Ili s ovog računala</b> (ako je ovo računalo spojeno na TV):
+        <div style="margin:6px 0 8px;"><button type="button" class="btn btn-primary btn-small" onclick="tvOtvoriOvdje_(this)">📺 Otvori TV prikaz na ovom računalu</button></div>
+        <b>Sigurnost</b>
+        <ul style="margin:4px 0 8px 18px;padding:0;">
+          <li>TV dobiva vlastiti ključ <b>samo za gledanje</b> — ne može ništa slati, mijenjati ni brisati; lozinka se na TV-u ne pamti.</li>
+          <li>Ključ vrijedi 90 dana, zatim TV sam traži novu prijavu.</li>
+          <li>Ako TV više ne koristiš ili sumnjaš da ga netko drugi vidi — klikni <b>Opozovi</b> niže; TV se odmah odjavljuje (najkasnije za 2 min).</li>
+          <li>Ručna odjava na samom TV-u: adresa <code>InTime_TV.html?odjava=1</code>.</li>
+        </ul>
+        <b>Prijavljeni TV uređaji</b> <button type="button" class="btn btn-outline btn-small" onclick="tvListaUcitaj_()">↻</button>
+        <div id="tv-lista" style="margin-top:6px;">—</div>
+      </div>
     </div>
     <div style="border:2px solid #1e8449;background:#f1faf4;border-radius:10px;padding:10px 12px;margin-bottom:14px;">
       <label style="display:block;font-weight:700;margin-bottom:4px;color:#1e8449;">🔗 Direktni linkovi — što sve možeš poslati klijentu</label>
@@ -3355,6 +3414,7 @@
   try {
     var savedToken = sessionStorage.getItem('intime_admin_token');
     if (savedToken) { adminToken = savedToken; }
+    if (/[?&]tv=1(&|$)/.test(location.search)) { adminToken = localStorage.getItem('intime_tv_token') || null; if (!adminToken) { location.replace('InTime_TV.html'); } }   // v403: TV prikaz
   } catch (e) { /* sessionStorage nedostupan (privatni način rada i sl.) — jednostavno se traži ponovna prijava */ }
 
   // Sašin izričit zahtjev (22.9.2026., osmi krug — nakon Network tab dokaza:
@@ -3437,6 +3497,30 @@
   function zapisiGotovi_() {
     if (ZAPISI_U_TIJEKU_ === 0 && OSVJEZI_NAKON_ZAPISA_) { OSVJEZI_NAKON_ZAPISA_ = false; try { loadEntries(); } catch (eZg) { /* nije kritično */ } }
   }
+  // ===== v403: TV PRIKAZ (InTime_Admin.html?tv=1) — samo pločice „Danas čeka tebe”, velike, sat, Battleships bodovi, osvježavanje svake 2 min =====
+  var TV_MOD_ = /[?&]tv=1(&|$)/.test(location.search);
+  var TV_AKCIJE_KLIJENT_ = /^(adminUcitajPocetno|adminListEntries|adminGetCounters|adminPismaBezOdgovora|adminPismaPogodci|tvProvjera)$/;
+  function tvOdjava_(poruka) { try { localStorage.removeItem('intime_tv_token'); } catch (e) {} location.replace('InTime_TV.html' + (poruka ? '?odjava=1' : '')); }
+  function tvPokreni_() {
+    document.documentElement.classList.add('tv-mod');
+    var ekran = document.createElement('div'); ekran.id = 'tv-ekran';
+    ekran.innerHTML = '<div class="tv-glava"><div class="tv-lijevo"><div class="tv-naslov">📌 DANAS ČEKA</div><div class="tv-pod">In Time d.o.o. · osvježeno <span id="tv-osvjezeno">—</span></div></div>' +
+      '<div class="tv-bs" id="tv-bs"></div><div class="tv-desno"><div class="tv-sat" id="tv-sat">--:--</div><div class="tv-datum" id="tv-datum"></div></div></div>';
+    document.body.appendChild(ekran);
+    var kp = document.getElementById('kp-danas'); if (kp) { ekran.appendChild(kp); }
+    var DANI = ['nedjelja', 'ponedjeljak', 'utorak', 'srijeda', 'četvrtak', 'petak', 'subota'];
+    var sat = function() { var d = new Date(), p2 = function(n) { return (n < 10 ? '0' : '') + n; }; document.getElementById('tv-sat').textContent = p2(d.getHours()) + ':' + p2(d.getMinutes()); document.getElementById('tv-datum').textContent = DANI[d.getDay()] + ', ' + d.getDate() + '.' + (d.getMonth() + 1) + '.' + d.getFullYear() + '.'; };
+    sat(); setInterval(sat, 10000);
+    setTimeout(function() { try { pogodciProvjeriNove_(true); } catch (e) {} }, 1500);
+    tvOznaciOsvjezeno_();
+    setInterval(function() { AUTO_OSVJ_ZADNJE_ = 0; adminAutoOsvjezi_(); try { pogodciProvjeriNove_(true); } catch (e) {} }, 120000);
+  }
+  function tvOznaciOsvjezeno_() { var el = document.getElementById('tv-osvjezeno'); if (el) { var d = new Date(), p2 = function(n) { return (n < 10 ? '0' : '') + n; }; el.textContent = p2(d.getHours()) + ':' + p2(d.getMinutes()); } }
+  function tvBodovi_(res) {
+    var el = document.getElementById('tv-bs'); if (!el || !res || res.status !== 'ok') { return; }
+    var b = res.mjesecBodovi || 0, c = res.cilj || 0, pct = c ? Math.min(100, Math.round(b / c * 100)) : 0;
+    el.innerHTML = '<div class="tv-bs-n">🚢 ' + b + (c ? ' <small>/ ' + c + '</small>' : '') + '</div><div class="tv-bs-traka"><i style="width:' + pct + '%"></i></div><div class="tv-bs-l">Battleships bodovi ovaj mjesec' + (res.razina ? ' · ' + esc(res.razina) : '') + '</div>';
+  }
   // ===== v393: BRZI PRIKAZ IZ MEMORIJE — admin se odmah otvara sa zadnjim podacima iz ovog preglednika, svježi stižu u pozadini =====
   // Dok podaci nisu svježi, radnje koje nešto SPREMAJU/ŠALJU čekaju (ne izvršavaju se nad starim stanjem). Pamćenje se briše pri odjavi.
   var KES_PREFIX_ = 'intime_kes1:', KES_STALE_ = false, KES_PRIMJENA_IZ_KESA_ = false, KES_SVJEZE_RESOLVE_ = null, KES_SVJEZE_PROMISE_ = Promise.resolve();
@@ -3481,6 +3565,7 @@
   var CITANJA_SPOJI_ = /^(adminLogistickiCentriList|adminBrowseSustavFolder|admin[A-Za-z]*UvodniTekstoviList|adminMailPredlosciList|adminListOsnovnaDokumentacija|adminDohvatiKlijentPristupOpceDokumente|adminKalkulatorPracenjeSazetak|adminGetTestMail|adminPostavkeGet|adminIzvoriKontakta|adminOdgovoriPovijest|adminRevizijeKlijenti|brziBiljeskeLista|adminPonudeSlanjaList|adminPonudaOpcijeLista|adminPonudaNacrtiLista|adminLogKontaktiStanje|adminPismaPogodci|otvPonudeLista|adminListEntries|adminGetCounters)$/;
   var CITANJA_U_TIJEKU_ = {};
   function gasCall(payload, pokusaj) {
+    if (TV_MOD_ && payload && !TV_AKCIJE_KLIJENT_.test(String(payload.action || ''))) { return Promise.resolve({ status: 'tv', message: '' }); }   // v403: TV samo gleda
     // v393: dok je prikaz iz memorije, radnje koje mijenjaju podatke čekaju svježe podatke
     if (!pokusaj && KES_STALE_ && payload && !JE_CITANJE_RE_.test(String(payload.action || ''))) {
       return KES_SVJEZE_PROMISE_.then(function() { return gasCall(payload); });
@@ -4518,6 +4603,7 @@
   }
 
   function handleAuthError(res) {
+    if (TV_MOD_) { if (res && res.tv === true) { tvOdjava_(true); return true; } return false; }   // v403
     if (res && res.status === 'error' && /sesija|prijav/i.test(res.message || '')) {
       handleLogout();
       return true;
@@ -5618,6 +5704,7 @@
     if (ZAPISI_U_TIJEKU_ > 0) { OSVJEZI_NAKON_ZAPISA_ = true; return; }
     allEntries = res.entries || [];
     entriesUcitano_ = true; otvoreneTabOmoguci_();
+    if (TV_MOD_) { try { tvOznaciOsvjezeno_(); } catch (eTvO) {} }
     if (!KES_PRIMJENA_IZ_KESA_) { kesSvjeze_(); }   // v393
     setTimeout(function() { try { if (ponSlanja_) { brziOznakeNaKarticama_(); } else { ponSlanjaUcitaj_(); } } catch (eBz_) {} }, 600);   // v363: oznake brzog upitnika
     try { setTimeout(logKontaktAutoProvjeri_, 400); } catch (eLk) {}
@@ -13303,6 +13390,7 @@
       if (res && res.code === 'auth') { zavrsi({ ok: false }); return; }
       try { if (res && res.status === 'ok') { var kp_ = kesKlon_(res); delete kp_.dogadaji; kesSpremi_('pogodci', kp_); } } catch (eKp) {}   // v393
       pismaUcinkovitost_(res);
+      if (TV_MOD_) { try { tvBodovi_(res); } catch (eTvB) {} }
       var novih = 0;
       if (!(slojOtvoren || document.getElementById('pogodak-sloj') || document.getElementById('raskid-sloj'))) {
         novih = pogodciSlaviNove_(res) || 0;
@@ -30273,6 +30361,51 @@
       }).catch(function() { cb.disabled = false; problemKarticaPrikazi_(!zeli); status.textContent = 'Greška u komunikaciji s poslužiteljem.'; });
     });
   })();
+  // ===== v403: kartica „TV prijava” u Postavkama =====
+  function tvAdresa_() { return location.href.replace(/[?#].*$/, '').replace(/[^\/]*$/, '') + 'InTime_TV.html'; }
+  function tvKarticaOtvori_() {
+    var t = document.getElementById('tv-kartica-tijelo'), st = document.getElementById('tv-kartica-strelica'); if (!t) { return; }
+    t.hidden = !t.hidden; if (st) { st.textContent = t.hidden ? '▸' : '▾'; }
+    var a = document.getElementById('tv-adresa'); if (a) { a.textContent = tvAdresa_(); }
+    if (!t.hidden) { tvListaUcitaj_(); }
+  }
+  function tvKopirajAdresu_(b) { var u = tvAdresa_(); try { navigator.clipboard.writeText(u).then(function() { b.textContent = '✓ Kopirano'; }).catch(function() { prompt('Kopiraj adresu:', u); }); } catch (e) { prompt('Kopiraj adresu:', u); } }
+  function tvDatum_(ms) { if (!ms) { return '—'; } if (typeof ms === 'string') { return ms; } var d = new Date(ms), p2 = function(n) { return (n < 10 ? '0' : '') + n; }; return d.getDate() + '.' + (d.getMonth() + 1) + '.' + d.getFullYear() + '. ' + p2(d.getHours()) + ':' + p2(d.getMinutes()); }
+  function tvListaUcitaj_() {
+    var el = document.getElementById('tv-lista'); if (!el) { return; }
+    el.textContent = 'Učitavam…';
+    gasCall({ action: 'adminTvLista', token: adminToken }).then(function(res) {
+      if (handleAuthError(res)) { return; }
+      if (!res || res.status !== 'ok') { el.textContent = (res && res.message) || 'Greška (je li objavljen novi Code.gs?)'; return; }
+      var l = res.lista || [];
+      if (!l.length) { el.innerHTML = '<i>Nema prijavljenih TV uređaja.</i>'; return; }
+      el.innerHTML = l.map(function(x) {
+        return '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:#fff;border:1px solid #c7d2fe;border-radius:8px;padding:6px 8px;margin-bottom:5px;">' +
+          '<b>📺 ' + esc(x.naziv || 'TV') + '</b><span style="color:#475569;font-size:12.5px;">prijavljen ' + tvDatum_(x.kreirano) + ' · zadnje viđen ' + tvDatum_(x.zadnje) + ' · vrijedi do ' + tvDatum_(x.istek) + '</span>' +
+          '<button type="button" class="btn btn-outline btn-small" style="margin-left:auto;color:#b71c1c;border-color:#b71c1c;" onclick="tvOpozovi_(\'' + esc(x.id) + '\', this)">Opozovi</button></div>';
+      }).join('');
+    }).catch(function() { el.textContent = 'Greška u komunikaciji.'; });
+  }
+  function tvOpozovi_(id, b) {
+    if (!confirm('Opozvati ovaj TV? Odjavit će se najkasnije za 2 minute.')) { return; }
+    b.disabled = true;
+    gasCall({ action: 'adminTvOpozovi', token: adminToken, id: id }).then(function(res) {
+      if (handleAuthError(res)) { return; }
+      if (!res || res.status !== 'ok') { b.disabled = false; alert((res && res.message) || 'Greška.'); return; }
+      tvListaUcitaj_();
+    }).catch(function() { b.disabled = false; });
+  }
+  function tvOtvoriOvdje_(b) {
+    b.disabled = true; var t0 = b.textContent; b.textContent = 'Pripremam…';
+    gasCall({ action: 'adminTvNovi', token: adminToken, naziv: 'Ovo računalo' }).then(function(res) {
+      b.disabled = false; b.textContent = t0;
+      if (handleAuthError(res)) { return; }
+      if (!res || res.status !== 'ok' || !res.tvToken) { alert((res && res.message) || 'TV ključ nije napravljen (je li objavljen novi Code.gs?).'); return; }
+      try { localStorage.setItem('intime_tv_token', res.tvToken); } catch (e) {}
+      window.open('InTime_Admin.html?tv=1', '_blank');
+      tvListaUcitaj_();
+    }).catch(function() { b.disabled = false; b.textContent = t0; });
+  }
   function openSettingsModal() {
     try { var kc_ = document.getElementById('settings-kes'); if (kc_) { kc_.checked = kesUkljucen_(); } } catch (eKc) {}
     try { if (!OSTALO_STANJE_.gotovo) { loadOstalo_(); } } catch (eOs2_) {}   // v371: Postavke trebaju gorivo/imenik postavke
@@ -30444,6 +30577,7 @@
   var kpStari_ = function(e) { return !!fieldVal(e, 'Stari klijent - token upitnika (admin)'); };
 
   function osvjeziKomandnuPlocu_() {
+    if (TV_MOD_) { try { tvOznaciOsvjezeno_(); } catch (eTvK) {} }
     try {
       var sve = allEntries || [];
       var interes = sve.filter(function(e) { return e.status === 'Interes'; });
@@ -30606,6 +30740,7 @@
   // međuvremenu istekao, handleAuthError() će nas vratiti na login.
   if (adminToken) {
     showDashboard();
+    if (TV_MOD_) { try { tvPokreni_(); } catch (eTv) {} }
   }
 </script>
 

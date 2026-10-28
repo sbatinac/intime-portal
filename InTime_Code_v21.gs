@@ -8258,6 +8258,12 @@ function doPost(e) {
   ZAUSTAVLJENI_PRIVITCI_ = [];
   try {
     var data = JSON.parse(e.postData.contents);
+    // v403: TV ključ — samo za čitanja s popisa (sve ostalo ga ne prepoznaje)
+    TV_PRISTUP_TOKEN_ = null;
+    if (data && typeof data.token === 'string' && data.token.indexOf('TV-') === 0) {
+      if (TV_AKCIJE_RE_.test(String(data.action || '')) && tvTokenValjan_(data.token)) { TV_PRISTUP_TOKEN_ = data.token; }
+      else { return ContentService.createTextOutput(JSON.stringify({ status: 'error', message: 'TV prijava nije valjana (prijavi se ponovno na TV-u).', tv: true })).setMimeType(ContentService.MimeType.JSON); }
+    }
     // kućica „Pošalji kopiju na administratorski mail“ — vrijedi samo uz valjani admin token
     KOPIJA_ADMINU_ZAHTJEV_ = (data.kopijaAdminu === true) && isValidAdminToken_(data.token);
 
@@ -8819,6 +8825,14 @@ function doPost(e) {
       result = adminKampanjaNacrtUcitaj(data.token, data.id);
     } else if (data.action === 'adminKampanjaNacrtBrisi') {
       result = adminKampanjaNacrtBrisi(data.token, data.id);
+    } else if (data.action === 'tvProvjera') {
+      result = { status: 'ok' };
+    } else if (data.action === 'adminTvNovi') {
+      result = adminTvNovi(data.token, data.naziv);
+    } else if (data.action === 'adminTvLista') {
+      result = adminTvLista(data.token);
+    } else if (data.action === 'adminTvOpozovi') {
+      result = adminTvOpozovi(data.token, data.id);
     } else if (data.action === 'adminPodsjetniciEvidencija') {
       result = adminPodsjetniciEvidencija(data.token);
     } else if (data.action === 'adminPodsjetniciEvidencijaBrisi') {
@@ -10345,7 +10359,41 @@ function saveAdminSessions_(sessions) {
 
 // Ujedno čisti istekle tokene (usput, pri svakoj provjeri) da ADMIN_SESSIONS
 // ne raste neograničeno.
+// v403: TV PRIKAZ — TV ključ (samo čitanje) vrijedi samo za popis dopuštenih akcija; doPost ga postavi ovdje za trajanje jednog zahtjeva
+var TV_PRISTUP_TOKEN_ = null;
+var TV_AKCIJE_RE_ = /^(adminUcitajPocetno|adminListEntries|adminGetCounters|adminPismaBezOdgovora|adminPismaPogodci|tvProvjera)$/;
+var TV_TRAJANJE_MS_ = 90 * 24 * 3600 * 1000;
+function tvTokeni_() { try { return JSON.parse(PropertiesService.getScriptProperties().getProperty('TV_TOKENI') || '{}'); } catch (e) { return {}; } }
+function tvTokeniSpremi_(m) { PropertiesService.getScriptProperties().setProperty('TV_TOKENI', JSON.stringify(m)); }
+function tvTokenValjan_(t) {
+  if (!t || String(t).indexOf('TV-') !== 0) { return false; }
+  var m = tvTokeni_(), x = m[t];
+  if (!x || x.istek < Date.now()) { return false; }
+  if (!x.zadnje || Date.now() - x.zadnje > 10 * 60 * 1000) { x.zadnje = Date.now(); try { tvTokeniSpremi_(m); } catch (e) {} }
+  return true;
+}
+function adminTvNovi(token, naziv) {
+  if (!isValidAdminToken_(token) || TV_PRISTUP_TOKEN_) { return { status: 'error', message: 'Sesija je istekla — prijavite se ponovno.' }; }
+  var m = tvTokeni_(), sada = Date.now();
+  Object.keys(m).forEach(function(k) { if (m[k].istek < sada) { delete m[k]; } });
+  var t = 'TV-' + Utilities.getUuid().replace(/-/g, '') + Utilities.getUuid().replace(/-/g, '').slice(0, 8);
+  m[t] = { naziv: String(naziv || 'TV').slice(0, 60), kreirano: sada, istek: sada + TV_TRAJANJE_MS_, zadnje: 0 };
+  tvTokeniSpremi_(m);
+  return { status: 'ok', tvToken: t, istek: Utilities.formatDate(new Date(sada + TV_TRAJANJE_MS_), Session.getScriptTimeZone(), 'dd.MM.yyyy.') };
+}
+function adminTvLista(token) {
+  if (!isValidAdminToken_(token) || TV_PRISTUP_TOKEN_) { return { status: 'error', message: 'Sesija je istekla — prijavite se ponovno.' }; }
+  var m = tvTokeni_(), tz = Session.getScriptTimeZone(), f = function(ms) { return ms ? Utilities.formatDate(new Date(ms), tz, 'dd.MM.yyyy. HH:mm') : '—'; };
+  var lista = Object.keys(m).filter(function(k) { return m[k].istek > Date.now(); }).map(function(k) { return { id: k, naziv: m[k].naziv, kreirano: f(m[k].kreirano), istek: f(m[k].istek), zadnje: f(m[k].zadnje) }; });
+  return { status: 'ok', lista: lista };
+}
+function adminTvOpozovi(token, id) {
+  if (!isValidAdminToken_(token) || TV_PRISTUP_TOKEN_) { return { status: 'error', message: 'Sesija je istekla — prijavite se ponovno.' }; }
+  var m = tvTokeni_(); delete m[String(id || '')]; tvTokeniSpremi_(m);
+  return { status: 'ok' };
+}
 function isValidAdminToken_(token) {
+  if (TV_PRISTUP_TOKEN_ && token === TV_PRISTUP_TOKEN_) { return true; }   // v403: TV ključ samo za dopuštena čitanja
   if (!token) { return false; }
   var sessions = getAdminSessions_();
   var changed = false;

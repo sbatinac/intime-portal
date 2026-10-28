@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="hr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>In Time — TV prikaz</title>
+<style>
+  :root { color-scheme: dark; }
+  body { margin: 0; min-height: 100vh; display: flex; align-items: center; justify-content: center; background: radial-gradient(circle at 30% 20%, #10224a 0%, #050b1f 60%); color: #e8eefc; font-family: Inter, "Segoe UI", Arial, sans-serif; }
+  .kutija { width: min(440px, calc(100% - 32px)); background: rgba(10, 22, 52, .9); border: 1px solid rgba(90, 160, 255, .35); border-radius: 18px; padding: 28px 26px; box-shadow: 0 20px 60px rgba(0,0,0,.5); }
+  h1 { margin: 0 0 4px; font-size: 24px; letter-spacing: .08em; }
+  p { margin: 0 0 18px; color: #a9c0e8; font-size: 14px; line-height: 1.5; }
+  label { display: block; font-size: 12px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: #9bb4dd; margin: 12px 0 6px; }
+  input { width: 100%; box-sizing: border-box; padding: 12px 14px; border-radius: 10px; border: 1px solid rgba(120, 170, 255, .35); background: #071233; color: #fff; font: inherit; font-size: 16px; }
+  button { width: 100%; margin-top: 20px; padding: 14px; border: 0; border-radius: 12px; background: linear-gradient(90deg, #2563eb, #06b6d4); color: #fff; font: inherit; font-size: 16px; font-weight: 800; letter-spacing: .06em; cursor: pointer; }
+  button[disabled] { opacity: .6; cursor: wait; }
+  .greska { margin-top: 12px; color: #ff8a80; font-weight: 700; font-size: 14px; min-height: 1em; }
+  .mala { margin-top: 16px; font-size: 12px; color: #7f97c2; text-align: center; }
+</style>
+</head>
+<body>
+<div class="kutija" id="kutija">
+  <h1>📺 TV PRIKAZ</h1>
+  <p>Jednokratna prijava ovog uređaja. TV dobiva vlastiti ključ <b>samo za gledanje</b> (90 dana) — tvoja admin lozinka se ovdje ne pamti.</p>
+  <form id="forma">
+    <label for="u">Korisničko ime</label><input id="u" autocomplete="username">
+    <label for="p">Lozinka</label><input id="p" type="password" autocomplete="current-password">
+    <label for="n">Naziv uređaja</label><input id="n" value="TV ured" maxlength="60">
+    <button type="submit" id="b">PRIJAVI TV</button>
+    <div class="greska" id="g"></div>
+  </form>
+  <div class="mala">In Time d.o.o. · TV prikaz „Danas čeka tebe”</div>
+</div>
+<script>
+  var GAS = "https://script.google.com/macros/s/AKfycbz73zkx72GhrDZ-t3CamF5wuz-9V7Uxe5z9IkFxHA8F5FBlrIlc7zMUd4_EHTILD9FTAw/exec";
+  function poziv(p) { return fetch(GAS, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(p) }).then(function(r) { return r.json(); }); }
+  var tok = ''; try { tok = localStorage.getItem('intime_tv_token') || ''; } catch (e) {}
+  if (/[?&]odjava=1/.test(location.search)) { try { localStorage.removeItem('intime_tv_token'); } catch (e) {} tok = ''; }
+  if (tok) { location.replace('InTime_Admin.html?tv=1'); }
+  document.getElementById('forma').addEventListener('submit', function(ev) {
+    ev.preventDefault();
+    var b = document.getElementById('b'), g = document.getElementById('g');
+    var u = document.getElementById('u').value.trim(), p = document.getElementById('p').value, n = document.getElementById('n').value.trim() || 'TV';
+    if (!u || !p) { g.textContent = 'Upiši korisničko ime i lozinku.'; return; }
+    b.disabled = true; b.textContent = 'PRIJAVLJUJEM…'; g.textContent = '';
+    poziv({ action: 'adminLogin', username: u, password: p }).then(function(res) {
+      if (!res || res.status !== 'ok' || !res.token) { throw new Error((res && res.message) || 'Prijava nije uspjela.'); }
+      return poziv({ action: 'adminTvNovi', token: res.token, naziv: n });
+    }).then(function(r2) {
+      if (!r2 || r2.status !== 'ok' || !r2.tvToken) { throw new Error((r2 && r2.message) || 'TV ključ nije napravljen.'); }
+      try { localStorage.setItem('intime_tv_token', r2.tvToken); } catch (e) { throw new Error('Preglednik ne dopušta spremanje (privatni način?).'); }
+      document.getElementById('p').value = '';
+      location.replace('InTime_Admin.html?tv=1');
+    }).catch(function(e) { b.disabled = false; b.textContent = 'PRIJAVI TV'; g.textContent = e.message || 'Greška u komunikaciji s poslužiteljem.'; });
+  });
+</script>
+</body>
+</html>
