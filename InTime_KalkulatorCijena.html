@@ -5175,6 +5175,7 @@ function kalkPdfHtml_(){
     (podaci.length ? '<div style="font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:#4d148c;margin:6px 0 6px;">Podaci o pošiljci</div>' +
       '<table style="width:100%;border-collapse:collapse;font-size:12.5px;margin-bottom:14px;">' + podaci.map(function(r, i){ return '<tr style="background:' + (i % 2 ? '#fff' : '#f6f3fb') + ';"><td style="padding:5px 8px;color:#5b6664;width:45%;">' + kalkPdfEsc_(r[0]) + '</td><td style="padding:5px 8px;font-weight:700;">' + kalkPdfEsc_(r[1]) + '</td></tr>'; }).join('') + '</table>' : '') +
     '<div style="font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:#4d148c;margin:6px 0 6px;">Obračun</div>' +
+    ((typeof KALK_UREDI_ !== 'undefined' && KALK_UREDI_ && Object.keys(KALK_PROMJENE_).length) ? '<div style="margin:0 0 6px;padding:6px 10px;background:#fff3b0;border:1px solid #e0a400;border-radius:6px;font-size:11.5px;">✏️ Izračun s ručno promijenjenim cijenama u cjeniku (' + Object.keys(KALK_PROMJENE_).length + ').</div>' : '') +
     '<table class="kalk-pdf-obracun" style="width:100%;border-collapse:collapse;font-size:12.5px;">' + tablica + '</table>' +
     (upoz.trim() ? '<div style="margin-top:10px;padding:8px 10px;background:#fff6e5;border:1px solid #f0c36d;border-radius:6px;font-size:11.5px;">' + kalkPdfEsc_(upoz.trim()) + '</div>' : '') +
     '<div style="margin-top:22px;padding-top:10px;border-top:1px solid #e3e6e5;font-size:10.5px;color:#7a8583;line-height:1.5;">Informativni izračun prema cjeniku i uvjetima u kalkulatoru IN TIME d.o.o. na dan izrade. Konačna cijena utvrđuje se pri obračunu pošiljke.<br>IN TIME d.o.o. · in-time.hr</div>' +
@@ -5205,6 +5206,77 @@ function kalkIzracunPdf_(){
       if(w){ w.document.write('<!doctype html><html><head><meta charset="utf-8"><title>' + ime.replace('.pdf', '') + '</title></head><body style="margin:0;">' + kalkPdfHtml_() + '<script>setTimeout(function(){window.print();},300);<\/script></body></html>'); w.document.close(); gotovo('Otvoren ispis — odaberi „Spremi kao PDF”.'); }
       else { gotovo('Preglednik je blokirao novi prozor — dopusti skočne prozore pa klikni ponovno.'); }
     }catch(eW){ gotovo('PDF nije uspio — pokušaj ponovno.'); }
+  });
+}
+
+// ---------- v389: RUČNA PROMJENA CIJENA — samo u Kalkulacijama (?kalk_uredi=1), vrijedi samo za trenutni izračun ----------
+var KALK_UREDI_ = /[?&]kalk_uredi=1(&|$)/.test(location.search);
+var KALK_IZVORNI_ = null, KALK_PROMJENE_ = {}, KALK_UREDI_RENDER_ = false;
+function kalkKopija_(d){ try{ return JSON.parse(JSON.stringify(d || [])); }catch(e){ return []; } }
+function kalkBrojPromjena_(){ return Object.keys(KALK_PROMJENE_).length; }
+function kalkUrediTraka_(){
+  if(!KALK_UREDI_){ return; }
+  var tbody = document.getElementById('cjenikTableBody'); if(!tbody){ return; }
+  var scroll = tbody.closest('.cjenik-scroll') || tbody.closest('table');
+  var t = document.getElementById('kalkUrediTraka');
+  if(!t && scroll){
+    t = document.createElement('div'); t.id = 'kalkUrediTraka';
+    t.style.cssText = 'margin:6px 0 8px;padding:8px 10px;border:1px dashed #e0a400;background:#fffbea;border-radius:8px;font-size:12.5px;color:#5a4300;display:flex;gap:8px;align-items:center;flex-wrap:wrap;';
+    scroll.parentNode.insertBefore(t, scroll);
+  }
+  if(!t){ return; }
+  var n = kalkBrojPromjena_();
+  t.innerHTML = '<span>✏️ <b>Klikni na cijenu u tablici da je promijeniš</b> — vrijedi samo za ovaj izračun; pri sljedećem učitavanju sve je kao prije.</span>' +
+    (n ? '<span style="font-weight:800;color:#b45309;">Promijenjeno: ' + n + '</span><button type="button" id="kalkVratiIzvorne" style="background:#fff;border:1.5px solid #b45309;color:#b45309;border-radius:6px;padding:3px 10px;font:inherit;font-weight:700;cursor:pointer;">↺ Vrati izvorne cijene</button>' : '');
+  var vb = document.getElementById('kalkVratiIzvorne');
+  if(vb){ vb.addEventListener('click', function(){ if(!KALK_IZVORNI_){ return; } CURRENT_CJENIK = kalkKopija_(KALK_IZVORNI_); KALK_PROMJENE_ = {}; KALK_UREDI_RENDER_ = true; renderCjenikTable(CURRENT_CJENIK); KALK_UREDI_RENDER_ = false; try{ izracunaj(); }catch(e){} }); }
+}
+function kalkOznaciPromjene_(){
+  if(!KALK_UREDI_){ return; }
+  var tbody = document.getElementById('cjenikTableBody'); if(!tbody){ return; }
+  Array.prototype.forEach.call(tbody.querySelectorAll('td[data-zone]'), function(td){
+    var kg = td.parentNode.getAttribute('data-kg'), z = td.getAttribute('data-zone');
+    td.style.cursor = 'pointer'; td.title = 'Klik = promijeni cijenu (samo za ovaj izračun)';
+    var prom = KALK_PROMJENE_[kg + '|' + z];
+    td.style.background = prom ? '#fff3b0' : ''; td.style.fontWeight = prom ? '800' : '';
+    if(prom){ td.title = 'Ručno promijenjeno (izvorno ' + fmt(prom.izvorno) + ') — klik za novu promjenu'; }
+  });
+  kalkUrediTraka_();
+}
+if(KALK_UREDI_ && typeof renderCjenikTable === 'function'){
+  var kalkRenderIzvorni_ = renderCjenikTable;
+  renderCjenikTable = function(data){
+    if(!KALK_UREDI_RENDER_){ KALK_IZVORNI_ = kalkKopija_(data); KALK_PROMJENE_ = {}; }
+    kalkRenderIzvorni_(data);
+    kalkOznaciPromjene_();
+  };
+  KALK_IZVORNI_ = kalkKopija_(CURRENT_CJENIK);
+  setTimeout(kalkOznaciPromjene_, 0);
+  document.addEventListener('click', function(ev){
+    var td = ev.target && ev.target.closest ? ev.target.closest('#cjenikTableBody td[data-zone]') : null;
+    if(!td || td.querySelector('input')){ return; }
+    var kg = td.parentNode.getAttribute('data-kg'), z = td.getAttribute('data-zone');
+    var red = null; for(var i = 0; i < CURRENT_CJENIK.length; i++){ if(String(CURRENT_CJENIK[i].kg) === String(kg)){ red = CURRENT_CJENIK[i]; break; } }
+    if(!red){ return; }
+    var inp = document.createElement('input');
+    inp.type = 'text'; inp.inputMode = 'decimal'; inp.value = String(red[z]).replace('.', ',');
+    inp.style.cssText = 'width:80px;padding:2px 4px;font:inherit;border:2px solid #e0a400;border-radius:4px;';
+    td.innerHTML = ''; td.appendChild(inp); inp.focus(); inp.select();
+    var gotovo = false;
+    function spremi(prihvati){
+      if(gotovo){ return; } gotovo = true;
+      var v = parseFloat(String(inp.value).replace(/\s/g, '').replace(',', '.'));
+      if(prihvati && isFinite(v) && v >= 0 && v !== Number(red[z])){
+        var kljuc = kg + '|' + z, izv = null;
+        for(var j = 0; KALK_IZVORNI_ && j < KALK_IZVORNI_.length; j++){ if(String(KALK_IZVORNI_[j].kg) === String(kg)){ izv = KALK_IZVORNI_[j][z]; break; } }
+        red[z] = v;
+        if(izv !== null && Math.abs(Number(izv) - v) < 1e-9){ delete KALK_PROMJENE_[kljuc]; } else { KALK_PROMJENE_[kljuc] = { izvorno: izv }; }
+      }
+      KALK_UREDI_RENDER_ = true; renderCjenikTable(CURRENT_CJENIK); KALK_UREDI_RENDER_ = false;
+      try{ izracunaj(); }catch(e){}
+    }
+    inp.addEventListener('keydown', function(e){ if(e.key === 'Enter'){ e.preventDefault(); spremi(true); } else if(e.key === 'Escape'){ spremi(false); } });
+    inp.addEventListener('blur', function(){ spremi(true); });
   });
 }
 </script>

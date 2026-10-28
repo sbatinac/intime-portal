@@ -8012,6 +8012,7 @@
       slotWrap.className = 'kalk-usporedba-slot';
       var urlParams_ = [];
       if (adminToken) { urlParams_.push('kalk_admin=' + encodeURIComponent(adminToken)); }
+      urlParams_.push('kalk_uredi=1');   // v389: u Kalkulacijama se cijene u tablici smiju ručno mijenjati (samo za izračun)
       if (!jeGlavni) { urlParams_.push('kalk_uloga=pratilac'); }
       var urlZaIframe = 'InTime_KalkulatorCijena.html' + (urlParams_.length ? ('?' + urlParams_.join('&')) : '');
       var naslovHtml = jeGlavni

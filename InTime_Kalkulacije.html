@@ -338,7 +338,7 @@ document.getElementById('odjavaGumb').addEventListener('click', function() {
       var jeGlavni = (slotovi_.length === 0);
       var slotWrap = document.createElement('div');
       slotWrap.className = 'kalk-usporedba-slot';
-      var urlParams_ = ['kalk_kolega=' + encodeURIComponent(kolegaSesija_.token), 'kalk_slot=' + broj];
+      var urlParams_ = ['kalk_kolega=' + encodeURIComponent(kolegaSesija_.token), 'kalk_slot=' + broj, 'kalk_uredi=1'];   // v389: ručna promjena cijena (samo za izračun)
       if (!jeGlavni) { urlParams_.push('kalk_uloga=pratilac'); }
       var urlZaIframe = 'InTime_KalkulatorCijena.html' + (urlParams_.length ? ('?' + urlParams_.join('&')) : '');
       var naslovHtml = jeGlavni
