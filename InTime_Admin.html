@@ -12927,9 +12927,9 @@
   var POGODCI_RUCNA_ = false;
   // dok je admin otvoren (na bilo kojoj kartici ili u drugom prozoru preglednika) svake 3 min (v314; prije 60 s) provjerava ima li novog pogotka — čim se pojavi, upali se animacija
   // v385: koliko često se automatski provjerava Battleships — bira se na plutajućoj tipki 🚢 (vrijedi za ovo računalo)
-  var BS_INTERVALI_ = [[30000, '30 s'], [60000, '1 min'], [180000, '3 min (zadano)'], [300000, '5 min'], [600000, '10 min'], [900000, '15 min'], [1800000, '30 min'], [3600000, '1 h'], [10800000, '3 h'], [21600000, '6 h'], [43200000, '12 h'], [86400000, '1× dnevno']];
-  function bsIntervalMs_() { var v = 180000; try { v = parseInt(localStorage.getItem('intime_bs_interval_ms'), 10) || 180000; } catch (e) {} return BS_INTERVALI_.some(function(x) { return x[0] === v; }) ? v : 180000; }
-  function bsIntervalNaziv_(ms) { for (var i = 0; i < BS_INTERVALI_.length; i++) { if (BS_INTERVALI_[i][0] === ms) { return BS_INTERVALI_[i][1].replace(' (zadano)', ''); } } return '3 min'; }
+  var BS_INTERVALI_ = [[30000, '30 s'], [60000, '1 min'], [180000, '3 min'], [300000, '5 min'], [600000, '10 min'], [900000, '15 min (zadano)'], [1800000, '30 min'], [3600000, '1 h'], [10800000, '3 h'], [21600000, '6 h'], [43200000, '12 h'], [86400000, '1× dnevno']];
+  function bsIntervalMs_() { var v = 900000; try { v = parseInt(localStorage.getItem('intime_bs_interval_ms'), 10) || 900000; } catch (e) {} return BS_INTERVALI_.some(function(x) { return x[0] === v; }) ? v : 900000; }   // v386: zadano 15 min
+  function bsIntervalNaziv_(ms) { for (var i = 0; i < BS_INTERVALI_.length; i++) { if (BS_INTERVALI_[i][0] === ms) { return BS_INTERVALI_[i][1].replace(' (zadano)', ''); } } return '15 min'; }
   var BS_SLJEDECA_ = 0;
   function pogodciPokreniPracenje_() {
     if (pogodciPoll_) { return; }
