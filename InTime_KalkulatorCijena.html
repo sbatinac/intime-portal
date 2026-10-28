@@ -1471,6 +1471,10 @@
       <label for="pdvToggle">Prikaži cijenu s PDV-om (25%)</label>
     </div>
     <div id="warnBox"></div>
+    <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;">
+      <button type="button" class="btn-secondary" id="kalkPdfGumb" onclick="kalkIzracunPdf_()" title="Spremi ovaj izračun kao PDF (podaci o pošiljci + obračun)">📄 Spremi izračun u PDF</button>
+      <span id="kalkPdfStatus" class="note" style="align-self:center;margin:0;"></span>
+    </div>
   </div>
 
   </div>
@@ -4594,7 +4598,7 @@ function prijaviKlijenta_(username, lozinka, tiho){
     }
     korisnikUcitaoVlastitiCjenik_ = true;
     prijavljeniKorisnickoIme_ = username;
-    try{ intimeClarityOznaci(res.naziv, 'kalk:' + username, 'kalkulator klijenta'); }catch(eCl){}
+    try{ (window.KALK_PDF_NAZIV_ = res.naziv || window.KALK_PDF_NAZIV_ || ''), intimeClarityOznaci(res.naziv, 'kalk:' + username, 'kalkulator klijenta'); }catch(eCl){}
     prijavljenaLozinka_ = lozinka;
     if(Array.isArray(res.cjenik) && res.cjenik.length){
       CURRENT_CJENIK = res.cjenik.slice();
@@ -4999,7 +5003,7 @@ function ucitajTestniKalkulatorIzUrlaAkoPostoji_(){
       return;
     }
     testniKalkToken_ = tok;
-    try{ intimeClarityOznaci(res.naziv, res.broj, 'testni kalkulator'); }catch(eCl){}
+    try{ (window.KALK_PDF_NAZIV_ = res.naziv || window.KALK_PDF_NAZIV_ || ''), intimeClarityOznaci(res.naziv, res.broj, 'testni kalkulator'); }catch(eCl){}
     korisnikUcitaoVlastitiCjenik_ = true;
     if(Array.isArray(res.cjenik) && res.cjenik.length){
       CURRENT_CJENIK = res.cjenik.slice();
@@ -5081,6 +5085,7 @@ function ucitajJednokratniIzUrlaAkoPostoji_(){
   gorivoGasCall_({ action: 'jedPodaciKalkulatora', token: tok, slot: jedSlot_ }).then(function(res){
     if(!res || res.status !== 'ok'){ jedIskljuci_((res && res.message) ? res.message : 'Kalkulator nije dostupan.'); return; }
     jedToken_ = tok;
+    window.KALK_PDF_NAZIV_ = res.naziv || window.KALK_PDF_NAZIV_ || '';
     korisnikUcitaoVlastitiCjenik_ = true;
     if(Array.isArray(res.cjenik) && res.cjenik.length){
       CURRENT_CJENIK = res.cjenik.slice();
@@ -5118,6 +5123,7 @@ if(!ucitajTestniKalkulatorIzUrlaAkoPostoji_() && !ucitajJednokratniIzUrlaAkoPost
 
 // v242: Admin (tab „Cjenici“, isti origin, ugrađeno u iframe) učitava cjenik odabranog klijenta u ovaj kalkulator — isto kao kad se klijent prijavi.
 window.adminUcitajCjenikKlijenta = function(cjenik, postavke, naziv, nazivDatoteke){
+  window.KALK_PDF_NAZIV_ = naziv || '';
   if(!Array.isArray(cjenik) || !cjenik.length){ return false; }
   korisnikUcitaoVlastitiCjenik_ = true;
   CURRENT_CJENIK = cjenik.slice();
@@ -5128,6 +5134,79 @@ window.adminUcitajCjenikKlijenta = function(cjenik, postavke, naziv, nazivDatote
   if(st){ st.textContent = 'Učitan cjenik klijenta: ' + (naziv || '') + (nazivDatoteke ? ' (' + nazivDatoteke + ')' : '') + ' — ' + CURRENT_CJENIK.length + ' kategorija težine × 3 zone.'; }
   return true;
 };
+
+// ---------- v387: IZRAČUN U PDF (Sašin zahtjev 28.10.2026.) — podaci o pošiljci + cijeli obračun, preuzima se kao .pdf ----------
+function kalkPdfEsc_(t){ return String(t == null ? '' : t).replace(/[&<>"]/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
+function kalkPdfPodaci_(){
+  var red = [], card = document.getElementById('podaciOPosiljciCard');
+  if(!card){ return red; }
+  Array.prototype.forEach.call(card.querySelectorAll('.field'), function(f){
+    if(f.offsetParent === null){ return; }
+    var l = f.querySelector('label');
+    var el = Array.prototype.filter.call(f.querySelectorAll('input,select,textarea'), function(x){ return x.type !== 'hidden' && x.type !== 'file' && (x.offsetParent !== null || x.type === 'radio'); })[0];
+    if(!l || !el){ return; }
+    var v = '';
+    var rad = f.querySelector('input[type=radio]:checked');
+    if(rad){ var rl = rad.closest('label') || f.querySelector('label[for="' + rad.id + '"]'); v = rl ? String(rl.innerText || '').split('\n')[0].replace(/\(.*?\)/g, '').replace(/\s+/g, ' ').trim() : rad.value; }
+    else if(el.type === 'checkbox'){ v = el.checked ? 'Da' : 'Ne'; }
+    else if(el.tagName === 'SELECT'){ v = el.options[el.selectedIndex] ? el.options[el.selectedIndex].text : ''; }
+    else { v = el.value; }
+    if(el.type === 'date' && /^\d{4}-\d{2}-\d{2}$/.test(v)){ var d = v.split('-'); v = d[2] + '.' + d[1] + '.' + d[0] + '.'; }
+    v = String(v || '').trim(); if(!v){ return; }
+    var lt = String(l.innerText || l.textContent || '').replace(/\s+/g, ' ').replace(/\(.*?\)/g, '').trim();
+    var jed = ''; var nx = el.nextElementSibling; if(nx && /^(SPAN|DIV)$/.test(nx.tagName) && nx.innerText && nx.innerText.length < 6){ jed = ' ' + nx.innerText.trim(); }
+    red.push([lt, v + jed]);
+  });
+  return red;
+}
+function kalkPdfHtml_(){
+  var sada = new Date(), p2 = function(n){ return (n < 10 ? '0' : '') + n; };
+  var dat = p2(sada.getDate()) + '.' + p2(sada.getMonth() + 1) + '.' + sada.getFullYear() + '. ' + p2(sada.getHours()) + ':' + p2(sada.getMinutes());
+  var naziv = window.KALK_PDF_NAZIV_ || '';
+  var podaci = kalkPdfPodaci_();
+  var tablica = document.getElementById('breakdownTable').innerHTML;
+  var upoz = (document.getElementById('warnBox') || {}).innerText || '';
+  return '<div style="font-family:Arial,Helvetica,sans-serif;color:#1f2d2b;width:720px;padding:28px 34px;background:#fff;">' +
+    '<div style="display:flex;justify-content:space-between;align-items:flex-end;border-bottom:3px solid #4d148c;padding-bottom:10px;margin-bottom:14px;">' +
+      '<div><div style="font-size:22px;font-weight:800;color:#4d148c;letter-spacing:.02em;">IN TIME d.o.o.</div><div style="font-size:11px;color:#ff6200;font-weight:700;">Licensee of FedEx</div></div>' +
+      '<div style="text-align:right;font-size:11.5px;color:#5b6664;">Izračun izrađen: <b>' + dat + '</b></div></div>' +
+    '<div style="font-size:18px;font-weight:800;margin:0 0 4px;">Izračun cijene dostave</div>' +
+    (naziv ? '<div style="font-size:13px;margin:0 0 12px;color:#4d148c;font-weight:700;">' + kalkPdfEsc_(naziv) + '</div>' : '<div style="height:8px;"></div>') +
+    (podaci.length ? '<div style="font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:#4d148c;margin:6px 0 6px;">Podaci o pošiljci</div>' +
+      '<table style="width:100%;border-collapse:collapse;font-size:12.5px;margin-bottom:14px;">' + podaci.map(function(r, i){ return '<tr style="background:' + (i % 2 ? '#fff' : '#f6f3fb') + ';"><td style="padding:5px 8px;color:#5b6664;width:45%;">' + kalkPdfEsc_(r[0]) + '</td><td style="padding:5px 8px;font-weight:700;">' + kalkPdfEsc_(r[1]) + '</td></tr>'; }).join('') + '</table>' : '') +
+    '<div style="font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:#4d148c;margin:6px 0 6px;">Obračun</div>' +
+    '<table class="kalk-pdf-obracun" style="width:100%;border-collapse:collapse;font-size:12.5px;">' + tablica + '</table>' +
+    (upoz.trim() ? '<div style="margin-top:10px;padding:8px 10px;background:#fff6e5;border:1px solid #f0c36d;border-radius:6px;font-size:11.5px;">' + kalkPdfEsc_(upoz.trim()) + '</div>' : '') +
+    '<div style="margin-top:22px;padding-top:10px;border-top:1px solid #e3e6e5;font-size:10.5px;color:#7a8583;line-height:1.5;">Informativni izračun prema cjeniku i uvjetima u kalkulatoru IN TIME d.o.o. na dan izrade. Konačna cijena utvrđuje se pri obračunu pošiljke.<br>IN TIME d.o.o. · in-time.hr</div>' +
+    '<style>.kalk-pdf-obracun td{padding:6px 8px;border-bottom:1px solid #eceef0;}.kalk-pdf-obracun td:last-child{text-align:right;white-space:nowrap;}.kalk-pdf-obracun tr.sub td{font-size:11px;color:#6b7472;}.kalk-pdf-obracun tr.total-row td{font-weight:800;font-size:14px;background:#4d148c;color:#fff;border:0;}</style>' +
+    '</div>';
+}
+function kalkUcitajSkriptu_(src){
+  return new Promise(function(ok, ne){ var s = document.createElement('script'); s.src = src; s.onload = ok; s.onerror = ne; document.head.appendChild(s); });
+}
+function kalkIzracunPdf_(){
+  var st = document.getElementById('kalkPdfStatus'), g = document.getElementById('kalkPdfGumb');
+  try{ if(typeof izracunaj === 'function'){ izracunaj(); } }catch(eI){}
+  var tb = document.getElementById('breakdownTable');
+  if(!tb || !tb.innerHTML.trim()){ if(st){ st.textContent = 'Prvo upiši podatke i izračunaj cijenu.'; } return; }
+  var naziv = String(window.KALK_PDF_NAZIV_ || '').replace(/[^\wčćžšđČĆŽŠĐ \-]/g, '').trim().replace(/\s+/g, '_').slice(0, 40);
+  var sada = new Date(), p2 = function(n){ return (n < 10 ? '0' : '') + n; };
+  var ime = 'InTime_izracun_' + (naziv ? naziv + '_' : '') + sada.getFullYear() + p2(sada.getMonth() + 1) + p2(sada.getDate()) + '_' + p2(sada.getHours()) + p2(sada.getMinutes()) + '.pdf';
+  if(g){ g.disabled = true; } if(st){ st.textContent = 'Pripremam PDF…'; }
+  var gotovo = function(t){ if(g){ g.disabled = false; } if(st){ st.textContent = t || ''; } };
+  var pdfUcitan = window.html2pdf ? Promise.resolve() : kalkUcitajSkriptu_('https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js');
+  pdfUcitan.then(function(){
+    return window.html2pdf().set({ margin: [8, 8, 8, 8], filename: ime, image: { type: 'jpeg', quality: 0.96 }, html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff', scrollX: 0, scrollY: 0 }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } })
+      .from(kalkPdfHtml_(), 'string').save().then(function(){ gotovo('✓ PDF je preuzet: ' + ime); });
+  }).catch(function(){
+    // rezerva: prozor za ispis → „Spremi kao PDF”
+    try{
+      var w = window.open('', '_blank');
+      if(w){ w.document.write('<!doctype html><html><head><meta charset="utf-8"><title>' + ime.replace('.pdf', '') + '</title></head><body style="margin:0;">' + kalkPdfHtml_() + '<script>setTimeout(function(){window.print();},300);<\/script></body></html>'); w.document.close(); gotovo('Otvoren ispis — odaberi „Spremi kao PDF”.'); }
+      else { gotovo('Preglednik je blokirao novi prozor — dopusti skočne prozore pa klikni ponovno.'); }
+    }catch(eW){ gotovo('PDF nije uspio — pokušaj ponovno.'); }
+  });
+}
 </script>
 
 </body>
