@@ -220,6 +220,16 @@
   #otvBezKartica .ob-n{font-size:30px;font-weight:900;color:#d35400;line-height:1;}
   #otvBezKartica.nula .ob-n{color:var(--muted);}
   .ob-stavka .ob-kr{display:inline-block;font-size:12px;font-weight:700;padding:2px 8px;border-radius:999px;background:#ede7ff;color:#5b21b6;margin-left:6px;}
+  /* v405: cjenici */
+  .cj-tab{width:100%;border-collapse:collapse;font-size:13.5px;margin-top:8px;}
+  .cj-tab th,.cj-tab td{border:1px solid var(--line);padding:5px 6px;text-align:right;}
+  .cj-tab th{background:#eef6f5;color:var(--teal-dark);}
+  .cj-tab td:first-child,.cj-tab th:first-child{text-align:left;}
+  #cjKalkSloj{position:fixed;inset:0;z-index:9999;background:#fff;display:flex;flex-direction:column;}
+  #cjKalkSloj[hidden]{display:none !important;}
+  #cjKalkSloj .cjk-glava{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:calc(10px + env(safe-area-inset-top)) 12px 10px;background:var(--navy);color:#fff;}
+  #cjKalkSloj .cjk-glava b{font-size:15px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  #cjKalkFrame{flex:1;width:100%;border:0;}
 </style>
 </head>
 <body>
@@ -239,6 +249,13 @@
   </div>
 </section>
 
+<!-- v405: kalkulator s cjenikom klijenta (preko cijelog ekrana) -->
+<div id="cjKalkSloj" hidden>
+  <div class="cjk-glava"><b id="cjKalkNaslov">🧮 Kalkulator</b><button type="button" class="mali sivo" id="cjKalkZatvori">✕ Zatvori</button></div>
+  <div class="poruka" id="cjKalkStatus" style="margin:0;padding:6px 12px;"></div>
+  <iframe id="cjKalkFrame" title="Kalkulator"></iframe>
+</div>
+
 <!-- APLIKACIJA -->
 <div id="app" hidden>
   <div class="zaglavlje">
@@ -253,7 +270,8 @@
       <img class="banner" src="https://i.imgur.com/soFb4wc.png" alt="In Time">
       <div class="upozorenje" id="pinUpozorenje" hidden>Još koristiš <b>zadani PIN</b>. Promijeni ga u postavkama (⚙).</div>
       <button type="button" class="kartica" id="bsKartica" hidden style="width:100%;text-align:left;background:#f2faff;border:2px solid #2fb1ee;color:var(--ink);font-weight:400;"></button>
-      <button type="button" class="sec" style="width:100%;margin:0 0 12px;text-align:left;" id="gumbLogPodaci">📋 Osnovni logistički podaci klijenata</button>
+      <button type="button" class="sec" style="width:100%;margin:0 0 8px;text-align:left;" id="gumbLogPodaci">📋 Osnovni logistički podaci klijenata</button>
+      <button type="button" class="sec" style="width:100%;margin:0 0 12px;text-align:left;" id="gumbCjenici">💶 Cjenici klijenata i kalkulator</button>
       <div class="brojke" id="brojke"></div>
       <button type="button" class="kartica" id="otvBezKartica" hidden style="width:100%;text-align:left;font-weight:400;color:var(--ink);"></button>
       <h2>⏰ Podsjetnici za danas i zakašnjeli</h2>
@@ -332,6 +350,14 @@
       <div class="kartica" style="margin-top:10px;font-size:14px;color:var(--muted);">Klijent je prihvatio otvorenu ponudu, a upitnik s podacima još nije stigao. <b>⚡ Kratki upitnik</b> mu šalje kraći upitnik (samo osnovni podaci) i <b>gasi automatske podsjetnike</b> za dugi upitnik.</div>
       <div class="poruka" id="obSazetak"></div>
       <div id="obLista"></div>
+    </section>
+
+    <!-- v405: CJENICI KLIJENATA (samo gledanje) + kalkulator s cjenikom klijenta -->
+    <section class="ekran" id="ekran-cjenici">
+      <button type="button" class="mali sec" data-ekran-natrag="pocetna">← Natrag</button>
+      <input id="cjQ" type="search" placeholder="Traži klijenta, OIB, mjesto…" autocomplete="off" style="margin-top:10px;">
+      <div class="poruka" id="cjSazetak"></div>
+      <div id="cjLista"></div>
     </section>
 
     <!-- ANKETE KVALITETE -->
@@ -513,15 +539,16 @@
   }
 
   // ---------- NAVIGACIJA ----------
-  var NASLOVI = { otvbez:'Prihvaćene — čekaju podatke', problemi:'Problemi klijenata', problemnovi:'Novi problem', pocetna:'Početna', klijent:'Klijent', pismo:'Pismo namjere', imenik:'Imenik', trazi:'Traži', biljeske:'Podsjetnici', ankete:'Ankete kvalitete', odbijenice:'Nisu zainteresirani', lista:'Popis', logpod:'Logistički podaci', raskid:'Raskid suradnje', raskidposalji:'Raskid — pošalji mail' };
+  var NASLOVI = { cjenici:'Cjenici klijenata', otvbez:'Prihvaćene — čekaju podatke', problemi:'Problemi klijenata', problemnovi:'Novi problem', pocetna:'Početna', klijent:'Klijent', pismo:'Pismo namjere', imenik:'Imenik', trazi:'Traži', biljeske:'Podsjetnici', ankete:'Ankete kvalitete', odbijenice:'Nisu zainteresirani', lista:'Popis', logpod:'Logistički podaci', raskid:'Raskid suradnje', raskidposalji:'Raskid — pošalji mail' };
   function idiNa(ekran){
     Array.prototype.forEach.call(document.querySelectorAll('.ekran'), function(e){ e.classList.toggle('aktivan', e.id === 'ekran-' + ekran); });
-    var navEkran = (ekran === 'ankete' || ekran === 'odbijenice' || ekran === 'lista' || ekran === 'logpod' || ekran === 'raskid' || ekran === 'problemi' || ekran === 'problemnovi' || ekran === 'otvbez') ? 'pocetna' : ekran;
+    var navEkran = (ekran === 'ankete' || ekran === 'odbijenice' || ekran === 'lista' || ekran === 'logpod' || ekran === 'raskid' || ekran === 'problemi' || ekran === 'problemnovi' || ekran === 'otvbez' || ekran === 'cjenici') ? 'pocetna' : ekran;
     Array.prototype.forEach.call(document.querySelectorAll('nav button'), function(b){ b.classList.toggle('aktivan', b.getAttribute('data-ekran') === navEkran); });
     $('zagNaslov').textContent = NASLOVI[ekran] || '';
     window.scrollTo(0, 0);
     if (ekran === 'pocetna') { ucitajPregled(); ucitajBattleships(); ucitajOtvBez(); }
     if (ekran === 'otvbez') { ucitajOtvBez(true); }
+    if (ekran === 'cjenici') { ucitajCjenike(); }
     if (ekran === 'biljeske') { ucitajBiljeske(); }
     if (ekran === 'pismo') { ucitajPismoStanje(); }
     if (ekran === 'ankete') { ucitajAnkete(); }
@@ -906,6 +933,71 @@
       }
     }).catch(function(e){ b.disabled = false; if (e && e.message === 'auth') { return; } por.className = 'poruka err'; por.textContent = 'Nema veze s poslužiteljem.'; });
   });
+
+  // ---------- v405: CJENICI KLIJENATA + KALKULATOR (samo gledanje) ----------
+  var cjPodaci = null, cjOtvoren = {};
+  function ucitajCjenike(){
+    if (cjPodaci) { cjIscrtaj(); }
+    else { $('cjSazetak').textContent = 'Učitavam cjenike…'; $('cjLista').innerHTML = ''; }
+    api({ action:'brziCjeniciLista', token: token }).then(function(res){
+      if (!res || res.status !== 'ok') { $('cjSazetak').className = 'poruka err'; $('cjSazetak').textContent = (res && res.message) || 'Učitavanje nije uspjelo (je li objavljen novi Code.gs?).'; return; }
+      cjPodaci = (res.cjenici || []).sort(function(a, b){ return String(a.naziv).localeCompare(String(b.naziv), 'hr'); });
+      cjIscrtaj();
+    }).catch(function(e){ if (e && e.message === 'auth') { return; } $('cjSazetak').className = 'poruka err'; $('cjSazetak').textContent = 'Nema veze s poslužiteljem.'; });
+  }
+  function cjBroj(v){ return (Number(v) || 0).toFixed(2).replace('.', ','); }
+  function cjIscrtaj(){
+    var q = $('cjQ').value.trim().toLowerCase();
+    var l = (cjPodaci || []).map(function(c, i){ return { c: c, i: i }; }).filter(function(x){
+      if (!q) { return true; }
+      var c = x.c; return [c.naziv, c.oib, c.mjesto, c.adresa, c.kontakt, c.sifra].join(' ').toLowerCase().indexOf(q) !== -1;
+    });
+    $('cjSazetak').className = 'poruka';
+    $('cjSazetak').textContent = (cjPodaci || []).length ? (l.length + ' od ' + cjPodaci.length + ' klijenata s cjenikom') : 'Nijedan klijent još nema cjenik u kalkulatoru.';
+    $('cjLista').innerHTML = l.map(function(x){
+      var c = x.c, i = x.i, t = telLink(c.mobitel);
+      var h = '<div class="stavka"><div class="naslov">' + esc(c.naziv || '(bez naziva)') + (c.tip === 'Otvorena' ? '<span class="oznaka faza">otvorena ponuda</span>' : '') + '</div>' +
+        '<div class="pod">' + esc([c.oib ? 'OIB ' + c.oib : '', [c.postanskiBroj, c.mjesto].filter(Boolean).join(' ')].filter(Boolean).join(' · ')) + '</div>' +
+        '<div class="pod">Cjenik' + (c.datum ? ' od ' + esc(c.datum) : '') + (c.nazivDatoteke ? ' · ' + esc(c.nazivDatoteke) : '') + ' · ' + c.cjenik.length + ' težinskih razreda</div>' +
+        '<div class="akcije"><button type="button" class="mali" data-cjkalk="' + i + '">🧮 Kalkulator</button>' +
+        '<button type="button" class="mali sec" data-cjtab="' + i + '">📋 ' + (cjOtvoren[i] ? 'Sakrij cjenik' : 'Cjenik') + '</button>' +
+        '<button type="button" class="mali sec" data-cjlog="' + i + '">📦 Log. podaci</button>' +
+        (t ? '<a class="gumb sec" href="tel:' + esc(t) + '">📞</a>' : '') + (c.email ? '<a class="gumb sec" href="mailto:' + esc(c.email) + '">✉</a>' : '') + '</div>';
+      if (cjOtvoren[i]) {
+        h += '<table class="cj-tab"><tr><th>kg</th><th>Zona 1</th><th>Zona 2</th><th>Zona 3</th></tr>' +
+          c.cjenik.map(function(r){ return '<tr><td>' + esc(String(r.kg).replace('.', ',')) + '</td><td>' + cjBroj(r.z1) + '</td><td>' + cjBroj(r.z2) + '</td><td>' + cjBroj(r.z3) + '</td></tr>'; }).join('') +
+          '</table><div class="pod" style="margin-top:4px;">Cijene u € bez PDV-a, osnovni cjenik (bez goriva i dodataka).</div>';
+      }
+      return h + '</div>';
+    }).join('');
+  }
+  $('cjQ').addEventListener('input', cjIscrtaj);
+  $('gumbCjenici').addEventListener('click', function(){ idiNa('cjenici'); });
+  $('cjLista').addEventListener('click', function(ev){
+    var b = ev.target.closest('[data-cjkalk],[data-cjtab],[data-cjlog]'); if (!b) { return; }
+    if (b.hasAttribute('data-cjtab')) { var k = +b.getAttribute('data-cjtab'); cjOtvoren[k] = !cjOtvoren[k]; cjIscrtaj(); return; }
+    if (b.hasAttribute('data-cjlog')) { var c0 = cjPodaci[+b.getAttribute('data-cjlog')]; $('lpQ').value = c0.oib || c0.naziv || ''; idiNa('logpod'); return; }
+    cjOtvoriKalkulator(cjPodaci[+b.getAttribute('data-cjkalk')]);
+  });
+  function cjOtvoriKalkulator(c){
+    var sloj = $('cjKalkSloj'), fr = $('cjKalkFrame'), st = $('cjKalkStatus');
+    $('cjKalkNaslov').textContent = '🧮 ' + (c.naziv || 'Kalkulator');
+    st.className = 'poruka'; st.textContent = 'Učitavam kalkulator…';
+    sloj.hidden = false; document.body.style.overflow = 'hidden';
+    fr.src = 'InTime_KalkulatorCijena.html?kalk_admin=' + encodeURIComponent(token) + '&_=' + Date.now();
+    var pokusaja = 0;
+    (function cekaj(){
+      var w = null; try { w = fr.contentWindow; } catch (e) { w = null; }
+      if (w && typeof w.adminUcitajCjenikKlijenta === 'function' && w.document && w.document.readyState === 'complete') {
+        var ok = false; try { ok = w.adminUcitajCjenikKlijenta(c.cjenik, c.postavke || {}, c.naziv, c.nazivDatoteke); } catch (e2) { ok = false; }
+        st.className = 'poruka ' + (ok ? 'ok' : 'err'); st.textContent = ok ? '✓ Učitan cjenik klijenta — samo za izračun, ništa se ne sprema.' : 'Cjenik nije moguće učitati.';
+        return;
+      }
+      if (++pokusaja > 80) { st.className = 'poruka err'; st.textContent = 'Kalkulator se nije učitao — zatvori i pokušaj ponovno.'; return; }
+      setTimeout(cekaj, 250);
+    })();
+  }
+  $('cjKalkZatvori').addEventListener('click', function(){ $('cjKalkSloj').hidden = true; $('cjKalkFrame').src = 'about:blank'; document.body.style.overflow = ''; });
 
   // ---------- KLIJENT ----------
   $('gumbNoviKlijent').addEventListener('click', function(){

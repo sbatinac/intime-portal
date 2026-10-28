@@ -93,7 +93,11 @@
     margin-bottom:0;
   }
   @media (max-width:980px){
-    .layout-grid{ flex-direction:column; }
+    .layout-grid{ flex-direction:column; align-items:stretch; }   /* v405: na mobitelu stupci ne smiju biti širi od ekrana */
+    .col-left,.col-right{ flex-basis:auto; width:100%; max-width:100%; }
+    .card-header-row > *{ flex:1 1 100% !important; min-width:0; max-width:100%; }
+    .card input,.card select,.card textarea{ max-width:100%; box-sizing:border-box; }
+    .live-fee-value{ white-space:normal !important; min-width:0; }
   }
   .card{
     background:var(--panel);

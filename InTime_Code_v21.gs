@@ -6900,7 +6900,8 @@ function adminDohvatiKalkulatorKorisnike(token) {
 // jednostavno ostaje na već učitanom zadanom/admin-postavljenom cjeniku
 // (ucitajZadaniCjenikSaAdmina_), nikad na klijentovom personaliziranom.
 function kalkulatorAdminPrijava(token) {
-  if (!isValidAdminToken_(token)) { return { status: 'error', message: 'Admin sesija je istekla — otvorite ovaj kalkulator ponovno iz admina.' }; }
+  var brziOk_ = false; try { brziOk_ = isValidBrziToken_(token); } catch (eBz) { brziOk_ = false; }   // v405: mobilna (Cjenici → kalkulator)
+  if (!isValidAdminToken_(token) && !brziOk_) { return { status: 'error', message: 'Admin sesija je istekla — otvorite ovaj kalkulator ponovno iz admina.' }; }
   return { status: 'ok', naziv: 'Administrator (osnovni cjenik)' };
 }
 
@@ -8771,6 +8772,8 @@ function doPost(e) {
       result = adminBrziPromijeniPin(data.token, data.noviPin);
     } else if (data.action === 'brziPregled') {
       result = brziPregled(data.token);
+    } else if (data.action === 'brziCjeniciLista') {
+      result = brziCjeniciLista(data.token);
     } else if (data.action === 'brziOtvBezPodataka') {
       result = brziOtvBezPodataka(data.token);
     } else if (data.action === 'brziOtvKratkiUpitnik') {
@@ -26499,6 +26502,14 @@ function adminRevizijaTab(token, stavke, uTabu) {
 // pretraga po težini/zoni/iznosu i otvaranje u kalkulatoru rade se u pregledniku.
 function adminCjeniciLista(token) {
   if (!isValidAdminToken_(token)) { return { status: 'error', message: 'Sesija je istekla — prijavite se ponovno.' }; }
+  return cjeniciListaIzvrsi_();
+}
+// v405: mobilna aplikacija — isti popis cjenika (samo čitanje)
+function brziCjeniciLista(token) {
+  if (!isValidBrziToken_(token)) { return brziAuthGreska_(); }
+  return cjeniciListaIzvrsi_();
+}
+function cjeniciListaIzvrsi_() {
   var out = [];
   try {
     var sheet = getOrCreateUpitiSheet();
