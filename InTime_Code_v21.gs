@@ -8820,7 +8820,7 @@ function doPost(e) {
     } else if (data.action === 'adminKampanjaNacrtBrisi') {
       result = adminKampanjaNacrtBrisi(data.token, data.id);
     } else if (data.action === 'adminPismoNazvan') {
-      result = adminPismoNazvan(data.token, data.oib, data.nazvan, data.mobitel, data.naziv);
+      result = adminPismoNazvan(data.token, data.oib, data.nazvan, data.mobitel, data.naziv, data.ishod);
     } else if (data.action === 'adminPismaBezOdgovora') {
       result = adminPismaBezOdgovora(data.token);
     } else if (data.action === 'adminPismoPosalji') {
@@ -20563,31 +20563,43 @@ function adminPismoTest(token, testMail, predlozakId) {
 // v395: PISMA NAMJERE BEZ ODGOVORA — firme kojima je pismo poslano, a nisu se javile (nema pogotka u Battleships: pozitivan/negativan/direktni/brzi/klijent).
 // Jedan redak po OIB-u (zadnje poslano pismo). Filtriranje po broju dana od slanja radi admin.
 // v396: evidencija poziva firmama bez odgovora (kvačica „nazvao” + ručno upisan mobitel) — tablica InTime_Pisma_Pozivi, jedan redak po OIB-u
-var PISMA_POZIVI_SHEET_ = 'InTime_Pisma_Pozivi', PISMA_POZIVI_HEADER_ = ['OIB', 'Nazvan (datum)', 'Mobitel', 'Naziv firme', 'Zadnja promjena'];
+var PISMA_POZIVI_SHEET_ = 'InTime_Pisma_Pozivi', PISMA_POZIVI_HEADER_ = ['OIB', 'Nazvan (datum)', 'Mobitel', 'Naziv firme', 'Zadnja promjena', 'Ishod (ne/mozda/da)', 'Ishod (datum)'];
+function pismaPoziviSheet_() {   // v397: stupci Ishod (dodaju se i u već postojeću tablicu)
+  var sh = getOrCreateNacrtSheet_(PISMA_POZIVI_SHEET_, PISMA_POZIVI_HEADER_, [1, 3]);
+  try { if (String(sh.getRange(1, 6).getValue() || '') !== PISMA_POZIVI_HEADER_[5]) { sh.getRange(1, 6, 1, 2).setValues([[PISMA_POZIVI_HEADER_[5], PISMA_POZIVI_HEADER_[6]]]); sh.getRange(1, 6, 1, 2).setFontWeight('bold'); } } catch (e) {}
+  return sh;
+}
 function pismaPoziviMapa_() {
   var out = {};
   try {
-    var sh = getOrCreateNacrtSheet_(PISMA_POZIVI_SHEET_, PISMA_POZIVI_HEADER_, [1, 3]), l = sh.getLastRow();
-    if (l >= 2) { sh.getRange(2, 1, l - 1, 3).getValues().forEach(function(r) { var o = oibNorm_(r[0]); if (o) { out[o] = { nazvan: (r[1] instanceof Date) ? Utilities.formatDate(r[1], Session.getScriptTimeZone(), 'dd.MM.yyyy. HH:mm') : String(r[1] || ''), mobitel: String(r[2] || '') }; } }); }
+    var sh = pismaPoziviSheet_(), l = sh.getLastRow(), tz = Session.getScriptTimeZone();
+    var fmt = function(v) { return (v instanceof Date) ? Utilities.formatDate(v, tz, 'dd.MM.yyyy. HH:mm') : String(v || ''); };
+    if (l >= 2) { sh.getRange(2, 1, l - 1, 7).getValues().forEach(function(r) { var o = oibNorm_(r[0]); if (o) { out[o] = { nazvan: fmt(r[1]), mobitel: String(r[2] || ''), ishod: String(r[5] || ''), ishodDatum: fmt(r[6]) }; } }); }
   } catch (e) { /* bez evidencije poziva */ }
   return out;
 }
-function adminPismoNazvan(token, oib, nazvan, mobitel, naziv) {
+function adminPismoNazvan(token, oib, nazvan, mobitel, naziv, ishod) {
   if (!isValidAdminToken_(token)) { return pismaAuthGreska_(); }
   oib = oibNorm_(oib);
   if (oib.length !== 11) { return { status: 'error', message: 'Neispravan OIB.' }; }
   var lock = LockService.getScriptLock(); lock.waitLock(20000);
   try {
-    var sh = getOrCreateNacrtSheet_(PISMA_POZIVI_SHEET_, PISMA_POZIVI_HEADER_, [1, 3]);
+    var sh = pismaPoziviSheet_();
     var red = nacrtRedPoId_(sh, oib), sada = new Date();
-    var stari = red ? sh.getRange(red, 1, 1, 5).getValues()[0] : [oib, '', '', '', ''];
+    var stari = red ? sh.getRange(red, 1, 1, 7).getValues()[0] : [oib, '', '', '', '', '', ''];
+    if (ishod !== undefined && ishod !== null) {
+      ishod = String(ishod); if (['', 'ne', 'mozda', 'da'].indexOf(ishod) === -1) { return { status: 'error', message: 'Neispravan status.' }; }
+      stari[5] = ishod; stari[6] = ishod ? sada : '';
+      if (ishod && !stari[1]) { stari[1] = sada; }   // status znači da je firma nazvana
+    }
     if (nazvan !== undefined && nazvan !== null) { stari[1] = nazvan ? sada : ''; }
     if (mobitel !== undefined && mobitel !== null) { stari[2] = pismaMobitel_(mobitel); }
     if (naziv) { stari[3] = String(naziv).slice(0, 200); }
     stari[0] = oib; stari[4] = sada;
     if (!red) { red = sh.getLastRow() + 1; sh.getRange(red, 1, 1, 1).setNumberFormat('@'); sh.getRange(red, 3, 1, 1).setNumberFormat('@'); }
-    sh.getRange(red, 1, 1, 5).setValues([sheetSigRed_(stari)]);
-    return { status: 'ok', nazvan: (stari[1] instanceof Date) ? Utilities.formatDate(stari[1], Session.getScriptTimeZone(), 'dd.MM.yyyy. HH:mm') : '', mobitel: String(stari[2] || '') };
+    sh.getRange(red, 1, 1, 7).setValues([sheetSigRed_(stari)]);
+    var tz = Session.getScriptTimeZone(), f = function(v) { return (v instanceof Date) ? Utilities.formatDate(v, tz, 'dd.MM.yyyy. HH:mm') : String(v || ''); };
+    return { status: 'ok', nazvan: f(stari[1]), mobitel: String(stari[2] || ''), ishod: String(stari[5] || ''), ishodDatum: f(stari[6]) };
   } finally { lock.releaseLock(); }
 }
 function adminPismaBezOdgovora(token) {
@@ -20614,7 +20626,7 @@ function adminPismaBezOdgovora(token) {
       });
     }
     var pozivi = pismaPoziviMapa_();   // v396
-    var lista = Object.keys(poOib).map(function(k) { var x = poOib[k], pz = pozivi[k]; if (pz) { x.nazvan = pz.nazvan; if (pz.mobitel) { x.mobitel = pz.mobitel; } } return x; }).sort(function(a, b) { return a.ms - b.ms; });
+    var lista = Object.keys(poOib).map(function(k) { var x = poOib[k], pz = pozivi[k]; if (pz) { x.nazvan = pz.nazvan; x.ishod = pz.ishod; x.ishodDatum = pz.ishodDatum; if (pz.mobitel) { x.mobitel = pz.mobitel; } } return x; }).sort(function(a, b) { return a.ms - b.ms; });
     return { status: 'ok', lista: lista };
   } catch (err) { return { status: 'error', message: 'Popis nije uspio: ' + err.message }; }
 }

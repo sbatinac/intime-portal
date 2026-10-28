@@ -2400,6 +2400,14 @@
   .pb-zvao-dat{font-size:11px;color:#1e8449;font-weight:700;white-space:nowrap;}
   .pb-tablica tr.pb-nazvan td{background:#eef8f1 !important;color:#5b6664;}
   .pb-mob-unos{display:inline-flex;gap:4px;}
+  .pb-st{display:flex;gap:4px;}
+  .pb-st-b{width:30px;height:30px;border-radius:8px;border:2px solid #d5dde5;background:#fff;cursor:pointer;font-size:14px;opacity:.55;padding:0;}
+  .pb-st-b:hover{opacity:1;}
+  .pb-st-b.akt{opacity:1;border-color:#1f2d3d;box-shadow:0 0 0 2px rgba(0,0,0,.08);transform:scale(1.08);}
+  .pb-st-opis{font-size:11px;font-weight:700;margin-top:3px;color:#5b6664;white-space:nowrap;}
+  .pb-tablica tr.pb-is-ne td{background:#fdecea !important;}
+  .pb-tablica tr.pb-is-mozda td{background:#fff8e1 !important;}
+  .pb-tablica tr.pb-is-da td{background:#e6f6ec !important;}
   .pb-mob-inp{width:120px;padding:4px 6px;border:1px solid #c9d6e4;border-radius:6px;font:inherit;font-size:12.5px;}
   .pb-mob-spremi,.pb-mob-uredi{border:1px solid #c9d6e4;background:#f4f8fc;border-radius:6px;padding:2px 6px;cursor:pointer;font-size:12px;}
   .kp-d.plpb:not(.nula){border-color:#3a8fd6 !important;box-shadow:0 0 14px rgba(58,143,214,.35) !important;}
@@ -6031,7 +6039,9 @@
   var PB_LISTA_ = null, PB_UCITAVA_ = false;
   function pbDani_() { var v = 7; try { v = parseInt(localStorage.getItem('intime_pb_dani'), 10); } catch (e) {} return isFinite(v) && v >= 0 ? v : 7; }
   function pbPrikaziNazvane_() { try { return localStorage.getItem('intime_pb_nazvani') === '1'; } catch (e) { return false; } }
-  function pbFiltrirano_(sNazvanima) { var d = pbDani_(), gr = Date.now() - d * 86400000; return (PB_LISTA_ || []).filter(function(x) { return x.ms <= gr && (sNazvanima || !x.nazvan); }); }   // v396: nazvani se ne broje
+  function pbPrikaziArhivu_() { try { return localStorage.getItem('intime_pb_arhiva') === '1'; } catch (e) { return false; } }
+  // v396/v397: nazvani se ne broje; „nisu zainteresirani” (ishod ne) su arhivirani — u popisu samo uz „prikaži i arhivirane”
+  function pbFiltrirano_(sNazvanima) { var d = pbDani_(), gr = Date.now() - d * 86400000; return (PB_LISTA_ || []).filter(function(x) { if (x.ms > gr) { return false; } if (!sNazvanima) { return !x.nazvan && !x.ishod; } return x.ishod !== 'ne' || pbPrikaziArhivu_(); }); }
   function pbUcitaj_(cb) {
     if (PB_UCITAVA_) { return; }
     if (!PB_LISTA_) { var k = kesCitaj_('pismaBez'); if (k && Array.isArray(k.d)) { PB_LISTA_ = k.d; } }
@@ -6045,15 +6055,21 @@
       if (cb) { cb(); }
     }).catch(function() { PB_UCITAVA_ = false; });
   }
+  function pbStatusHtml_(x) {
+    var b = function(k, ikona, tekst) { return '<button type="button" class="pb-st-b pb-st-' + k + (x.ishod === k ? ' akt' : '') + '" data-is="' + k + '" title="' + tekst + (x.ishod === k ? ' (klik = poništi)' : '') + '">' + ikona + '</button>'; };
+    var opis = { ne: 'nisu zainteresirani · arhivirano', mozda: 'možda', da: 'zainteresirani' }[x.ishod || ''] || '';
+    return '<div class="pb-st">' + b('ne', '🔴', 'Nisu zainteresirani — arhiviraj') + b('mozda', '🟡', 'Možda — javiti se ponovno') + b('da', '🟢', 'Zainteresirani') + '</div>' + (opis ? '<div class="pb-st-opis">' + opis + (x.ishodDatum ? ' · ' + esc(x.ishodDatum) : '') + '</div>' : '');
+  }
   function pbIscrtaj_(container) {
     var d = pbDani_(), lista = pbFiltrirano_(pbPrikaziNazvane_()), nNeNaz = pbFiltrirano_(false).length;
     var glava = document.createElement('div'); glava.className = 'ix-prikaz-glava'; glava.style.background = 'linear-gradient(90deg,#0f3d5e,#14578f 60%,#3a8fd6)';
     var opcije = [0, 1, 2, 3, 5, 7, 10, 14, 21, 30, 60].map(function(n) { return '<option value="' + n + '"' + (n === d ? ' selected' : '') + '>' + (n === 0 ? 'sva pisma' : 'najmanje ' + n + (n === 1 ? ' dan' : ' dana') + ' od slanja') + '</option>'; }).join('');
     glava.innerHTML = '<span><b>📞 NAZVATI</b> — pisma namjere bez odgovora: <b>' + nNeNaz + '</b> još za nazvati</span>' +
-      '<span style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;"><label style="font-size:12.5px;font-weight:700;cursor:pointer;"><input type="checkbox" class="pb-nazvani"' + (pbPrikaziNazvane_() ? ' checked' : '') + '> prikaži i nazvane</label><select class="pb-dani" style="padding:5px 8px;border-radius:8px;border:0;font:inherit;font-weight:700;">' + opcije + '</select>' +
+      '<span style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;"><label style="font-size:12.5px;font-weight:700;cursor:pointer;"><input type="checkbox" class="pb-nazvani"' + (pbPrikaziNazvane_() ? ' checked' : '') + '> prikaži i nazvane</label><label style="font-size:12.5px;font-weight:700;cursor:pointer;"><input type="checkbox" class="pb-arhiva"' + (pbPrikaziArhivu_() ? ' checked' : '') + '> i arhivirane</label><select class="pb-dani" style="padding:5px 8px;border-radius:8px;border:0;font:inherit;font-weight:700;">' + opcije + '</select>' +
       '<button type="button" class="ix-prikaz-x pb-osvjezi">⟳ Osvježi</button><button type="button" class="ix-prikaz-x pb-x">✕ Zatvori</button></span>';
     container.appendChild(glava);
     glava.querySelector('.pb-dani').addEventListener('change', function() { try { localStorage.setItem('intime_pb_dani', this.value); } catch (e) {} renderEntries(); try { osvjeziKomandnuPlocu_(); } catch (e2) {} });
+    glava.querySelector('.pb-arhiva').addEventListener('change', function() { try { localStorage.setItem('intime_pb_arhiva', this.checked ? '1' : '0'); if (this.checked) { localStorage.setItem('intime_pb_nazvani', '1'); } } catch (e) {} renderEntries(); });
     glava.querySelector('.pb-nazvani').addEventListener('change', function() { try { localStorage.setItem('intime_pb_nazvani', this.checked ? '1' : '0'); } catch (e) {} renderEntries(); });
     glava.querySelector('.pb-osvjezi').addEventListener('click', function() { this.disabled = true; this.textContent = 'Osvježavam…'; pbUcitaj_(); });
     glava.querySelector('.pb-x').addEventListener('click', function() { switchTab('Pisma'); });
@@ -6061,11 +6077,11 @@
     if (!lista.length) { var pr = document.createElement('div'); pr.className = 'empty-hint'; pr.textContent = 'Nema pisama bez odgovora za odabrano razdoblje.'; container.appendChild(pr); return; }
     var sada = Date.now();
     var t = document.createElement('div');
-    t.innerHTML = '<div style="overflow-x:auto;"><table class="pb-tablica"><thead><tr><th>#</th><th>📞 Nazvao</th><th>Firma</th><th>📱 Mobitel</th><th>Kontakt osoba</th><th>Poslano</th><th>Prošlo</th><th>E-mail</th><th>Grad</th><th>Kampanja</th></tr></thead><tbody>' +
+    t.innerHTML = '<div style="overflow-x:auto;"><table class="pb-tablica"><thead><tr><th>#</th><th>📞 Nazvao</th><th>Status</th><th>Firma</th><th>📱 Mobitel</th><th>Kontakt osoba</th><th>Poslano</th><th>Prošlo</th><th>E-mail</th><th>Grad</th><th>Kampanja</th></tr></thead><tbody>' +
       lista.map(function(x, i) {
         var dana = Math.floor((sada - x.ms) / 86400000);
         var tel = x.mobitel ? '<a href="tel:' + esc(x.mobitel) + '" class="pb-tel">' + esc(x.mobitel) + '</a> <button type="button" class="pb-mob-uredi" title="Promijeni broj">✎</button>' : '<span class="pb-mob-unos"><input type="tel" class="pb-mob-inp" placeholder="upiši broj"><button type="button" class="pb-mob-spremi">💾</button></span>';
-        return '<tr data-oib="' + esc(x.oib) + '"' + (x.nazvan ? ' class="pb-nazvan"' : '') + '><td>' + (i + 1) + '</td><td><label class="pb-zvao"><input type="checkbox" class="pb-zvao-cb"' + (x.nazvan ? ' checked' : '') + '><span class="pb-zvao-dat">' + (x.nazvan ? esc(x.nazvan) : '') + '</span></label></td><td><b>' + esc(x.naziv) + '</b><div style="font-size:11px;color:#6b7472;">OIB ' + esc(x.oib) + (x.pisama > 1 ? ' · pisama: ' + x.pisama : '') + '</div></td><td>' + tel + '</td><td>' + esc(x.osoba || '') + '</td><td style="white-space:nowrap;">' + esc(x.datum) + '</td><td style="white-space:nowrap;font-weight:800;color:' + (dana >= 14 ? '#c0392b' : (dana >= 7 ? '#b45309' : '#1f2d3d')) + ';">' + dana + ' d</td><td style="font-size:12px;">' + esc(x.email) + '</td><td>' + esc(x.grad || '') + '</td><td style="font-size:12px;">' + esc(x.kampanja || '') + (x.izvor ? '<div style="color:#6b7472;">📍 ' + esc(x.izvor) + '</div>' : '') + '</td></tr>';
+        return '<tr data-oib="' + esc(x.oib) + '" class="' + (x.nazvan ? 'pb-nazvan' : '') + (x.ishod ? ' pb-is-' + x.ishod : '') + '"><td>' + (i + 1) + '</td><td><label class="pb-zvao"><input type="checkbox" class="pb-zvao-cb"' + (x.nazvan ? ' checked' : '') + '><span class="pb-zvao-dat">' + (x.nazvan ? esc(x.nazvan) : '') + '</span></label></td><td>' + pbStatusHtml_(x) + '</td><td><b>' + esc(x.naziv) + '</b><div style="font-size:11px;color:#6b7472;">OIB ' + esc(x.oib) + (x.pisama > 1 ? ' · pisama: ' + x.pisama : '') + '</div></td><td>' + tel + '</td><td>' + esc(x.osoba || '') + '</td><td style="white-space:nowrap;">' + esc(x.datum) + '</td><td style="white-space:nowrap;font-weight:800;color:' + (dana >= 14 ? '#c0392b' : (dana >= 7 ? '#b45309' : '#1f2d3d')) + ';">' + dana + ' d</td><td style="font-size:12px;">' + esc(x.email) + '</td><td>' + esc(x.grad || '') + '</td><td style="font-size:12px;">' + esc(x.kampanja || '') + (x.izvor ? '<div style="color:#6b7472;">📍 ' + esc(x.izvor) + '</div>' : '') + '</td></tr>';
       }).join('') + '</tbody></table></div>';
     container.appendChild(t);
     // v396: kvačica „nazvao” (bilježi datum i vrijeme) i ručni unos mobitela
@@ -6075,7 +6091,7 @@
       gasCall(Object.assign({ action: 'adminPismoNazvan', token: adminToken, oib: oib, naziv: x.naziv }, podaci)).then(function(res) {
         if (handleAuthError(res)) { return; }
         if (!res || res.status !== 'ok') { alert((res && res.message) || 'Spremanje nije uspjelo.'); gotovo(false); return; }
-        x.nazvan = res.nazvan || ''; x.mobitel = res.mobitel || x.mobitel; kesSpremi_('pismaBez', PB_LISTA_); gotovo(true); try { osvjeziKomandnuPlocu_(); } catch (e) {}
+        x.nazvan = res.nazvan || ''; x.mobitel = res.mobitel || x.mobitel; if (res.ishod !== undefined) { x.ishod = res.ishod; x.ishodDatum = res.ishodDatum; } kesSpremi_('pismaBez', PB_LISTA_); gotovo(true); try { osvjeziKomandnuPlocu_(); } catch (e) {}
       }).catch(function() { alert('Nema veze s poslužiteljem — pokušaj ponovno.'); gotovo(false); });
     };
     Array.prototype.forEach.call(t.querySelectorAll('tr[data-oib]'), function(tr) {
@@ -6085,7 +6101,18 @@
         var uklj = cb.checked; cb.disabled = true;
         spremi(oib, { nazvan: uklj }, function(ok) { cb.disabled = false; if (!ok) { cb.checked = !uklj; return; } var x = nadji(oib); tr.classList.toggle('pb-nazvan', !!x.nazvan); tr.querySelector('.pb-zvao-dat').textContent = x.nazvan || ''; });
       });
-      var celija = tr.cells[3];
+      var celija = tr.cells[4];
+      Array.prototype.forEach.call(tr.querySelectorAll('.pb-st-b'), function(b) {
+        b.addEventListener('click', function() {
+          var x = nadji(oib), novi = b.getAttribute('data-is'); if (x.ishod === novi) { novi = ''; }
+          if (novi === 'ne' && !confirm('Označiti „' + x.naziv + '” kao NISU ZAINTERESIRANI i arhivirati? Nestaje iz popisa za nazvati (vidi se uz „i arhivirane”).')) { return; }
+          Array.prototype.forEach.call(tr.querySelectorAll('.pb-st-b'), function(z) { z.disabled = true; });
+          spremi(oib, { ishod: novi }, function(ok) {
+            Array.prototype.forEach.call(tr.querySelectorAll('.pb-st-b'), function(z) { z.disabled = false; });
+            if (ok) { setTimeout(function() { renderEntries(); }, 200); }
+          });
+        });
+      });
       var unos = function() {
         var x = nadji(oib);
         celija.innerHTML = '<span class="pb-mob-unos"><input type="tel" class="pb-mob-inp" value="' + esc(x.mobitel || '') + '" placeholder="upiši broj"><button type="button" class="pb-mob-spremi">💾</button></span>';
