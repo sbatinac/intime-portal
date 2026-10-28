@@ -4283,7 +4283,7 @@
         '<button type="button" class="btn btn-outline btn-small kalk-cjenik-arhiva-vrati-btn">Vrati kao aktivno</button>' +
         '<button type="button" class="btn btn-danger btn-small kalk-cjenik-arhiva-obrisi-btn">🗑 Obriši</button>';
       row.querySelector('.kalk-cjenik-arhiva-vrati-btn').addEventListener('click', function() {
-        vratiKalkulatorCjenikArhivu_(entry.fileId, entry.naziv);
+        openAdminPasswordConfirmModal('Vraćanje starijeg osnovnog cjenika', 'Vraćate „' + entry.naziv + '” kao cjenik po kojem kalkulator na naslovnici radi SVIM posjetiteljima. Za potvrdu unesite admin lozinku.', function() { vratiKalkulatorCjenikArhivu_(entry.fileId, entry.naziv); });   // v390: i vraćanje traži lozinku
       });
       row.querySelector('.kalk-cjenik-arhiva-obrisi-btn').addEventListener('click', function() {
         obrisiKalkulatorCjenikArhivu_(entry.fileId, entry.naziv);
