@@ -2543,6 +2543,14 @@
   #tv-ekran .kp-d.nula{opacity:.45;}
   #tv-ekran .kp-danas-ok{font-size:2.8vh;margin-top:1.2vh;color:#7ee2a8 !important;text-align:center;}
   #tv-ekran .kp-pe-gumb{display:none !important;}
+  /* v431: TV kazalo brojača */
+  #tv-ekran .tv-odj-kaz{display:flex;align-items:center;gap:1.4vw;flex-wrap:nowrap;}
+  #tv-ekran .tv-kaz{display:flex;align-items:center;gap:1.1vw;letter-spacing:0;text-transform:none;font-weight:600;color:#cfdcf0;font-size:1.5vh;margin-left:auto;}
+  #tv-ekran .tv-kaz i{font-style:normal;display:inline-flex;align-items:center;gap:.35vw;white-space:nowrap;}
+  #tv-ekran .tv-kaz .kz{font-size:1.4vh;font-weight:900;border-radius:.9vh;padding:0 .5vw;line-height:2.1vh;}
+  #tv-ekran .tv-kaz .kz-v{font-size:1.6vh;font-weight:900;background:rgba(255,255,255,.22);border-radius:.9vh;padding:0 .55vw;color:#fff;line-height:2.2vh;}
+  #tv-ekran .tv-kaz .kz-p{background:#2ecc71;color:#06371a;} #tv-ekran .tv-kaz .kz-o{background:#e5383b;color:#fff;}
+  #tv-ekran .tv-kaz .kz-i{background:#7b2ff7;color:#fff;} #tv-ekran .tv-kaz .kz-ob{background:#e8459a;color:#fff;} #tv-ekran .tv-kaz .kz-u{background:rgba(0,0,0,.4);color:#fff;}
   /* v425: vrijeme vani */
   #tv-ekran .tv-naslov{white-space:nowrap;font-size:4vh !important;}
   #tv-ekran .tv-glava{gap:1.4vw !important;align-items:center !important;}
@@ -3621,7 +3629,10 @@
     // v424: ispod pločica — traka statistike i traka brojača (prepisuje se iz admina svake 2 s)
     var od2 = document.createElement('div'); od2.className = 'tv-odjeljak'; od2.textContent = '📊 Statistika'; ekran.appendChild(od2);
     var trS = document.createElement('div'); trS.id = 'tv-stat'; trS.className = 'tv-traka'; ekran.appendChild(trS);
-    var od3 = document.createElement('div'); od3.className = 'tv-odjeljak'; od3.textContent = '🗂 Ponude i komunikacija'; ekran.appendChild(od3);
+    var od3 = document.createElement('div'); od3.className = 'tv-odjeljak tv-odj-kaz';
+    od3.innerHTML = '<span>🗂 Ponude i komunikacija</span><span class="tv-kaz">' +   // v431: kazalo brojača i na TV-u
+      '<i><b class="kz-v">5</b>čeka odgovor</i><i><b class="kz kz-p">✓</b>prihvaćene</i><i><b class="kz kz-o">✗</b>odbijene</i><i><b class="kz kz-i">INTRIX</b>čeka odobrenje</i><i><b class="kz kz-ob">⭐</b>čeka OB ulaz</i><i><b class="kz kz-u">Σ</b>ukupno</i></span>';
+    ekran.appendChild(od3);
     var trB = document.createElement('div'); trB.id = 'tv-broj'; trB.className = 'tv-traka'; ekran.appendChild(trB);
     tvSazetak_(); setInterval(tvSazetak_, 2000);
     tvVrijemeUcitaj_(); setInterval(tvVrijemeUcitaj_, 15 * 60000);   // v425: vrijeme vani (Open-Meteo) svakih 15 min
