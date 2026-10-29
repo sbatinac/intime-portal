@@ -691,7 +691,20 @@
   .entry-card.ob-ceka:not(.intrix) > .entry-card-head{background:linear-gradient(90deg,#ffd3ea 0%,#fff0f7 45%,#ffffff 100%) !important;box-shadow:inset 8px 0 0 #e8459a !important;}
   .entry-card.ob-ceka:not(.intrix) > .entry-card-head:hover{background:linear-gradient(90deg,#ffbadd 0%,#ffe3f1 45%,#fff9fc 100%) !important;}
   /* v418: čeka OB ulaz */
-  .ob-ceka-cip{display:inline-flex;align-items:center;margin-left:8px;padding:2px 10px;border-radius:999px;background:#fff6cc;border:1.5px solid #e0b400;color:#7a5c00;font-size:11.5px;font-weight:900;white-space:nowrap;vertical-align:middle;}
+  .ob-ceka-cip{display:inline-flex;align-items:center;margin-left:8px;padding:2px 10px;border-radius:999px;background:#ffe0f0;border:1.5px solid #e8459a;color:#9d1a5c;font-size:11.5px;font-weight:900;white-space:nowrap;vertical-align:middle;}
+  /* v422: kazalo brojača */
+  .bs-kazalo{display:flex;flex-wrap:wrap;align-items:center;gap:6px 14px;margin:10px 4px 0;padding:8px 12px;border-radius:10px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);font-size:12px;color:#cfdcf0;}
+  .bs-kazalo .bs-kaz-n{font-weight:800;color:#fff;}
+  .bs-kazalo span{display:inline-flex;align-items:center;gap:5px;}
+  .bs-kazalo .bs-kaz{font-size:10.5px;font-weight:800;border-radius:8px;padding:0 6px;line-height:16px;}
+  .bs-kazalo .bs-kaz-v{font-size:13px;font-weight:800;background:rgba(255,255,255,.22);border-radius:8px;padding:0 7px;color:#fff;}
+  .bs-kazalo .bs-kaz-p{background:#2ecc71;color:#06371a;}
+  .bs-kazalo .bs-kaz-o{background:#e5383b;color:#fff;}
+  .bs-kazalo .bs-kaz-i{background:#7b2ff7;color:#fff;}
+  .bs-kazalo .bs-kaz-ob{background:#e8459a;color:#fff;}
+  .bs-kazalo .bs-kaz-u{background:rgba(0,0,0,.35);color:#fff;}
+  .bs-kazalo .bs-kaz-sit{color:#9fb3d3;font-style:italic;}
+  html.tv-mod .bs-kazalo{display:none;}
   /* v414 */
   .uspj-kl{margin:10px 0 6px;padding:10px 12px;border-radius:10px;background:#eef9f1;border:1.5px solid #1e8449;}
   .uspj-kl-n{font-size:14.5px;color:#14532d;}
@@ -703,7 +716,7 @@
   .intrix-prek.on{background:#0b1f3a;border-color:#2196f3;color:#4fc3ff;text-shadow:0 0 6px #2196f3,0 0 12px #2196f3;box-shadow:0 0 10px rgba(33,150,243,.7),inset 0 0 6px rgba(33,150,243,.5);animation:intrixSjaj 2s ease-in-out infinite;}
   .intrix-prek[disabled]{opacity:.6;cursor:wait;}
   @keyframes intrixSjaj{0%,100%{box-shadow:0 0 8px rgba(33,150,243,.6),inset 0 0 5px rgba(33,150,243,.4);}50%{box-shadow:0 0 16px rgba(33,150,243,.95),inset 0 0 8px rgba(33,150,243,.6);}}
-  .bs-brojac .bs-ob{background:#ffd43b;color:#5c4300;box-shadow:0 0 6px rgba(255,212,59,.7);cursor:pointer;}
+  .bs-brojac .bs-ob{background:#e8459a;color:#fff;box-shadow:0 0 6px rgba(232,69,154,.75);cursor:pointer;}   /* v422: ružičasto */
   .bs-brojac .bs-i{background:#7b2ff7;color:#fff;box-shadow:0 0 6px rgba(123,47,247,.7);cursor:pointer;}
   .bs-brojac .bs-i:hover{background:#9d5cff;box-shadow:0 0 10px rgba(157,92,255,.9);}
   .ix-prikaz-glava{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:0 0 12px;padding:12px 16px;border-radius:12px;background:linear-gradient(90deg,#5b1fc7,#7b2ff7 60%,#9d5cff);color:#fff;font-size:15px;box-shadow:0 0 18px rgba(123,47,247,.4);}
@@ -2826,6 +2839,17 @@
       <button type="button" class="tab-btn tab-btn-narancasti" id="tab-btn-problemi" onclick="switchTab('Problemi')">🎧 Servis klijenata <span id="tab-count-problemi"></span></button>
       <!-- NOVO (4.10.2026.): "Battleships" — igra: poslani OIB-ovi praćeni kroz sustav (pogodak → klijent → arhiva), mjesečni cilj 500 bodova, evidencija bodova. -->
       <button type="button" class="tab-btn tab-btn-svijetloplavi" id="tab-btn-pogodci" onclick="switchTab('Pogodci')"><svg class="tab-meta-icon" width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="#d62b1f"/><circle cx="12" cy="12" r="7" fill="#fff"/><circle cx="12" cy="12" r="4.2" fill="#d62b1f"/><circle cx="12" cy="12" r="1.7" fill="#fff"/></svg>Battleships</button>
+    </div>
+    <!-- v422: kazalo boja malih brojača na tipkama Ponude / Otvorene ponude -->
+    <div class="bs-kazalo" title="Kazalo malih brojača na tipkama Ponude i Otvorene ponude">
+      <span class="bs-kaz-n">Kazalo brojača:</span>
+      <span><b class="bs-kaz-v">5</b> veliki broj = čeka odgovor klijenta</span>
+      <span><b class="bs-kaz bs-kaz-p">✓</b> prihvaćene</span>
+      <span><b class="bs-kaz bs-kaz-o">✗</b> odbijene</span>
+      <span><b class="bs-kaz bs-kaz-i">INTRIX</b> čeka odobrenje u INTRIX-u</span>
+      <span><b class="bs-kaz bs-kaz-ob">⭐</b> čeka OB ulaz (mail za OB poslan, nema OB lozinke)</span>
+      <span><b class="bs-kaz bs-kaz-u">Σ</b> ukupno u kartici</span>
+      <span class="bs-kaz-sit">klik na INTRIX ili ⭐ = popis tih ponuda</span>
     </div>
     </div><!-- /pz-srednja -->
 
