@@ -2516,6 +2516,7 @@
   #tv-ekran .tv-glava{display:flex;align-items:center;gap:3vw;}
   #tv-ekran .tv-lijevo{flex:1;}
   #tv-ekran .tv-naslov{font-size:4.2vh;font-weight:900;letter-spacing:.08em;}
+  #tv-ekran .tv-int{font:inherit;font-size:inherit;color:#ffd75e;background:transparent;border:1px solid rgba(255,215,94,.45);border-radius:999px;padding:0 10px;cursor:pointer;}
   #tv-ekran .tv-pod{font-size:2vh;color:#9bb4dd;margin-top:.4vh;}
   #tv-ekran .tv-desno{text-align:right;}
   #tv-ekran .tv-sat{font-size:7vh;font-weight:900;line-height:1;letter-spacing:.04em;}
@@ -2975,7 +2976,7 @@
     <!-- v403: TV prijava (Sašin zahtjev: kartica u Postavkama s cijelom uputom) -->
     <div id="tv-kartica" style="border:2px solid #0f172a;background:#eef2ff;border-radius:10px;padding:10px 12px;margin-bottom:14px;">
       <button type="button" onclick="tvKarticaOtvori_()" style="all:unset;cursor:pointer;display:flex;align-items:center;justify-content:space-between;width:100%;font-weight:800;color:#1e1b4b;font-size:15px;">📺 TV prijava <span id="tv-kartica-strelica">▸</span></button>
-      <p class="settings-hint" style="margin:4px 0 0;">Pločice „Danas čeka tebe” velike na televizoru — same se osvježavaju svake 2 minute.</p>
+      <p class="settings-hint" style="margin:4px 0 0;">Pločice „Danas čeka tebe” velike na televizoru — same se osvježavaju (zadano svake 1 min; na TV-u klik na „svakih …” mijenja: 30 s / 1 / 2 / 5 min).</p>
       <div id="tv-kartica-tijelo" hidden style="margin-top:10px;font-size:13.5px;line-height:1.5;color:#1f2937;">
         <b>Što TV prikazuje</b>
         <ul style="margin:4px 0 8px 18px;padding:0;">
@@ -3552,7 +3553,7 @@
   function tvPokreni_() {
     document.documentElement.classList.add('tv-mod');
     var ekran = document.createElement('div'); ekran.id = 'tv-ekran';
-    ekran.innerHTML = '<div class="tv-glava"><div class="tv-lijevo"><div class="tv-naslov">📌 DANAS ČEKA</div><div class="tv-pod">In Time d.o.o. · osvježeno <span id="tv-osvjezeno">—</span></div></div>' +
+    ekran.innerHTML = '<div class="tv-glava"><div class="tv-lijevo"><div class="tv-naslov">📌 DANAS ČEKA</div><div class="tv-pod">In Time d.o.o. · osvježeno <span id="tv-osvjezeno">—</span> · <button type="button" id="tv-int" class="tv-int" title="Klik = promijeni koliko često se TV osvježava"></button></div></div>' +
       '<div class="tv-bs" id="tv-bs"></div><div class="tv-desno"><div class="tv-sat" id="tv-sat">--:--</div><div class="tv-datum" id="tv-datum"></div></div></div>';
     document.body.appendChild(ekran);
     var kp = document.getElementById('kp-danas'); if (kp) { ekran.appendChild(kp); }
@@ -3561,7 +3562,21 @@
     sat(); setInterval(sat, 10000);
     setTimeout(function() { try { pogodciProvjeriNove_(true); } catch (e) {} }, 1500);
     tvOznaciOsvjezeno_();
-    setInterval(function() { AUTO_OSVJ_ZADNJE_ = 0; adminAutoOsvjezi_(); try { pogodciProvjeriNove_(true); } catch (e) {} }, 120000);
+    // v423: brzina osvježavanja TV-a — bira se klikom na TV-u (pamti se na tom uređaju); zadano 1 min, najbrže 30 s
+    var TV_INT_ = [[30000, '30 s'], [60000, '1 min'], [120000, '2 min'], [300000, '5 min']], tvTimer_ = null;
+    var tvIntMs_ = function() { var v = 60000; try { v = parseInt(localStorage.getItem('intime_tv_interval_ms'), 10) || 60000; } catch (e) {} return TV_INT_.some(function(x) { return x[0] === v; }) ? v : 60000; };
+    var tvOsvjezi_ = function() { AUTO_OSVJ_ZADNJE_ = 0; adminAutoOsvjezi_(); try { pogodciProvjeriNove_(true); } catch (e) {} };
+    var tvPokreniTimer_ = function() {
+      if (tvTimer_) { clearInterval(tvTimer_); }
+      var ms = tvIntMs_(); tvTimer_ = setInterval(tvOsvjezi_, ms);
+      var b = document.getElementById('tv-int'); if (b) { b.textContent = 'svakih ' + TV_INT_.filter(function(x) { return x[0] === ms; })[0][1]; }
+    };
+    tvPokreniTimer_();
+    document.getElementById('tv-int').addEventListener('click', function() {
+      var ms = tvIntMs_(), i = 0; TV_INT_.forEach(function(x, k) { if (x[0] === ms) { i = k; } });
+      try { localStorage.setItem('intime_tv_interval_ms', String(TV_INT_[(i + 1) % TV_INT_.length][0])); } catch (e) {}
+      tvPokreniTimer_(); tvOsvjezi_();
+    });
   }
   function tvOznaciOsvjezeno_() { var el = document.getElementById('tv-osvjezeno'); if (el) { var d = new Date(), p2 = function(n) { return (n < 10 ? '0' : '') + n; }; el.textContent = p2(d.getHours()) + ':' + p2(d.getMinutes()); } }
   function tvBodovi_(res) {
@@ -3613,7 +3628,7 @@
   var CITANJA_SPOJI_ = /^(adminLogistickiCentriList|adminBrowseSustavFolder|admin[A-Za-z]*UvodniTekstoviList|adminMailPredlosciList|adminListOsnovnaDokumentacija|adminDohvatiKlijentPristupOpceDokumente|adminKalkulatorPracenjeSazetak|adminGetTestMail|adminPostavkeGet|adminIzvoriKontakta|adminOdgovoriPovijest|adminRevizijeKlijenti|brziBiljeskeLista|adminPonudeSlanjaList|adminPonudaOpcijeLista|adminPonudaNacrtiLista|adminLogKontaktiStanje|adminPismaPogodci|otvPonudeLista|adminListEntries|adminGetCounters)$/;
   var CITANJA_U_TIJEKU_ = {};
   function gasCall(payload, pokusaj) {
-    if (TV_MOD_ && payload && !TV_AKCIJE_KLIJENT_.test(String(payload.action || ''))) { return Promise.resolve({ status: 'tv', message: '' }); }   // v403: TV samo gleda
+    if (TV_MOD_ && payload && !TV_AKCIJE_KLIJENT_.test(String(payload.action || ''))) { return new Promise(function() {}); }   // v403/v423: TV samo gleda — zabranjeni pozivi tiho čekaju zauvijek (nikad ne pokreću petlje ponovnih pokušaja)
     // v393: dok je prikaz iz memorije, radnje koje mijenjaju podatke čekaju svježe podatke
     if (!pokusaj && KES_STALE_ && payload && !JE_CITANJE_RE_.test(String(payload.action || ''))) {
       return KES_SVJEZE_PROMISE_.then(function() { return gasCall(payload); });
@@ -10290,6 +10305,7 @@
     gasCall({ action: 'adminLogKontaktiStanje', token: adminToken }).then(function(res) {
       logKontaktState_.ucitava = false;
       if (res && res.status === 'ok') { logKontaktState_.ucitano = true; logKontaktState_.enabled = !!res.enabled; logKontaktState_.stanje = res.stanje || {}; }
+      else { return; }   // v423: bez uspješnog odgovora NE ponavljaj odmah (prije: beskonačna petlja → zaleđen TV / poplava zahtjeva)
       if (cb) { cb(); }
     }).catch(function() { logKontaktState_.ucitava = false; });
   }
