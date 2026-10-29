@@ -13291,11 +13291,21 @@
       return { poslano: p0, odgovorilo: j0, prihvatilo: z0, odbilo: Math.max(0, j0 - z0), klijenti: r.klijenti || 0, izvori: null, samoUkupno: true };
     }
     var dog = {};
-    (r.dogadaji || []).forEach(function(d) {
+    // v413: broje se SVI načini odgovora — upitnik, direktni, otvorena ponuda (upitnik / postao klijent), unikorni; postao klijent = i odgovorio
+    var dogL = r.dogadaji || (r.dogMini || []).map(function(m) { return { oib: m[0], vrsta: m[1] }; });
+    if (!r.dogadaji && !r.dogMini) { return null; }   // iz memorije bez popisa odgovora — pričekaj svježe podatke
+    dogL.forEach(function(d) {
       var o = dog[d.oib] || (dog[d.oib] = { odg: false, poz: false, kl: false });
-      if (d.vrsta === 'POZITIVAN' || d.vrsta === 'DIREKTNI') { o.odg = true; o.poz = true; }
+      if (d.vrsta === 'POZITIVAN' || d.vrsta === 'DIREKTNI' || d.vrsta === 'OTV_UPITNIK' || d.vrsta === 'UNIKORN_UPITNIK') { o.odg = true; o.poz = true; }
       else if (d.vrsta === 'NEGATIVAN') { o.odg = true; }
-      else if (d.vrsta === 'KLIJENT') { o.kl = true; }
+      else if (d.vrsta === 'KLIJENT' || d.vrsta === 'OTV_KLIJENT' || d.vrsta === 'UNIKORN_KLIJENT') { o.kl = true; o.odg = true; o.poz = true; }
+    });
+    // v413: ishod poziva s popisa „nazvati” (🟢 / 🟡 = javio se, zainteresiran; 🔴 = nije zainteresiran)
+    (PB_LISTA_ || []).forEach(function(x) {
+      if (!x || !x.oib || !x.ishod) { return; }
+      var o = dog[x.oib] || (dog[x.oib] = { odg: false, poz: false, kl: false });
+      if (x.ishod === 'da' || x.ishod === 'mozda') { o.odg = true; o.poz = true; }
+      else if (x.ishod === 'ne' && !o.odg) { o.odg = true; }
     });
     var x = { poslano: 0, odgovorilo: 0, prihvatilo: 0, odbilo: 0, klijenti: 0, izvori: {} };
     r.poslaniLista.forEach(function(l) {
@@ -13329,7 +13339,7 @@
     if (!x) { return '<div class="uspj-red" style="--c:' + boja + '"><h3>' + esc(naslov) + '</h3><p class="uspj-det">Podaci se još učitavaju… probaj za par sekundi.</p></div>'; }
     if (!x.poslano) { return '<div class="uspj-red" style="--c:' + boja + '"><h3>' + esc(naslov) + '</h3><p class="uspj-det">Ništa nije poslano u odabranom razdoblju.</p></div>'; }
     var rec = 'Od ' + x.poslano + ' poslanih ' + tekstOdgovor + ' ' + x.odgovorilo + ' ih je odgovorilo (' + pctTxt_(x.odgovorilo, x.poslano) + '), a ' + x.klijenti + ' ih je postalo klijentima (' + pctTxt_(x.klijenti, x.poslano) + ' svih poslanih' + (x.odgovorilo ? '; ' + pctTxt_(x.klijenti, x.odgovorilo) + ' onih koji su odgovorili' : '') + ').';
-    var det = 'Od onih koji su odgovorili: ' + x.prihvatilo + ' pozitivno (zainteresirani/prihvatili), ' + x.odbilo + ' negativno.' + (typeof x.ceka === 'number' ? ' Još čeka odgovor: ' + x.ceka + '.' : '') + (x.samoUkupno ? ' (Razdoblje i kampanje za pisma bit će dostupni kad se postavi novi .gs.)' : '');
+    var det = (tekstOdgovor === 'pisama' ? 'Odgovor = upitnik, odbijenica, poziv (🟢 🟡 🔴 na popisu „nazvati”) ili otvorena ponuda. ' : '') + 'Od onih koji su odgovorili: ' + x.prihvatilo + ' pozitivno (zainteresirani/prihvatili), ' + x.odbilo + ' negativno.' + (typeof x.ceka === 'number' ? ' Još čeka odgovor: ' + x.ceka + '.' : '') + (x.samoUkupno ? ' (Razdoblje i kampanje za pisma bit će dostupni kad se postavi novi .gs.)' : '');
     return '<div class="uspj-red" style="--c:' + boja + '"><h3>' + esc(naslov) + '</h3><div class="uspj-tok">' +
       '<div class="uspj-kor"><div class="n">' + x.poslano + '</div><div class="l">Poslano</div><div class="p">100 %</div></div>' +
       '<div class="uspj-str"><b>→</b>' + pctTxt_(x.odgovorilo, x.poslano) + '<br>odgovori</div>' +
@@ -13494,7 +13504,7 @@
     gasCall({ action: 'adminPismaPogodci', token: adminToken }).then(function(res) {
       POGODCI_U_TIJEKU_ = false;
       if (res && res.code === 'auth') { zavrsi({ ok: false }); return; }
-      try { if (res && res.status === 'ok') { var kp_ = kesKlon_(res); delete kp_.dogadaji; kesSpremi_('pogodci', kp_); } } catch (eKp) {}   // v393
+      try { if (res && res.status === 'ok') { var kp_ = kesKlon_(res); kp_.dogMini = (res.dogadaji || []).map(function(d) { return [d.oib, d.vrsta]; }); delete kp_.dogadaji; kesSpremi_('pogodci', kp_); } } catch (eKp) {}   // v393
       pismaUcinkovitost_(res);
       if (TV_MOD_) { try { tvBodovi_(res); } catch (eTvB) {} }
       var novih = 0;
