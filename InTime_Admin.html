@@ -6144,6 +6144,9 @@
     if (k === 'mjesec') { return [new Date(god, mj, 1).getTime(), sada.getTime() + 1]; }
     if (k === 'prosli') { return [new Date(god, mj - 1, 1).getTime(), new Date(god, mj, 1).getTime()]; }
     if (k === 'godina') { return [new Date(god, 0, 1).getTime(), sada.getTime() + 1]; }
+    var kv = Math.floor(mj / 3) * 3;   // v415: prvi mjesec tekućeg kvartala
+    if (k === 'kvartal') { return [new Date(god, kv, 1).getTime(), sada.getTime() + 1]; }
+    if (k === 'proslikv') { return [new Date(god, kv - 3, 1).getTime(), new Date(god, kv, 1).getTime()]; }
     return null;
   }
   function uspjURasponu_(f, raspon) {
@@ -13364,7 +13367,8 @@
       '<div class="uspj-kor"><div class="n">' + x.klijenti + '</div><div class="l">Postali klijenti</div><div class="p">' + pctTxt_(x.klijenti, x.poslano) + ' svih poslanih</div></div>' +
       '</div><p class="uspj-rec">' + esc(rec) + '</p><p class="uspj-det">' + esc(det) + '</p>' + uspjKlijentiHtml_(x) + uspjIzvoriHtml_(x.izvori) + '</div>';
   }
-  var USPJ_RAZDOBLJA_ = [['sve', 'Sve vrijeme'], ['30', 'Zadnjih 30 dana'], ['mjesec', 'Ovaj mjesec'], ['prosli', 'Prošli mjesec'], ['godina', 'Ova godina']];
+  var USPJ_KV_ = function(pomak) { var d = new Date(), q = Math.floor(d.getMonth() / 3) + 1 + pomak, g = d.getFullYear(); if (q < 1) { q += 4; g--; } return 'Q' + q + ' ' + g; };
+  var USPJ_RAZDOBLJA_ = [['sve', 'Sve vrijeme'], ['30', 'Zadnjih 30 dana'], ['mjesec', 'Ovaj mjesec'], ['prosli', 'Prošli mjesec'], ['kvartal', 'Ovaj kvartal (' + USPJ_KV_(0) + ')'], ['proslikv', 'Prošli kvartal (' + USPJ_KV_(-1) + ')'], ['godina', 'Ova godina']];   // v415: kvartali
   function uspjesnostSadrzaj_(sloj) {
     var rasp = uspjRaspon_(USPJ_STANJE_.razdoblje);
     var tijelo = sloj.querySelector('.uspj-tijelo');
