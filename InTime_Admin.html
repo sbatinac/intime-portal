@@ -5666,8 +5666,29 @@
     });
   }
   try { if (window.matchMedia && window.matchMedia('(hover: hover)').matches) { setInterval(autoZatvoriProvjeri_, 1000); } } catch (eAz) { /* bez automatskog zatvaranja */ }
+  // v406: nakon ponovnog crtanja ekran se vraća na ISTU KARTICU (po retku), ne na isti broj piksela — inače bi se, kad se popis iznad promijeni, pokazala druga firma
+  function karticaSidro_() {
+    var vh = window.innerHeight || 800, sid = null;
+    try {
+      var sve = Array.prototype.slice.call(document.querySelectorAll('.entry-card[data-row-index]')).filter(function(c) { return c.offsetParent !== null; });
+      var vidljiva = function(c) { var r = c.getBoundingClientRect(); return r.bottom > 0 && r.top < vh; };
+      var c0 = sve.filter(function(c) { return c.classList.contains('expanded') && vidljiva(c); })[0] || sve.filter(vidljiva)[0];
+      if (c0) { sid = { row: c0.dataset.rowIndex, top: c0.getBoundingClientRect().top, otvorena: c0.classList.contains('expanded') }; }
+    } catch (e) { sid = null; }
+    return sid;
+  }
+  function karticaSidroVrati_(sid, y) {
+    try {
+      if (sid) {
+        var kand = Array.prototype.slice.call(document.querySelectorAll('.entry-card[data-row-index="' + sid.row + '"]')).filter(function(c) { return c.offsetParent !== null; });
+        var c = kand.filter(function(k) { return k.classList.contains('expanded') === sid.otvorena; })[0] || kand[0];
+        if (c) { window.scrollBy(0, c.getBoundingClientRect().top - sid.top); return; }
+      }
+      window.scrollTo(0, y);
+    } catch (e) { /* nije kritično */ }
+  }
   function renderUzCuvanje_() {
-    var otv = [], y = window.scrollY || 0;
+    var otv = [], y = window.scrollY || 0, sid = karticaSidro_();
     try { Array.prototype.forEach.call(document.querySelectorAll('#entries-list .entry-card.expanded'), function(c) { if (c.dataset && c.dataset.rowIndex) { otv.push(c.dataset.rowIndex); } }); } catch (eC) { /* nije kritično */ }
     renderEntries();
     try {
@@ -5675,9 +5696,17 @@
         var c = document.querySelector('#entries-list .entry-card[data-row-index="' + r + '"]');
         if (c && !c.classList.contains('expanded')) { var h = c.querySelector('.entry-card-head'); if (h) { h.click(); } }
       });
-      window.scrollTo(0, y);
     } catch (eV) { /* nije kritično */ }
+    karticaSidroVrati_(sid, y);
   }
+  // v406: automatsko osvježavanje NE precrtava popis dok je neka kartica otvorena (radiš u njoj) — brojke i pločice se osvježe odmah, popis čim zatvoriš kartice
+  var AUTO_OSVJ_U_TIJEKU_ = false, AUTO_RENDER_CEKA_ = false;
+  function imaOtvorenuKarticu_() { try { return Array.prototype.some.call(document.querySelectorAll('.entry-card.expanded'), function(c) { return c.offsetParent !== null; }); } catch (e) { return false; } }
+  setInterval(function() {
+    if (!AUTO_RENDER_CEKA_ || imaOtvorenuKarticu_() || unosAktivan_()) { return; }
+    AUTO_RENDER_CEKA_ = false;
+    if (activeTab !== 'Ankete') { renderUzCuvanje_(); }
+  }, 3000);
   document.addEventListener('focusout', function() {
     if (!ODGODJEN_RENDER_) { return; }
     setTimeout(function() { if (ODGODJEN_RENDER_ && !unosAktivan_()) { ODGODJEN_RENDER_ = false; if (activeTab !== 'Ankete') { renderUzCuvanje_(); } } }, 500);
@@ -5710,8 +5739,10 @@
     try { setTimeout(logKontaktAutoProvjeri_, 400); } catch (eLk) {}
     labelToKeyMap = res.labelToKey || {};
     renderTabCounts();
+    var auto_ = AUTO_OSVJ_U_TIJEKU_; AUTO_OSVJ_U_TIJEKU_ = false;
     if (activeTab !== 'Ankete') {
-      if (unosAktivan_()) { ODGODJEN_RENDER_ = true; }   // korisnik upravo tipka u polje — crtanje čeka da makne fokus
+      if (auto_ && imaOtvorenuKarticu_()) { AUTO_RENDER_CEKA_ = true; try { osvjeziKomandnuPlocu_(); } catch (eKpA) {} }   // v406: ne diraj karticu u kojoj radiš
+      else if (unosAktivan_()) { ODGODJEN_RENDER_ = true; }   // korisnik upravo tipka u polje — crtanje čeka da makne fokus
       else { renderUzCuvanje_(); }
     }
     try { revizijeOsvjezi_(true); } catch (eRv) {}
@@ -13428,6 +13459,7 @@
     if (Date.now() - AUTO_OSVJ_ZADNJE_ < 120000) { return; }
     if (typeof ZAPISI_U_TIJEKU_ !== 'undefined' && ZAPISI_U_TIJEKU_ > 0) { return; }
     AUTO_OSVJ_ZADNJE_ = Date.now();
+    AUTO_OSVJ_U_TIJEKU_ = true;   // v406
     try { loadEntries(); } catch (e1) {}
     try { pbUcitaj_(); } catch (e2) {}
     try { otvStanje_.lista = null; } catch (e3) {}
