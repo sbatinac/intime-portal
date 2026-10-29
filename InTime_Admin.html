@@ -22660,13 +22660,15 @@
     // za OB zahtjev (plavi panel) već poslan.
     var kredGuardUsername_ = !!fieldVal(entry, 'OB korisničko ime (admin)');
     var kredGuardPassword_ = !!fieldVal(entry, 'OB lozinka (admin)');
-    var kredGuardObPoslan_ = !!fieldVal(entry, 'Datum slanja zahtjeva za OB (admin)');
+    // v411: kod REVIZIJE (postojeći klijent) mail za OB zahtjev se ne šalje — nije uvjet
+    var kredRevizija_ = fieldVal(entry, 'Ponuda je revizija (admin)') === 'DA';
+    var kredGuardObPoslan_ = kredRevizija_ || !!fieldVal(entry, 'Datum slanja zahtjeva za OB (admin)');
     var kredGuardSveOtkljucano_ = kredGuardUsername_ && kredGuardPassword_ && kredGuardObPoslan_;
     var kredGuardStavke_ = [
       { ok: kredGuardUsername_, naziv: 'OB korisničko ime potvrđeno' },
-      { ok: kredGuardPassword_, naziv: 'OB lozinka potvrđena' },
-      { ok: kredGuardObPoslan_, naziv: 'Mail za OB zahtjev poslan' }
+      { ok: kredGuardPassword_, naziv: 'OB lozinka potvrđena' }
     ];
+    if (!kredRevizija_) { kredGuardStavke_.push({ ok: kredGuardObPoslan_, naziv: 'Mail za OB zahtjev poslan' }); }
     var kredGuardListaHtml_ = kredGuardStavke_.map(function(s) {
       return '<span class="af-kred-guard-stavka' + (s.ok ? ' ok' : '') + '">' + (s.ok ? '✓' : '✕') + ' ' + esc(s.naziv) + '</span>';
     }).join('');
@@ -24276,9 +24278,14 @@
     var kredGuardRecheck_ = function() {
       var blok = wrap.querySelector('.af-kred-mail-blok');
       if (!blok || !blok.classList.contains('locked')) { return; }
-      var svi = !!fieldVal(entry, 'OB korisničko ime (admin)') &&
-        !!fieldVal(entry, 'OB lozinka (admin)') &&
-        !!fieldVal(entry, 'Datum slanja zahtjeva za OB (admin)');
+      var rev_ = fieldVal(entry, 'Ponuda je revizija (admin)') === 'DA';
+      var st_ = [!!fieldVal(entry, 'OB korisničko ime (admin)'), !!fieldVal(entry, 'OB lozinka (admin)'), rev_ || !!fieldVal(entry, 'Datum slanja zahtjeva za OB (admin)')];
+      // v411: ✓/✕ u popisu uvjeta osvježava se odmah (prije je ostajao ✕ dok se kartica ne otvori ponovno)
+      try {
+        var hint_ = blok.parentNode && blok.parentNode.querySelector('.af-kred-guard-hint');
+        if (hint_) { Array.prototype.forEach.call(hint_.querySelectorAll('.af-kred-guard-stavka'), function(sp, i) { if (i < st_.length) { var ok = st_[i]; sp.classList.toggle('ok', ok); sp.textContent = (ok ? '✓' : '✕') + sp.textContent.replace(/^[✓✕]/, ''); } }); }
+      } catch (eKh) { /* nije kritično */ }
+      var svi = st_[0] && st_[1] && st_[2];
       if (!svi) { return; }
       blok.classList.remove('locked');
       var lockIcon = blok.querySelector('.af-kred-guard-lock');
@@ -24286,6 +24293,7 @@
       var hint = blok.querySelector('.af-kred-guard-hint');
       if (hint) { hint.remove(); }
     };
+    (function() { var bio_ = false, t_ = setInterval(function() { if (document.body.contains(wrap)) { bio_ = true; try { kredGuardRecheck_(); } catch (e) {} } else if (bio_) { clearInterval(t_); } }, 1000); })();   // v411
     var kredOsvjeziPregledAkoPostoji_ = function() {
       if (typeof wrap._kredPregledOsvjezi_ === 'function') { wrap._kredPregledOsvjezi_(); }
     };
