@@ -204,5 +204,52 @@ el('excelBtn').addEventListener('click', preuzmiExcel);
 el('trazi').addEventListener('input', prikazi);
 el('kategorija').addEventListener('change', prikazi);
 </script>
+<!-- v417: „oko” uz svako polje za lozinku — klik prikaže/sakrije upisanu lozinku -->
+<style>
+  .pw-omot{position:relative;}
+  .pw-omot > input{padding-right:42px !important;box-sizing:border-box;}
+  .pw-oko{position:absolute;right:6px;top:50%;transform:translateY(-50%);width:32px;height:28px;padding:0 !important;margin:0 !important;border:0 !important;background:transparent !important;box-shadow:none !important;cursor:pointer;line-height:0;opacity:.7;z-index:2;min-width:0 !important;display:flex !important;align-items:center;justify-content:center;}
+  .pw-oko svg{display:block;pointer-events:none;}
+  .pw-oko:hover,.pw-oko.vidi{opacity:1;}
+</style>
+<script>
+(function(){
+  var OKO_ = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg>', ZAT_ = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 19c-7 0-11-7-11-7a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19M14.12 14.12a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>';
+  function opremi(inp){
+    if (!inp || inp.dataset.pwOko) { return; }
+    inp.dataset.pwOko = '1';
+    var cs = window.getComputedStyle(inp), blok = cs.display === 'block' || cs.width === (inp.parentNode && window.getComputedStyle(inp.parentNode).width);
+    var omot = document.createElement('span');
+    omot.className = 'pw-omot';
+    omot.style.display = blok ? 'block' : 'inline-block';
+    if (!blok && inp.style.width) { omot.style.width = inp.style.width; }
+    var mt = cs.marginTop, mb = cs.marginBottom;
+    inp.parentNode.insertBefore(omot, inp);
+    omot.appendChild(inp);
+    if (blok) { inp.style.width = '100%'; }
+    var b = document.createElement('button');
+    b.type = 'button'; b.className = 'pw-oko'; b.innerHTML = OKO_; b.title = 'Prikaži lozinku'; b.tabIndex = -1;
+    b.style.marginTop = '0'; b.style.setProperty('color', cs.color || '#4a5a66', 'important');
+    if (mt !== '0px' || mb !== '0px') { b.style.top = 'calc(50% + (' + mt + ' - ' + mb + ') / 2)'; }
+    b.addEventListener('mousedown', function(ev){ ev.preventDefault(); });
+    b.addEventListener('click', function(ev){
+      ev.preventDefault(); ev.stopPropagation();
+      var vidi = inp.type === 'password';
+      inp.type = vidi ? 'text' : 'password';
+      b.innerHTML = vidi ? ZAT_ : OKO_; b.title = vidi ? 'Sakrij lozinku' : 'Prikaži lozinku';
+      b.classList.toggle('vidi', vidi);
+    });
+    omot.appendChild(b);
+  }
+  function prodji(korijen){ try { Array.prototype.forEach.call((korijen || document).querySelectorAll('input[type="password"]'), opremi); } catch (e) {} }
+  function kreni(){
+    prodji(document);
+    var t = null;
+    try { new MutationObserver(function(){ if (t) { return; } t = setTimeout(function(){ t = null; prodji(document); }, 150); }).observe(document.body, { childList: true, subtree: true }); } catch (e) {}
+  }
+  if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', kreni); } else { kreni(); }
+})();
+</script>
+
 </body>
 </html>

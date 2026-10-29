@@ -72,3 +72,4 @@
 - v414 (29.10.2026.): Uspješnost → Pisma namjere: zeleni okvir „🏆 Preko pisama namjere postalo je klijentima: N (upitnik → ponuda / otvorena ponuda)” + popis firmi (put, datum, izvor/kampanja); prati odabrano razdoblje. Apps Script nije mijenjan.
 - v415 (29.10.2026.): Uspješnost / Učinkovitost — novi gumbi razdoblja „Ovaj kvartal (Qn godina)” i „Prošli kvartal”. Apps Script nije mijenjan.
 - v416 (29.10.2026.): Podaci o prikupu pošiljaka — klik u polje odmah otvara uređivanje (bez olovke); Enter = potvrdi (✓), Esc = odustani. Apps Script nije mijenjan.
+- v417 (29.10.2026.): „oko” uz svako polje za lozinku (admin, mobilna, TV, Kalkulacije, kalkulator, jednokratni, centri, ispravak, upitnik) — klik prikaže/sakrije lozinku; radi i za prozore koji se otvore kasnije. Apps Script nije mijenjan.
