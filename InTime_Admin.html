@@ -2427,6 +2427,7 @@
   .kp-d.crv .n{color:#c0392b;}.kp-d.nar .n{color:#e65100;}.kp-d.ind .n{color:#4f46e5;}.kp-d.zel .n{color:#0b7a4b;}.kp-d.plav .n{color:#1a73c8;}
   /* v377: INTRIX kućica — ljubičasta kad ima ponuda u INTRIX-u */
   .kp-d.ljub .n{color:#7b2ff7;}
+  .kp-d.ruz .n{color:#e8459a;}
   .kp-d.zelpr .n{color:#1e8449;}
   .kp-danas-mreza .kp-d.plpb{grid-column-end:-1;}   /* v395: uvijek dolje desno */
   .kp-d.plpb .n{color:#3a8fd6;}
@@ -2467,6 +2468,8 @@
   .pb-tel:hover{text-decoration:underline;}
   .kp-d.zelpr:not(.nula){background:linear-gradient(135deg,#14532d 0%,#1e8449 60%,#3fbf7f 100%) !important;border-color:#7ee2a8 !important;box-shadow:0 0 18px rgba(30,132,73,.45) !important;}
   .kp-d.zelpr:not(.nula) .n,.kp-d.zelpr:not(.nula) .l,.kp-d.zelpr:not(.nula) .a{color:#fff !important;text-shadow:none !important;}
+  .kp-d.ruz:not(.nula){background:linear-gradient(135deg,#9d1a5c 0%,#e8459a 60%,#ff8cc6 100%) !important;border-color:#ffb3d9 !important;box-shadow:0 0 18px rgba(232,69,154,.45) !important;}
+  .kp-d.ruz:not(.nula) .n,.kp-d.ruz:not(.nula) .l,.kp-d.ruz:not(.nula) .a{color:#fff !important;text-shadow:none !important;}
   .kp-d.ljub:not(.nula){background:linear-gradient(135deg,#5b1fc7 0%,#7b2ff7 60%,#9d5cff 100%) !important;border-color:#b98cff !important;box-shadow:0 0 18px rgba(123,47,247,.45) !important;}
   .kp-d.ljub:not(.nula) .n,.kp-d.ljub:not(.nula) .l,.kp-d.ljub:not(.nula) .a{color:#fff !important;text-shadow:none !important;}
   .kp-d.nula{opacity:.55;}.kp-d.nula .n{color:#8a9a97;}
@@ -2537,6 +2540,38 @@
   #tv-ekran .kp-d.nula{opacity:.45;}
   #tv-ekran .kp-danas-ok{font-size:2.8vh;margin-top:1.2vh;color:#7ee2a8 !important;text-align:center;}
   #tv-ekran .kp-pe-gumb{display:none !important;}
+  /* v424: TV zaglavlje — bojni brod */
+  #tv-ekran .tv-glava{position:relative;min-height:15vh;padding:1.6vh 2vw;border-radius:2vh;overflow:hidden;background:#06122b url('tv_bojni_brod.jpg') center 55%/cover no-repeat;border:1px solid rgba(95,200,255,.35);box-shadow:0 0 30px rgba(0,140,255,.25), inset 0 0 0 1px rgba(255,255,255,.04);}
+  #tv-ekran .tv-glava::before{content:'';position:absolute;inset:0;background:linear-gradient(90deg,rgba(3,10,30,.92) 0%,rgba(3,10,30,.55) 38%,rgba(3,10,30,.15) 62%,rgba(3,10,30,.6) 100%);pointer-events:none;}
+  #tv-ekran .tv-glava > *{position:relative;}
+  #tv-ekran .tv-naslov{font-size:5vh !important;letter-spacing:.14em !important;color:#fff;text-shadow:0 0 18px rgba(80,190,255,.65);}
+  #tv-ekran .tv-bs{background:rgba(3,12,32,.62);border:1px solid rgba(255,215,94,.35);border-radius:1.6vh;padding:1vh 1.2vw;backdrop-filter:blur(4px);}
+  #tv-ekran .tv-desno{background:rgba(3,12,32,.55);border-radius:1.6vh;padding:.8vh 1.2vw;}
+  #tv-ekran .tv-odjeljak{flex:0 0 auto;font-size:1.6vh;font-weight:900;letter-spacing:.22em;color:#6fc3ff;margin:0 0 -1vh .3vw;text-transform:uppercase;line-height:1.2;}
+  #tv-ekran #kp-danas{overflow:hidden;}
+  #tv-ekran .kp-danas-mreza{flex:1 1 auto;min-height:0;grid-template-rows:repeat(2,minmax(0,1fr)) !important;grid-auto-rows:minmax(0,1fr) !important;padding-bottom:.4vh;}
+  #tv-ekran .kp-d{min-height:0 !important;overflow:hidden;}
+  #tv-ekran .kp-danas-ok{flex:0 0 auto;}
+  /* v424: TV — traka statistike i brojača */
+  #tv-ekran #kp-danas{flex:1 1 52%;}
+  #tv-ekran .kp-d .n{font-size:6.5vh !important;}
+  #tv-ekran .kp-d .l{font-size:1.9vh !important;}
+  #tv-ekran .tv-traka{display:grid;gap:1.2vh 1vw;flex:0 0 auto;}
+  #tv-ekran #tv-stat{grid-template-columns:repeat(8,1fr);}
+  #tv-ekran #tv-broj{grid-template-columns:repeat(6,1fr);}
+  #tv-ekran .tv-st{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.14);border-radius:1.4vh;padding:1.1vh .8vw;display:flex;flex-direction:column;align-items:flex-start;gap:.3vh;min-width:0;}
+  #tv-ekran .tv-st b{font-size:4.2vh;line-height:1;font-weight:900;color:#fff;}
+  #tv-ekran .tv-st .tv-st-i{font-size:1.8vh;opacity:.85;}
+  #tv-ekran .tv-st .tv-st-l{font-size:1.55vh;color:#a9c0e8;line-height:1.2;}
+  #tv-ekran .tv-st.zel b{color:#5fe39a;} #tv-ekran .tv-st.crv b{color:#ff7b7b;} #tv-ekran .tv-st.ljub b{color:#c9a4ff;} #tv-ekran .tv-st.nar b{color:#ffb15c;}
+  #tv-ekran .tv-b{background:linear-gradient(160deg,rgba(40,70,140,.55),rgba(10,25,60,.75));border:1px solid rgba(120,170,255,.3);border-radius:1.4vh;padding:1vh .8vw;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.5vh;min-width:0;text-align:center;}
+  #tv-ekran .tv-b-n{font-size:1.9vh;font-weight:800;color:#e8eefc;}
+  #tv-ekran .tv-b-v{font-size:4vh;line-height:1;font-weight:900;color:#fff;}
+  #tv-ekran .tv-b-s{font-size:1.3vh;color:#9bb4dd;}
+  #tv-ekran .tv-b .bs-brojac{margin:0;}
+  #tv-ekran .tv-b .bs-brojac .bs-v{font-size:4vh;padding:.2vh 1.2vw;border-radius:1.2vh;}
+  #tv-ekran .tv-b .bs-brojac .bs-m{gap:.4vw;margin-top:.6vh;}
+  #tv-ekran .tv-b .bs-brojac .bs-m b{font-size:1.7vh;line-height:2.4vh;padding:0 .6vw;border-radius:1vh;pointer-events:none;}
   /* v378: Brojači u Postavkama — jasan kontrast */
   .set-brojaci .permanent-stat-note{color:#1f2d3d !important;font-size:14px;font-weight:600;background:#fff;border:1px solid #c9daf3;border-radius:8px;padding:10px 12px;margin:0 0 10px;opacity:1 !important;}
   .set-brojaci .permanent-stat-note strong{color:#0d47a1;font-size:18px;}
@@ -3553,10 +3588,17 @@
   function tvPokreni_() {
     document.documentElement.classList.add('tv-mod');
     var ekran = document.createElement('div'); ekran.id = 'tv-ekran';
-    ekran.innerHTML = '<div class="tv-glava"><div class="tv-lijevo"><div class="tv-naslov">📌 DANAS ČEKA</div><div class="tv-pod">In Time d.o.o. · osvježeno <span id="tv-osvjezeno">—</span> · <button type="button" id="tv-int" class="tv-int" title="Klik = promijeni koliko često se TV osvježava"></button></div></div>' +
+    ekran.innerHTML = '<div class="tv-glava"><div class="tv-lijevo"><div class="tv-naslov">⚓ COMMAND BRIDGE</div><div class="tv-pod">In Time d.o.o. · zapovjedni most · osvježeno <span id="tv-osvjezeno">—</span> · <button type="button" id="tv-int" class="tv-int" title="Klik = promijeni koliko često se TV osvježava"></button></div></div>' +
       '<div class="tv-bs" id="tv-bs"></div><div class="tv-desno"><div class="tv-sat" id="tv-sat">--:--</div><div class="tv-datum" id="tv-datum"></div></div></div>';
     document.body.appendChild(ekran);
+    var od1 = document.createElement('div'); od1.className = 'tv-odjeljak'; od1.textContent = '📌 Danas čeka'; ekran.appendChild(od1);
     var kp = document.getElementById('kp-danas'); if (kp) { ekran.appendChild(kp); }
+    // v424: ispod pločica — traka statistike i traka brojača (prepisuje se iz admina svake 2 s)
+    var od2 = document.createElement('div'); od2.className = 'tv-odjeljak'; od2.textContent = '📊 Statistika'; ekran.appendChild(od2);
+    var trS = document.createElement('div'); trS.id = 'tv-stat'; trS.className = 'tv-traka'; ekran.appendChild(trS);
+    var od3 = document.createElement('div'); od3.className = 'tv-odjeljak'; od3.textContent = '🗂 Ponude i komunikacija'; ekran.appendChild(od3);
+    var trB = document.createElement('div'); trB.id = 'tv-broj'; trB.className = 'tv-traka'; ekran.appendChild(trB);
+    tvSazetak_(); setInterval(tvSazetak_, 2000);
     var DANI = ['nedjelja', 'ponedjeljak', 'utorak', 'srijeda', 'četvrtak', 'petak', 'subota'];
     var sat = function() { var d = new Date(), p2 = function(n) { return (n < 10 ? '0' : '') + n; }; document.getElementById('tv-sat').textContent = p2(d.getHours()) + ':' + p2(d.getMinutes()); document.getElementById('tv-datum').textContent = DANI[d.getDay()] + ', ' + d.getDate() + '.' + (d.getMonth() + 1) + '.' + d.getFullYear() + '.'; };
     sat(); setInterval(sat, 10000);
@@ -3577,6 +3619,30 @@
       try { localStorage.setItem('intime_tv_interval_ms', String(TV_INT_[(i + 1) % TV_INT_.length][0])); } catch (e) {}
       tvPokreniTimer_(); tvOsvjezi_();
     });
+  }
+  // v424: TV — statistika i brojači s tipki (vrijednosti se čitaju iz skrivenog admina, pa su uvijek iste kao u adminu)
+  function tvSazetak_() {
+    var t = function(id) { var el = document.getElementById(id); return el ? String(el.textContent || '').trim() : ''; };
+    var h = function(id) { var el = document.getElementById(id); return el ? el.innerHTML : ''; };
+    var br = function(v) { v = String(v || '').replace(/[()]/g, '').trim(); return v === '' ? '—' : v; };
+    var st = [
+      ['👁', br(t('stat-posjete-danas')), 'posjeta danas', ''], ['👥', br(t('stat-posjete')), 'posjeta ukupno', ''],
+      ['👍', br(t('stat-pozitivno')), 'pozitivno odlučili', 'zel'], ['👎', br(t('stat-negativno')), 'negativno odlučili', 'crv'],
+      ['⭐', br(t('stat-ankete')), 'anketa kvalitete', 'ljub'], ['❤️', br(t('stat-klijenti-ukupno')), 'klijenata u bazi' + (t('trend-klijenti') ? ' · ' + t('trend-klijenti') : ''), 'zel'],
+      ['✖', br(t('stat-raskid')), 'raskinuli suradnju', 'crv'], ['🎧', br(t('stat-problemi')), 'otvoreni problemi', 'nar']
+    ];
+    var s1 = document.getElementById('tv-stat');
+    if (s1) { s1.innerHTML = st.map(function(x) { return '<div class="tv-st ' + x[3] + '"><span class="tv-st-i">' + x[0] + '</span><b>' + esc(x[1]) + '</b><span class="tv-st-l">' + esc(x[2]) + '</span></div>'; }).join(''); }
+    var bp = [
+      ['Zainteresirani', '<b class="tv-b-v">' + esc(br(t('tab-count-interes'))) + '</b>'],
+      ['Ponude', '<span class="bs-brojac">' + h('tab-count-ponude') + '</span>'],
+      ['📨 Otvorene ponude', '<span class="bs-brojac">' + h('tab-count-otvorene') + '</span>'],
+      ['✉ Pisma namjere', '<b class="tv-b-v">' + esc(br(t('tab-count-pisma'))) + '</b><span class="tv-b-s">zainteresirani / odgovorili / poslano</span>'],
+      ['Nisu zainteresirani', '<b class="tv-b-v">' + esc(br(t('tab-count-odbijenica'))) + '</b>'],
+      ['Ankete kvalitete', '<b class="tv-b-v">' + esc(br(t('tab-count-ankete'))) + '</b>']
+    ];
+    var s2 = document.getElementById('tv-broj');
+    if (s2) { s2.innerHTML = bp.map(function(x) { return '<div class="tv-b"><div class="tv-b-n">' + x[0] + '</div>' + x[1] + '</div>'; }).join(''); }
   }
   function tvOznaciOsvjezeno_() { var el = document.getElementById('tv-osvjezeno'); if (el) { var d = new Date(), p2 = function(n) { return (n < 10 ? '0' : '') + n; }; el.textContent = p2(d.getHours()) + ':' + p2(d.getMinutes()); } }
   function tvBodovi_(res) {
@@ -30882,6 +30948,7 @@
         { n: stariCeka.length, kl: 'ind', l: 'stari klijenti čekaju upitnik' + (stariNijePos ? ' (' + stariNijePos + ' još nije poslano)' : ''), a: 'Unos starih klijenata →', tab: 'Stari' },
         { n: probl, kl: 'zel', l: 'otvoreni problemi klijenata', a: 'Servis klijenata →', tab: 'Problemi' },
         { n: prPon + prOtv, kl: 'zelpr', l: 'prihvaćena ponuda — nastaviti postupak' + (prOtv && prPon ? ' (Ponude: ' + prPon + ', Otvorene: ' + prOtv + ')' : ''), a: 'Prikaži popis →', tab: 'Popis:prihv' },
+        { n: (allEntries || []).filter(function(e) { return posebniPasuje_(e, 'obCeka') && (e.status === 'Otvorena' ? !fieldVal(e, 'Otvorena ponuda - datum prebacivanja (admin)') : (e.status === 'Interes' && jePonuda(e) && !jeOtvorenKlijent(e) && !jeArhiva(e))); }).length, kl: 'ruz', info: true, l: '⭐ čeka OB ulaz (mail za OB poslan, nema OB lozinke)', a: 'Prikaži popis →', tab: 'Popis:obCeka' },   // v424
         { n: ixPon + ixOtv, kl: 'ljub', info: true, l: 'ponuda čeka odobrenje u INTRIX-u' + (ixOtv && ixPon ? ' (Ponude: ' + ixPon + ', Otvorene: ' + ixOtv + ')' : ''), a: 'Prikaži INTRIX ponude →', tab: 'Intrix' },
         { n: (PB_LISTA_ ? pbFiltrirano_().length : '…'), kl: (PB_LISTA_ && pbFiltrirano_().length ? 'plpb crvpb' : 'plpb'), info: !PB_LISTA_, l: 'pisma namjere bez odgovora — nazvati (' + (pbDani_() === 0 ? 'sva' : 'najmanje ' + pbDani_() + ' d od slanja') + ')', a: 'Prikaži popis →', tab: 'Popis:pismaBez' }
       ];
