@@ -19453,7 +19453,7 @@
       '.pisma-wrap .pm-dvije .pm-prikaz{height:640px;border-radius:10px;border-color:#d8c6ee;display:block;}' +
       '.pisma-wrap .pm-vizualni{width:100%;height:640px;border:1px solid #d8c6ee;border-radius:0 0 10px 10px;background:#fff;display:block;resize:vertical;overflow:auto;}' +
       '</style>' +
-      '<div class="lc-podtabs pm-tabovi"><button type="button" class="lc-podtab-btn pm-tab active" data-tab="pojedinacno">✉ Pojedinačno slanje</button><button type="button" class="lc-podtab-btn pm-tab" data-tab="arhiva">🗄 Arhiva pojedinačnih pisama</button><button type="button" class="lc-podtab-btn pm-tab" data-tab="kampanje">📣 Kampanje</button><button type="button" class="lc-podtab-btn pm-tab" data-tab="arhkamp">📁 Arhiva kampanja</button><button type="button" class="lc-podtab-btn pm-tab" data-tab="predlosci">📝 Predlošci maila</button><button type="button" class="lc-podtab-btn pm-tab" data-tab="mobilno">📱 Mobilno pismo namjere</button><button type="button" class="lc-podtab-btn pm-tab" data-tab="postavke">⚙ Postavke izlaznog maila</button></div>' +
+      '<div class="lc-podtabs pm-tabovi"><button type="button" class="lc-podtab-btn pm-tab active" data-tab="pojedinacno">✉ Pojedinačno slanje</button><button type="button" class="lc-podtab-btn pm-tab" data-tab="arhiva">🔎 Pretraga svih pisama</button><button type="button" class="lc-podtab-btn pm-tab" data-tab="kampanje">📣 Kampanje</button><button type="button" class="lc-podtab-btn pm-tab" data-tab="arhkamp">📁 Arhiva kampanja</button><button type="button" class="lc-podtab-btn pm-tab" data-tab="predlosci">📝 Predlošci maila</button><button type="button" class="lc-podtab-btn pm-tab" data-tab="mobilno">📱 Mobilno pismo namjere</button><button type="button" class="lc-podtab-btn pm-tab" data-tab="postavke">⚙ Postavke izlaznog maila</button></div>' +
       '<div class="pm-pane" data-pane="pojedinacno">' +
       // 1. Novo pismo
       '<div class="pm-kartica"><div class="pm-glava">✉ Novo pismo namjere<small id="pm-kvota"></small></div><div class="pm-tijelo">' +
@@ -19556,13 +19556,13 @@
       '<div class="pm-pane" data-pane="predlosci" hidden><p class="pm-hint" style="margin:0 0 10px;">Ovdje izrađuješ i uređuješ predloške. Isti uređivač (s izbornikom predložaka) nalazi se i u kartici Pojedinačno slanje (za pojedinačni mail) i u kartici Kampanje (za cijelu listu).</p><div id="pm-tpl-slot-pred"></div></div>' +
       // ARHIVA
       '<div class="pm-pane" data-pane="arhiva" hidden>' +
-        '<div class="pm-kartica"><div class="pm-glava">🗄 Arhiva pojedinačnih pisama<small id="pm-arh-broj"></small></div><div class="pm-tijelo">' +
+        '<div class="pm-kartica"><div class="pm-glava">🔎 Pretraga svih pisama — pojedinačna i sve kampanje<small id="pm-arh-broj"></small></div><div class="pm-tijelo">' +
           '<p class="pm-hint">Sva poslana pisma — pojedinačna i iz kampanja (ovdje je i evidencija poslanog). Pretraži po nazivu firme, e-mail adresi, OIB-u (ili gradu/imenu), datumu slanja, vrsti (pojedinačni mailovi / kampanje) i nazivu kampanje. Brisanje traži admin lozinku i riječ BRISATI.</p>' +
           '<div class="pm-red">' +
             '<label class="pm-polje" style="flex:1;min-width:240px;">Pretraga (firma, e-mail, OIB…)<input type="search" id="pm-arh-q" placeholder="npr. Pharma, ime@firma.hr ili 30400318938"></label>' +
             '<label class="pm-polje">Poslano od<input type="date" id="pm-arh-od"></label>' +
             '<label class="pm-polje">Poslano do<input type="date" id="pm-arh-do"></label>' +
-            '<label class="pm-polje">Vrsta<select id="pm-arh-vrsta"><option value="">Sve (pojedinačni mailovi i kampanje)</option><option value="rucno" selected>Samo pojedinačni mailovi</option><option value="kampanje">Samo kampanje</option></select></label>' +
+            '<label class="pm-polje">Vrsta<select id="pm-arh-vrsta"><option value="" selected>Sve (pojedinačni mailovi i kampanje)</option><option value="rucno">Samo pojedinačni mailovi</option><option value="kampanje">Samo kampanje</option></select></label>' +
             '<label class="pm-polje">Kampanja<select id="pm-arh-kamp"><option value="">Sve kampanje</option></select></label>' +
             '<label class="pm-polje">Status<select id="pm-arh-status"><option value="Poslano">Poslano</option><option value="Sve">Sve</option><option value="Greška">Greška</option><option value="Preskočeno">Preskočeno</option><option value="Čeka">Čeka</option><option value="Zaustavljeno">Zaustavljeno</option></select></label>' +
             '<label class="pm-polje">Izvor kontakta<select id="pm-arh-izvor"><option value="">Svi izvori</option></select></label>' +
@@ -20514,7 +20514,7 @@
     var arhivaTimer = null;
     ['pm-arh-q'].forEach(function(id) { $(id).addEventListener('input', function() { clearTimeout(arhivaTimer); arhivaTimer = setTimeout(arhivaUcitaj, 350); }); });
     ['pm-arh-od', 'pm-arh-do', 'pm-arh-vrsta', 'pm-arh-kamp', 'pm-arh-status', 'pm-arh-odg', 'pm-arh-izvor'].forEach(function(id) { $(id).addEventListener('change', arhivaUcitaj); });
-    $('pm-arh-ponisti').addEventListener('click', function() { $('pm-arh-q').value = ''; $('pm-arh-od').value = ''; $('pm-arh-do').value = ''; $('pm-arh-kamp').value = ''; $('pm-arh-vrsta').value = 'rucno'; $('pm-arh-status').value = 'Poslano'; $('pm-arh-odg').value = ''; $('pm-arh-izvor').value = ''; arhivaUcitaj(); });
+    $('pm-arh-ponisti').addEventListener('click', function() { $('pm-arh-q').value = ''; $('pm-arh-od').value = ''; $('pm-arh-do').value = ''; $('pm-arh-kamp').value = ''; $('pm-arh-vrsta').value = ''; $('pm-arh-status').value = 'Poslano'; $('pm-arh-odg').value = ''; $('pm-arh-izvor').value = ''; arhivaUcitaj(); });
     $('pm-arh-brisi').addEventListener('click', function() {
       $('pm-arh-potvrda-n').textContent = '(' + Object.keys(oznaceno).length + ')';
       $('pm-arh-loz').value = ''; $('pm-arh-rijec').value = ''; status($('pm-arh-potvrda-status'), '');
