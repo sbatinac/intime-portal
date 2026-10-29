@@ -21649,10 +21649,11 @@ function adminKampanjaExcelCitaj(token, base64Data, filename) {
     if (lastRow < 2) { return { status: 'error', message: 'Tablica je prazna (treba zaglavlje i barem jedan redak).' }; }
     var vals = sh.getRange(1, 1, lastRow, lastCol).getDisplayValues();
     var norm = function(s) { return brziNormaliziraj_(s).replace(/[^a-z0-9]/g, ''); };
-    var idx = { oib: -1, naziv: -1, email: -1, grad: -1, osoba: -1, posta: -1, izvor: -1, mobitel: -1 };
+    var idx = { oib: -1, naziv: -1, email: -1, grad: -1, osoba: -1, posta: -1, izvor: -1, mobitel: -1, kampanja: -1 };
     vals[0].forEach(function(h, c) {
       var n = norm(h);
-      if (n === 'oib') { idx.oib = c; }
+      if (n.indexOf('kampanj') !== -1) { if (idx.kampanja < 0) { idx.kampanja = c; } }   // v426: stupac „Naziv kampanje” → Panther sam upiše naziv
+      else if (n === 'oib') { idx.oib = c; }
       else if (n.indexOf('mob') === 0 || n.indexOf('telefon') === 0 || n === 'tel' || n === 'gsm' || n.indexOf('brojmob') === 0) { if (idx.mobitel < 0) { idx.mobitel = c; } }   // v395
       else if (n.indexOf('izvor') === 0) { if (idx.izvor < 0) { idx.izvor = c; } }
       else if (n.indexOf('postan') === 0 || n === 'pbr' || n === 'zip' || n === 'postcode') { idx.posta = c; }
@@ -21676,7 +21677,9 @@ function adminKampanjaExcelCitaj(token, base64Data, filename) {
       redci.push(p);
       if (redci.length >= 2000) { break; }
     }
-    return { status: 'ok', redci: redci, kvota: pismaKvota_() };
+    var nazivKampanje = '';
+    if (idx.kampanja >= 0) { for (var k = 1; k < vals.length && !nazivKampanje; k++) { nazivKampanje = String(vals[k][idx.kampanja] || '').trim(); } }
+    return { status: 'ok', redci: redci, kvota: pismaKvota_(), nazivKampanje: nazivKampanje };
   } catch (err) {
     return { status: 'error', message: 'Čitanje tablice nije uspjelo: ' + err.message };
   } finally {
