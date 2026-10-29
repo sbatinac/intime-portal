@@ -9790,6 +9790,7 @@ var ADMIN_ONLY_FIELDS = {
   izvor_kontakta: 'Izvor kontakta (admin)',
   kratki_upitnik: 'Kratki upitnik - dopušten (admin)',
   prihvat_admin: 'Prihvat unio admin u ime klijenta (admin)',   // v383: Saša prihvatio ponudu u ime klijenta (bez obavijesti klijentu)   // v381: datum kad je Saša klijentu dopustio/poslao kratki upitnik (samo osnovni podaci)
+  intrix_odobren: 'INTRIX odobren (admin)',   // v412: datum kad je ponuda ručno izbačena iz INTRIX-a (odobreno); TM broj INTRIX više ne gasi sam
   intrix: 'INTRIX (admin)'   // v374: prihvaćena ponuda je u INTRIX-u (prekidač na kartici); poništava se kad ponuda dobije TM broj
   // (30.9.2026., ISPRAVAK ISTI DAN: polje "dokumenti_klijent_pristup" koje je
   // ovdje kratko postojalo — po-klijentu JSON popis mail-priloga — u
@@ -10580,6 +10581,25 @@ function adminResetPosjeteSveukupno(token) {
 // (vidi loadAll() u InTime_Admin.html).
 // v316: dvije faze — 'jezgra' (brojači, unosi, brojevi, imenik: ono što treba za prvi prikaz) i 'ostalo' (ankete, FAQ, zone, kalkulator, gorivo...).
 // Bez parametra faza vraća sve odjednom (kompatibilno sa starim Admin.html).
+// v412: jednokratno — ponude koje su po starom pravilu izašle iz INTRIX-a dobivanjem TM broja dobivaju „INTRIX odobren” (da ne postanu ponovno ljubičaste)
+function intrixMigracijaV412_() {
+  var pr = PropertiesService.getScriptProperties();
+  if (pr.getProperty('INTRIX_MIG_V412') === 'DA') { return 0; }
+  var sheet = getOrCreateUpitiSheet(), lastRow = sheet.getLastRow(), n = 0;
+  if (lastRow >= 2) {
+    var header = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+    var iIx = header.indexOf(ADMIN_ONLY_FIELDS.intrix), iTm = header.indexOf('Identifikacijski TM broj klijenta (admin)'), iOd = header.indexOf(ADMIN_ONLY_FIELDS.intrix_odobren);
+    if (iIx === -1 || iTm === -1 || iOd === -1) { return 0; }   // stupac još ne postoji — pokušaj idući put
+    var d = sheet.getRange(2, 1, lastRow - 1, header.length).getValues();
+    for (var i = 0; i < d.length; i++) {
+      if (String(d[i][iIx] || '').trim() && String(d[i][iTm] || '').trim() && !String(d[i][iOd] || '').trim()) {
+        sheet.getRange(i + 2, iOd + 1).setValue('staro (TM broj)'); n++;
+      }
+    }
+  }
+  pr.setProperty('INTRIX_MIG_V412', 'DA');
+  return n;
+}
 function adminUcitajPocetno(token, faza) {
   if (!isValidAdminToken_(token)) { return { status: 'error', message: 'Sesija je istekla — prijavite se ponovno.' }; }
   var r = { status: 'ok' };
@@ -10587,7 +10607,8 @@ function adminUcitajPocetno(token, faza) {
   var ms_ = {}, t_ = Date.now();
   function mj_(ime, fn) { var t0 = Date.now(); var v = fn(); ms_[ime] = Date.now() - t0; return v; }
   if (faza !== 'ostalo') {
-    mj_('backfill', function() { return kalkTestPracenjeBackfill_(); });   // v325: jednokratno (provjera zastavice je jeftina)
+    mj_('backfill', function() { return kalkTestPracenjeBackfill_(); });
+    mj_('intrixMig', function() { return intrixMigracijaV412_(); });   // v412: jednokratno   // v325: jednokratno (provjera zastavice je jeftina)
     r.counters = mj_('counters', function() { return adminGetCounters(token); });
     r.entries = mj_('entries', function() { return adminListEntries(token); });
     r.brojStatus = mj_('brojStatus', function() { return adminGetBrojStatus(token); });
@@ -15893,6 +15914,7 @@ function izracunajOcekivanoZaglavljeUpiti_() {
   header.push('INTRIX (admin)');   // v374 — na sam kraj (self-healing doda stupac)
   header.push('Kratki upitnik - dopušten (admin)');   // v381
   header.push('Prihvat unio admin u ime klijenta (admin)');   // v383
+  header.push('INTRIX odobren (admin)');   // v412
   // (30.9.2026., ISPRAVAK ISTI DAN: stupac "Dokumenti uz pristupne podatke
   // (admin, JSON)" koji je ovdje kratko bio dodan uklonjen je zajedno s
   // ADMIN_ONLY_FIELDS.dokumenti_klijent_pristup gore — vidi napomenu ondje.
