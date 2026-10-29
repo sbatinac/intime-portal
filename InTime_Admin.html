@@ -2522,7 +2522,7 @@
   #tv-ekran .tv-int{font:inherit;font-size:inherit;color:#ffd75e;background:transparent;border:1px solid rgba(255,215,94,.45);border-radius:999px;padding:0 10px;cursor:pointer;}
   #tv-ekran .tv-pod{font-size:2vh;color:#9bb4dd;margin-top:.4vh;}
   #tv-ekran .tv-desno{text-align:right;}
-  #tv-ekran .tv-sat{font-size:7vh;font-weight:900;line-height:1;letter-spacing:.04em;}
+  #tv-ekran .tv-sat{font-size:7vh !important;font-size:7vh;font-weight:900;line-height:1;letter-spacing:.04em;}
   #tv-ekran .tv-datum{font-size:2.2vh;color:#9bb4dd;}
   #tv-ekran .tv-bs{min-width:24vw;}
   #tv-ekran .tv-bs-n{font-size:4.5vh;font-weight:900;color:#ffd75e;}
@@ -2540,6 +2540,28 @@
   #tv-ekran .kp-d.nula{opacity:.45;}
   #tv-ekran .kp-danas-ok{font-size:2.8vh;margin-top:1.2vh;color:#7ee2a8 !important;text-align:center;}
   #tv-ekran .kp-pe-gumb{display:none !important;}
+  /* v425: vrijeme vani */
+  #tv-ekran .tv-naslov{white-space:nowrap;font-size:4vh !important;}
+  #tv-ekran .tv-glava{gap:1.4vw !important;align-items:center !important;}
+  #tv-ekran .tv-lijevo{flex:1 1 auto !important;min-width:0;}
+  #tv-ekran .tv-bs{align-self:center;}
+  #tv-ekran .tv-vrijeme b small{font-size:1.7vh;font-weight:700;color:#a9c0e8;}
+  #tv-ekran .tv-bs{min-width:17vw !important;max-width:20vw;}
+  #tv-ekran .tv-datum{white-space:nowrap;}
+  #tv-ekran .tv-bs-l{white-space:nowrap;}
+  #tv-ekran .tv-vrijeme{display:grid;grid-template-columns:auto auto;grid-template-rows:auto auto;align-items:center;justify-content:center;column-gap:.6vw;text-align:center;background:rgba(3,12,32,.55) !important;border:1px solid rgba(110,195,255,.3) !important;border-radius:1.6vh;padding:1vh 1.2vw !important;width:auto !important;background:transparent;border:0;color:#e8eefc;font:inherit;cursor:pointer;padding:0;width:100%;}
+  #tv-ekran .tv-vrijeme b{font-size:3.4vh;font-weight:900;color:#fff;}
+  #tv-ekran .tv-vrijeme .tv-vr-i{font-size:3.2vh;grid-row:1;grid-column:1;}
+  #tv-ekran .tv-vrijeme b{grid-row:1;grid-column:2;}
+  #tv-ekran .tv-vrijeme .tv-vr-t{font-size:1.6vh;color:#a9c0e8;grid-row:2;grid-column:1 / span 2;white-space:nowrap;}
+  #tv-grad-sloj{position:fixed;inset:0;z-index:10060;background:rgba(2,8,24,.7);display:flex;align-items:center;justify-content:center;}
+  #tv-grad-sloj .tv-grad-k{background:#0b1a3c;border:1px solid rgba(110,180,255,.45);border-radius:16px;padding:20px;width:min(460px,92vw);display:flex;flex-direction:column;gap:10px;color:#e8eefc;font-family:Inter,"Segoe UI",Arial,sans-serif;}
+  #tv-grad-sloj input{padding:12px 14px;border-radius:10px;border:1px solid rgba(120,170,255,.4);background:#06122b;color:#fff;font:inherit;font-size:17px;}
+  #tv-grad-sloj #tv-grad-rez{display:flex;flex-direction:column;gap:6px;max-height:50vh;overflow:auto;}
+  #tv-grad-sloj #tv-grad-rez button{display:flex;flex-direction:column;align-items:flex-start;text-align:left;padding:10px 12px;border-radius:10px;border:1px solid rgba(120,170,255,.25);background:rgba(255,255,255,.05);color:#fff;font:inherit;font-weight:700;cursor:pointer;}
+  #tv-grad-sloj #tv-grad-rez small{font-weight:400;color:#9bb4dd;}
+  #tv-grad-sloj #tv-grad-zatvori{align-self:flex-end;padding:8px 16px;border-radius:10px;border:0;background:#24477f;color:#fff;font:inherit;cursor:pointer;}
+  #tv-grad-sloj .tv-grad-nema{color:#9bb4dd;font-size:14px;}
   /* v424: TV zaglavlje — bojni brod */
   #tv-ekran .tv-glava{position:relative;min-height:15vh;padding:1.6vh 2vw;border-radius:2vh;overflow:hidden;background:#06122b url('tv_bojni_brod.jpg') center 55%/cover no-repeat;border:1px solid rgba(95,200,255,.35);box-shadow:0 0 30px rgba(0,140,255,.25), inset 0 0 0 1px rgba(255,255,255,.04);}
   #tv-ekran .tv-glava::before{content:'';position:absolute;inset:0;background:linear-gradient(90deg,rgba(3,10,30,.92) 0%,rgba(3,10,30,.55) 38%,rgba(3,10,30,.15) 62%,rgba(3,10,30,.6) 100%);pointer-events:none;}
@@ -3589,7 +3611,7 @@
     document.documentElement.classList.add('tv-mod');
     var ekran = document.createElement('div'); ekran.id = 'tv-ekran';
     ekran.innerHTML = '<div class="tv-glava"><div class="tv-lijevo"><div class="tv-naslov">⚓ COMMAND BRIDGE</div><div class="tv-pod">In Time d.o.o. · zapovjedni most · osvježeno <span id="tv-osvjezeno">—</span> · <button type="button" id="tv-int" class="tv-int" title="Klik = promijeni koliko često se TV osvježava"></button></div></div>' +
-      '<div class="tv-bs" id="tv-bs"></div><div class="tv-desno"><div class="tv-sat" id="tv-sat">--:--</div><div class="tv-datum" id="tv-datum"></div></div></div>';
+      '<div class="tv-bs" id="tv-bs"></div><button type="button" class="tv-vrijeme" id="tv-vrijeme" title="Klik = odaberi grad">🌡 …</button><div class="tv-desno"><div class="tv-sat" id="tv-sat">--:--</div><div class="tv-datum" id="tv-datum"></div></div></div>';
     document.body.appendChild(ekran);
     var od1 = document.createElement('div'); od1.className = 'tv-odjeljak'; od1.textContent = '📌 Danas čeka'; ekran.appendChild(od1);
     var kp = document.getElementById('kp-danas'); if (kp) { ekran.appendChild(kp); }
@@ -3599,6 +3621,8 @@
     var od3 = document.createElement('div'); od3.className = 'tv-odjeljak'; od3.textContent = '🗂 Ponude i komunikacija'; ekran.appendChild(od3);
     var trB = document.createElement('div'); trB.id = 'tv-broj'; trB.className = 'tv-traka'; ekran.appendChild(trB);
     tvSazetak_(); setInterval(tvSazetak_, 2000);
+    tvVrijemeUcitaj_(); setInterval(tvVrijemeUcitaj_, 15 * 60000);   // v425: vrijeme vani (Open-Meteo) svakih 15 min
+    document.getElementById('tv-vrijeme').addEventListener('click', tvGradProzor_);
     var DANI = ['nedjelja', 'ponedjeljak', 'utorak', 'srijeda', 'četvrtak', 'petak', 'subota'];
     var sat = function() { var d = new Date(), p2 = function(n) { return (n < 10 ? '0' : '') + n; }; document.getElementById('tv-sat').textContent = p2(d.getHours()) + ':' + p2(d.getMinutes()); document.getElementById('tv-datum').textContent = DANI[d.getDay()] + ', ' + d.getDate() + '.' + (d.getMonth() + 1) + '.' + d.getFullYear() + '.'; };
     sat(); setInterval(sat, 10000);
@@ -3618,6 +3642,47 @@
       var ms = tvIntMs_(), i = 0; TV_INT_.forEach(function(x, k) { if (x[0] === ms) { i = k; } });
       try { localStorage.setItem('intime_tv_interval_ms', String(TV_INT_[(i + 1) % TV_INT_.length][0])); } catch (e) {}
       tvPokreniTimer_(); tvOsvjezi_();
+    });
+  }
+  // ===== v425: TV — vrijeme vani (Open-Meteo, besplatno, bez ključa); grad se bira klikom i pamti na tom uređaju =====
+  var TV_VR_KOD_ = { 0: ['☀️', 'vedro'], 1: ['🌤', 'pretežno vedro'], 2: ['⛅', 'djelomično oblačno'], 3: ['☁️', 'oblačno'], 45: ['🌫', 'magla'], 48: ['🌫', 'magla s injem'],
+    51: ['🌦', 'slaba rosulja'], 53: ['🌦', 'rosulja'], 55: ['🌧', 'jaka rosulja'], 56: ['🌧', 'ledena rosulja'], 57: ['🌧', 'ledena rosulja'], 61: ['🌦', 'slaba kiša'], 63: ['🌧', 'kiša'], 65: ['🌧', 'jaka kiša'],
+    66: ['🌧', 'ledena kiša'], 67: ['🌧', 'ledena kiša'], 71: ['🌨', 'slab snijeg'], 73: ['🌨', 'snijeg'], 75: ['❄️', 'jak snijeg'], 77: ['🌨', 'zrnati snijeg'], 80: ['🌦', 'pljuskovi'], 81: ['🌧', 'pljuskovi'], 82: ['⛈', 'jaki pljuskovi'],
+    85: ['🌨', 'snježni pljuskovi'], 86: ['❄️', 'jaki snježni pljuskovi'], 95: ['⛈', 'grmljavina'], 96: ['⛈', 'grmljavina s tučom'], 99: ['⛈', 'grmljavina s tučom'] };
+  function tvGrad_() { var g = null; try { g = JSON.parse(localStorage.getItem('intime_tv_grad') || 'null'); } catch (e) { g = null; } return g && g.lat ? g : { ime: 'Zagreb', lat: 45.815, lon: 15.982 }; }
+  function tvVrijemeUcitaj_() {
+    var el = document.getElementById('tv-vrijeme'); if (!el) { return; }
+    var g = tvGrad_();
+    fetch('https://api.open-meteo.com/v1/forecast?latitude=' + g.lat + '&longitude=' + g.lon + '&current=temperature_2m,apparent_temperature,weather_code,wind_speed_10m&daily=temperature_2m_max,temperature_2m_min&timezone=Europe%2FZagreb&forecast_days=1')
+      .then(function(r) { return r.json(); }).then(function(d) {
+        var c = d && d.current; if (!c) { throw new Error('nema podataka'); }
+        var k = TV_VR_KOD_[c.weather_code] || ['🌡', ''];
+        var mx = d.daily && d.daily.temperature_2m_max ? Math.round(d.daily.temperature_2m_max[0]) : null, mn = d.daily && d.daily.temperature_2m_min ? Math.round(d.daily.temperature_2m_min[0]) : null;
+        el.innerHTML = '<span class="tv-vr-i">' + k[0] + '</span><b>' + Math.round(c.temperature_2m) + '°C' + (mx !== null ? '<small> ' + mn + '° / ' + mx + '°</small>' : '') + '</b><span class="tv-vr-t">' + esc(g.ime) + ' · ' + esc(k[1]) + '</span>';
+        el.title = 'Osjet ' + Math.round(c.apparent_temperature) + '°C · vjetar ' + Math.round(c.wind_speed_10m) + ' km/h · klik = odaberi grad';
+      }).catch(function() { el.innerHTML = '🌡 <span class="tv-vr-t">' + esc(g.ime) + ' — vrijeme nedostupno</span>'; });
+  }
+  function tvGradProzor_() {
+    if (document.getElementById('tv-grad-sloj')) { return; }
+    var o = document.createElement('div'); o.id = 'tv-grad-sloj';
+    o.innerHTML = '<div class="tv-grad-k"><b>🌡 Grad za vrijeme</b><input type="text" id="tv-grad-q" placeholder="npr. Osijek, Split, Rijeka…" autocomplete="off"><div id="tv-grad-rez"></div><button type="button" id="tv-grad-zatvori">Zatvori</button></div>';
+    (document.getElementById('tv-ekran') || document.body).appendChild(o);
+    var q = o.querySelector('#tv-grad-q'), rez = o.querySelector('#tv-grad-rez'), t = null;
+    q.focus();
+    o.querySelector('#tv-grad-zatvori').addEventListener('click', function() { o.remove(); });
+    q.addEventListener('input', function() {
+      clearTimeout(t); var v = q.value.trim(); if (v.length < 2) { rez.innerHTML = ''; return; }
+      t = setTimeout(function() {
+        fetch('https://geocoding-api.open-meteo.com/v1/search?count=8&language=hr&format=json&name=' + encodeURIComponent(v)).then(function(r) { return r.json(); }).then(function(d) {
+          var l = (d && d.results) || [];
+          rez.innerHTML = l.length ? l.map(function(x, i) { return '<button type="button" data-i="' + i + '">' + esc(x.name) + '<small>' + esc([x.admin1, x.country].filter(Boolean).join(', ')) + '</small></button>'; }).join('') : '<div class="tv-grad-nema">Nema rezultata.</div>';
+          Array.prototype.forEach.call(rez.querySelectorAll('[data-i]'), function(b) { b.addEventListener('click', function() {
+            var x = l[+b.getAttribute('data-i')];
+            try { localStorage.setItem('intime_tv_grad', JSON.stringify({ ime: x.name, lat: x.latitude, lon: x.longitude })); } catch (e) {}
+            o.remove(); tvVrijemeUcitaj_();
+          }); });
+        }).catch(function() { rez.innerHTML = '<div class="tv-grad-nema">Pretraga nije uspjela.</div>'; });
+      }, 300);
     });
   }
   // v424: TV — statistika i brojači s tipki (vrijednosti se čitaju iz skrivenog admina, pa su uvijek iste kao u adminu)
@@ -3648,7 +3713,7 @@
   function tvBodovi_(res) {
     var el = document.getElementById('tv-bs'); if (!el || !res || res.status !== 'ok') { return; }
     var b = res.mjesecBodovi || 0, c = res.cilj || 0, pct = c ? Math.min(100, Math.round(b / c * 100)) : 0;
-    el.innerHTML = '<div class="tv-bs-n">🚢 ' + b + (c ? ' <small>/ ' + c + '</small>' : '') + '</div><div class="tv-bs-traka"><i style="width:' + pct + '%"></i></div><div class="tv-bs-l">Battleships bodovi ovaj mjesec' + (res.razina ? ' · ' + esc(res.razina) : '') + '</div>';
+    el.innerHTML = '<div class="tv-bs-n">🚢 ' + b + (c ? ' <small>/ ' + c + '</small>' : '') + '</div><div class="tv-bs-traka"><i style="width:' + pct + '%"></i></div><div class="tv-bs-l">Battleships · ovaj mjesec' + (res.razina ? ' · ' + esc(res.razina) : '') + '</div>';
   }
   // ===== v393: BRZI PRIKAZ IZ MEMORIJE — admin se odmah otvara sa zadnjim podacima iz ovog preglednika, svježi stižu u pozadini =====
   // Dok podaci nisu svježi, radnje koje nešto SPREMAJU/ŠALJU čekaju (ne izvršavaju se nad starim stanjem). Pamćenje se briše pri odjavi.
