@@ -19531,7 +19531,7 @@
       '<div class="pm-pane" data-pane="kampanje" hidden>' +
       // 3. Kampanja
       '<div class="pm-kartica"><div class="pm-glava">📣 Mail kampanja iz Excela<small id="pm-kvota2"></small></div><div class="pm-tijelo">' +
-        '<p class="pm-hint">1) Preuzmi praznu tablicu, popuni je (OIB, naziv firme, e-mail, grad, poštanski broj, ime i prezime vlasnika, po želji izvor i broj mobitela) i vrati je u okvir ispod. 2) Upiši naziv kampanje i klikni "Pošalji kampanju". Mailovi idu jedan po jedan, u razmaku koji se namješta u Postavkama (zadano 3 sekunde), na sve ispravne adrese; već poslane adrese se preskaču. Slanje se nastavlja na poslužitelju i ako zatvoriš stranicu.</p>' +
+        '<p class="pm-hint">1) Preuzmi praznu tablicu, popuni je (OIB, naziv firme, e-mail, grad, poštanski broj, ime i prezime vlasnika, po želji izvor i broj mobitela) i vrati je u okvir ispod. 2) Naziv kampanje se sam upiše iz imena Excel datoteke (npr. „Web trgovine Osijek i Baranja.xlsx”) — možeš ga promijeniti — i klikni "Pošalji kampanju". Mailovi idu jedan po jedan, u razmaku koji se namješta u Postavkama (zadano 3 sekunde), na sve ispravne adrese; već poslane adrese se preskaču. Slanje se nastavlja na poslužitelju i ako zatvoriš stranicu.</p>' +
         '<div class="pm-mreza"><label class="pm-polje">Naziv mail kampanje<input type="text" id="pm-kamp-naziv" placeholder="npr. Slavonija — listopad 2026."></label></div>' +
         '<select id="pm-kamp-tpl" hidden></select>' +
         '<div class="pm-drop" id="pm-drop">📂 Povuci Excel (.xlsx) ovdje ili klikni za odabir<input type="file" id="pm-datoteka" accept=".xlsx" style="display:none;"></div>' +
@@ -20057,7 +20057,7 @@
     $('pm-rucno-tpl').addEventListener('change', rucnoAzuriraj);
     $('pm-kamp-tpl').addEventListener('change', kampAzuriraj);
     ['pm-oib', 'pm-naziv', 'pm-email'].forEach(function(id) { $(id).addEventListener('input', rucnoAzuriraj); });
-    $('pm-kamp-naziv').addEventListener('input', kampAzuriraj);
+    $('pm-kamp-naziv').addEventListener('input', function() { this.removeAttribute('data-auto'); kampAzuriraj(); });
     // ---- OIB → sudski registar (95. dorada): popunjava samo PRAZNA polja ----
     var oibZadnji = '';
     $('pm-oib').addEventListener('input', function() {
@@ -20265,7 +20265,14 @@
       reader.onload = function() {
         var base64 = String(reader.result).split(',')[1] || '';
         poziv({ action: 'adminKampanjaExcelCitaj', base64Data: base64, filename: file.name }).then(function(res) {
-          if (res.status === 'ok') { status($('pm-ucitaj-status'), file.name + ' — ' + res.redci.length + ' redaka.', 'ok'); nacrtajPregledTablice(res); }
+          if (res.status === 'ok') {
+            status($('pm-ucitaj-status'), file.name + ' — ' + res.redci.length + ' redaka.', 'ok'); nacrtajPregledTablice(res);
+            // v426: naziv kampanje iz imena Excel datoteke (npr. „Web trgovine Osijek i Baranja.xlsx”) — ne prepisuje naziv koji si sam upisao
+            try {
+              var nk_ = $('pm-kamp-naziv'), ime_ = String(file.name || '').replace(/\.xlsx$/i, '').replace(/^\s*\d+\s*[_\-.]\s*/, '').replace(/^kampanja\s*[-_:–]\s*/i, '').replace(/_/g, ' ').replace(/\s{2,}/g, ' ').trim();
+              if (nk_ && ime_ && (!nk_.value.trim() || nk_.getAttribute('data-auto') === '1')) { nk_.value = ime_; nk_.setAttribute('data-auto', '1'); kampAzuriraj(); status($('pm-ucitaj-status'), file.name + ' — ' + res.redci.length + ' redaka. Naziv kampanje: „' + ime_ + '” (možeš ga promijeniti).', 'ok'); }
+            } catch (eNk_) { /* nije kritično */ }
+          }
           else { status($('pm-ucitaj-status'), res.message || 'Čitanje nije uspjelo.', 'greska'); $('pm-pregled').innerHTML = ''; }
         }).catch(function(e) { status($('pm-ucitaj-status'), e.message || 'Greška u komunikaciji s poslužiteljem.', 'greska'); });
       };
