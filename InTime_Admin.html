@@ -686,6 +686,10 @@
   .ix-pit-da{background:#7b2ff7;color:#fff;}
   .ix-pit-ne{background:#fff;color:#5b1fc7;}
   .ix-pit-st{font-size:12.5px;color:#5b6664;margin-top:8px;min-height:1em;}
+  /* v420: kartica čeka OB ulaz — ružičasta (INTRIX ljubičasta ima prednost) */
+  .entry-card.ob-ceka:not(.intrix){border:2px solid #e8459a !important;box-shadow:0 0 0 3px rgba(232,69,154,.18) !important;}
+  .entry-card.ob-ceka:not(.intrix) > .entry-card-head{background:linear-gradient(90deg,#ffd3ea 0%,#fff0f7 45%,#ffffff 100%) !important;box-shadow:inset 8px 0 0 #e8459a !important;}
+  .entry-card.ob-ceka:not(.intrix) > .entry-card-head:hover{background:linear-gradient(90deg,#ffbadd 0%,#ffe3f1 45%,#fff9fc 100%) !important;}
   /* v418: čeka OB ulaz */
   .ob-ceka-cip{display:inline-flex;align-items:center;margin-left:8px;padding:2px 10px;border-radius:999px;background:#fff6cc;border:1.5px solid #e0b400;color:#7a5c00;font-size:11.5px;font-weight:900;white-space:nowrap;vertical-align:middle;}
   /* v414 */
@@ -6563,6 +6567,7 @@
         var e = poRetku[c.dataset.rowIndex]; if (!e) { return; }
         var t = c.querySelector('.entry-card-title'); if (!t) { return; }
         var cip = t.querySelector('.ob-ceka-cip'), treba = obCeka_(e);
+        c.classList.toggle('ob-ceka', treba);   // v420: ružičasta kartica dok čeka OB ulaz
         if (treba && !cip) { var d = String(e.fields['Datum slanja zahtjeva za OB (admin)'] || ''); t.insertAdjacentHTML('beforeend', '<span class="ob-ceka-cip" title="Mail za OB zahtjev poslan ' + esc(d) + ' — čeka se otvaranje Online Bookinga (nestaje kad upišeš OB lozinku)">⭐ čeka OB ulaz</span>'); }
         else if (!treba && cip) { cip.remove(); }
       });
