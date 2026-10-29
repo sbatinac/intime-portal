@@ -2886,7 +2886,7 @@
     <div class="settings-kolone">
     <div style="border:2px solid #7c3aed;background:#f6f1ff;border-radius:10px;padding:10px 12px;margin-bottom:14px;">
       <label style="display:flex;align-items:center;gap:10px;font-weight:700;margin-bottom:4px;color:#5b21b6;cursor:pointer;">
-        <input type="checkbox" id="settings-auto-zatvori" onchange="autoZatvoriPostavi_(this.checked)" style="width:20px;height:20px;"> ⏱ Kartice se same zatvaraju nakon 5 s bez miša iznad njih
+        <input type="checkbox" id="settings-auto-zatvori" onchange="autoZatvoriPostavi_(this.checked)" style="width:20px;height:20px;"> ⏱ Kartice se same zatvaraju nakon 60 s bez miša iznad njih (i bez rada u njima)
       </label>
       <p class="settings-hint" style="margin:0;">Ne zatvara se dok upisuješ u polje, dok traje spremanje/slanje ili dok je otvoren prozor. Vrijedi za ovo računalo.</p>
     </div>
@@ -3495,7 +3495,7 @@
   }
 
   // v302: broji radnje koje MIJENJAJU podatke dok traju — osvježeni popis koji stigne usred spremanja je zastario pa se ne primjenjuje (kartica ne gubi tek dodano), nego se popis dohvati ponovno čim spremanje završi
-  var ZAPISI_U_TIJEKU_ = 0, OSVJEZI_NAKON_ZAPISA_ = false;
+  var ZAPISI_U_TIJEKU_ = 0, OSVJEZI_NAKON_ZAPISA_ = false, ZADNJI_ZAPIS_KRAJ_ = 0;   // v410: ZADNJI_ZAPIS_KRAJ_ — kad je završilo zadnje spremanje
   var ZAPIS_AKCIJE_ = /^(adminUpdateFields|adminPosalji|adminPripremi|adminGeneriraj|adminDisk|adminPonudaOpcijeSpremi|adminSpremi|adminDodaj|adminUkloni|adminPrebaci|adminSet|otvPonude(Posalji|Ponovi|NovaVerzija|Upload|Spremi))/;
   function zapisiGotovi_() {
     if (ZAPISI_U_TIJEKU_ === 0 && OSVJEZI_NAKON_ZAPISA_) { OSVJEZI_NAKON_ZAPISA_ = false; try { loadEntries(); } catch (eZg) { /* nije kritično */ } }
@@ -3588,7 +3588,7 @@
     pokusaj = pokusaj || 1;
     if (pokusaj === 1 && ZAPIS_AKCIJE_.test(String(payload.action || ''))) {
       ZAPISI_U_TIJEKU_++;
-      var kraj_ = function() { ZAPISI_U_TIJEKU_ = Math.max(0, ZAPISI_U_TIJEKU_ - 1); zapisiGotovi_(); };
+      var kraj_ = function() { ZAPISI_U_TIJEKU_ = Math.max(0, ZAPISI_U_TIJEKU_ - 1); ZADNJI_ZAPIS_KRAJ_ = Date.now(); zapisiGotovi_(); };
       var pr_ = gasCallOsnovni_(payload, pokusaj);
       pr_.then(kraj_, kraj_);
       return pr_;
@@ -5643,12 +5643,22 @@
     return !!(a.closest && a.closest('#entries-list'));
   }
   // v312: kartice se same zatvaraju kad miš 5 s nije iznad njih (isključivo na uređajima s mišem; postavka u Postavkama, zadano uključeno)
-  var AUTO_ZATVORI_MS_ = 5000, AUTO_ZATVORI_PRVI_MS_ = 15000, autoZatvoriMis_ = { x: -1, y: -1 }, autoZatvoriZadnje_ = new WeakMap();
+  var AUTO_ZATVORI_MS_ = 60000, AUTO_ZATVORI_PRVI_MS_ = 90000, autoZatvoriMis_ = { x: -1, y: -1 }, autoZatvoriZadnje_ = new WeakMap();
   function autoZatvoriUkljuceno_() { try { return localStorage.getItem('intime_auto_zatvori') !== '0'; } catch (e) { return true; } }
   function autoZatvoriPostavi_(v) { try { localStorage.setItem('intime_auto_zatvori', v ? '1' : '0'); } catch (e) { /* bez localStorage */ } autoZatvoriZadnje_ = new WeakMap(); }
   document.addEventListener('mousemove', function(ev) { autoZatvoriMis_.x = ev.clientX; autoZatvoriMis_.y = ev.clientY; }, { passive: true });
   // v409: rad u kartici (klik, tipkanje, odabir) i svako spremanje daju 30 s mira — kartica se ne zatvara odmah nakon unosa
-  var AUTO_ZATVORI_MIR_MS_ = 30000, AUTO_ZATVORI_MIR_DO_ = 0;
+  var AUTO_ZATVORI_MIR_MS_ = 60000, AUTO_ZATVORI_MIR_DO_ = 0;
+  // v410: i vrtenje kotačića / pomicanje stranice dok je otvorena kartica na ekranu = rad u kartici
+  var autoZatvoriPomak_ = function() {
+    try {
+      var vh = window.innerHeight || 800;
+      Array.prototype.forEach.call(document.querySelectorAll('.entry-card.expanded'), function(c) { var r = c.getBoundingClientRect(); if (r.bottom > 0 && r.top < vh) { autoZatvoriZadnje_.set(c, Date.now() + AUTO_ZATVORI_MIR_MS_ - AUTO_ZATVORI_MS_); AUTO_ZATVORI_MIR_DO_ = Date.now() + AUTO_ZATVORI_MIR_MS_; } });
+    } catch (e) { /* nije kritično */ }
+  };
+  window.addEventListener('wheel', autoZatvoriPomak_, { passive: true });
+  window.addEventListener('scroll', autoZatvoriPomak_, { passive: true });
+  window.addEventListener('touchmove', autoZatvoriPomak_, { passive: true });
   ['click', 'input', 'change', 'keydown'].forEach(function(t) {
     document.addEventListener(t, function(ev) {
       try { var c = ev.target && ev.target.closest ? ev.target.closest('.entry-card') : null; if (c) { autoZatvoriZadnje_.set(c, Date.now() + AUTO_ZATVORI_MIR_MS_ - AUTO_ZATVORI_MS_); AUTO_ZATVORI_MIR_DO_ = Date.now() + AUTO_ZATVORI_MIR_MS_; } } catch (e) { /* nije kritično */ }
@@ -5752,7 +5762,8 @@
     renderTabCounts();
     var auto_ = AUTO_OSVJ_U_TIJEKU_; AUTO_OSVJ_U_TIJEKU_ = false;
     if (activeTab !== 'Ankete') {
-      if (auto_ && imaOtvorenuKarticu_()) { AUTO_RENDER_CEKA_ = true; try { osvjeziKomandnuPlocu_(); } catch (eKpA) {} }   // v406: ne diraj karticu u kojoj radiš
+      var nedavniZapis_ = (Date.now() - ZADNJI_ZAPIS_KRAJ_) < 8000;
+      if ((auto_ || !nedavniZapis_) && imaOtvorenuKarticu_()) { AUTO_RENDER_CEKA_ = true; try { osvjeziKomandnuPlocu_(); } catch (eKpA) {} }   // v406: ne diraj karticu u kojoj radiš
       else if (unosAktivan_()) { ODGODJEN_RENDER_ = true; }   // korisnik upravo tipka u polje — crtanje čeka da makne fokus
       else { renderUzCuvanje_(); }
     }
