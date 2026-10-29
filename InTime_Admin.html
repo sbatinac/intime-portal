@@ -24543,7 +24543,10 @@
         // sat, minuta, sekunda), isto formatiranje kao za "Prebaci u
         // ponude/nove klijente" (vidi formatirajDatumOtvaranjaKlijenta_).
         var vrijednost = (kljuc === 'datumOb') ? formatirajDatumOtvaranjaKlijenta_(new Date()) : input.value.trim();
-        if (!vrijednost) { input.focus(); return; }
+        // v421: OB lozinka se smije i OBRISATI (prazno + ✓) — npr. kad je upisana kriva; kartica tada opet čeka OB ulaz
+        var brisanje_ = !vrijednost && kljuc === 'password' && !!String(fieldVal(entry, def.label) || '').trim();
+        if (!vrijednost && !brisanje_) { input.focus(); return; }
+        if (brisanje_ && !confirm('Obrisati OB lozinku?\n\nKartica će ponovno biti ružičasta — „⭐ čeka OB ulaz” (ako je mail za OB poslan).')) { return; }
         potvrdiBtn.disabled = true;
         var fields = {};
         fields[def.param] = vrijednost;
@@ -24552,9 +24555,16 @@
           if (res.status === 'ok') {
             entry.fields[def.label] = vrijednost;
             input.value = vrijednost;
+            if (brisanje_) {   // v421: prazno polje ostaje otvoreno za novi upis
+              input.readOnly = false; potvrdiBtn.disabled = false; potvrdiBtn.style.display = ''; if (promijeniBtn) { promijeniBtn.style.display = 'none'; }
+              try { var kb_ = wrap.querySelector('.af-kred-mail-blok'); if (kb_ && !kb_.classList.contains('locked')) { kb_.classList.add('locked'); } } catch (eKb) {}
+              try { obCekaOsvjezi_(); renderTabCounts(); } catch (eOc) {}
+              return;
+            }
             input.readOnly = true;
             potvrdiBtn.style.display = 'none';
             if (promijeniBtn) { promijeniBtn.style.display = ''; }
+            try { obCekaOsvjezi_(); renderTabCounts(); } catch (eOc2) {}
             obGuardRecheck_();
             obOsvjeziPregledAkoPostoji_();
             // kredGuard* (panel "Pošalji pristupne podatke klijentu") sluša
