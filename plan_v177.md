@@ -73,3 +73,4 @@
 - v415 (29.10.2026.): Uspješnost / Učinkovitost — novi gumbi razdoblja „Ovaj kvartal (Qn godina)” i „Prošli kvartal”. Apps Script nije mijenjan.
 - v416 (29.10.2026.): Podaci o prikupu pošiljaka — klik u polje odmah otvara uređivanje (bez olovke); Enter = potvrdi (✓), Esc = odustani. Apps Script nije mijenjan.
 - v417 (29.10.2026.): „oko” uz svako polje za lozinku (admin, mobilna, TV, Kalkulacije, kalkulator, jednokratni, centri, ispravak, upitnik) — klik prikaže/sakrije lozinku; radi i za prozore koji se otvore kasnije. Apps Script nije mijenjan.
+- v418 (29.10.2026.): žuti čip „⭐ čeka OB ulaz” na zaglavlju kartice — kad je mail za OB zahtjev poslan, a OB lozinka još nije upisana; nestaje čim se upiše OB lozinka (vidi se bez otvaranja kartice, u svim karticama). Apps Script nije mijenjan.

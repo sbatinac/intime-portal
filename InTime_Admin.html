@@ -686,6 +686,8 @@
   .ix-pit-da{background:#7b2ff7;color:#fff;}
   .ix-pit-ne{background:#fff;color:#5b1fc7;}
   .ix-pit-st{font-size:12.5px;color:#5b6664;margin-top:8px;min-height:1em;}
+  /* v418: čeka OB ulaz */
+  .ob-ceka-cip{display:inline-flex;align-items:center;margin-left:8px;padding:2px 10px;border-radius:999px;background:#fff6cc;border:1.5px solid #e0b400;color:#7a5c00;font-size:11.5px;font-weight:900;white-space:nowrap;vertical-align:middle;}
   /* v414 */
   .uspj-kl{margin:10px 0 6px;padding:10px 12px;border-radius:10px;background:#eef9f1;border:1.5px solid #1e8449;}
   .uspj-kl-n{font-size:14.5px;color:#14532d;}
@@ -6546,6 +6548,24 @@
     if (intrixNovoPravilo_(f)) { return !String(f['INTRIX odobren (admin)'] || '').trim(); }
     return !String(f['Identifikacijski TM broj klijenta (admin)'] || '').trim();
   }
+  // v418: ⭐ ČEKA OB ULAZ — mail za OB zahtjev je poslan, a OB lozinka još nije upisana (vidi se na zaglavlju kartice bez otvaranja)
+  function obCeka_(e) {
+    var f = (e && e.fields) || {};
+    return !!String(f['Datum slanja zahtjeva za OB (admin)'] || '').trim() && !String(f['OB lozinka (admin)'] || '').trim();
+  }
+  function obCekaOsvjezi_() {
+    try {
+      var poRetku = {}; (allEntries || []).forEach(function(e) { poRetku[String(e.rowIndex)] = e; });
+      Array.prototype.forEach.call(document.querySelectorAll('.entry-card[data-row-index]'), function(c) {
+        var e = poRetku[c.dataset.rowIndex]; if (!e) { return; }
+        var t = c.querySelector('.entry-card-title'); if (!t) { return; }
+        var cip = t.querySelector('.ob-ceka-cip'), treba = obCeka_(e);
+        if (treba && !cip) { var d = String(e.fields['Datum slanja zahtjeva za OB (admin)'] || ''); t.insertAdjacentHTML('beforeend', '<span class="ob-ceka-cip" title="Mail za OB zahtjev poslan ' + esc(d) + ' — čeka se otvaranje Online Bookinga (nestaje kad upišeš OB lozinku)">⭐ čeka OB ulaz</span>'); }
+        else if (!treba && cip) { cip.remove(); }
+      });
+    } catch (e) { /* nije kritično */ }
+  }
+  setInterval(obCekaOsvjezi_, 1500);
   function intrixBio_(e) {
     var f = (e && e.fields) || {};
     if (!String(f['INTRIX (admin)'] || '').trim()) { return false; }
