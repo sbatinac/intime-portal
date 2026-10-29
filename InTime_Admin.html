@@ -23736,14 +23736,17 @@
       var prebaciUvjeti_ = function() {
         // v366: REVIZIJA (postojeći klijent) — može u klijente bilo kad; obavezno samo TM, OB, odgovorna osoba, adresa i kontakti
         if (fieldVal(entry, 'Ponuda je revizija (admin)') === 'DA') {
+          var rvF_ = function(l) { for (var i = 0; i < l.length; i++) { var v = String(fieldVal(entry, l[i]) || '').trim(); if (v) { return v; } } return ''; };
+          var rvOsoba_ = function() { return rvF_(['Ispravljena osoba zadužena za prikup (admin)', 'Osoba za organizaciju slanja/primanja pošiljaka – ime i prezime']); };
           return [
             { ok: !!fieldVal(entry, 'Identifikacijski TM broj klijenta (admin)'), naziv: 'TM broj' },
             { ok: !!(fieldVal(entry, 'OB korisničko ime (admin)') || fieldVal(entry, 'Preferirana e-mail adresa za prijavu u Online Booking (OB)')), naziv: 'Online Booking (korisničko ime)' },
-            { ok: !!fieldVal(entry, 'Ime i prezime'), naziv: 'odgovorna osoba' },
-            { ok: !!(fieldVal(entry, 'Adresa sjedišta') && fieldVal(entry, 'Mjesto')), naziv: 'adresa (ulica i mjesto)' },
-            { ok: !!fieldVal(entry, 'Kontakt osoba'), naziv: 'kontakt osoba' },
-            { ok: !!(fieldVal(entry, 'Mobitel') || fieldVal(entry, 'Telefon odgovorne osobe')), naziv: 'telefon' },
-            { ok: !!(fieldVal(entry, 'Email kontakt osobe') || fieldVal(entry, 'Mail adresa odgovorne osobe')), naziv: 'e-mail' }
+            // v407: prihvaćaju se i podaci iz bloka „Podaci o prikupu pošiljaka” (upitnik ili ✎ ispravljeno)
+            { ok: !!(fieldVal(entry, 'Ime i prezime') || rvOsoba_()), naziv: 'odgovorna osoba' },
+            { ok: !!((fieldVal(entry, 'Adresa sjedišta') && fieldVal(entry, 'Mjesto')) || (rvF_(['Ispravljena adresa prikupa (admin)', 'Adresa mjesta prikupa pošiljaka']) && rvF_(['Ispravljeno mjesto prikupa (admin)', 'Mjesto prikupa pošiljaka', 'Mjesto']))), naziv: 'adresa (ulica i mjesto)' },
+            { ok: !!(fieldVal(entry, 'Kontakt osoba') || rvOsoba_()), naziv: 'kontakt osoba' },
+            { ok: !!(fieldVal(entry, 'Mobitel') || fieldVal(entry, 'Telefon odgovorne osobe') || rvF_(['Ispravljeni telefon prikupa (admin)', 'Osoba za organizaciju slanja/primanja pošiljaka – telefon'])), naziv: 'telefon' },
+            { ok: !!(fieldVal(entry, 'Email kontakt osobe') || fieldVal(entry, 'Mail adresa odgovorne osobe') || rvF_(['Ispravljeni email prikupa (admin)', 'Osoba za organizaciju slanja/primanja pošiljaka – email'])), naziv: 'e-mail' }
           ];
         }
         return [
