@@ -686,6 +686,10 @@
   .ix-pit-da{background:#7b2ff7;color:#fff;}
   .ix-pit-ne{background:#fff;color:#5b1fc7;}
   .ix-pit-st{font-size:12.5px;color:#5b6664;margin-top:8px;min-height:1em;}
+  /* v414 */
+  .uspj-kl{margin:10px 0 6px;padding:10px 12px;border-radius:10px;background:#eef9f1;border:1.5px solid #1e8449;}
+  .uspj-kl-n{font-size:14.5px;color:#14532d;}
+  .uspj-kl-n span{font-size:12.5px;color:#3c5c46;}
   /* v408: bio u INTRIX-u */
   .ix-bio-cip{display:inline-flex;align-items:center;gap:5px;margin-left:8px;padding:2px 10px;border-radius:999px;border:1.5px solid #7b2ff7;background:#f3ecff;color:#5b1fc7;font-size:11.5px;font-weight:900;letter-spacing:.06em;vertical-align:middle;white-space:nowrap;}
   .ix-bio-cip small{font-weight:700;letter-spacing:0;color:#6d4bb0;}
@@ -13292,13 +13296,13 @@
     }
     var dog = {};
     // v413: broje se SVI načini odgovora — upitnik, direktni, otvorena ponuda (upitnik / postao klijent), unikorni; postao klijent = i odgovorio
-    var dogL = r.dogadaji || (r.dogMini || []).map(function(m) { return { oib: m[0], vrsta: m[1] }; });
+    var dogL = r.dogadaji || (r.dogMini || []).map(function(m) { return { oib: m[0], vrsta: m[1], naziv: m[2], datum: m[3] }; });
     if (!r.dogadaji && !r.dogMini) { return null; }   // iz memorije bez popisa odgovora — pričekaj svježe podatke
     dogL.forEach(function(d) {
       var o = dog[d.oib] || (dog[d.oib] = { odg: false, poz: false, kl: false });
       if (d.vrsta === 'POZITIVAN' || d.vrsta === 'DIREKTNI' || d.vrsta === 'OTV_UPITNIK' || d.vrsta === 'UNIKORN_UPITNIK') { o.odg = true; o.poz = true; }
       else if (d.vrsta === 'NEGATIVAN') { o.odg = true; }
-      else if (d.vrsta === 'KLIJENT' || d.vrsta === 'OTV_KLIJENT' || d.vrsta === 'UNIKORN_KLIJENT') { o.kl = true; o.odg = true; o.poz = true; }
+      else if (d.vrsta === 'KLIJENT' || d.vrsta === 'OTV_KLIJENT' || d.vrsta === 'UNIKORN_KLIJENT') { o.kl = true; o.odg = true; o.poz = true; if (d.vrsta === 'OTV_KLIJENT') { o.klOtv = true; } else { o.klPon = true; } if (d.naziv) { o.naziv = d.naziv; } if (d.datum) { o.klDat = String(d.datum).split(' ')[0]; } }
     });
     // v413: ishod poziva s popisa „nazvati” (🟢 / 🟡 = javio se, zainteresiran; 🔴 = nije zainteresiran)
     (PB_LISTA_ || []).forEach(function(x) {
@@ -13307,14 +13311,14 @@
       if (x.ishod === 'da' || x.ishod === 'mozda') { o.odg = true; o.poz = true; }
       else if (x.ishod === 'ne' && !o.odg) { o.odg = true; }
     });
-    var x = { poslano: 0, odgovorilo: 0, prihvatilo: 0, odbilo: 0, klijenti: 0, izvori: {} };
+    var x = { poslano: 0, odgovorilo: 0, prihvatilo: 0, odbilo: 0, klijenti: 0, izvori: {}, klijentiLista: [], klPon: 0, klOtv: 0 };
     r.poslaniLista.forEach(function(l) {
       if (raspon && !(l[0] && l[0] >= raspon[0] && l[0] < raspon[1])) { return; }
       var o = dog[l[2]] || {}, iz = (r.poslaniIzvori || [])[l[1]] || USPJ_BEZ_IZVORA_;
       var b = x.izvori[iz] || (x.izvori[iz] = { poslano: 0, odgovorilo: 0, klijenti: 0 });
       x.poslano++; b.poslano++;
       if (o.odg) { x.odgovorilo++; b.odgovorilo++; if (o.poz) { x.prihvatilo++; } else { x.odbilo++; } }
-      if (o.kl) { x.klijenti++; b.klijenti++; }
+      if (o.kl) { x.klijenti++; b.klijenti++; if (o.klOtv) { x.klOtv++; } else { x.klPon++; } x.klijentiLista.push({ naziv: o.naziv || ('OIB ' + l[2]), put: o.klOtv ? 'otvorena ponuda' : 'upitnik → ponuda', datum: o.klDat || '', izvor: iz }); }
     });
     return x;
   }
@@ -13326,6 +13330,18 @@
       var t = function(x) { return x ? (x.poslano + ' → ' + x.odgovorilo + ' → ' + x.klijenti) : '…'; };
       el.textContent = 'Pisma namjere: ' + t(pi) + '  ·  Ponude: ' + t(po) + '  ·  Otvorene ponude: ' + t(ot) + '   (poslano → odgovorilo → postali klijenti)';
     } catch (eU_) { /* nije kritično */ }
+  }
+  // v414: pisma namjere → postali klijenti: kojim putem + popis firmi
+  function uspjKlijentiHtml_(x) {
+    if (!x || !x.klijentiLista) { return ''; }
+    var l = x.klijentiLista;
+    var h = '<div class="uspj-kl"><div class="uspj-kl-n">🏆 Preko pisama namjere postalo je klijentima: <b>' + l.length + '</b>' +
+      (l.length ? ' <span>(upitnik → ponuda: <b>' + x.klPon + '</b> · otvorena ponuda: <b>' + x.klOtv + '</b>)</span>' : '') + '</div>';
+    if (l.length) {
+      h += '<details class="uspj-izv"' + (l.length <= 10 ? ' open' : '') + '><summary>Koje firme (' + l.length + ')</summary><table><thead><tr><th>Firma</th><th>Put</th><th>Postao klijent</th><th>Izvor / kampanja</th></tr></thead><tbody>' +
+        l.map(function(k) { return '<tr><td>' + esc(k.naziv) + '</td><td>' + esc(k.put) + '</td><td>' + esc(k.datum) + '</td><td>' + esc(k.izvor) + '</td></tr>'; }).join('') + '</tbody></table></details>';
+    }
+    return h + '</div>';
   }
   function uspjIzvoriHtml_(izv) {
     var kljuci = izv ? Object.keys(izv) : [];
@@ -13346,7 +13362,7 @@
       '<div class="uspj-kor"><div class="n">' + x.odgovorilo + '</div><div class="l">Odgovorilo</div><div class="p">' + x.prihvatilo + ' da · ' + x.odbilo + ' ne</div></div>' +
       '<div class="uspj-str"><b>→</b>' + pctTxt_(x.klijenti, x.odgovorilo) + '<br>od odgovorilih</div>' +
       '<div class="uspj-kor"><div class="n">' + x.klijenti + '</div><div class="l">Postali klijenti</div><div class="p">' + pctTxt_(x.klijenti, x.poslano) + ' svih poslanih</div></div>' +
-      '</div><p class="uspj-rec">' + esc(rec) + '</p><p class="uspj-det">' + esc(det) + '</p>' + uspjIzvoriHtml_(x.izvori) + '</div>';
+      '</div><p class="uspj-rec">' + esc(rec) + '</p><p class="uspj-det">' + esc(det) + '</p>' + uspjKlijentiHtml_(x) + uspjIzvoriHtml_(x.izvori) + '</div>';
   }
   var USPJ_RAZDOBLJA_ = [['sve', 'Sve vrijeme'], ['30', 'Zadnjih 30 dana'], ['mjesec', 'Ovaj mjesec'], ['prosli', 'Prošli mjesec'], ['godina', 'Ova godina']];
   function uspjesnostSadrzaj_(sloj) {
@@ -13504,7 +13520,7 @@
     gasCall({ action: 'adminPismaPogodci', token: adminToken }).then(function(res) {
       POGODCI_U_TIJEKU_ = false;
       if (res && res.code === 'auth') { zavrsi({ ok: false }); return; }
-      try { if (res && res.status === 'ok') { var kp_ = kesKlon_(res); kp_.dogMini = (res.dogadaji || []).map(function(d) { return [d.oib, d.vrsta]; }); delete kp_.dogadaji; kesSpremi_('pogodci', kp_); } } catch (eKp) {}   // v393
+      try { if (res && res.status === 'ok') { var kp_ = kesKlon_(res); kp_.dogMini = (res.dogadaji || []).map(function(d) { return /KLIJENT/.test(d.vrsta) ? [d.oib, d.vrsta, d.naziv, d.datum] : [d.oib, d.vrsta]; }); delete kp_.dogadaji; kesSpremi_('pogodci', kp_); } } catch (eKp) {}   // v393
       pismaUcinkovitost_(res);
       if (TV_MOD_) { try { tvBodovi_(res); } catch (eTvB) {} }
       var novih = 0;
