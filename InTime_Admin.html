@@ -26626,6 +26626,14 @@
           promijeniBtn.style.display = 'none';
           potvrdiBtn.style.display = '';
         });
+        // v416: klik u polje odmah otvara uređivanje (olovka nije potrebna); Enter = potvrdi (✓), Esc = odustani
+        input.style.cursor = 'text';
+        input.addEventListener('click', function(ev) { ev.stopPropagation(); if (input.readOnly && promijeniBtn.style.display !== 'none') { promijeniBtn.click(); } });
+        input.addEventListener('keydown', function(ev) {
+          if (input.readOnly) { return; }
+          if (ev.key === 'Enter') { ev.preventDefault(); potvrdiBtn.click(); }
+          else if (ev.key === 'Escape') { ev.preventDefault(); var d_ = PRIKUP_ISPRAVAK_DEF_[kljuc] || {}; input.value = String(fieldVal(entry, d_.label) || d_.klijent || ''); input.readOnly = true; potvrdiBtn.style.display = 'none'; promijeniBtn.style.display = ''; input.blur(); }
+        });
       });
       Array.prototype.forEach.call(wrap.querySelectorAll('.af-prikup-ispravak-potvrdi-btn'), function(potvrdiBtn) {
         var kljuc = potvrdiBtn.getAttribute('data-polje');

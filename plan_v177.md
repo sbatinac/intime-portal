@@ -71,3 +71,4 @@
 - v413 (29.10.2026.): Uspješnost → Pisma namjere: „Odgovorilo” broji i otvorenu ponudu (upitnik / postao klijent), unikorne i ishod poziva s popisa „nazvati” (🟢 🟡 = pozitivno, 🔴 = negativno); „postao klijent” uključuje i klijente preko otvorene ponude i računa se kao odgovor. Iz memorije se pamti i sažeti popis odgovora (nema više 0 dok ne stignu svježi podaci). Apps Script nije mijenjan.
 - v414 (29.10.2026.): Uspješnost → Pisma namjere: zeleni okvir „🏆 Preko pisama namjere postalo je klijentima: N (upitnik → ponuda / otvorena ponuda)” + popis firmi (put, datum, izvor/kampanja); prati odabrano razdoblje. Apps Script nije mijenjan.
 - v415 (29.10.2026.): Uspješnost / Učinkovitost — novi gumbi razdoblja „Ovaj kvartal (Qn godina)” i „Prošli kvartal”. Apps Script nije mijenjan.
+- v416 (29.10.2026.): Podaci o prikupu pošiljaka — klik u polje odmah otvara uređivanje (bez olovke); Enter = potvrdi (✓), Esc = odustani. Apps Script nije mijenjan.
