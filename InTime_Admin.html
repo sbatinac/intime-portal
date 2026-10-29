@@ -19538,7 +19538,7 @@
         '<div class="pm-mreza"><label class="pm-polje">Naziv mail kampanje<input type="text" id="pm-kamp-naziv" placeholder="npr. Slavonija — listopad 2026."></label></div>' +
         '<select id="pm-kamp-tpl" hidden></select>' +
         '<div class="pm-drop" id="pm-drop">📂 Povuci Excel (.xlsx) ovdje ili klikni za odabir<input type="file" id="pm-datoteka" accept=".xlsx" style="display:none;"></div>' +
-        '<div style="margin:10px 0;"><button type="button" class="pm-gumb sek" id="pm-predlozak-xlsx">⬇ Preuzmi praznu Excel tablicu</button><span class="pm-status" id="pm-ucitaj-status"></span></div>' +
+        '<div style="margin:10px 0;"><button type="button" class="pm-gumb sek" id="pm-predlozak-xlsx">⬇ Preuzmi praznu Excel tablicu</button> <button type="button" class="pm-gumb sek" id="pm-ponisti-kamp" hidden style="color:#a93226;border-color:#a93226;">🗑 Poništi kampanju (izbaci Excel)</button><span class="pm-status" id="pm-ucitaj-status"></span></div>' +
         '<div id="pm-pregled"></div>' +
         '<div id="pm-tpl-slot-kamp"></div>' +
         '<div class="af-slanje-guard" id="pm-kamp-guard" style="margin-top:12px;"><h4>Uvjeti za slanje kampanje</h4><div class="af-slanje-guard-uvjeti" id="pm-kamp-uvjeti"></div>' +
@@ -20271,7 +20271,22 @@
         ' <span style="color:#5b6664;font-weight:600;">· trajanje ≈ ' + Math.max(1, Math.ceil(ok * 3 / 60)) + ' min</span>';
       var sve = $('pm-kv-sve'); if (sve) { var moguci = redciKampanje.filter(function(r) { return !r.greska; }); sve.checked = moguci.length > 0 && moguci.every(function(r) { return !r.iskljuci; }); sve.indeterminate = !sve.checked && moguci.some(function(r) { return !r.iskljuci; }); }
     }
+    // v429: poništi kampanju prije slanja — izbacuje učitani Excel, naziv i oznake; nacrti i predložak ostaju
+    function kampPonistiGumb_() { var g = $('pm-ponisti-kamp'); if (g) { g.hidden = !(redciKampanje.length && !kampanjaZakljucana); } }
+    function kampPonisti_() {
+      if (kampanjaZakljucana) { return; }
+      if (!confirm('Poništiti ovu kampanju?\n\nIzbacuje se učitani Excel (' + redciKampanje.length + ' redaka), naziv kampanje i kvačice. Ništa nije poslano i ništa se ne briše na poslužitelju — možeš odmah ubaciti drugi Excel.')) { return; }
+      redciKampanje = []; kampNacrtId = null;
+      $('pm-pregled').innerHTML = '';
+      var nk = $('pm-kamp-naziv'); if (nk) { nk.value = ''; nk.removeAttribute('data-auto'); }
+      status($('pm-ucitaj-status'), 'Kampanja poništena — ubaci novi Excel.', 'ok');
+      try { status($('pm-kreni-status'), ''); } catch (e) {}
+      try { pregledRedovaOsvjezi(); } catch (e2) {}
+      try { nacrtajPregledOdgodeno(); } catch (e3) {}
+      kampAzuriraj(); kampPonistiGumb_();
+    }
     function kampKvacice_() {
+      kampPonistiGumb_();
       kampSazetak_();
       var pr = $('pm-pregled'); if (!pr) { return; }
       var postavi = function(uklj) { if (kampanjaZakljucana) { return; } redciKampanje.forEach(function(r) { if (!r.greska) { r.iskljuci = !uklj; } }); Array.prototype.forEach.call(pr.querySelectorAll('.pm-kv'), function(c) { c.checked = uklj; c.closest('tr').classList.toggle('pm-iskljucen', !uklj); }); kampSazetak_(); kampAzuriraj(); try { pregledRedovaOsvjezi(); } catch (e) {} };
@@ -20309,6 +20324,7 @@
       };
       reader.readAsDataURL(file);
     }
+    $('pm-ponisti-kamp').addEventListener('click', kampPonisti_);
     var drop = $('pm-drop'), inp = $('pm-datoteka');
     drop.addEventListener('click', function(ev) { if (ev.target !== inp) { inp.click(); } });
     inp.addEventListener('change', function() { ucitajDatoteku(inp.files[0]); inp.value = ''; });
@@ -20338,7 +20354,7 @@
       poziv({ action: 'adminKampanjaStart', kopijaAdminu: !!document.querySelector('.pm-kamp-kopija:checked'), naziv: naziv, predlozakId: $('pm-kamp-tpl').value, redci: redciKampanje.filter(function(r) { return !r.iskljuci; }).map(function(r) { return { oib: r.oib, naziv: r.naziv, email: r.email, grad: r.grad, posta: r.posta, osoba: r.osoba, izvorKontakta: r.izvorKontakta || '', mobitel: r.mobitel || '' }; }) }).then(function(res) {
         if (res.status !== 'ok') { gifPaljbaZatvoriOdmah_(); b.disabled = false; status($('pm-kreni-status'), res.message || 'Pokretanje nije uspjelo.', 'greska'); kampAzuriraj(); return; }
         status($('pm-kreni-status'), '');
-        kampanjaZakljucana = true; potvrdjeno['pm-kamp'] = ''; guardiOsvjezi();
+        kampanjaZakljucana = true; potvrdjeno['pm-kamp'] = ''; guardiOsvjezi(); try { kampPonistiGumb_(); } catch (ePg) {}
         kampNacrtPoslan_();
         kvotaPrikaz(res.kvota); akbUcitaj();
         tijekKampanje = { id: res.kampanjaId, ukupno: res.ceka, poslano: 0, greske: 0, stani: false, pokusaji: 0 };
