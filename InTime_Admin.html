@@ -5647,8 +5647,16 @@
   function autoZatvoriUkljuceno_() { try { return localStorage.getItem('intime_auto_zatvori') !== '0'; } catch (e) { return true; } }
   function autoZatvoriPostavi_(v) { try { localStorage.setItem('intime_auto_zatvori', v ? '1' : '0'); } catch (e) { /* bez localStorage */ } autoZatvoriZadnje_ = new WeakMap(); }
   document.addEventListener('mousemove', function(ev) { autoZatvoriMis_.x = ev.clientX; autoZatvoriMis_.y = ev.clientY; }, { passive: true });
+  // v409: rad u kartici (klik, tipkanje, odabir) i svako spremanje daju 30 s mira — kartica se ne zatvara odmah nakon unosa
+  var AUTO_ZATVORI_MIR_MS_ = 30000, AUTO_ZATVORI_MIR_DO_ = 0;
+  ['click', 'input', 'change', 'keydown'].forEach(function(t) {
+    document.addEventListener(t, function(ev) {
+      try { var c = ev.target && ev.target.closest ? ev.target.closest('.entry-card') : null; if (c) { autoZatvoriZadnje_.set(c, Date.now() + AUTO_ZATVORI_MIR_MS_ - AUTO_ZATVORI_MS_); AUTO_ZATVORI_MIR_DO_ = Date.now() + AUTO_ZATVORI_MIR_MS_; } } catch (e) { /* nije kritično */ }
+    }, true);
+  });
   function autoZatvoriPauza_() {
-    if (ZAPISI_U_TIJEKU_ > 0) { return true; }
+    if (ZAPISI_U_TIJEKU_ > 0) { AUTO_ZATVORI_MIR_DO_ = Date.now() + AUTO_ZATVORI_MIR_MS_; return true; }
+    if (Date.now() < AUTO_ZATVORI_MIR_DO_) { return true; }
     if (document.querySelector('.modal-overlay:not([hidden])')) { return true; }
     return false;
   }
