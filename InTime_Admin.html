@@ -705,6 +705,9 @@
   .bs-kazalo .bs-kaz-u{background:rgba(0,0,0,.35);color:#fff;}
   .bs-kazalo .bs-kaz-sit{color:#9fb3d3;font-style:italic;}
   html.tv-mod .bs-kazalo{display:none;}
+  /* v428: otkvačena firma u kampanji */
+  .pm-tablica tr.pm-iskljucen td{opacity:.45;text-decoration:line-through;}
+  .pm-tablica tr.pm-iskljucen td:first-child{opacity:1;text-decoration:none;}
   /* v414 */
   .uspj-kl{margin:10px 0 6px;padding:10px 12px;border-radius:10px;background:#eef9f1;border:1.5px solid #1e8449;}
   .uspj-kl-n{font-size:14.5px;color:#14532d;}
@@ -19871,7 +19874,7 @@
     $('pm-pregled-red').addEventListener('change', nacrtajPregled);
     function pregledRedovaOsvjezi() {
       var sel = $('pm-pregled-red'), staro = sel.value, h = '', n = 0;
-      (redciKampanje || []).forEach(function(r, i) { if (!r.greska && n < 200) { n++; h += '<option value="' + i + '">' + esc((r.naziv || '(bez naziva)') + ' — ' + (r.email || '')) + '</option>'; } });
+      (redciKampanje || []).forEach(function(r, i) { if (!r.greska && !r.iskljuci && n < 200) { n++; h += '<option value="' + i + '">' + esc((r.naziv || '(bez naziva)') + ' — ' + (r.email || '')) + '</option>'; } });
       sel.innerHTML = h; sel.hidden = !n;
       if (n && Array.prototype.some.call(sel.options, function(o) { return o.value === staro; })) { sel.value = staro; }
     }
@@ -20039,7 +20042,7 @@
       $('pm-posalji').disabled = !sveOk;
     }
     function kampAzuriraj() {
-      var ok = redciKampanje.filter(function(r) { return !r.greska; }).length;
+      var ok = redciKampanje.filter(function(r) { return !r.greska && !r.iskljuci; }).length;
       var naziv = $('pm-kamp-naziv').value.trim();
       var potvrda = tplPotvrdaOk('pm-kamp', 'pm-kamp-tpl');
       var uvjeti = [
@@ -20106,7 +20109,7 @@
       var naziv = $('pm-kamp-naziv').value.trim();
       if (!naziv && !redciKampanje.length) { status(st, 'Upiši naziv kampanje ili učitaj popis (Excel).', 'greska'); return; }
       b.disabled = true; status(st, 'Spremam…');
-      poziv({ action: 'adminKampanjaNacrtSpremi', nacrt: { id: kampNacrtId || '', naziv: naziv, predlozakId: $('pm-kamp-tpl').value, redci: redciKampanje.map(function(r) { return { red: r.red, oib: r.oib, naziv: r.naziv, email: r.email, posta: r.posta, grad: r.grad, osoba: r.osoba, izvorKontakta: r.izvorKontakta || '', mobitel: r.mobitel || '', greska: r.greska || '' }; }) } }).then(function(res) {
+      poziv({ action: 'adminKampanjaNacrtSpremi', nacrt: { id: kampNacrtId || '', naziv: naziv, predlozakId: $('pm-kamp-tpl').value, redci: redciKampanje.map(function(r) { return { red: r.red, oib: r.oib, naziv: r.naziv, email: r.email, posta: r.posta, grad: r.grad, osoba: r.osoba, izvorKontakta: r.izvorKontakta || '', mobitel: r.mobitel || '', greska: r.greska || '', iskljuci: !!r.iskljuci }; }) } }).then(function(res) {
         b.disabled = false;
         if (res.status === 'ok') { kampNacrtId = res.id; status(st, '✓ Spremljeno kao „nije poslano“ (' + res.redaka + ' redaka, ' + res.datum + ').', 'ok'); kampNacrtOsvjezi_(); }
         else { status(st, res.message || 'Spremanje nije uspjelo.', 'greska'); }
@@ -20244,18 +20247,46 @@
     function nacrtajPregledTablice(res) {
       redciKampanje = res.redci || [];
       if (res.kvota !== undefined) { kvotaPrikaz(res.kvota); }
-      var ok = redciKampanje.filter(function(r) { return !r.greska; }).length, lose = redciKampanje.length - ok;
-      var html = '<div style="margin:6px 0;font-size:13px;font-weight:700;"><span class="pm-cip p">Spremno za slanje: ' + ok + '</span>' + (lose ? '<span class="pm-cip g">Preskače se: ' + lose + '</span>' : '') +
-        ' <span style="color:#5b6664;font-weight:600;">· trajanje ≈ ' + Math.max(1, Math.ceil(ok * 3 / 60)) + ' min</span></div>' +
-        '<div class="pm-skrol"><table class="pm-tablica"><thead><tr><th>#</th><th>OIB</th><th>Naziv firme</th><th>E-mail</th><th>Pošt. br.</th><th>Grad</th><th>Ime i prezime</th><th>Izvor</th><th>Mobitel</th><th>Napomena</th></tr></thead><tbody>' +
+      var lose = redciKampanje.filter(function(r) { return !!r.greska; }).length;
+      var html = '<div style="margin:6px 0;font-size:13px;font-weight:700;" id="pm-kamp-sazetak"></div>' +
+        '<div style="margin:0 0 6px;font-size:12.5px;color:#5b6664;">☑ Kvačica = firma ide u kampanju. Otkvači one kojima ne želiš slati. <button type="button" class="pm-gumb mali" id="pm-oznaci-sve" style="margin-left:6px;">☑ Označi sve</button> <button type="button" class="pm-gumb mali" id="pm-odznaci-sve">☐ Odznači sve</button></div>' +
+        '<div class="pm-skrol"><table class="pm-tablica"><thead><tr><th style="width:28px;"><input type="checkbox" id="pm-kv-sve" title="Označi / odznači sve" style="width:18px;height:18px;"></th><th>#</th><th>OIB</th><th>Naziv firme</th><th>E-mail</th><th>Pošt. br.</th><th>Grad</th><th>Ime i prezime</th><th>Izvor</th><th>Mobitel</th><th>Napomena</th></tr></thead><tbody>' +
         redciKampanje.slice(0, 500).map(function(r) {
-          return '<tr class="' + (r.greska ? 'lose' : '') + '"><td>' + r.red + '</td><td>' + esc(r.oib) + '</td><td>' + esc(r.naziv) + '</td><td>' + esc(r.email) + '</td><td>' + esc(r.posta) + '</td><td>' + esc(r.grad) + '</td><td>' + esc(r.osoba) + '</td><td>' + esc(r.izvorKontakta || '') + '</td><td>' + esc(r.mobitel || '') + '</td><td>' + esc(r.greska || '✓') + '</td></tr>';
+          var ix_ = redciKampanje.indexOf(r);
+          return '<tr class="' + (r.greska ? 'lose' : '') + (r.iskljuci ? ' pm-iskljucen' : '') + '"><td>' + (r.greska ? '' : '<input type="checkbox" class="pm-kv" data-i="' + ix_ + '"' + (r.iskljuci ? '' : ' checked') + ' style="width:18px;height:18px;cursor:pointer;">') + '</td><td>' + r.red + '</td><td>' + esc(r.oib) + '</td><td>' + esc(r.naziv) + '</td><td>' + esc(r.email) + '</td><td>' + esc(r.posta) + '</td><td>' + esc(r.grad) + '</td><td>' + esc(r.osoba) + '</td><td>' + esc(r.izvorKontakta || '') + '</td><td>' + esc(r.mobitel || '') + '</td><td>' + esc(r.greska || '✓') + '</td></tr>';
         }).join('') + '</tbody></table></div>' + (redciKampanje.length > 500 ? '<p class="pm-hint">Prikazano prvih 500 redaka od ' + redciKampanje.length + '.</p>' : '') +
         '';
       $('pm-pregled').innerHTML = html;
+      kampKvacice_();
       kampanjaZakljucana = false;
       pregledRedovaOsvjezi(); nacrtajPregledOdgodeno();
       kampAzuriraj();
+    }
+    // v428: kvačice — otkvačene firme ne idu u kampanju
+    function kampOk_(r) { return !r.greska && !r.iskljuci; }
+    function kampSazetak_() {
+      var el = $('pm-kamp-sazetak'); if (!el) { return; }
+      var ok = redciKampanje.filter(kampOk_).length, lose = redciKampanje.filter(function(r) { return !!r.greska; }).length, isk = redciKampanje.filter(function(r) { return !r.greska && r.iskljuci; }).length;
+      el.innerHTML = '<span class="pm-cip p">Spremno za slanje: ' + ok + '</span>' + (isk ? '<span class="pm-cip g" style="background:#fff3cd;color:#7a5c00;border-color:#e0b400;">Otkvačeno: ' + isk + '</span>' : '') + (lose ? '<span class="pm-cip g">Preskače se (greška): ' + lose + '</span>' : '') +
+        ' <span style="color:#5b6664;font-weight:600;">· trajanje ≈ ' + Math.max(1, Math.ceil(ok * 3 / 60)) + ' min</span>';
+      var sve = $('pm-kv-sve'); if (sve) { var moguci = redciKampanje.filter(function(r) { return !r.greska; }); sve.checked = moguci.length > 0 && moguci.every(function(r) { return !r.iskljuci; }); sve.indeterminate = !sve.checked && moguci.some(function(r) { return !r.iskljuci; }); }
+    }
+    function kampKvacice_() {
+      kampSazetak_();
+      var pr = $('pm-pregled'); if (!pr) { return; }
+      var postavi = function(uklj) { if (kampanjaZakljucana) { return; } redciKampanje.forEach(function(r) { if (!r.greska) { r.iskljuci = !uklj; } }); Array.prototype.forEach.call(pr.querySelectorAll('.pm-kv'), function(c) { c.checked = uklj; c.closest('tr').classList.toggle('pm-iskljucen', !uklj); }); kampSazetak_(); kampAzuriraj(); try { pregledRedovaOsvjezi(); } catch (e) {} };
+      Array.prototype.forEach.call(pr.querySelectorAll('.pm-kv'), function(c) {
+        c.addEventListener('change', function() {
+          if (kampanjaZakljucana) { c.checked = !c.checked; return; }
+          var r = redciKampanje[+c.getAttribute('data-i')]; if (!r) { return; }
+          r.iskljuci = !c.checked; c.closest('tr').classList.toggle('pm-iskljucen', !c.checked);
+          kampSazetak_(); kampAzuriraj(); try { pregledRedovaOsvjezi(); } catch (e) {}
+        });
+      });
+      var sve = $('pm-kv-sve'); if (sve) { sve.addEventListener('change', function() { postavi(sve.checked); }); }
+      var a = $('pm-oznaci-sve'), b = $('pm-odznaci-sve');
+      if (a) { a.addEventListener('click', function() { postavi(true); }); }
+      if (b) { b.addEventListener('click', function() { postavi(false); }); }
     }
     function ucitajDatoteku(file) {
       if (!file) { return; }
@@ -20289,7 +20320,7 @@
     var tijekKampanje = null;
     function pokreniKampanju() {
       var naziv = $('pm-kamp-naziv').value.trim();
-      var ok = redciKampanje.filter(function(r) { return !r.greska; });
+      var ok = redciKampanje.filter(function(r) { return !r.greska && !r.iskljuci; });   // v428: bez otkvačenih
       if (!naziv) { status($('pm-kreni-status'), 'Upiši naziv kampanje.', 'greska'); $('pm-kamp-naziv').focus(); return; }
       var b = $('pm-kreni'); b.disabled = true; status($('pm-kreni-status'), 'Provjeravam postavke…');
       poziv({ action: 'adminPismaIzlaz' }).then(function(pr) {
@@ -20304,7 +20335,7 @@
     function pokreniKampanjuStvarno_(naziv, ok, b) {
       b.disabled = true; status($('pm-kreni-status'), 'Pokrećem…');
       gifPaljbaOtvori_('🚀 Pokrećem kampanju…');
-      poziv({ action: 'adminKampanjaStart', kopijaAdminu: !!document.querySelector('.pm-kamp-kopija:checked'), naziv: naziv, predlozakId: $('pm-kamp-tpl').value, redci: redciKampanje.map(function(r) { return { oib: r.oib, naziv: r.naziv, email: r.email, grad: r.grad, posta: r.posta, osoba: r.osoba, izvorKontakta: r.izvorKontakta || '', mobitel: r.mobitel || '' }; }) }).then(function(res) {
+      poziv({ action: 'adminKampanjaStart', kopijaAdminu: !!document.querySelector('.pm-kamp-kopija:checked'), naziv: naziv, predlozakId: $('pm-kamp-tpl').value, redci: redciKampanje.filter(function(r) { return !r.iskljuci; }).map(function(r) { return { oib: r.oib, naziv: r.naziv, email: r.email, grad: r.grad, posta: r.posta, osoba: r.osoba, izvorKontakta: r.izvorKontakta || '', mobitel: r.mobitel || '' }; }) }).then(function(res) {
         if (res.status !== 'ok') { gifPaljbaZatvoriOdmah_(); b.disabled = false; status($('pm-kreni-status'), res.message || 'Pokretanje nije uspjelo.', 'greska'); kampAzuriraj(); return; }
         status($('pm-kreni-status'), '');
         kampanjaZakljucana = true; potvrdjeno['pm-kamp'] = ''; guardiOsvjezi();
