@@ -2543,6 +2543,9 @@
   #tv-ekran .kp-d.nula{opacity:.45;}
   #tv-ekran .kp-danas-ok{font-size:2.8vh;margin-top:1.2vh;color:#7ee2a8 !important;text-align:center;}
   #tv-ekran .kp-pe-gumb{display:none !important;}
+  /* v432: potpis programa na TV-u */
+  #tv-ekran .tv-potpis{margin-left:auto;font-size:1.6vh;font-weight:800;letter-spacing:.12em;color:#9fd2ff;text-transform:none;white-space:nowrap;text-shadow:0 0 10px rgba(80,190,255,.45);}
+  #tv-ekran .tv-potpis em{font-style:normal;color:#5b7aa8;margin:0 .3vw;}
   /* v431: TV kazalo brojača */
   #tv-ekran .tv-odj-kaz{display:flex;align-items:center;gap:1.4vw;flex-wrap:nowrap;}
   #tv-ekran .tv-kaz{display:flex;align-items:center;gap:1.1vw;letter-spacing:0;text-transform:none;font-weight:600;color:#cfdcf0;font-size:1.5vh;margin-left:auto;}
@@ -3624,7 +3627,7 @@
     ekran.innerHTML = '<div class="tv-glava"><div class="tv-lijevo"><div class="tv-naslov">⚓ COMMAND BRIDGE</div><div class="tv-pod">In Time d.o.o. · zapovjedni most · osvježeno <span id="tv-osvjezeno">—</span> · <button type="button" id="tv-int" class="tv-int" title="Klik = promijeni koliko često se TV osvježava"></button></div></div>' +
       '<div class="tv-bs" id="tv-bs"></div><button type="button" class="tv-vrijeme" id="tv-vrijeme" title="Klik = odaberi grad">🌡 …</button><div class="tv-desno"><div class="tv-sat" id="tv-sat">--:--</div><div class="tv-datum" id="tv-datum"></div></div></div>';
     document.body.appendChild(ekran);
-    var od1 = document.createElement('div'); od1.className = 'tv-odjeljak'; od1.textContent = '📌 Danas čeka'; ekran.appendChild(od1);
+    var od1 = document.createElement('div'); od1.className = 'tv-odjeljak tv-odj-kaz'; od1.innerHTML = '<span>📌 Danas čeka</span><span class="tv-potpis">🐾 PANTHER <em>·</em> izradio Saša Batinac</span>'; ekran.appendChild(od1);   // v432
     var kp = document.getElementById('kp-danas'); if (kp) { ekran.appendChild(kp); }
     // v424: ispod pločica — traka statistike i traka brojača (prepisuje se iz admina svake 2 s)
     var od2 = document.createElement('div'); od2.className = 'tv-odjeljak'; od2.textContent = '📊 Statistika'; ekran.appendChild(od2);

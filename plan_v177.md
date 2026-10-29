@@ -87,3 +87,4 @@
 - v429 (30.10.2026.): Kampanja — tipka „🗑 Poništi kampanju (izbaci Excel)” prije slanja: uz potvrdu izbacuje učitani Excel, naziv i kvačice (ništa se ne šalje ni ne briše na poslužitelju), pa se odmah može ubaciti drugi Excel; nakon pokretanja kampanje tipka se skriva. Apps Script nije mijenjan.
 - v430 (30.10.2026.): Pisma namjere — podkartica „🗄 Arhiva pojedinačnih pisama” preimenovana u „🔎 Pretraga svih pisama”; „Vrsta” je zadano „Sve (pojedinačni mailovi i kampanje)” (i nakon „✕ Poništi”), pa pretraga po nazivu/OIB-u/gradu/datumu odmah gleda i sve kampanje. Apps Script nije mijenjan.
 - v431 (30.10.2026.): TV — kazalo brojača desno uz naslov „Ponude i komunikacija” (veliki broj = čeka odgovor, ✓ prihvaćene, ✗ odbijene, INTRIX, ⭐ čeka OB ulaz, Σ ukupno). Apps Script nije mijenjan.
+- v432 (30.10.2026.): TV — desno uz „Danas čeka” potpis programa „🐾 PANTHER · izradio Saša Batinac”. Apps Script nije mijenjan.
