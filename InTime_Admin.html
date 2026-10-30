@@ -720,6 +720,10 @@
   .intrix-prek[disabled]{opacity:.6;cursor:wait;}
   @keyframes intrixSjaj{0%,100%{box-shadow:0 0 8px rgba(33,150,243,.6),inset 0 0 5px rgba(33,150,243,.4);}50%{box-shadow:0 0 16px rgba(33,150,243,.95),inset 0 0 8px rgba(33,150,243,.6);}}
   .bs-brojac .bs-ob{background:#e8459a;color:#fff;box-shadow:0 0 6px rgba(232,69,154,.75);cursor:pointer;}   /* v422: ružičasto */
+  .ix-prekidac{display:inline-flex;gap:6px;margin-left:auto;margin-right:8px;}
+  .ix-prekidac button{border:2px solid rgba(255,255,255,.7);background:rgba(255,255,255,.15);color:#fff;border-radius:999px;padding:4px 12px;font:inherit;font-weight:800;cursor:pointer;}
+  .ix-prekidac button.akt{background:#fff;color:#4a1d96;}
+  .ix-prekidac button[data-v=obCeka].akt{color:#c2185b;}
   .bs-brojac .bs-i{background:#7b2ff7;color:#fff;box-shadow:0 0 6px rgba(123,47,247,.7);cursor:pointer;}
   .bs-brojac .bs-i:hover{background:#9d5cff;box-shadow:0 0 10px rgba(157,92,255,.9);}
   .ix-prikaz-glava{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:0 0 12px;padding:12px 16px;border-radius:12px;background:linear-gradient(90deg,#5b1fc7,#7b2ff7 60%,#9d5cff);color:#fff;font-size:15px;box-shadow:0 0 18px rgba(123,47,247,.4);}
@@ -3723,7 +3727,7 @@
     if (ZAPISI_U_TIJEKU_ === 0 && OSVJEZI_NAKON_ZAPISA_) { OSVJEZI_NAKON_ZAPISA_ = false; try { loadEntries(); } catch (eZg) { /* nije kritično */ } }
   }
   // ===== v403: TV PRIKAZ (InTime_Admin.html?tv=1) — samo pločice „Danas čeka tebe”, velike, sat, Battleships bodovi, osvježavanje svake 2 min =====
-  var PANTHER_VERZIJA_ = 'v441';   // v433: broj verzije — Claude ga podiže pri svakoj isporuci (prikazuje se na TV-u i u adminu)
+  var PANTHER_VERZIJA_ = 'v442';   // v433: broj verzije — Claude ga podiže pri svakoj isporuci (prikazuje se na TV-u i u adminu)
   try { document.addEventListener('DOMContentLoaded', function() { var v = document.getElementById('panther-ver'); if (v) { v.textContent = '🐾 PANTHER ' + PANTHER_VERZIJA_; } }); var v0_ = document.getElementById('panther-ver'); if (v0_) { v0_.textContent = '🐾 PANTHER ' + PANTHER_VERZIJA_; } } catch (eVer) {}
   var TV_MOD_ = /[?&]tv=1(&|$)/.test(location.search);
   var TV_AKCIJE_KLIJENT_ = /^(adminDnevniCiljStanje|adminUcitajPocetno|adminListEntries|adminGetCounters|adminPismaBezOdgovora|adminPismaPogodci|tvProvjera)$/;
@@ -6954,7 +6958,7 @@
     ceka: ['ČEKA ODGOVOR', 'poslane ponude koje čekaju odgovor klijenta', 'linear-gradient(90deg,#3730a3,#4f46e5 60%,#818cf8)'],
     istice: ['ROK ISTJEČE', 'ponude kojima rok ističe u 48 h', 'linear-gradient(90deg,#991b1b,#c0392b 60%,#ef6b5b)'],
     prihv: ['PRIHVAĆENE', 'prihvaćene ponude — nastaviti postupak', 'linear-gradient(90deg,#14532d,#1e8449 60%,#3fbf7f)'],
-    obCeka: ['⭐ ČEKA OB ULAZ', 'mail za OB zahtjev poslan, OB lozinka još nije upisana', 'linear-gradient(90deg,#8a6500,#d4a300 60%,#f5d24a)'],
+    obCeka: ['⭐ ČEKA OB ULAZ', 'mail za OB zahtjev poslan, OB lozinka još nije upisana', 'linear-gradient(90deg,#a3195b,#e8459a 60%,#ff8cc6)'],
     otvBez: ['PODACI NISU STIGLI', 'otvorene ponude prihvaćene, a upitnik nije popunjen', 'linear-gradient(90deg,#9a3412,#e65100 60%,#ff9e4f)'] };
   function posebniPasuje_(e, vrsta) {
     var st = ponudaStatusSazetak_(e);
@@ -7169,7 +7173,7 @@
   function bsIscrtaj_(el, btn, r, naziv) {
     if (!el) { return; }
     el.innerHTML = '<span class="bs-v" title="Čeka odgovor klijenta">' + r.ceka + '</span>' +
-      '<span class="bs-m"><b class="bs-p" title="Prihvaćene (bez onih u INTRIX-u)">✓ ' + r.prih + '</b><b class="bs-o" title="Odbijene">✗ ' + r.odb + '</b>' + (r.intrix ? '<b class="bs-i" title="Klik = prikaži sve ponude u INTRIX-u (Ponude + Otvorene)" onclick="event.stopPropagation(); intrixOtvoriPrikaz_();">INTRIX ' + r.intrix + '</b>' : '') + (r.ob ? '<b class="bs-ob" title="Čeka OB ulaz — mail za OB zahtjev poslan, OB lozinka još nije upisana. Klik = prikaži popis" onclick="event.stopPropagation(); posebniOtvori_(\'obCeka\');">⭐ ' + r.ob + '</b>' : '') + '<b class="bs-u" title="Ukupno u kartici">Σ ' + r.uk + '</b></span>';
+      '<span class="bs-m"><b class="bs-p" title="Prihvaćene (bez onih u INTRIX-u)">✓ ' + r.prih + '</b><b class="bs-o" title="Odbijene">✗ ' + r.odb + '</b>' + (r.intrix ? '<b class="bs-i" title="Klik = prikaži sve ponude u INTRIX-u (Ponude + Otvorene)" onclick="event.stopPropagation(); intrixOtvoriPrikaz_();">INTRIX ' + r.intrix + '</b>' : '') + (r.ob ? '<b class="bs-ob" title="Čeka OB ulaz — mail za OB zahtjev poslan, OB lozinka još nije upisana. Klik = prikaži popis" onclick="event.stopPropagation(); posebniOtvori_(\'obCeka\');">⭐ OB ' + r.ob + '</b>' : '') + '<b class="bs-u" title="Ukupno u kartici">Σ ' + r.uk + '</b></span>';
     if (btn) { btn.title = naziv + ': čeka odgovor ' + r.ceka + ' · prihvaćene ' + r.prih + (r.intrix ? ' · u INTRIX-u ' + r.intrix : '') + (r.ob ? ' · čeka OB ulaz ' + r.ob : '') + ' · odbijene ' + r.odb + ' · ukupno ' + r.uk + (naziv === 'Otvorene ponude' ? ' (prebačene u Ponude se ne računaju)' : ''); }
   }
   // v315: tab „Otvorene ponude” — samo brojevi: prihvaćene / odgovorile / poslane (bez postotaka)
@@ -7362,7 +7366,14 @@
       ixGlava_.className = 'ix-prikaz-glava';
       var ixN_ = POSEBNI_NASLOVI_[POSEBNI_VRSTA_] || POSEBNI_NASLOVI_.intrix;
       ixGlava_.style.background = ixN_[2];
-      ixGlava_.innerHTML = '<span><b>' + ixN_[0] + '</b> — ' + ixN_[1] + ': <b>' + ixLista_.length + '</b></span><button type="button" class="ix-prikaz-x">✕ Zatvori</button>';
+      // v442: gumbi za brzi prijelaz INTRIX ↔ ⭐ čeka OB
+      var ixPrekidac_ = '';
+      if (POSEBNI_VRSTA_ === 'intrix' || POSEBNI_VRSTA_ === 'obCeka') {
+        var vrSt_ = POSEBNI_VRSTA_; POSEBNI_VRSTA_ = 'intrix'; var nIx_ = intrixListaZaPrikaz_().length; POSEBNI_VRSTA_ = 'obCeka'; var nOb_ = intrixListaZaPrikaz_().length; POSEBNI_VRSTA_ = vrSt_;
+        ixPrekidac_ = '<span class="ix-prekidac"><button type="button" data-v="intrix" class="' + (POSEBNI_VRSTA_ === 'intrix' ? 'akt' : '') + '">🟣 INTRIX ' + nIx_ + '</button><button type="button" data-v="obCeka" class="' + (POSEBNI_VRSTA_ === 'obCeka' ? 'akt' : '') + '">⭐ Čeka OB ' + nOb_ + '</button></span>';
+      }
+      ixGlava_.innerHTML = '<span><b>' + ixN_[0] + '</b> — ' + ixN_[1] + ': <b>' + ixLista_.length + '</b></span>' + ixPrekidac_ + '<button type="button" class="ix-prikaz-x">✕ Zatvori</button>';
+      Array.prototype.forEach.call(ixGlava_.querySelectorAll('.ix-prekidac button'), function(b) { b.addEventListener('click', function() { posebniOtvori_(b.getAttribute('data-v')); }); });
       ixGlava_.querySelector('.ix-prikaz-x').addEventListener('click', function() { switchTab('Ponude'); });
       container.appendChild(ixGlava_);
       if (!ixLista_.length) {

@@ -97,3 +97,4 @@
 - v439 (30.10.2026.): TV — brojači Ponude / Otvorene ponude: oznake (✓ ✗ INTRIX ⭐ Σ) u jednom redu umjesto u dva.
 - v440 (30.10.2026.): TV — nova kartica „🧩 Ostalo za riješiti”: ponude u INTRIX-u po imenu (što fali: TM / OB / OB lozinka, ili ✓ izbaci) i ⭐ ponude koje čekaju OB ulaz (datum slanja zahtjeva). Red s ciljem sad ima 5 kartica.
 - v441 (30.10.2026.): TV — odbrojavanje i do kraja godine: „⏱ do kraja: mj. · Q · god.”; „Admiral još N” prebačeno u redak Battleshipsa da sve stane.
+- v442 (30.10.2026.): Admin — oznaka „⭐ OB n” uz INTRIX (klik = sve ponude koje čekaju OB); u prikazu INTRIX / Čeka OB gumbi „🟣 INTRIX n” i „⭐ Čeka OB n” za brzi prijelaz; prikaz Čeka OB ružičast.
