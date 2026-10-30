@@ -738,6 +738,7 @@
   .intrix-prek[disabled]{opacity:.6;cursor:wait;}
   @keyframes intrixSjaj{0%,100%{box-shadow:0 0 8px rgba(33,150,243,.6),inset 0 0 5px rgba(33,150,243,.4);}50%{box-shadow:0 0 16px rgba(33,150,243,.95),inset 0 0 8px rgba(33,150,243,.6);}}
   .bs-brojac .bs-ob{background:#e8459a;color:#fff;box-shadow:0 0 6px rgba(232,69,154,.75);cursor:pointer;}   /* v422: ružičasto */
+  .pm-akb-zbroj td{position:sticky;bottom:0;background:#eef6ff;border-top:2px solid #1a73c8;font-weight:700;padding-top:8px;padding-bottom:8px;}
   .ix-prekidac{display:inline-flex;gap:6px;margin-left:auto;margin-right:8px;}
   .ix-prekidac button{border:2px solid rgba(255,255,255,.7);background:rgba(255,255,255,.15);color:#fff;border-radius:999px;padding:4px 12px;font:inherit;font-weight:800;cursor:pointer;}
   .ix-prekidac button.akt{background:#fff;color:#4a1d96;}
@@ -3745,7 +3746,7 @@
     if (ZAPISI_U_TIJEKU_ === 0 && OSVJEZI_NAKON_ZAPISA_) { OSVJEZI_NAKON_ZAPISA_ = false; try { loadEntries(); } catch (eZg) { /* nije kritično */ } }
   }
   // ===== v403: TV PRIKAZ (InTime_Admin.html?tv=1) — samo pločice „Danas čeka tebe”, velike, sat, Battleships bodovi, osvježavanje svake 2 min =====
-  var PANTHER_VERZIJA_ = 'v443';   // v433: broj verzije — Claude ga podiže pri svakoj isporuci (prikazuje se na TV-u i u adminu)
+  var PANTHER_VERZIJA_ = 'v444';   // v433: broj verzije — Claude ga podiže pri svakoj isporuci (prikazuje se na TV-u i u adminu)
   try { document.addEventListener('DOMContentLoaded', function() { var v = document.getElementById('panther-ver'); if (v) { v.textContent = '🐾 PANTHER ' + PANTHER_VERZIJA_; } }); var v0_ = document.getElementById('panther-ver'); if (v0_) { v0_.textContent = '🐾 PANTHER ' + PANTHER_VERZIJA_; } } catch (eVer) {}
   var TV_MOD_ = /[?&]tv=1(&|$)/.test(location.search);
   var TV_AKCIJE_KLIJENT_ = /^(adminDnevniCiljStanje|adminUcitajPocetno|adminListEntries|adminGetCounters|adminPismaBezOdgovora|adminPismaPogodci|tvProvjera)$/;
@@ -21003,6 +21004,14 @@
         akbNacrtaj();
       }).catch(function(e) { $('pm-akb-lista').innerHTML = '<div class="empty-hint">' + esc(e.message || 'Greška.') + '</div>'; });
     }
+    // v444: zbroj svih kampanja na dnu tablice
+    function akbZbroj_() {
+      var z = { ukupno: 0, Poslano: 0, 'Čeka': 0, Zaustavljeno: 0, 'Greška': 0, 'Preskočeno': 0 };
+      akbKampanje.forEach(function(k) { Object.keys(z).forEach(function(x) { z[x] += Number(k[x]) || 0; }); });
+      return '<tfoot><tr class="pm-akb-zbroj"><td><strong>Σ UKUPNO</strong> <span style="color:#5b6664;font-size:12px;">(' + akbKampanje.length + ' kampanja)</span></td><td></td><td>' + z.ukupno + ' adresa · <span class="pm-cip p" style="font-size:13px;">✉ Poslano ukupno ' + z.Poslano + '</span>' +
+        (z['Čeka'] ? '<span class="pm-cip c">Čeka ' + z['Čeka'] + '</span>' : '') + (z.Zaustavljeno ? '<span class="pm-cip g">Zaustavljeno ' + z.Zaustavljeno + '</span>' : '') +
+        (z['Greška'] ? '<span class="pm-cip g">Greške ' + z['Greška'] + '</span>' : '') + (z['Preskočeno'] ? '<span class="pm-cip">Preskočeno ' + z['Preskočeno'] + '</span>' : '') + '</td><td></td></tr></tfoot>';
+    }
     function akbNacrtaj() {
       var box = $('pm-akb-lista');
       if (!akbKampanje.length) { box.innerHTML = '<div class="empty-hint">Još nema učitanih lista — kad pokreneš kampanju, ovdje će ostati njezina lista.</div>'; return; }
@@ -21013,7 +21022,7 @@
             (k['Greška'] ? '<span class="pm-cip g">Greške ' + k['Greška'] + '</span>' : '') + (k['Preskočeno'] ? '<span class="pm-cip">Preskočeno ' + k['Preskočeno'] + '</span>' : '') + '</td>' +
             '<td style="white-space:nowrap;"><button type="button" class="pm-gumb sek" data-akb="pogledaj" data-i="' + i + '">📋 Lista</button> <button type="button" class="pm-gumb sek" data-akb="preuzmi" data-i="' + i + '">⬇ CSV</button> <button type="button" class="pm-gumb opasan" data-akb="brisi" data-i="' + i + '">🗑 Obriši</button></td></tr>' +
             '<tr class="pm-akb-detalj" id="pm-akb-detalj-' + i + '" hidden><td colspan="4"></td></tr>';
-        }).join('') + '</tbody></table></div>';
+        }).join('') + '</tbody>' + akbZbroj_() + '</table></div>';
     }
     function akbDetalj(k, cb) {
       poziv({ action: 'adminKampanjaDetalj', kampanjaId: k.id }).then(function(res) {
