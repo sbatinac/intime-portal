@@ -2573,6 +2573,12 @@
   #tv-ekran .kp-d{padding:1vh 1vw !important;} #tv-ekran .kp-d .n{font-size:6.2vh !important;} #tv-ekran .kp-d .l{font-size:2vh !important;margin-top:.5vh;}
   #tv-ekran .tv-st{padding:.8vh .8vw;} #tv-ekran .tv-st b{font-size:3.4vh;} #tv-ekran .tv-b{padding:.7vh .8vw;}
   #tv-ekran .tv-pod{white-space:nowrap;}
+  /* v438: pločice „Danas čeka” — broj i tekst centrirani, broj veći i jasniji */
+  #tv-ekran .kp-danas-mreza .kp-d{align-items:center !important;justify-content:center !important;text-align:center !important;}
+  #tv-ekran .kp-danas-mreza .kp-d .n{font-size:7.4vh !important;font-weight:900 !important;line-height:1.05 !important;}
+  #tv-ekran .kp-danas-mreza .kp-d .l{font-size:2.1vh !important;font-weight:700 !important;margin-top:.6vh !important;}
+  #tv-ekran .kp-danas-mreza .kp-d.nula{opacity:.75 !important;}
+  #tv-ekran .kp-danas-mreza .kp-d.nula .n{color:#94a3b8 !important;}
   #tv-dan .tv-dan-k{background:rgba(255,255,255,.05);border:1px solid rgba(120,170,255,.25);border-radius:1.6vh;padding:1vh 1vw;min-height:0;overflow:hidden;display:flex;flex-direction:column;gap:.5vh;}
   #tv-dan .tv-dan-k.ok{border-color:#69db7c;box-shadow:0 0 24px rgba(105,219,124,.35);}
   #tv-dan .tv-dan-h{font-size:1.9vh;font-weight:900;letter-spacing:.06em;color:#9fd2ff;text-transform:uppercase;white-space:nowrap;}
@@ -3711,7 +3717,7 @@
     if (ZAPISI_U_TIJEKU_ === 0 && OSVJEZI_NAKON_ZAPISA_) { OSVJEZI_NAKON_ZAPISA_ = false; try { loadEntries(); } catch (eZg) { /* nije kritično */ } }
   }
   // ===== v403: TV PRIKAZ (InTime_Admin.html?tv=1) — samo pločice „Danas čeka tebe”, velike, sat, Battleships bodovi, osvježavanje svake 2 min =====
-  var PANTHER_VERZIJA_ = 'v437';   // v433: broj verzije — Claude ga podiže pri svakoj isporuci (prikazuje se na TV-u i u adminu)
+  var PANTHER_VERZIJA_ = 'v438';   // v433: broj verzije — Claude ga podiže pri svakoj isporuci (prikazuje se na TV-u i u adminu)
   try { document.addEventListener('DOMContentLoaded', function() { var v = document.getElementById('panther-ver'); if (v) { v.textContent = '🐾 PANTHER ' + PANTHER_VERZIJA_; } }); var v0_ = document.getElementById('panther-ver'); if (v0_) { v0_.textContent = '🐾 PANTHER ' + PANTHER_VERZIJA_; } } catch (eVer) {}
   var TV_MOD_ = /[?&]tv=1(&|$)/.test(location.search);
   var TV_AKCIJE_KLIJENT_ = /^(adminDnevniCiljStanje|adminUcitajPocetno|adminListEntries|adminGetCounters|adminPismaBezOdgovora|adminPismaPogodci|tvProvjera)$/;
