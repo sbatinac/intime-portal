@@ -2544,6 +2544,28 @@
   #tv-ekran .kp-danas-ok{font-size:2.8vh;margin-top:1.2vh;color:#7ee2a8 !important;text-align:center;}
   #tv-ekran .kp-pe-gumb{display:none !important;}
   .panther-ver{display:inline-block;margin-left:10px;padding:2px 10px;border-radius:999px;font-size:12px;font-weight:800;letter-spacing:.06em;vertical-align:middle;background:rgba(255,215,94,.15);color:#ffd75e;border:1px solid rgba(255,215,94,.45);}
+  /* v434: TV — promjena: iskoči van 1 min, pa žuto do iduće promjene */
+  #tv-ekran .kp-d,#tv-ekran .tv-st,#tv-ekran .tv-b{transition:transform .7s cubic-bezier(.2,1.4,.4,1),box-shadow .7s,background .7s;position:relative;}
+  #tv-ekran .kp-d.tv-promj,#tv-ekran .tv-st.tv-promj,#tv-ekran .tv-b.tv-promj{background:linear-gradient(135deg,#ffe066 0%,#ffd43b 55%,#fab005 100%) !important;border-color:#fff3bf !important;box-shadow:0 0 22px rgba(255,212,59,.55) !important;opacity:1 !important;}
+  #tv-ekran .tv-promj .n,#tv-ekran .tv-promj .l,#tv-ekran .tv-promj .a,#tv-ekran .tv-promj b,#tv-ekran .tv-promj .tv-st-l,#tv-ekran .tv-promj .tv-b-n,#tv-ekran .tv-promj .tv-b-s,#tv-ekran .tv-promj .tv-st-i{color:#3d2c00 !important;text-shadow:none !important;}
+  #tv-ekran .tv-van{transform:scale(1.1) translateY(-1.2vh);z-index:20 !important;box-shadow:0 2vh 5vh rgba(0,0,0,.6),0 0 40px rgba(255,212,59,.85) !important;animation:tvVanPuls 1.4s ease-in-out infinite;}
+  @keyframes tvVanPuls{0%,100%{filter:brightness(1);}50%{filter:brightness(1.15);}}
+  /* v434: velika promjena na sredini ekrana */
+  #tv-velika{position:fixed;inset:0;z-index:60;pointer-events:none;display:flex;align-items:center;justify-content:center;gap:2vw;flex-wrap:wrap;}
+  #tv-velika .tv-vel-k{position:relative;flex:0 1 min(46vw,900px);transform:translate(var(--x0),var(--y0)) scale(.22);opacity:0;transition:transform 1.1s cubic-bezier(.2,1.2,.3,1),opacity .6s;background:linear-gradient(135deg,#ffe066 0%,#ffd43b 55%,#fab005 100%);border:.5vh solid #fff3bf;border-radius:3vh;box-shadow:0 4vh 10vh rgba(0,0,0,.7),0 0 80px rgba(255,212,59,.9);padding:3vh 3vw;color:#3d2c00;text-align:center;}
+  #tv-velika .tv-vel-k.u-sredini{transform:none;opacity:1;animation:tvVelPuls 1.6s ease-in-out 1.2s infinite;}
+  #tv-velika .tv-vel-k.natrag{transform:translate(var(--x0),var(--y0)) scale(.22);opacity:0;}
+  #tv-velika.vise .tv-vel-k{flex-basis:min(30vw,600px);}
+  #tv-velika.vise .tv-vel-u .n,#tv-velika.vise .tv-vel-u b,#tv-velika.vise .tv-vel-u .tv-b-v,#tv-velika.vise .tv-vel-u .bs-v{font-size:11vh !important;}
+  #tv-velika .tv-vel-k + .tv-vel-k{margin-top:0;}
+  @keyframes tvVelPuls{0%,100%{box-shadow:0 4vh 10vh rgba(0,0,0,.7),0 0 60px rgba(255,212,59,.7);}50%{box-shadow:0 4vh 10vh rgba(0,0,0,.7),0 0 120px rgba(255,230,120,1);}}
+  #tv-velika .tv-vel-n{font-size:3vh;font-weight:900;letter-spacing:.3em;margin-bottom:1.5vh;}
+  #tv-velika .tv-vel-u > *{transform:none !important;width:100% !important;height:auto !important;min-height:22vh;margin:0 !important;background:rgba(255,255,255,.35) !important;border-color:rgba(61,44,0,.25) !important;box-shadow:none !important;opacity:1 !important;animation:none !important;}
+  #tv-velika .tv-vel-u .n,#tv-velika .tv-vel-u b,#tv-velika .tv-vel-u .tv-b-v,#tv-velika .tv-vel-u .bs-v{font-size:16vh !important;line-height:1 !important;color:#3d2c00 !important;text-shadow:none !important;}
+  #tv-velika .tv-vel-u .l,#tv-velika .tv-vel-u .tv-st-l,#tv-velika .tv-vel-u .tv-b-n{font-size:3.6vh !important;color:#3d2c00 !important;}
+  #tv-velika .tv-vel-u .a{display:none !important;}
+  #tv-velika .tv-vel-s{margin-top:1.6vh;font-size:4vh;font-weight:800;}
+  #tv-velika .tv-vel-s span{opacity:.6;text-decoration:line-through;}
   /* v432: potpis programa na TV-u */
   #tv-ekran .tv-potpis{margin-left:auto;font-size:1.6vh;font-weight:800;letter-spacing:.12em;color:#9fd2ff;text-transform:none;white-space:nowrap;text-shadow:0 0 10px rgba(80,190,255,.45);}
   #tv-ekran .tv-potpis .tv-ver{color:#ffd75e;font-weight:900;letter-spacing:.06em;margin-left:.3vw;}
@@ -2586,7 +2608,7 @@
   #tv-ekran .tv-bs{background:rgba(3,12,32,.62);border:1px solid rgba(255,215,94,.35);border-radius:1.6vh;padding:1vh 1.2vw;backdrop-filter:blur(4px);}
   #tv-ekran .tv-desno{background:rgba(3,12,32,.55);border-radius:1.6vh;padding:.8vh 1.2vw;}
   #tv-ekran .tv-odjeljak{flex:0 0 auto;font-size:1.6vh;font-weight:900;letter-spacing:.22em;color:#6fc3ff;margin:0 0 -1vh .3vw;text-transform:uppercase;line-height:1.2;}
-  #tv-ekran #kp-danas{overflow:hidden;}
+  #tv-ekran #kp-danas{overflow:visible;}
   #tv-ekran .kp-danas-mreza{flex:1 1 auto;min-height:0;grid-template-rows:repeat(2,minmax(0,1fr)) !important;grid-auto-rows:minmax(0,1fr) !important;padding-bottom:.4vh;}
   #tv-ekran .kp-d{min-height:0 !important;overflow:hidden;}
   #tv-ekran .kp-danas-ok{flex:0 0 auto;}
@@ -3620,7 +3642,7 @@
     if (ZAPISI_U_TIJEKU_ === 0 && OSVJEZI_NAKON_ZAPISA_) { OSVJEZI_NAKON_ZAPISA_ = false; try { loadEntries(); } catch (eZg) { /* nije kritično */ } }
   }
   // ===== v403: TV PRIKAZ (InTime_Admin.html?tv=1) — samo pločice „Danas čeka tebe”, velike, sat, Battleships bodovi, osvježavanje svake 2 min =====
-  var PANTHER_VERZIJA_ = 'v433';   // v433: broj verzije — Claude ga podiže pri svakoj isporuci (prikazuje se na TV-u i u adminu)
+  var PANTHER_VERZIJA_ = 'v434';   // v433: broj verzije — Claude ga podiže pri svakoj isporuci (prikazuje se na TV-u i u adminu)
   try { document.addEventListener('DOMContentLoaded', function() { var v = document.getElementById('panther-ver'); if (v) { v.textContent = '🐾 PANTHER ' + PANTHER_VERZIJA_; } }); var v0_ = document.getElementById('panther-ver'); if (v0_) { v0_.textContent = '🐾 PANTHER ' + PANTHER_VERZIJA_; } } catch (eVer) {}
   var TV_MOD_ = /[?&]tv=1(&|$)/.test(location.search);
   var TV_AKCIJE_KLIJENT_ = /^(adminUcitajPocetno|adminListEntries|adminGetCounters|adminPismaBezOdgovora|adminPismaPogodci|tvProvjera)$/;
@@ -3641,7 +3663,7 @@
       '<i><b class="kz-v">5</b>čeka odgovor</i><i><b class="kz kz-p">✓</b>prihvaćene</i><i><b class="kz kz-o">✗</b>odbijene</i><i><b class="kz kz-i">INTRIX</b>čeka odobrenje</i><i><b class="kz kz-ob">⭐</b>čeka OB ulaz</i><i><b class="kz kz-u">Σ</b>ukupno</i></span>';
     ekran.appendChild(od3);
     var trB = document.createElement('div'); trB.id = 'tv-broj'; trB.className = 'tv-traka'; ekran.appendChild(trB);
-    tvSazetak_(); setInterval(tvSazetak_, 2000);
+    tvSazetak_(); setInterval(function() { tvSazetak_(); try { tvPromjeneOznaci_(); } catch (eTp) {} }, 2000);
     tvVrijemeUcitaj_(); setInterval(tvVrijemeUcitaj_, 15 * 60000);   // v425: vrijeme vani (Open-Meteo) svakih 15 min
     document.getElementById('tv-vrijeme').addEventListener('click', tvGradProzor_);
     var DANI = ['nedjelja', 'ponedjeljak', 'utorak', 'srijeda', 'četvrtak', 'petak', 'subota'];
@@ -3704,6 +3726,61 @@
           }); });
         }).catch(function() { rez.innerHTML = '<div class="tv-grad-nema">Pretraga nije uspjela.</div>'; });
       }, 300);
+    });
+  }
+  // ===== v434: TV — promijenjena pločica „iskoči van” 1 min, pa ostane žuta do iduće promjene =====
+  var TV_PROMJ_ = { prije: null, kljucevi: {}, vrijeme: 0 };
+  function tvPromjeneVrijednosti_() {
+    var m = {}, ocisti = function(t) { return String(t || '').replace(/\s+/g, ' ').trim(); };
+    Array.prototype.forEach.call(document.querySelectorAll('#tv-ekran .kp-d'), function(el) { var l = el.querySelector('.l'), n = el.querySelector('.n'); if (l && n) { m['kp:' + ocisti(l.textContent).replace(/\(.*?\)/g, '').trim()] = { el: el, v: ocisti(n.textContent) }; } });
+    Array.prototype.forEach.call(document.querySelectorAll('#tv-stat .tv-st'), function(el, i) { var b = el.querySelector('b'); m['st:' + i] = { el: el, v: ocisti(b && b.textContent) }; });
+    Array.prototype.forEach.call(document.querySelectorAll('#tv-broj .tv-b'), function(el, i) { var n = el.querySelector('.tv-b-n'); m['b:' + i] = { el: el, v: ocisti(el.textContent).replace(ocisti(n && n.textContent), '') }; });
+    return m;
+  }
+  // v434: promjena iskoči na sredinu ekrana (velika, ~4 pločice), stoji 1 min, pa se vrati na svoje mjesto
+  var TV_VELIKA_ = { sloj: null, timer: null };
+  function tvPromjenaVelika_(lista) {
+    if (!lista.length) { return; }
+    var ek = document.getElementById('tv-ekran'); if (!ek) { return; }
+    var sloj = TV_VELIKA_.sloj;
+    if (!sloj) { sloj = document.createElement('div'); sloj.id = 'tv-velika'; ek.appendChild(sloj); TV_VELIKA_.sloj = sloj; }
+    lista.forEach(function(x) {
+      var r = x.el.getBoundingClientRect();
+      var k = document.createElement('div'); k.className = 'tv-vel-k';
+      var naziv = (x.el.querySelector('.l, .tv-st-l, .tv-b-n') || {}).textContent || '';
+      var klon = x.el.cloneNode(true); klon.classList.remove('tv-promj', 'tv-van'); klon.removeAttribute('data-i');
+      k.innerHTML = '<div class="tv-vel-n">🔔 PROMJENA</div>';
+      var unutra = document.createElement('div'); unutra.className = 'tv-vel-u'; unutra.appendChild(klon); k.appendChild(unutra);
+      var st = document.createElement('div'); st.className = 'tv-vel-s'; st.innerHTML = '<span>' + esc(x.staro) + '</span> → <b>' + esc(x.novo) + '</b>'; k.appendChild(st);
+      k.style.setProperty('--x0', (r.left + r.width / 2 - window.innerWidth / 2) + 'px');
+      k.style.setProperty('--y0', (r.top + r.height / 2 - window.innerHeight / 2) + 'px');
+      k.title = naziv;
+      sloj.appendChild(k);
+      while (sloj.children.length > 3) { sloj.removeChild(sloj.firstChild); }   // najviše 3 odjednom
+      sloj.classList.toggle('vise', sloj.children.length > 1);
+      requestAnimationFrame(function() { requestAnimationFrame(function() { k.classList.add('u-sredini'); }); });
+      setTimeout(function() { k.classList.remove('u-sredini'); k.classList.add('natrag'); setTimeout(function() { if (k.parentNode) { k.parentNode.removeChild(k); } sloj.classList.toggle('vise', sloj.children.length > 1); }, 1200); }, 60000);
+    });
+  }
+  function tvPromjeneOznaci_() {
+    var m = tvPromjeneVrijednosti_(), sad = Date.now(), nevaz = /^(…|—|-|\.\.\.)?$/;
+    if (TV_PROMJ_.prije) {
+      var nove = {};
+      Object.keys(m).forEach(function(k) {
+        var st = TV_PROMJ_.prije[k]; if (st === undefined) { return; }
+        if (st !== m[k].v && !nevaz.test(st) && !nevaz.test(m[k].v) && st.indexOf('…') === -1 && m[k].v.indexOf('…') === -1) { nove[k] = true; }
+      });
+      if (Object.keys(nove).length) {
+        if (sad - TV_PROMJ_.vrijeme < 15000) { Object.keys(nove).forEach(function(k) { TV_PROMJ_.kljucevi[k] = true; }); }   // promjene iz istog osvježavanja idu zajedno
+        else { TV_PROMJ_.kljucevi = nove; TV_PROMJ_.vrijeme = sad; }
+        tvPromjenaVelika_(Object.keys(nove).map(function(k) { return { el: m[k].el, staro: TV_PROMJ_.prije[k], novo: m[k].v }; }));
+      }
+    }
+    TV_PROMJ_.prije = {}; Object.keys(m).forEach(function(k) { TV_PROMJ_.prije[k] = m[k].v; });
+    var van = sad - TV_PROMJ_.vrijeme < 60000;
+    Object.keys(m).forEach(function(k) {
+      var el = m[k].el, je = !!TV_PROMJ_.kljucevi[k];
+      el.classList.toggle('tv-promj', je); el.classList.toggle('tv-van', false);
     });
   }
   // v424: TV — statistika i brojači s tipki (vrijednosti se čitaju iz skrivenog admina, pa su uvijek iste kao u adminu)

@@ -89,3 +89,4 @@
 - v431 (30.10.2026.): TV — kazalo brojača desno uz naslov „Ponude i komunikacija” (veliki broj = čeka odgovor, ✓ prihvaćene, ✗ odbijene, INTRIX, ⭐ čeka OB ulaz, Σ ukupno). Apps Script nije mijenjan.
 - v432 (30.10.2026.): TV — desno uz „Danas čeka” potpis programa „🐾 PANTHER · izradio Saša Batinac”. Apps Script nije mijenjan.
 - v433 (30.10.2026.): broj verzije programa (PANTHER_VERZIJA_ u InTime_Admin.html — podiže se pri SVAKOJ isporuci): na TV-u „🐾 PANTHER v433 · izradio Saša Batinac”, u adminu žuta oznaka „🐾 PANTHER v433” uz naslov. Apps Script nije mijenjan.
+- v434 (30.10.2026.): TV — kad se promijeni broj (pločice Danas čeka, statistika, brojači), pločica „iskoči” na sredinu ekrana (velika, ~4 pločice; 🔔 PROMJENA, staro → novo), stoji 1 min pa se vrati na svoje mjesto; promijenjena pločica ostaje ŽUTA do iduće promjene (promjene iz istog osvježavanja idu zajedno, najviše 3 velike kartice odjednom). Apps Script nije mijenjan.
