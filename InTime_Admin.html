@@ -3723,7 +3723,7 @@
     if (ZAPISI_U_TIJEKU_ === 0 && OSVJEZI_NAKON_ZAPISA_) { OSVJEZI_NAKON_ZAPISA_ = false; try { loadEntries(); } catch (eZg) { /* nije kritično */ } }
   }
   // ===== v403: TV PRIKAZ (InTime_Admin.html?tv=1) — samo pločice „Danas čeka tebe”, velike, sat, Battleships bodovi, osvježavanje svake 2 min =====
-  var PANTHER_VERZIJA_ = 'v440';   // v433: broj verzije — Claude ga podiže pri svakoj isporuci (prikazuje se na TV-u i u adminu)
+  var PANTHER_VERZIJA_ = 'v441';   // v433: broj verzije — Claude ga podiže pri svakoj isporuci (prikazuje se na TV-u i u adminu)
   try { document.addEventListener('DOMContentLoaded', function() { var v = document.getElementById('panther-ver'); if (v) { v.textContent = '🐾 PANTHER ' + PANTHER_VERZIJA_; } }); var v0_ = document.getElementById('panther-ver'); if (v0_) { v0_.textContent = '🐾 PANTHER ' + PANTHER_VERZIJA_; } } catch (eVer) {}
   var TV_MOD_ = /[?&]tv=1(&|$)/.test(location.search);
   var TV_AKCIJE_KLIJENT_ = /^(adminDnevniCiljStanje|adminUcitajPocetno|adminListEntries|adminGetCounters|adminPismaBezOdgovora|adminPismaPogodci|tvProvjera)$/;
@@ -3910,15 +3910,15 @@
   function tvBodovi_(res) {
     var el = document.getElementById('tv-bs'); if (!el || !res || res.status !== 'ok') { return; }
     var b = res.mjesecBodovi || 0, c = res.cilj || 0, pct = c ? Math.min(100, Math.round(b / c * 100)) : 0;
-    el.innerHTML = '<div class="tv-bs-n">🚢 ' + b + (c ? ' <small>/ ' + c + '</small>' : '') + '</div><div class="tv-bs-traka"><i style="width:' + pct + '%"></i></div><div class="tv-bs-l">Battleships · ovaj mjesec' + (res.razina ? ' · ' + esc(res.razina) : '') + '</div>' + tvOdbrojavanje_(res);
+    el.innerHTML = '<div class="tv-bs-n">🚢 ' + b + (c ? ' <small>/ ' + c + '</small>' : '') + '</div><div class="tv-bs-traka"><i style="width:' + pct + '%"></i></div><div class="tv-bs-l">Battleships' + (res.razina ? ' · ' + esc(res.razina) : '') + (res.sljedecaRazina && res.sljedecaRazina.bodova > b ? ' · ' + esc(res.sljedecaRazina.naziv) + ' još ' + (res.sljedecaRazina.bodova - b) : '') + '</div>' + tvOdbrojavanje_(res);
   }
   // v437: odbrojavanje do kraja mjeseca i kvartala + koliko fali do sljedeće razine
   function tvOdbrojavanje_(res) {
     var d = new Date(), dan = 86400000, danas = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
     var krajMj = new Date(d.getFullYear(), d.getMonth() + 1, 1).getTime(), krajQ = new Date(d.getFullYear(), Math.floor(d.getMonth() / 3) * 3 + 3, 1).getTime();
-    var dm = Math.max(0, Math.round((krajMj - danas) / dan) - 1), dq = Math.max(0, Math.round((krajQ - danas) / dan) - 1);
+    var dm = Math.max(0, Math.round((krajMj - danas) / dan) - 1), dq = Math.max(0, Math.round((krajQ - danas) / dan) - 1), dg = Math.max(0, Math.round((new Date(d.getFullYear() + 1, 0, 1).getTime() - danas) / dan) - 1);
     var nx = res && res.sljedecaRazina, fali = nx ? Math.max(0, nx.bodova - (res.mjesecBodovi || 0)) : 0;
-    return '<div class="tv-bs-l tv-odbr">⏱ mj. još ' + (dm ? dm + ' d' : 'danas') + ' · Q' + (Math.floor(d.getMonth() / 3) + 1) + ' još ' + dq + ' d' + (nx && fali ? ' · ' + esc(nx.naziv) + ' −' + fali : '') + '</div>';
+    return '<div class="tv-bs-l tv-odbr">⏱ do kraja: mj. ' + (dm ? dm + ' d' : 'danas') + ' · Q' + (Math.floor(d.getMonth() / 3) + 1) + ' ' + dq + ' d · god. ' + dg + ' d</div>';
   }
   // ===== v437: 🎯 DNEVNI CILJ, ⏳ ističe uskoro, 📞 za nazvati, 📈 tjedan, 🏅 rekordi, 🌙 noćni način, 🔔 zvuk =====
   var DNEVNI_ = null;
