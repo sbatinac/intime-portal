@@ -677,6 +677,24 @@
   .kratki-kart-btn:hover{background:#086039;}
   .kratki-kart-btn.poslan{background:#e3f4ea;color:#0b7a4b;border:1.5px solid #0b7a4b;}
   /* v412: pitanje „izbaci iz INTRIX-a” */
+  #ix-bocni{position:fixed;right:18px;bottom:90px;z-index:10040;width:290px;background:#fff;border:3px solid #7b2ff7;border-radius:16px;box-shadow:0 14px 40px rgba(60,20,140,.35);padding:12px 14px;font-size:13.5px;color:#1f2937;animation:ixbUlaz .35s ease-out;}
+  @keyframes ixbUlaz{from{transform:translateX(40px);opacity:0}to{transform:none;opacity:1}}
+  #ix-bocni .ixb-nasl{display:flex;justify-content:space-between;align-items:center;font-weight:900;color:#5b1fc7;font-size:15px;}
+  #ix-bocni .ixb-x{border:0;background:transparent;font-size:16px;cursor:pointer;color:#6b7280;}
+  #ix-bocni .ixb-ime{font-weight:800;margin:2px 0 8px;}
+  #ix-bocni .ixb-lista{display:flex;flex-direction:column;gap:3px;margin-bottom:8px;}
+  #ix-bocni .ixb-lista .da{color:#1e8449;font-weight:700;} #ix-bocni .ixb-lista .ne{color:#b91c1c;font-weight:700;}
+  #ix-bocni .ixb-pit{font-weight:800;margin-bottom:6px;}
+  #ix-bocni .ixb-b{display:block;width:100%;text-align:left;border-radius:10px;padding:8px 10px;margin:5px 0;font:inherit;font-weight:800;cursor:pointer;border:2px solid;}
+  #ix-bocni .ixb-b small{display:block;font-weight:500;font-size:11.5px;opacity:.85;}
+  #ix-bocni .ixb-b.izb{background:#7b2ff7;border-color:#7b2ff7;color:#fff;text-align:center;}
+  #ix-bocni .ixb-b.nat{background:#ebfbee;border-color:#40c057;color:#1e6b33;}
+  #ix-bocni .ixb-b.ob{background:#fff0f6;border-color:#e8459a;color:#a3195b;}
+  #ix-bocni .ixb-b.od{background:#f8f9fa;border-color:#ced4da;color:#495057;text-align:center;font-weight:600;}
+  #ix-bocni .ixb-b:disabled{opacity:.5;cursor:not-allowed;}
+  #ix-bocni .ixb-ok{background:#ebfbee;border:1px solid #8ce99a;border-radius:10px;padding:8px 10px;font-weight:700;color:#1e6b33;}
+  #ix-bocni .ixb-mali{font-size:11.5px;color:#6b7280;margin-top:6px;}
+  #ix-bocni .ixb-st{font-size:12px;color:#5b1fc7;font-weight:700;}
   .ix-pit-sloj{position:fixed;inset:0;z-index:10050;background:rgba(20,10,40,.45);display:flex;align-items:center;justify-content:center;padding:16px;}
   .ix-pit-kutija{background:#fff;border:3px solid #7b2ff7;border-radius:16px;max-width:460px;width:100%;padding:20px 22px;box-shadow:0 20px 60px rgba(60,20,120,.45);}
   .ix-pit-nasl{font-size:19px;font-weight:900;color:#5b1fc7;margin-bottom:8px;}
@@ -3727,7 +3745,7 @@
     if (ZAPISI_U_TIJEKU_ === 0 && OSVJEZI_NAKON_ZAPISA_) { OSVJEZI_NAKON_ZAPISA_ = false; try { loadEntries(); } catch (eZg) { /* nije kritično */ } }
   }
   // ===== v403: TV PRIKAZ (InTime_Admin.html?tv=1) — samo pločice „Danas čeka tebe”, velike, sat, Battleships bodovi, osvježavanje svake 2 min =====
-  var PANTHER_VERZIJA_ = 'v442';   // v433: broj verzije — Claude ga podiže pri svakoj isporuci (prikazuje se na TV-u i u adminu)
+  var PANTHER_VERZIJA_ = 'v443';   // v433: broj verzije — Claude ga podiže pri svakoj isporuci (prikazuje se na TV-u i u adminu)
   try { document.addEventListener('DOMContentLoaded', function() { var v = document.getElementById('panther-ver'); if (v) { v.textContent = '🐾 PANTHER ' + PANTHER_VERZIJA_; } }); var v0_ = document.getElementById('panther-ver'); if (v0_) { v0_.textContent = '🐾 PANTHER ' + PANTHER_VERZIJA_; } } catch (eVer) {}
   var TV_MOD_ = /[?&]tv=1(&|$)/.test(location.search);
   var TV_AKCIJE_KLIJENT_ = /^(adminDnevniCiljStanje|adminUcitajPocetno|adminListEntries|adminGetCounters|adminPismaBezOdgovora|adminPismaPogodci|tvProvjera)$/;
@@ -4018,7 +4036,7 @@
         ix.push({ n: naziv, t: fali.length ? 'fali ' + fali.join(' + ') : '✓ izbaci', ok: !fali.length });
       } else if (obCeka_(e)) {
         var d = String(f['Datum slanja zahtjeva za OB (admin)'] || '').replace(/^(\d{1,2}\.\d{1,2}\.)\d{4}\.?.*$/, '$1');
-        ob.push({ n: naziv, t: 'poslan ' + d });
+        ob.push({ n: naziv, t: d ? 'poslan ' + d : 'iz INTRIX-a' });
       }
     });
     var red = function(x, cls, ik) { return '<div class="tv-red ' + cls + '"><span>' + ik + ' ' + esc(x.n) + '</span><b>' + esc(x.t) + '</b></div>'; };
@@ -7103,7 +7121,9 @@
   // v418: ⭐ ČEKA OB ULAZ — mail za OB zahtjev je poslan, a OB lozinka još nije upisana (vidi se na zaglavlju kartice bez otvaranja)
   function obCeka_(e) {
     var f = (e && e.fields) || {};
-    return !!String(f['Datum slanja zahtjeva za OB (admin)'] || '').trim() && !String(f['OB lozinka (admin)'] || '').trim();
+    if (String(f['OB lozinka (admin)'] || '').trim()) { return false; }
+    // v443: izbačena iz INTRIX-a s izborom „⭐ čeka OB ulaz” (oznaka u polju „INTRIX odobren (admin)”)
+    return !!String(f['Datum slanja zahtjeva za OB (admin)'] || '').trim() || /čeka OB/.test(String(f['INTRIX odobren (admin)'] || ''));
   }
   function obCekaOsvjezi_() {
     try {
@@ -7126,36 +7146,76 @@
     return !!String(f['Identifikacijski TM broj klijenta (admin)'] || '').trim();
   }
   // v412: izbaci iz INTRIX-a (odobreno) — sprema datum, osvježava kartice i brojače
-  function intrixIzbaci_(entry, gotovo) {
-    var dat = formatirajSadaHr_(), staro = entry.fields['INTRIX odobren (admin)'] || '';
+  function intrixIzbaci_(entry, gotovo, uOb) {
+    var dat = formatirajSadaHr_() + (uOb ? ' · čeka OB' : ''), staro = entry.fields['INTRIX odobren (admin)'] || '';
     entry.fields['INTRIX odobren (admin)'] = dat;
     gasCall({ action: 'adminUpdateFields', token: adminToken, rowIndex: entry.rowIndex, fields: { intrix_odobren: dat } }).then(function(res) {
       if (handleAuthError(res)) { return; }
       if (!res || res.status !== 'ok') { entry.fields['INTRIX odobren (admin)'] = staro; alert('Nije spremljeno: ' + ((res && res.message) || 'greška') + '\n(Je li objavljen novi Code.gs?)'); if (gotovo) { gotovo(false); } return; }
       try { renderTabCounts(); } catch (e1) {}
       try { osvjeziKomandnuPlocu_(); } catch (e2) {}
-      try { renderUzCuvanje_(); } catch (e3) {}
+      // v443: kartica se premjesti tek kad je zatvoriš (dok radiš u njoj, ostaje gdje je)
+      if (typeof imaOtvorenuKarticu_ === 'function' && imaOtvorenuKarticu_()) {
+        var tCek_ = setInterval(function() { if (!imaOtvorenuKarticu_()) { clearInterval(tCek_); try { renderUzCuvanje_(); } catch (e4) {} } }, 1000);
+      } else { try { renderUzCuvanje_(); } catch (e3) {} }
       if (gotovo) { gotovo(true); }
     }).catch(function() { entry.fields['INTRIX odobren (admin)'] = staro; alert('Nije spremljeno (veza s poslužiteljem).'); if (gotovo) { gotovo(false); } });
   }
   // v412: kad su upisani TM broj + OB korisničko ime + OB lozinka, a ponuda je još u INTRIX-u — nakon svakog spremanja pitaj „izbaci iz INTRIX-a?”
-  function intrixPitajAkoTreba_(entry) {
-    if (!entry || !entry.fields || !intrixNovoPravilo_(entry.fields) || !intrixAktivan_(entry)) { return; }
-    if (!fieldVal(entry, 'Identifikacijski TM broj klijenta (admin)') || !fieldVal(entry, 'OB korisničko ime (admin)') || !fieldVal(entry, 'OB lozinka (admin)')) { return; }
-    if (!ZADNJI_ZAPIS_KRAJ_ || entry._ixPitanZapis_ === ZADNJI_ZAPIS_KRAJ_ || ZAPISI_U_TIJEKU_ > 0) { return; }
-    if (Date.now() - ZADNJI_ZAPIS_KRAJ_ > 15000) { entry._ixPitanZapis_ = ZADNJI_ZAPIS_KRAJ_; return; }
-    if (document.getElementById('ix-pitanje')) { return; }
-    entry._ixPitanZapis_ = ZADNJI_ZAPIS_KRAJ_;
-    var o = document.createElement('div'); o.id = 'ix-pitanje'; o.className = 'ix-pit-sloj';
-    o.innerHTML = '<div class="ix-pit-kutija"><div class="ix-pit-nasl">🟣 Ponuda je još u INTRIX-u</div>' +
-      '<div class="ix-pit-tekst"><b>' + esc(fieldVal(entry, 'Naziv tvrtke') || '') + '</b><br>Svi podaci su upisani: TM broj <b>' + esc(fieldVal(entry, 'Identifikacijski TM broj klijenta (admin)')) + '</b>, OB korisničko ime i OB lozinka.</div>' +
-      '<div class="ix-pit-gumbi"><button type="button" class="ix-pit-da">✓ Odobreno — izbaci iz INTRIX-a</button><button type="button" class="ix-pit-ne">Ostavi u INTRIX-u</button></div><div class="ix-pit-st"></div></div>';
-    document.body.appendChild(o);
-    o.querySelector('.ix-pit-ne').addEventListener('click', function() { o.remove(); });
-    o.querySelector('.ix-pit-da').addEventListener('click', function() {
-      var b = this; b.disabled = true; o.querySelector('.ix-pit-st').textContent = 'Spremam…';
-      intrixIzbaci_(entry, function(ok) { if (ok) { o.remove(); } else { b.disabled = false; o.querySelector('.ix-pit-st').textContent = ''; } });
-    });
+  // v443: umjesto iskačućeg prozora — bočni panel „🟣 U INTRIX-u” dok je kartica otvorena; čeka da sam klikneš „Izbaci”,
+  // pa ponudi kamo ide: natrag (prihvaćena ponuda) ili ⭐ čeka OB ulaz. Kartica se premjesti tek kad je zatvoriš.
+  setInterval(function() { var p = document.getElementById('ix-bocni'); if (p && p._card && !(document.body.contains(p._card) && p._card.classList.contains('expanded'))) { p.remove(); } }, 1000);
+  function intrixPitajAkoTreba_(entry, wrap) {
+    var card = wrap && wrap.closest ? wrap.closest('.entry-card') : null;
+    var otvorena = card && card.classList.contains('expanded') && card.offsetParent !== null;
+    var panel = document.getElementById('ix-bocni');
+    if (!entry || !entry.fields || !intrixNovoPravilo_(entry.fields)) { return; }
+    var mojPanel = panel && panel._entry === entry;
+    if (!otvorena) { entry._ixSkriven = false; if (mojPanel) { panel.remove(); } return; }
+    if (entry._ixSkriven) { return; }
+    if (!intrixAktivan_(entry) && !(mojPanel && panel._gotovo)) { if (mojPanel) { panel.remove(); } return; }
+    if (panel && !mojPanel) { if (panel._gotovo || !document.body.contains(panel._card || document.body)) { panel.remove(); panel = null; } else { return; } }
+    if (!panel) {
+      panel = document.createElement('div'); panel.id = 'ix-bocni'; panel._entry = entry; panel._card = card;
+      document.body.appendChild(panel);
+      panel.addEventListener('click', function(ev) {
+        var b = ev.target.closest('button'); if (!b) { return; }
+        var akc = b.getAttribute('data-a');
+        if (akc === 'zatvori') { entry._ixSkriven = true; panel.remove(); return; }
+        if (akc === 'izbaci') { panel._izbor = true; crtaj(); return; }
+        if (akc === 'odustani') { panel._izbor = false; crtaj(); return; }
+        if (akc === 'natrag' || akc === 'ob') {
+          Array.prototype.forEach.call(panel.querySelectorAll('button'), function(x) { x.disabled = true; });
+          panel.querySelector('.ixb-st').textContent = 'Spremam…';
+          intrixIzbaci_(entry, function(ok) {
+            if (!ok) { panel._izbor = true; crtaj(); return; }
+            panel._gotovo = akc; crtaj();
+            try { card.classList.remove('intrix'); var bx = card.querySelector('.intrix-prek'); if (bx) { bx.classList.remove('on'); } } catch (eC) {}
+          }, akc === 'ob');
+        }
+      });
+    }
+    function crtaj() {
+      var f = entry.fields, naziv = String(f['Naziv tvrtke'] || '');
+      var ima = function(k) { return !!String(f[k] || '').trim(); };
+      var tm = ima('Identifikacijski TM broj klijenta (admin)'), obI = ima('OB korisničko ime (admin)'), obL = ima('OB lozinka (admin)');
+      var odakle = entry.status === 'Otvorena' || entry.otvorena ? '📨 Otvorene ponude' : '📄 Ponude';
+      var h = '<div class="ixb-nasl">🟣 U INTRIX-u <button type="button" data-a="zatvori" class="ixb-x" title="Sakrij (vraća se kad ponovno otvoriš karticu)">✕</button></div><div class="ixb-ime">' + esc(naziv) + '</div>';
+      if (panel._gotovo) {
+        h += '<div class="ixb-ok">✓ Izbačeno iz INTRIX-a<br>➜ ide u: <b>' + (panel._gotovo === 'ob' ? '⭐ Čeka OB ulaz' : odakle + ' (prihvaćena)') + '</b></div><div class="ixb-mali">Kartica ostaje ovdje dok je ne zatvoriš — onda se premjesti.</div>';
+      } else if (panel._izbor) {
+        h += '<div class="ixb-pit">Kamo ide nakon INTRIX-a?</div>' +
+          '<button type="button" data-a="natrag" class="ixb-b nat">✅ Natrag u ' + odakle + '<small>prihvaćena ponuda — nastavljaš postupak</small></button>' +
+          '<button type="button" data-a="ob" class="ixb-b ob"' + (obL ? ' disabled title="OB lozinka je već upisana"' : '') + '>⭐ Čeka OB ulaz<small>' + (obL ? 'OB lozinka je već upisana' : 'OB lozinka još nije upisana — ružičasta dok je ne upišeš') + '</small></button>' +
+          '<button type="button" data-a="odustani" class="ixb-b od">Odustani — ostaje u INTRIX-u</button>';
+      } else {
+        h += '<div class="ixb-lista"><span class="' + (tm ? 'da' : 'ne') + '">' + (tm ? '✓' : '✗') + ' TM broj</span><span class="' + (obI ? 'da' : 'ne') + '">' + (obI ? '✓' : '✗') + ' OB korisničko ime</span><span class="' + (obL ? 'da' : 'ne') + '">' + (obL ? '✓' : '✗') + ' OB lozinka</span></div>' +
+          '<button type="button" data-a="izbaci" class="ixb-b izb">🟣 Izbaci iz INTRIX-a…</button><div class="ixb-mali">Ne žuri — panel čeka dok ne završiš s karticom.</div>';
+      }
+      h += '<div class="ixb-st"></div>';
+      if (panel._zadnje !== h) { panel.innerHTML = h; panel._zadnje = h; }
+    }
+    crtaj();
   }
   function bsBroji_(lista) {
     var r = { ceka: 0, prih: 0, odb: 0, uk: 0, intrix: 0, ob: 0 };
@@ -22119,8 +22179,10 @@
             ev.stopPropagation(); ev.preventDefault();
             // v412: ima TM broj → klik znači „odobreno, izbaci iz INTRIX-a” (ostaje oznaka ✓ BIO U INTRIX-u)
             if (intrixAktivan_(entry) && intrixNovoPravilo_(entry.fields) && fieldVal(entry, 'Identifikacijski TM broj klijenta (admin)')) {
-              if (!confirm('Ponuda je odobrena u INTRIX-u?\n\nIzbaci je iz INTRIX-a (ostaje oznaka „✓ BIO U INTRIX-u”).')) { return; }
-              bIx_.disabled = true; intrixIzbaci_(entry, function() { bIx_.disabled = false; ixOsvjezi_(); }); return;
+              // v443: izbor „kamo ide” u bočnom panelu (otvori karticu ako nije otvorena)
+              if (!card.classList.contains('expanded')) { try { head.click(); } catch (eHc) {} }
+              setTimeout(function() { var pb = document.getElementById('ix-bocni'); if (pb && pb._entry === entry && !pb._gotovo) { var bz = pb.querySelector('[data-a="izbaci"]'); if (bz) { bz.click(); } } }, 1300);
+              return;
             }
             var novo = intrixAktivan_(entry) ? '' : formatirajSadaHr_();
             var staro = entry.fields['INTRIX (admin)'] || '';
@@ -25033,7 +25095,7 @@
       var hint = blok.querySelector('.af-kred-guard-hint');
       if (hint) { hint.remove(); }
     };
-    (function() { var bio_ = false, t_ = setInterval(function() { if (document.body.contains(wrap)) { bio_ = true; try { kredGuardRecheck_(); } catch (e) {} try { intrixPitajAkoTreba_(entry); } catch (eIxP) {} } else if (bio_) { clearInterval(t_); } }, 1000); })();   // v411
+    (function() { var bio_ = false, t_ = setInterval(function() { if (document.body.contains(wrap)) { bio_ = true; try { kredGuardRecheck_(); } catch (e) {} try { intrixPitajAkoTreba_(entry, wrap); } catch (eIxP) {} } else if (bio_) { clearInterval(t_); } }, 1000); })();   // v411
     var kredOsvjeziPregledAkoPostoji_ = function() {
       if (typeof wrap._kredPregledOsvjezi_ === 'function') { wrap._kredPregledOsvjezi_(); }
     };
