@@ -2515,7 +2515,8 @@
   .kp-l-str{font-size:12px;font-weight:800;color:#0b7a4b;padding:0 6px;text-align:center;white-space:nowrap;}
 
   /* v403: TV PRIKAZ */
-  html.tv-mod body > *:not(#tv-ekran):not(#pogodak-sloj):not(#raskid-sloj):not(.vk-sloj):not(#kes-traka):not(script):not(style){display:none !important;}
+  html.tv-mod #ukp-sloj .ukp-gumbi,html.tv-mod #ukp-kasnije{display:none !important;}
+  html.tv-mod body > *:not(#tv-ekran):not(#pogodak-sloj):not(#raskid-sloj):not(#ukp-sloj):not(.vk-sloj):not(#kes-traka):not(script):not(style){display:none !important;}
   html.tv-mod body{background:radial-gradient(circle at 20% 10%,#10224a 0%,#050b1f 65%) !important;overflow:hidden;}
   html.tv-mod{background:#050b1f !important;}
   #tv-ekran{position:fixed;inset:0;z-index:5;background:radial-gradient(circle at 20% 10%,#10224a 0%,#050b1f 65%);padding:2.2vh 2.5vw;box-sizing:border-box;display:flex;flex-direction:column;gap:2vh;color:#e8eefc;font-family:Inter,"Segoe UI",Arial,sans-serif;}
@@ -3642,7 +3643,7 @@
     if (ZAPISI_U_TIJEKU_ === 0 && OSVJEZI_NAKON_ZAPISA_) { OSVJEZI_NAKON_ZAPISA_ = false; try { loadEntries(); } catch (eZg) { /* nije kritično */ } }
   }
   // ===== v403: TV PRIKAZ (InTime_Admin.html?tv=1) — samo pločice „Danas čeka tebe”, velike, sat, Battleships bodovi, osvježavanje svake 2 min =====
-  var PANTHER_VERZIJA_ = 'v435';   // v433: broj verzije — Claude ga podiže pri svakoj isporuci (prikazuje se na TV-u i u adminu)
+  var PANTHER_VERZIJA_ = 'v436';   // v433: broj verzije — Claude ga podiže pri svakoj isporuci (prikazuje se na TV-u i u adminu)
   try { document.addEventListener('DOMContentLoaded', function() { var v = document.getElementById('panther-ver'); if (v) { v.textContent = '🐾 PANTHER ' + PANTHER_VERZIJA_; } }); var v0_ = document.getElementById('panther-ver'); if (v0_) { v0_.textContent = '🐾 PANTHER ' + PANTHER_VERZIJA_; } } catch (eVer) {}
   var TV_MOD_ = /[?&]tv=1(&|$)/.test(location.search);
   var TV_AKCIJE_KLIJENT_ = /^(adminUcitajPocetno|adminListEntries|adminGetCounters|adminPismaBezOdgovora|adminPismaPogodci|tvProvjera)$/;
@@ -3668,7 +3669,7 @@
     // v435: na TV-u nitko ne klikne „Super!” — slavlje (pogodak / raskid / video) se samo zatvori nakon 60 s
     var tvSlavljeOd_ = {};
     setInterval(function() {
-      [['pogodak-sloj', '#pogodak-zatvori'], ['raskid-sloj', '#raskid-zatvori']].forEach(function(x) {
+      [['pogodak-sloj', '#pogodak-zatvori'], ['raskid-sloj', '#raskid-zatvori'], ['ukp-sloj', '#ukp-x']].forEach(function(x) {
         var el = document.getElementById(x[0]);
         if (!el) { delete tvSlavljeOd_[x[0]]; return; }
         if (!tvSlavljeOd_[x[0]]) { tvSlavljeOd_[x[0]] = Date.now(); return; }
@@ -14005,6 +14006,15 @@
   function unikorniPodsjetnikProvjeri_(res) {
     if (!res || res.status !== 'ok' || !res.unikorni || !res.unikorni.podsjetnik) { return; }
     var p = res.unikorni.podsjetnik;
+    if (TV_MOD_) {   // v436: TV pokaže podsjetnik za unikorne jednom dnevno (radnim danom) za sebe; sam se zatvori nakon 60 s
+      if (p.radniDan === false || document.getElementById('pogodak-sloj') || document.getElementById('raskid-sloj') || document.getElementById('ukp-sloj')) { return; }
+      var cekTv = (p.naRedu || []).filter(function(x) { return x.status === 'ceka' || x.status === 'bez odgovora'; });
+      if (!cekTv.length) { return; }
+      var dTv = new Date(), danTv = dTv.getFullYear() + '-' + (dTv.getMonth() + 1) + '-' + dTv.getDate();
+      try { if (localStorage.getItem('intime_tv_ukp_dan') === danTv) { return; } localStorage.setItem('intime_tv_ukp_dan', danTv); } catch (eU) {}
+      ukPodsjetnikPopup_(cekTv, false);
+      return;
+    }
     if (!p.prikazi || document.getElementById('pogodak-sloj') || document.getElementById('raskid-sloj') || document.getElementById('ukp-sloj')) { return; }
     var cekaju = p.naRedu.filter(function(x) { return x.status === 'ceka' || x.status === 'bez odgovora'; });
     if (!cekaju.length) { return; }
