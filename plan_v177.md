@@ -90,3 +90,4 @@
 - v432 (30.10.2026.): TV — desno uz „Danas čeka” potpis programa „🐾 PANTHER · izradio Saša Batinac”. Apps Script nije mijenjan.
 - v433 (30.10.2026.): broj verzije programa (PANTHER_VERZIJA_ u InTime_Admin.html — podiže se pri SVAKOJ isporuci): na TV-u „🐾 PANTHER v433 · izradio Saša Batinac”, u adminu žuta oznaka „🐾 PANTHER v433” uz naslov. Apps Script nije mijenjan.
 - v434 (30.10.2026.): TV — kad se promijeni broj (pločice Danas čeka, statistika, brojači), pločica „iskoči” na sredinu ekrana (velika, ~4 pločice; 🔔 PROMJENA, staro → novo), stoji 1 min pa se vrati na svoje mjesto; promijenjena pločica ostaje ŽUTA do iduće promjene (promjene iz istog osvježavanja idu zajedno, najviše 3 velike kartice odjednom). Apps Script nije mijenjan.
+- v435 (30.10.2026.): TV — animacije pogodaka/raskida: TV „viđeno” pamti samo za sebe (svaki novi pogodak slavi jednom, i kad ga je računalo već vidjelo); slavlje se na TV-u samo zatvori nakon 60 s. Apps Script nije mijenjan.

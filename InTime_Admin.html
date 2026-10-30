@@ -3642,7 +3642,7 @@
     if (ZAPISI_U_TIJEKU_ === 0 && OSVJEZI_NAKON_ZAPISA_) { OSVJEZI_NAKON_ZAPISA_ = false; try { loadEntries(); } catch (eZg) { /* nije kritično */ } }
   }
   // ===== v403: TV PRIKAZ (InTime_Admin.html?tv=1) — samo pločice „Danas čeka tebe”, velike, sat, Battleships bodovi, osvježavanje svake 2 min =====
-  var PANTHER_VERZIJA_ = 'v434';   // v433: broj verzije — Claude ga podiže pri svakoj isporuci (prikazuje se na TV-u i u adminu)
+  var PANTHER_VERZIJA_ = 'v435';   // v433: broj verzije — Claude ga podiže pri svakoj isporuci (prikazuje se na TV-u i u adminu)
   try { document.addEventListener('DOMContentLoaded', function() { var v = document.getElementById('panther-ver'); if (v) { v.textContent = '🐾 PANTHER ' + PANTHER_VERZIJA_; } }); var v0_ = document.getElementById('panther-ver'); if (v0_) { v0_.textContent = '🐾 PANTHER ' + PANTHER_VERZIJA_; } } catch (eVer) {}
   var TV_MOD_ = /[?&]tv=1(&|$)/.test(location.search);
   var TV_AKCIJE_KLIJENT_ = /^(adminUcitajPocetno|adminListEntries|adminGetCounters|adminPismaBezOdgovora|adminPismaPogodci|tvProvjera)$/;
@@ -3664,7 +3664,18 @@
     ekran.appendChild(od3);
     var trB = document.createElement('div'); trB.id = 'tv-broj'; trB.className = 'tv-traka'; ekran.appendChild(trB);
     tvSazetak_(); setInterval(function() { tvSazetak_(); try { tvPromjeneOznaci_(); } catch (eTp) {} }, 2000);
-    tvVrijemeUcitaj_(); setInterval(tvVrijemeUcitaj_, 15 * 60000);   // v425: vrijeme vani (Open-Meteo) svakih 15 min
+    tvVrijemeUcitaj_(); setInterval(tvVrijemeUcitaj_, 15 * 60000);
+    // v435: na TV-u nitko ne klikne „Super!” — slavlje (pogodak / raskid / video) se samo zatvori nakon 60 s
+    var tvSlavljeOd_ = {};
+    setInterval(function() {
+      [['pogodak-sloj', '#pogodak-zatvori'], ['raskid-sloj', '#raskid-zatvori']].forEach(function(x) {
+        var el = document.getElementById(x[0]);
+        if (!el) { delete tvSlavljeOd_[x[0]]; return; }
+        if (!tvSlavljeOd_[x[0]]) { tvSlavljeOd_[x[0]] = Date.now(); return; }
+        if (Date.now() - tvSlavljeOd_[x[0]] > 60000) { var b = el.querySelector(x[1]); if (b) { b.click(); } else if (el.parentNode) { el.parentNode.removeChild(el); } delete tvSlavljeOd_[x[0]]; }
+      });
+      Array.prototype.forEach.call(document.querySelectorAll('.vk-sloj'), function(v) { if (!v._tvOd) { v._tvOd = Date.now(); } else if (Date.now() - v._tvOd > 60000 && v.parentNode) { v.parentNode.removeChild(v); } });
+    }, 5000);   // v425: vrijeme vani (Open-Meteo) svakih 15 min
     document.getElementById('tv-vrijeme').addEventListener('click', tvGradProzor_);
     var DANI = ['nedjelja', 'ponedjeljak', 'utorak', 'srijeda', 'četvrtak', 'petak', 'subota'];
     var sat = function() { var d = new Date(), p2 = function(n) { return (n < 10 ? '0' : '') + n; }; document.getElementById('tv-sat').textContent = p2(d.getHours()) + ':' + p2(d.getMinutes()); document.getElementById('tv-datum').textContent = DANI[d.getDay()] + ', ' + d.getDate() + '.' + (d.getMonth() + 1) + '.' + d.getFullYear() + '.'; };
@@ -12374,6 +12385,15 @@
     var vidjeniSet = {}; (vidjeni || []).forEach(function(k) { vidjeniSet[k] = true; });
     // v253: „viđeno“ je ZAJEDNIČKO za sva računala (poslužitelj čuva najveći datum viđenog događaja). Stariji .gs bez tog polja → ponaša se kao prije (samo preglednik).
     var srvMs = (typeof res.zadnjeVidjenoMs === 'number') ? res.zadnjeVidjenoMs : null;
+    if (TV_MOD_) {   // v435: TV pamti „viđeno” samo za sebe — slavi svaki novi pogodak jednom, čak i ako ga je računalo već vidjelo
+      var noviTv = vidjeni === null ? [] : res.dogadaji.filter(function(d) { return !vidjeniSet[d.kljuc]; });
+      try { localStorage.setItem('battleships_vidjeni', JSON.stringify(res.dogadaji.map(function(d) { return d.kljuc; }))); } catch (eTv) {}
+      if (!noviTv.length) { return 0; }
+      var nr = noviTv.filter(function(d) { return d.vrsta === 'RASKID'; });
+      if (noviTv.some(function(d) { return d.bodovi > 0; })) { pogodakSlavlje_(noviTv.filter(function(d) { return d.vrsta !== 'RASKID'; }), res.mjesecBodovi, res.cilj); }
+      if (nr.length) { raskidSlavlje_(nr, res.mjesecBodovi, res.cilj); }
+      return noviTv.length;
+    }
     var maxMs = 0; res.dogadaji.forEach(function(d) { if (d.datumMs > maxMs) { maxMs = d.datumMs; } });
     var novi;
     if (srvMs !== null && srvMs === 0 && vidjeni === null) {
