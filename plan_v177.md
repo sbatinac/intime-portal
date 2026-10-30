@@ -88,3 +88,4 @@
 - v430 (30.10.2026.): Pisma namjere — podkartica „🗄 Arhiva pojedinačnih pisama” preimenovana u „🔎 Pretraga svih pisama”; „Vrsta” je zadano „Sve (pojedinačni mailovi i kampanje)” (i nakon „✕ Poništi”), pa pretraga po nazivu/OIB-u/gradu/datumu odmah gleda i sve kampanje. Apps Script nije mijenjan.
 - v431 (30.10.2026.): TV — kazalo brojača desno uz naslov „Ponude i komunikacija” (veliki broj = čeka odgovor, ✓ prihvaćene, ✗ odbijene, INTRIX, ⭐ čeka OB ulaz, Σ ukupno). Apps Script nije mijenjan.
 - v432 (30.10.2026.): TV — desno uz „Danas čeka” potpis programa „🐾 PANTHER · izradio Saša Batinac”. Apps Script nije mijenjan.
+- v433 (30.10.2026.): broj verzije programa (PANTHER_VERZIJA_ u InTime_Admin.html — podiže se pri SVAKOJ isporuci): na TV-u „🐾 PANTHER v433 · izradio Saša Batinac”, u adminu žuta oznaka „🐾 PANTHER v433” uz naslov. Apps Script nije mijenjan.
