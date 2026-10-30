@@ -2567,6 +2567,63 @@
   #tv-velika .tv-vel-u .a{display:none !important;}
   #tv-velika .tv-vel-s{margin-top:1.6vh;font-size:4vh;font-weight:800;}
   #tv-velika .tv-vel-s span{opacity:.6;text-decoration:line-through;}
+  /* v437: dnevni cilj / ističe / pozivi / tjedan */
+  #tv-dan{display:grid;grid-template-columns:1.1fr 1.2fr .8fr 1.3fr;gap:1.2vw;height:18vh;flex:0 0 auto;}
+  #tv-ekran{gap:1.3vh !important;padding-top:1.6vh !important;padding-bottom:1.6vh !important;}
+  #tv-ekran .kp-d{padding:1vh 1vw !important;} #tv-ekran .kp-d .n{font-size:6.2vh !important;} #tv-ekran .kp-d .l{font-size:2vh !important;margin-top:.5vh;}
+  #tv-ekran .tv-st{padding:.8vh .8vw;} #tv-ekran .tv-st b{font-size:3.4vh;} #tv-ekran .tv-b{padding:.7vh .8vw;}
+  #tv-ekran .tv-pod{white-space:nowrap;}
+  #tv-dan .tv-dan-k{background:rgba(255,255,255,.05);border:1px solid rgba(120,170,255,.25);border-radius:1.6vh;padding:1vh 1vw;min-height:0;overflow:hidden;display:flex;flex-direction:column;gap:.5vh;}
+  #tv-dan .tv-dan-k.ok{border-color:#69db7c;box-shadow:0 0 24px rgba(105,219,124,.35);}
+  #tv-dan .tv-dan-h{font-size:1.9vh;font-weight:900;letter-spacing:.06em;color:#9fd2ff;text-transform:uppercase;white-space:nowrap;}
+  #tv-dan .tv-dan-h small{font-size:1.5vh;color:#7d93b8;text-transform:none;letter-spacing:0;}
+  #tv-dan .tv-dan-p{font-size:1.7vh;color:#a9c0e8;margin-top:auto;}
+  #tv-dan .tv-dan-p b{color:#ffd75e;font-size:2vh;}
+  #tv-dan .tv-cilj{display:grid;grid-template-columns:auto 1fr;align-items:center;column-gap:.6vw;font-size:1.8vh;}
+  #tv-dan .tv-cilj b{justify-self:end;font-size:2.2vh;font-weight:900;color:#fff;} #tv-dan .tv-cilj b small{font-size:1.7vh;color:#9bb4dd;}
+  #tv-dan .tv-cilj i{grid-column:1 / span 2;height:.9vh;border-radius:99px;background:rgba(255,255,255,.12);overflow:hidden;}
+  #tv-dan .tv-cilj i em{display:block;height:100%;background:linear-gradient(90deg,#4dabf7,#9775fa);}
+  #tv-dan .tv-cilj.ok b{color:#69db7c;} #tv-dan .tv-cilj.ok i em{background:linear-gradient(90deg,#40c057,#94d82d);}
+  #tv-dan .tv-red{display:flex;justify-content:space-between;gap:.6vw;font-size:1.8vh;padding:.3vh .5vw;border-radius:.8vh;background:rgba(255,255,255,.04);}
+  #tv-dan .tv-red span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;}
+  #tv-dan .tv-red b{white-space:nowrap;color:#ffd75e;}
+  #tv-dan .tv-red.hitno{background:rgba(229,56,59,.25);border:1px solid #e5383b;} #tv-dan .tv-red.hitno b{color:#ff8787;}
+  #tv-dan .tv-poz-n{font-size:4.6vh;font-weight:900;line-height:1;color:#69db7c;} #tv-dan .tv-poz-n.nula{opacity:.4;}
+  #tv-dan .tv-leg{font-size:1.3vh;letter-spacing:0;text-transform:none;color:#a9c0e8;font-weight:600;margin-left:.6vw;}
+  #tv-dan .tv-leg i{display:inline-block;width:1vh;height:1vh;border-radius:2px;margin:0 .2vw 0 .5vw;}
+  #tv-dan .tv-graf{flex:1;min-height:0;display:flex;gap:.8vw;align-items:stretch;}
+  #tv-dan .tv-g-d{flex:1;display:flex;flex-direction:column;align-items:center;min-height:0;}
+  #tv-dan .tv-g-d > span{font-size:1.5vh;color:#9bb4dd;}
+  #tv-dan .tv-g-s{flex:1;width:100%;display:flex;align-items:flex-end;gap:2px;min-height:0;}
+  #tv-dan .tv-g-s i{flex:1;border-radius:3px 3px 0 0;position:relative;}
+  #tv-dan .tv-g-s{margin-top:1.5vh;} #tv-dan .tv-g-s i b{position:absolute;top:-1.5vh;left:0;right:0;text-align:center;font-size:1.2vh;color:#e8eefc;}
+  #tv-ekran .tv-odbr{color:#ffd75e !important;margin-top:.3vh;}
+  /* v437: malo slavlje (cilj / rekord) */
+  .tv-mslavlje{z-index:99996 !important;overflow:hidden;}
+  .tv-mslavlje .tv-ms-k{position:relative;z-index:2;background:linear-gradient(135deg,#1b2b5e,#2d1b5e);border:4px solid #ffd43b;border-radius:3vh;padding:4vh 4vw;text-align:center;color:#fff;box-shadow:0 0 120px rgba(255,212,59,.6);animation:ukpSkoci .6s cubic-bezier(.2,1.4,.4,1);font-family:Inter,"Segoe UI",Arial,sans-serif;max-width:80vw;}
+  .tv-mslavlje .tv-ms-i{font-size:16vh;line-height:1;}
+  .tv-mslavlje h2{font-size:9vh;margin:1vh 0;color:#ffd43b;letter-spacing:.08em;font-weight:900;}
+  .tv-mslavlje p{font-size:3.6vh;margin:0;color:#e8eefc;line-height:1.5;}
+  .tv-mslavlje p b{color:#69db7c;}
+  .tv-ms-konf{position:absolute;inset:0;pointer-events:none;}
+  .tv-ms-konf i{position:absolute;top:-4vh;width:1.4vh;height:2.2vh;border-radius:2px;animation:tvKonf 3.2s linear infinite;}
+  @keyframes tvKonf{to{transform:translateY(110vh) rotate(720deg);}}
+  @keyframes ukpSkoci{from{transform:scale(.4);opacity:0}to{transform:scale(1);opacity:1}}
+  /* v437: noćni način */
+  #tv-noc{display:none;}
+  html.tv-noc #tv-noc{display:flex;position:fixed;inset:0;z-index:55;background:#000;flex-direction:column;align-items:center;justify-content:center;gap:2vh;color:#6b7a99;cursor:pointer;font-family:Inter,"Segoe UI",Arial,sans-serif;}
+  html.tv-noc #tv-noc .tv-noc-sat{font-size:24vh;font-weight:900;color:#3d4d70;line-height:1;}
+  html.tv-noc #tv-noc .tv-noc-d{font-size:3.4vh;} html.tv-noc #tv-noc .tv-noc-s{font-size:3.4vh;color:#56658a;} html.tv-noc #tv-noc .tv-noc-h{font-size:1.8vh;color:#3a455e;margin-top:3vh;}
+  /* v437: traka dnevnog cilja u adminu */
+  .adm-cilj{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;margin:0 0 10px;padding:8px 12px;border:1px solid #c7d2fe;background:#eef2ff;border-radius:10px;font-size:13.5px;}
+  .adm-cilj[hidden]{display:none;}
+  .adm-cilj.sve{background:#ebfbee;border-color:#8ce99a;}
+  .adm-cilj .adm-c-n{font-weight:800;color:#1e1b4b;}
+  .adm-cilj .adm-c-s{display:inline-flex;flex-direction:column;gap:3px;font-weight:700;color:#334155;min-width:90px;}
+  .adm-cilj .adm-c-s i{display:block;height:5px;border-radius:9px;background:#dbe4ff;overflow:hidden;}
+  .adm-cilj .adm-c-s i b{display:block;height:100%;background:#5c7cfa;}
+  .adm-cilj .adm-c-s.ok{color:#2b8a3e;} .adm-cilj .adm-c-s.ok i b{background:#40c057;}
+  .adm-cilj .adm-c-x{color:#475569;}
   /* v432: potpis programa na TV-u */
   #tv-ekran .tv-potpis{margin-left:auto;font-size:1.6vh;font-weight:800;letter-spacing:.12em;color:#9fd2ff;text-transform:none;white-space:nowrap;text-shadow:0 0 10px rgba(80,190,255,.45);}
   #tv-ekran .tv-potpis .tv-ver{color:#ffd75e;font-weight:900;letter-spacing:.06em;margin-left:.3vw;}
@@ -2809,6 +2866,7 @@
       <div class="kp-trazi"><span>🔎</span><input type="search" id="kp-trazi" placeholder="Traži klijenta, OIB, firmu, mail…" autocomplete="off"><kbd>/</kbd></div>
       <div id="kp-trazi-rez" class="kp-trazi-rez" hidden></div>
     </div>
+    <div id="adm-cilj" class="adm-cilj" hidden></div>
     <div id="kp-danas" class="kp-danas"></div>
     </div><!-- /pz-zona -->
 
@@ -3072,6 +3130,16 @@
     <!-- v403: TV prijava (Sašin zahtjev: kartica u Postavkama s cijelom uputom) -->
     <div id="tv-kartica" style="border:2px solid #0f172a;background:#eef2ff;border-radius:10px;padding:10px 12px;margin-bottom:14px;">
       <button type="button" onclick="tvKarticaOtvori_()" style="all:unset;cursor:pointer;display:flex;align-items:center;justify-content:space-between;width:100%;font-weight:800;color:#1e1b4b;font-size:15px;">📺 TV prijava <span id="tv-kartica-strelica">▸</span></button>
+      <div id="dc-blok" style="margin:8px 0 6px;padding:8px 10px;background:#fff;border:1px solid #c7d2fe;border-radius:8px;">
+        <b style="color:#1e1b4b;">🎯 Dnevni cilj</b> <span class="settings-hint" style="margin:0;">— koliko dnevno želiš (prazno ili 0 = ne prati se). Vidi se na TV-u i pri vrhu admina.</span>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:6px;">
+          <label>✉ Pisma namjere <input type="number" id="dc-pisma" min="0" max="999" style="width:70px;padding:5px;"></label>
+          <label>📄 Ponude <input type="number" id="dc-ponude" min="0" max="999" style="width:70px;padding:5px;"></label>
+          <label>📞 Pozivi <input type="number" id="dc-pozivi" min="0" max="999" style="width:70px;padding:5px;"></label>
+          <button type="button" class="btn btn-small" onclick="dnevniCiljSpremi_(this)">Spremi cilj</button>
+          <span id="dc-poruka" style="font-size:12.5px;color:#475569;"></span>
+        </div>
+      </div>
       <p class="settings-hint" style="margin:4px 0 0;">Pločice „Danas čeka tebe” velike na televizoru — same se osvježavaju (zadano svake 1 min; na TV-u klik na „svakih …” mijenja: 30 s / 1 / 2 / 5 min).</p>
       <div id="tv-kartica-tijelo" hidden style="margin-top:10px;font-size:13.5px;line-height:1.5;color:#1f2937;">
         <b>Što TV prikazuje</b>
@@ -3643,19 +3711,20 @@
     if (ZAPISI_U_TIJEKU_ === 0 && OSVJEZI_NAKON_ZAPISA_) { OSVJEZI_NAKON_ZAPISA_ = false; try { loadEntries(); } catch (eZg) { /* nije kritično */ } }
   }
   // ===== v403: TV PRIKAZ (InTime_Admin.html?tv=1) — samo pločice „Danas čeka tebe”, velike, sat, Battleships bodovi, osvježavanje svake 2 min =====
-  var PANTHER_VERZIJA_ = 'v436';   // v433: broj verzije — Claude ga podiže pri svakoj isporuci (prikazuje se na TV-u i u adminu)
+  var PANTHER_VERZIJA_ = 'v437';   // v433: broj verzije — Claude ga podiže pri svakoj isporuci (prikazuje se na TV-u i u adminu)
   try { document.addEventListener('DOMContentLoaded', function() { var v = document.getElementById('panther-ver'); if (v) { v.textContent = '🐾 PANTHER ' + PANTHER_VERZIJA_; } }); var v0_ = document.getElementById('panther-ver'); if (v0_) { v0_.textContent = '🐾 PANTHER ' + PANTHER_VERZIJA_; } } catch (eVer) {}
   var TV_MOD_ = /[?&]tv=1(&|$)/.test(location.search);
-  var TV_AKCIJE_KLIJENT_ = /^(adminUcitajPocetno|adminListEntries|adminGetCounters|adminPismaBezOdgovora|adminPismaPogodci|tvProvjera)$/;
+  var TV_AKCIJE_KLIJENT_ = /^(adminDnevniCiljStanje|adminUcitajPocetno|adminListEntries|adminGetCounters|adminPismaBezOdgovora|adminPismaPogodci|tvProvjera)$/;
   function tvOdjava_(poruka) { try { localStorage.removeItem('intime_tv_token'); } catch (e) {} location.replace('InTime_TV.html' + (poruka ? '?odjava=1' : '')); }
   function tvPokreni_() {
     document.documentElement.classList.add('tv-mod');
     var ekran = document.createElement('div'); ekran.id = 'tv-ekran';
-    ekran.innerHTML = '<div class="tv-glava"><div class="tv-lijevo"><div class="tv-naslov">⚓ COMMAND BRIDGE</div><div class="tv-pod">In Time d.o.o. · zapovjedni most · osvježeno <span id="tv-osvjezeno">—</span> · <button type="button" id="tv-int" class="tv-int" title="Klik = promijeni koliko često se TV osvježava"></button></div></div>' +
+    ekran.innerHTML = '<div class="tv-glava"><div class="tv-lijevo"><div class="tv-naslov">⚓ COMMAND BRIDGE</div><div class="tv-pod">In Time d.o.o. · zapovjedni most · osvježeno <span id="tv-osvjezeno">—</span> · <button type="button" id="tv-int" class="tv-int" title="Klik = promijeni koliko često se TV osvježava"></button> <button type="button" id="tv-ping" class="tv-int" title="Klik = zvuk kod promjene uključi/isključi"></button></div></div>' +
       '<div class="tv-bs" id="tv-bs"></div><button type="button" class="tv-vrijeme" id="tv-vrijeme" title="Klik = odaberi grad">🌡 …</button><div class="tv-desno"><div class="tv-sat" id="tv-sat">--:--</div><div class="tv-datum" id="tv-datum"></div></div></div>';
     document.body.appendChild(ekran);
     var od1 = document.createElement('div'); od1.className = 'tv-odjeljak tv-odj-kaz'; od1.innerHTML = '<span>📌 Danas čeka</span><span class="tv-potpis">🐾 PANTHER <b class="tv-ver">' + PANTHER_VERZIJA_ + '</b> <em>·</em> izradio Saša Batinac</span>'; ekran.appendChild(od1);   // v432
     var kp = document.getElementById('kp-danas'); if (kp) { ekran.appendChild(kp); }
+    var trD = document.createElement('div'); trD.id = 'tv-dan'; trD.innerHTML = '<div class="tv-dan-k" id="tv-dan-cilj"></div><div class="tv-dan-k" id="tv-dan-istek"></div><div class="tv-dan-k" id="tv-dan-pozivi"></div><div class="tv-dan-k" id="tv-dan-tjedan"></div>'; ekran.appendChild(trD);   // v437
     // v424: ispod pločica — traka statistike i traka brojača (prepisuje se iz admina svake 2 s)
     var od2 = document.createElement('div'); od2.className = 'tv-odjeljak'; od2.textContent = '📊 Statistika'; ekran.appendChild(od2);
     var trS = document.createElement('div'); trS.id = 'tv-stat'; trS.className = 'tv-traka'; ekran.appendChild(trS);
@@ -3666,6 +3735,10 @@
     var trB = document.createElement('div'); trB.id = 'tv-broj'; trB.className = 'tv-traka'; ekran.appendChild(trB);
     tvSazetak_(); setInterval(function() { tvSazetak_(); try { tvPromjeneOznaci_(); } catch (eTp) {} }, 2000);
     tvVrijemeUcitaj_(); setInterval(tvVrijemeUcitaj_, 15 * 60000);
+    // v437: dnevni cilj, ističe uskoro, pozivi, tjedan, rekordi (svake 3 min) + noćni način + zvuk promjene
+    dnevniUcitaj_(); setInterval(dnevniUcitaj_, 3 * 60000); setInterval(tvDnevniRender_, 30000);
+    tvNocProvjeri_(); setInterval(tvNocProvjeri_, 30000);
+    tvPingGumb_(); document.getElementById('tv-ping').addEventListener('click', function() { try { localStorage.setItem('intime_tv_ping', tvPingUkljucen_() ? '0' : '1'); } catch (e) {} tvPingGumb_(); if (tvPingUkljucen_()) { tvPing_(); } });
     // v435: na TV-u nitko ne klikne „Super!” — slavlje (pogodak / raskid / video) se samo zatvori nakon 60 s
     var tvSlavljeOd_ = {};
     setInterval(function() {
@@ -3753,6 +3826,8 @@
   var TV_VELIKA_ = { sloj: null, timer: null };
   function tvPromjenaVelika_(lista) {
     if (!lista.length) { return; }
+    if (document.documentElement.classList.contains('tv-noc')) { return; }   // v437: noću bez iskakanja
+    tvPing_();
     var ek = document.getElementById('tv-ekran'); if (!ek) { return; }
     var sloj = TV_VELIKA_.sloj;
     if (!sloj) { sloj = document.createElement('div'); sloj.id = 'tv-velika'; ek.appendChild(sloj); TV_VELIKA_.sloj = sloj; }
@@ -3823,8 +3898,157 @@
   function tvBodovi_(res) {
     var el = document.getElementById('tv-bs'); if (!el || !res || res.status !== 'ok') { return; }
     var b = res.mjesecBodovi || 0, c = res.cilj || 0, pct = c ? Math.min(100, Math.round(b / c * 100)) : 0;
-    el.innerHTML = '<div class="tv-bs-n">🚢 ' + b + (c ? ' <small>/ ' + c + '</small>' : '') + '</div><div class="tv-bs-traka"><i style="width:' + pct + '%"></i></div><div class="tv-bs-l">Battleships · ovaj mjesec' + (res.razina ? ' · ' + esc(res.razina) : '') + '</div>';
+    el.innerHTML = '<div class="tv-bs-n">🚢 ' + b + (c ? ' <small>/ ' + c + '</small>' : '') + '</div><div class="tv-bs-traka"><i style="width:' + pct + '%"></i></div><div class="tv-bs-l">Battleships · ovaj mjesec' + (res.razina ? ' · ' + esc(res.razina) : '') + '</div>' + tvOdbrojavanje_(res);
   }
+  // v437: odbrojavanje do kraja mjeseca i kvartala + koliko fali do sljedeće razine
+  function tvOdbrojavanje_(res) {
+    var d = new Date(), dan = 86400000, danas = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+    var krajMj = new Date(d.getFullYear(), d.getMonth() + 1, 1).getTime(), krajQ = new Date(d.getFullYear(), Math.floor(d.getMonth() / 3) * 3 + 3, 1).getTime();
+    var dm = Math.max(0, Math.round((krajMj - danas) / dan) - 1), dq = Math.max(0, Math.round((krajQ - danas) / dan) - 1);
+    var nx = res && res.sljedecaRazina, fali = nx ? Math.max(0, nx.bodova - (res.mjesecBodovi || 0)) : 0;
+    return '<div class="tv-bs-l tv-odbr">⏱ mj. još ' + (dm ? dm + ' d' : 'danas') + ' · Q' + (Math.floor(d.getMonth() / 3) + 1) + ' još ' + dq + ' d' + (nx && fali ? ' · ' + esc(nx.naziv) + ' −' + fali : '') + '</div>';
+  }
+  // ===== v437: 🎯 DNEVNI CILJ, ⏳ ističe uskoro, 📞 za nazvati, 📈 tjedan, 🏅 rekordi, 🌙 noćni način, 🔔 zvuk =====
+  var DNEVNI_ = null;
+  function dnevniUcitaj_() {
+    if (!adminToken) { return Promise.resolve(); }
+    return gasCall({ action: 'adminDnevniCiljStanje', token: adminToken }).then(function(res) {
+      if (!res || res.status !== 'ok') { return; }
+      DNEVNI_ = res; dnevniPrimijeni_();
+    }).catch(function() {});
+  }
+  function dnevniPrimijeni_() {
+    var c = (DNEVNI_ && DNEVNI_.cilj) || {};
+    ['pisma', 'ponude', 'pozivi'].forEach(function(k) { var i = document.getElementById('dc-' + k); if (i && document.activeElement !== i && !i._dirty) { i.value = c[k] || ''; } });
+    if (TV_MOD_) { tvDnevniRender_(); tvNocProvjeri_(); tvDnevnaSlavlja_(); } else { admCiljRender_(); }
+  }
+  function dnevniCiljSpremi_(b) {
+    var v = function(k) { var i = document.getElementById('dc-' + k); return i ? (parseInt(i.value, 10) || 0) : 0; };
+    var msg = document.getElementById('dc-poruka'); if (msg) { msg.textContent = 'Spremam…'; }
+    b.disabled = true;
+    gasCall({ action: 'adminDnevniCiljSpremi', token: adminToken, cilj: { pisma: v('pisma'), ponude: v('ponude'), pozivi: v('pozivi') } }).then(function(res) {
+      b.disabled = false;
+      if (handleAuthError(res)) { return; }
+      if (!res || res.status !== 'ok') { if (msg) { msg.textContent = (res && res.message) || 'Greška (je li objavljen novi Code.gs?)'; } return; }
+      if (msg) { msg.textContent = '✓ Spremljeno — TV ga preuzme za najviše 3 min.'; }
+      ['pisma', 'ponude', 'pozivi'].forEach(function(k) { var i = document.getElementById('dc-' + k); if (i) { i._dirty = false; } });
+      dnevniUcitaj_();
+    }).catch(function() { b.disabled = false; if (msg) { msg.textContent = 'Greška veze.'; } });
+  }
+  var DNEVNI_VRSTE_ = [['pisma', '✉', 'Pisma'], ['ponude', '📄', 'Ponude'], ['pozivi', '📞', 'Pozivi']];
+  function dnevniStavke_() {
+    var c = (DNEVNI_ && DNEVNI_.cilj) || {}, d = (DNEVNI_ && DNEVNI_.danasBroj) || {};
+    return DNEVNI_VRSTE_.filter(function(x) { return c[x[0]] > 0; }).map(function(x) { var n = d[x[0]] || 0, g = c[x[0]]; return { k: x[0], ik: x[1], naziv: x[2], n: n, cilj: g, pct: Math.min(100, Math.round(n / g * 100)), ok: n >= g }; });
+  }
+  function admCiljRender_() {
+    var el = document.getElementById('adm-cilj'); if (!el || !DNEVNI_) { return; }
+    var st = dnevniStavke_();
+    var dod = (DNEVNI_.istekUkupno ? '<span class="adm-c-x" title="ponude koje ističu u sljedećih 14 dana">⏳ ističe uskoro: <b>' + DNEVNI_.istekUkupno + '</b></span>' : '') +
+      (DNEVNI_.dospjeloBroj ? '<span class="adm-c-x">📞 za nazvati danas: <b>' + DNEVNI_.dospjeloBroj + '</b></span>' : '');
+    if (!st.length) { el.innerHTML = '<span class="adm-c-n">🎯 Dnevni cilj nije postavljen</span><span class="adm-c-x" style="color:#64748b;">Postavke → 📺 TV prijava → 🎯 Dnevni cilj</span>' + dod; el.hidden = false; return; }
+    var sve = st.every(function(x) { return x.ok; });
+    el.innerHTML = '<span class="adm-c-n">' + (sve ? '🎉 Dnevni cilj ispunjen!' : '🎯 Danas') + '</span>' + st.map(function(x) {
+      return '<span class="adm-c-s' + (x.ok ? ' ok' : '') + '">' + x.ik + ' ' + x.n + ' / ' + x.cilj + '<i><b style="width:' + x.pct + '%"></b></i></span>';
+    }).join('') + dod;
+    el.classList.toggle('sve', sve); el.hidden = false;
+  }
+  function tvOdbroj_(ms) {
+    var r = Math.max(0, ms - Date.now()), d = Math.floor(r / 86400000), h = Math.floor(r % 86400000 / 3600000), m = Math.floor(r % 3600000 / 60000);
+    return d ? d + ' d ' + (h < 10 ? '0' : '') + h + ' h' : h + ' h ' + (m < 10 ? '0' : '') + m + ' min';
+  }
+  function tvDnevniRender_() {
+    if (!TV_MOD_ || !DNEVNI_) { return; }
+    var D = DNEVNI_, e1 = document.getElementById('tv-dan-cilj'), e2 = document.getElementById('tv-dan-istek'), e3 = document.getElementById('tv-dan-pozivi'), e4 = document.getElementById('tv-dan-tjedan');
+    if (!e1) { return; }
+    var st = dnevniStavke_(), sve = st.length && st.every(function(x) { return x.ok; });
+    e1.className = 'tv-dan-k' + (sve ? ' ok' : '');
+    e1.innerHTML = '<div class="tv-dan-h">' + (sve ? '🎉 Dnevni cilj ispunjen!' : '🎯 Dnevni cilj') + '</div>' + (st.length ? st.map(function(x) {
+      return '<div class="tv-cilj' + (x.ok ? ' ok' : '') + '"><span>' + x.ik + ' ' + x.naziv + '</span><b>' + x.n + ' <small>/ ' + x.cilj + '</small></b><i><em style="width:' + x.pct + '%"></em></i></div>';
+    }).join('') : '<div class="tv-dan-p">Postavi ga u adminu:<br>Postavke → 📺 TV prijava → 🎯</div>') + '<div class="tv-dan-p">🎯 pogodaka danas: <b>' + ((D.danasBroj || {}).pogodci || 0) + '</b></div>';
+    var ist = D.istek || [];
+    e2.innerHTML = '<div class="tv-dan-h">⏳ Ističe uskoro' + (D.istekUkupno > ist.length ? ' <small>(' + D.istekUkupno + ' u 14 d)</small>' : '') + '</div>' + (ist.length ? ist.map(function(x) {
+      var hitno = x.istekMs - Date.now() < 86400000;
+      return '<div class="tv-red' + (hitno ? ' hitno' : '') + '"><span>' + (x.otvorena ? '📨 ' : '📄 ') + esc(x.naziv || '(bez naziva)') + '</span><b>' + tvOdbroj_(x.istekMs) + '</b></div>';
+    }).join('') : '<div class="tv-dan-p">✓ nijedna ponuda ne ističe u 14 dana</div>');
+    var dos = D.dospjelo || [];
+    e3.innerHTML = '<div class="tv-dan-h">📞 Za nazvati danas</div><div class="tv-poz-n' + (D.dospjeloBroj ? '' : ' nula') + '">' + (D.dospjeloBroj || 0) + '</div>' + dos.map(function(x) { return '<div class="tv-red"><span>' + esc(x.naziv || '—') + '</span></div>'; }).join('');
+    // tjedan pon–pet (tekući tjedan) — svaka vrsta mjerena svojim najvećim brojem
+    var tj = (D.dani || []).slice(-7).filter(function(x) { return x.dt >= 1 && x.dt <= 5; });
+    var danasDt = (D.dani || []).length ? D.dani[D.dani.length - 1].dt : 1;
+    tj = tj.filter(function(x) { return x.dt <= danasDt || danasDt > 5; }).slice(-5);
+    var vr = [['pisma', '#4dabf7'], ['ponude', '#ffd43b'], ['pozivi', '#69db7c'], ['pogodci', '#ff6b9d']];
+    var max = {}; vr.forEach(function(v) { max[v[0]] = Math.max.apply(null, [1].concat(tj.map(function(x) { return x[v[0]] || 0; }))); });
+    var DN = ['', 'pon', 'uto', 'sri', 'čet', 'pet'];
+    var rk = D.rekordi || {}, rkT = [['pisma', '✉'], ['ponude', '📄'], ['pozivi', '📞'], ['pogodci', '🎯']].filter(function(x) { return rk[x[0]] && rk[x[0]].broj; }).map(function(x) { return x[1] + ' ' + rk[x[0]].broj; }).join(' · ');
+    e4.innerHTML = '<div class="tv-dan-h">📈 Ovaj tjedan <span class="tv-leg">' + vr.map(function(v) { return '<i style="background:' + v[1] + '"></i>' + ({ pisma: '✉', ponude: '📄', pozivi: '📞', pogodci: '🎯' })[v[0]]; }).join(' ') + '</span></div>' +
+      '<div class="tv-graf">' + tj.map(function(x) {
+        return '<div class="tv-g-d"><div class="tv-g-s">' + vr.map(function(v) { var n = x[v[0]] || 0; return '<i title="' + n + '" style="height:' + Math.max(3, Math.round(n / max[v[0]] * 100)) + '%;background:' + v[1] + (n ? '' : ';opacity:.25') + '"><b>' + (n || '') + '</b></i>'; }).join('') + '</div><span>' + DN[x.dt] + '</span></div>';
+      }).join('') + '</div>' + (rkT ? '<div class="tv-dan-p">🏅 rekordni dan: ' + rkT + '</div>' : '');
+  }
+  function tvDanKljuc_() { var d = new Date(); return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate(); }
+  function tvDnevnaSlavlja_() {
+    if (!TV_MOD_ || !DNEVNI_ || document.documentElement.classList.contains('tv-noc') || document.getElementById('pogodak-sloj') || document.getElementById('raskid-sloj') || document.querySelector('.tv-mslavlje')) { return; }
+    var dk = tvDanKljuc_(), ls = function(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }, lsSet = function(k, v) { try { localStorage.setItem(k, v); } catch (e) {} };
+    var st = dnevniStavke_();
+    if (st.length && st.every(function(x) { return x.ok; }) && ls('intime_tv_cilj_dan') !== dk) {
+      lsSet('intime_tv_cilj_dan', dk);
+      tvMaloSlavlje_('🎯', 'DNEVNI CILJ!', st.map(function(x) { return x.ik + ' ' + x.n + ' / ' + x.cilj; }).join(' · '));
+      return;
+    }
+    var rk = DNEVNI_.rekordi || {}, d = DNEVNI_.danasBroj || {};
+    var IM = { pisma: '✉ Pisma namjere', ponude: '📄 Ponude', pozivi: '📞 Pozivi', pogodci: '🎯 Pogodci' };
+    var novi = Object.keys(IM).filter(function(k) { return rk[k] && rk[k].broj > 0 && (d[k] || 0) > rk[k].broj && ls('intime_tv_rekord_' + k) !== dk; });
+    if (novi.length) {
+      novi.forEach(function(k) { lsSet('intime_tv_rekord_' + k, dk); });
+      tvMaloSlavlje_('🏅', 'NOVI REKORD!', novi.map(function(k) { var o = rk[k].dan.split('-'); return IM[k] + ': <b>' + d[k] + '</b> (stari ' + rk[k].broj + ', ' + (+o[2]) + '.' + (+o[1]) + '.)'; }).join('<br>'));
+    }
+  }
+  function tvMaloSlavlje_(ikona, naslov, tekst) {
+    var s = document.createElement('div'); s.className = 'vk-sloj tv-mslavlje';
+    var konf = ''; for (var i = 0; i < 40; i++) { konf += '<i style="left:' + Math.round(Math.random() * 100) + '%;animation-delay:' + (Math.random() * 2.5).toFixed(2) + 's;background:hsl(' + Math.round(Math.random() * 360) + ',90%,60%)"></i>'; }
+    s.innerHTML = '<div class="tv-ms-konf">' + konf + '</div><div class="tv-ms-k"><div class="tv-ms-i">' + ikona + '</div><h2>' + naslov + '</h2><p>' + tekst + '</p></div>';
+    s.addEventListener('click', function() { if (s.parentNode) { s.parentNode.removeChild(s); } });
+    document.body.appendChild(s); tvPing_(true);
+  }
+  // 🌙 noćni način: 20:00–7:00 TV potamni (sat, vrijeme, sažetak dana); klik = normalni prikaz 10 min
+  var TV_NOC_BUDAN_DO_ = 0;
+  function tvNocProvjeri_() {
+    var h = new Date().getHours(), noc = (h >= 20 || h < 7) && Date.now() > TV_NOC_BUDAN_DO_;
+    var html = document.documentElement, el = document.getElementById('tv-noc');
+    if (!el) {
+      el = document.createElement('div'); el.id = 'tv-noc'; el.className = 'vk-noc';
+      el.addEventListener('click', function() { TV_NOC_BUDAN_DO_ = Date.now() + 10 * 60000; tvNocProvjeri_(); });
+      (document.getElementById('tv-ekran') || document.body).appendChild(el);
+    }
+    html.classList.toggle('tv-noc', noc);
+    if (!noc) { return; }
+    var d = new Date(), p2 = function(n) { return (n < 10 ? '0' : '') + n; }, DNi = ['nedjelja', 'ponedjeljak', 'utorak', 'srijeda', 'četvrtak', 'petak', 'subota'];
+    var vr = document.getElementById('tv-vrijeme'), db = (DNEVNI_ && DNEVNI_.danasBroj) || {};
+    el.innerHTML = '<div class="tv-noc-sat">' + p2(d.getHours()) + ':' + p2(d.getMinutes()) + '</div><div class="tv-noc-d">' + DNi[d.getDay()] + ', ' + d.getDate() + '.' + (d.getMonth() + 1) + '.' + d.getFullYear() + '.' + (vr ? ' · ' + esc(vr.textContent.replace(/\s+/g, ' ').trim()) : '') + '</div>' +
+      '<div class="tv-noc-s">Danas: ✉ ' + (db.pisma || 0) + ' · 📄 ' + (db.ponude || 0) + ' · 📞 ' + (db.pozivi || 0) + ' · 🎯 ' + (db.pogodci || 0) + '</div><div class="tv-noc-h">🌙 noćni način (20–7 h) · dodirni ekran za puni prikaz</div>';
+  }
+  // 🔔 kratki „ping” kod promjene (pamti se na TV-u; zadano uključeno; noću tiho)
+  function tvPingUkljucen_() { try { return localStorage.getItem('intime_tv_ping') !== '0'; } catch (e) { return true; } }
+  function tvPingGumb_() { var b = document.getElementById('tv-ping'); if (b) { b.textContent = tvPingUkljucen_() ? '🔔 zvuk' : '🔕 bez zvuka'; } }
+  var TV_AUDIO_ = null;
+  function tvPing_(svecano) {
+    if (!TV_MOD_ || !tvPingUkljucen_() || document.documentElement.classList.contains('tv-noc')) { return; }
+    try {
+      TV_AUDIO_ = TV_AUDIO_ || new (window.AudioContext || window.webkitAudioContext)();
+      var ctx = TV_AUDIO_; if (ctx.state === 'suspended') { ctx.resume(); }
+      (svecano ? [660, 880, 1320] : [880, 1320]).forEach(function(f, i) {
+        var o = ctx.createOscillator(), g = ctx.createGain(), t = ctx.currentTime + i * 0.16;
+        o.type = 'sine'; o.frequency.value = f; g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.25, t + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.35);
+        o.connect(g); g.connect(ctx.destination); o.start(t); o.stop(t + 0.4);
+      });
+    } catch (e) {}
+  }
+  // admin: dnevni pregled svake 3 min (dok je kartica vidljiva)
+  (function() {
+    var prvi = setInterval(function() { if (adminToken && !TV_MOD_) { clearInterval(prvi); dnevniUcitaj_(); } }, 3000);
+    setInterval(function() { if (adminToken && !TV_MOD_ && document.visibilityState === 'visible') { dnevniUcitaj_(); } }, 3 * 60000);
+    document.addEventListener('input', function(ev) { if (ev.target && /^dc-/.test(ev.target.id || '')) { ev.target._dirty = true; } });
+  })();
   // ===== v393: BRZI PRIKAZ IZ MEMORIJE — admin se odmah otvara sa zadnjim podacima iz ovog preglednika, svježi stižu u pozadini =====
   // Dok podaci nisu svježi, radnje koje nešto SPREMAJU/ŠALJU čekaju (ne izvršavaju se nad starim stanjem). Pamćenje se briše pri odjavi.
   var KES_PREFIX_ = 'intime_kes1:', KES_STALE_ = false, KES_PRIMJENA_IZ_KESA_ = false, KES_SVJEZE_RESOLVE_ = null, KES_SVJEZE_PROMISE_ = Promise.resolve();

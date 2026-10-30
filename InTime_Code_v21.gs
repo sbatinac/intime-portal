@@ -8834,6 +8834,10 @@ function doPost(e) {
       result = adminKampanjaNacrtBrisi(data.token, data.id);
     } else if (data.action === 'tvProvjera') {
       result = { status: 'ok' };
+    } else if (data.action === 'adminDnevniCiljStanje') {
+      result = adminDnevniCiljStanje(data.token);
+    } else if (data.action === 'adminDnevniCiljSpremi') {
+      result = adminDnevniCiljSpremi(data.token, data.cilj);
     } else if (data.action === 'adminTvNovi') {
       result = adminTvNovi(data.token, data.naziv);
     } else if (data.action === 'adminTvLista') {
@@ -10369,9 +10373,93 @@ function saveAdminSessions_(sessions) {
 // ne raste neograničeno.
 // v403: TV PRIKAZ — TV ključ (samo čitanje) vrijedi samo za popis dopuštenih akcija; doPost ga postavi ovdje za trajanje jednog zahtjeva
 var TV_PRISTUP_TOKEN_ = null;
-var TV_AKCIJE_RE_ = /^(adminUcitajPocetno|adminListEntries|adminGetCounters|adminPismaBezOdgovora|adminPismaPogodci|tvProvjera)$/;
+var TV_AKCIJE_RE_ = /^(adminDnevniCiljStanje|adminUcitajPocetno|adminListEntries|adminGetCounters|adminPismaBezOdgovora|adminPismaPogodci|tvProvjera)$/;
 var TV_TRAJANJE_MS_ = 90 * 24 * 3600 * 1000;
 function tvTokeni_() { try { return JSON.parse(PropertiesService.getScriptProperties().getProperty('TV_TOKENI') || '{}'); } catch (e) { return {}; } }
+// ============================================================================
+// v437: 🎯 DNEVNI CILJ + pregled dana za TV i admin — brojevi po danu (pisma, ponude, pozivi, pogodci), rekordi,
+// ponude koje uskoro ističu i dospjeli pozivi. Samo čita; rezultat se pamti 2 min.
+// ============================================================================
+var DNEVNI_CILJ_KLJUC_ = 'DNEVNI_CILJ', DNEVNI_KES_KLJUC_ = 'dnevni_v437';
+function dnevniDatum_(v, krajDana) {
+  if (v instanceof Date) { return isNaN(v.getTime()) ? null : v; }
+  var t = String(v || '').trim(); if (!t) { return null; }
+  var m = /^(\d{1,2})\.(\d{1,2})\.(\d{4})\.?\s*(?:(\d{1,2}):(\d{2}))?/.exec(t);
+  if (m) { return new Date(+m[3], +m[2] - 1, +m[1], m[4] ? +m[4] : (krajDana ? 23 : 12), m[5] ? +m[5] : (krajDana ? 59 : 0)); }
+  var d = new Date(t.replace(/^(\d{4}-\d{2}-\d{2}) (\d)/, '$1T$2'));
+  return isNaN(d.getTime()) ? null : d;
+}
+function dnevniCilj_() {
+  var c = {}; try { c = JSON.parse(PropertiesService.getScriptProperties().getProperty(DNEVNI_CILJ_KLJUC_) || '{}'); } catch (e) { c = {}; }
+  var n = function(v) { v = parseInt(v, 10); return isFinite(v) && v > 0 ? Math.min(v, 999) : 0; };
+  return { pisma: n(c.pisma), ponude: n(c.ponude), pozivi: n(c.pozivi) };
+}
+function adminDnevniCiljSpremi(token, cilj) {
+  if (!isValidAdminToken_(token) || TV_PRISTUP_TOKEN_) { return pismaAuthGreska_(); }
+  var c = cilj || {}, n = function(v) { v = parseInt(v, 10); return isFinite(v) && v > 0 ? Math.min(v, 999) : 0; };
+  PropertiesService.getScriptProperties().setProperty(DNEVNI_CILJ_KLJUC_, JSON.stringify({ pisma: n(c.pisma), ponude: n(c.ponude), pozivi: n(c.pozivi) }));
+  try { CacheService.getScriptCache().remove(DNEVNI_KES_KLJUC_); } catch (e) {}
+  return { status: 'ok', cilj: dnevniCilj_() };
+}
+function adminDnevniCiljStanje(token) {
+  if (!isValidAdminToken_(token)) { return pismaAuthGreska_(); }
+  try { var k = CacheService.getScriptCache().get(DNEVNI_KES_KLJUC_); if (k) { var o = JSON.parse(k); o.izKesa = true; return o; } } catch (eK) {}
+  try {
+    var tz = PISMA_TZ_, dan = function(d) { return Utilities.formatDate(d, tz, 'yyyy-MM-dd'); };
+    var danas = dan(new Date());
+    var dani = {};   // 'yyyy-MM-dd' → { pisma, ponude, pozivi, pogodci }
+    var plus = function(d, polje) { if (!(d instanceof Date) || isNaN(d.getTime())) { return; } var k = dan(d); dani[k] = dani[k] || { pisma: 0, ponude: 0, pozivi: 0, pogodci: 0 }; dani[k][polje]++; };
+    // 1) pisma namjere (sva poslana: kampanje + pojedinačna)
+    var ps = getOrCreatePismaSheet_(), pl = ps.getLastRow();
+    if (pl >= 2) { ps.getRange(2, 1, pl - 1, 11).getValues().forEach(function(r) { if (String(r[9]) === 'Poslano') { plus(dnevniDatum_(r[10]) || dnevniDatum_(r[2]), 'pisma'); } }); }
+    // 2) ponude (obične i otvorene) — datum slanja aktivne ponude; + ponude koje uskoro ističu
+    var istek = [];
+    var up = getOrCreateUpitiSheet(), lr = up.getLastRow();
+    if (lr >= 2) {
+      var ocek = izracunajOcekivanoZaglavljeUpiti_(), lc = Math.min(up.getLastColumn(), ocek.length);
+      var header = up.getRange(1, 1, 1, lc).getValues()[0], data = up.getRange(2, 1, lr - 1, lc).getValues();
+      var iSl = header.indexOf('Datum slanja aktivne ponude (admin)'), iIst = header.indexOf('Datum isteka ponude (admin)'), iNaz = header.indexOf('Naziv tvrtke'), iTip = header.indexOf('Tip');
+      var sada = Date.now();
+      data.forEach(function(row) {
+        if (iSl !== -1) { plus(dnevniDatum_(row[iSl]), 'ponude'); }
+        if (iIst === -1 || !row[iIst]) { return; }
+        var di = dnevniDatum_(row[iIst], true); if (!di || di.getTime() < sada || di.getTime() - sada > 14 * 86400000) { return; }
+        var st = ''; try { st = izracunajStatusPonude_(header, row); } catch (eS) { st = ''; }
+        if (st !== 'na_cekanju') { return; }
+        istek.push({ naziv: iNaz === -1 ? '' : String(row[iNaz] || ''), istekMs: di.getTime(), otvorena: iTip !== -1 && String(row[iTip]) === OTV_TIP_ });
+      });
+    }
+    istek.sort(function(a, b) { return a.istekMs - b.istekMs; });
+    // 3) pozivi + dospjeli „nazvati ponovno”
+    var pozZadnji = {}, sh = evidencijaSheets_(), zl = sh.pozivi.getLastRow();
+    if (zl >= 2) {
+      sh.pozivi.getRange(2, 1, zl - 1, EVID_POZIVI_HEADER_.length).getValues().forEach(function(r) {
+        var t = dnevniDatum_(r[1]);
+        plus(t, 'pozivi');
+        var k = String(r[2]), ms = t ? t.getTime() : 0;
+        if (!pozZadnji[k] || pozZadnji[k].ms <= ms) { pozZadnji[k] = { ms: ms, naziv: String(r[3] || ''), ishod: String(r[5] || ''), ponovno: r[7] instanceof Date ? dan(r[7]) : String(r[7] || '').slice(0, 10) }; }
+      });
+    }
+    var dospjelo = Object.keys(pozZadnji).map(function(k) { return pozZadnji[k]; }).filter(function(z) { return z.ponovno && /^\d{4}-\d{2}-\d{2}$/.test(z.ponovno) && z.ponovno <= danas && z.ishod !== 'ne_zanima'; });
+    dospjelo.sort(function(a, b) { return a.ponovno < b.ponovno ? -1 : (a.ponovno > b.ponovno ? 1 : 0); });
+    // 4) pogodci (pozitivni događaji iz Battleshipsa)
+    var bs = battleSheet_(), bl = bs.getLastRow();
+    if (bl >= 2) { bs.getRange(2, 1, bl - 1, 6).getValues().forEach(function(r) { if ((Number(r[5]) || 0) > 0 && r[1] instanceof Date) { plus(r[1], 'pogodci'); } }); }
+    // rekordi (najbolji dan za svaku vrstu, ne računajući danas) + zadnjih 14 dana
+    var rekordi = {};
+    ['pisma', 'ponude', 'pozivi', 'pogodci'].forEach(function(v) {
+      var best = { broj: 0, dan: '' };
+      Object.keys(dani).forEach(function(k) { if (k !== danas && dani[k][v] > best.broj) { best = { broj: dani[k][v], dan: k }; } });
+      rekordi[v] = best;
+    });
+    var zadnji = [];
+    for (var i = 13; i >= 0; i--) { var d = new Date(Date.now() - i * 86400000), kk = dan(d); var x = dani[kk] || { pisma: 0, ponude: 0, pozivi: 0, pogodci: 0 }; zadnji.push({ dan: kk, dt: Number(Utilities.formatDate(d, tz, 'u')), pisma: x.pisma, ponude: x.ponude, pozivi: x.pozivi, pogodci: x.pogodci }); }
+    var out = { status: 'ok', danas: danas, cilj: dnevniCilj_(), danasBroj: dani[danas] || { pisma: 0, ponude: 0, pozivi: 0, pogodci: 0 }, rekordi: rekordi, dani: zadnji,
+      istek: istek.slice(0, 3), istekUkupno: istek.length, dospjeloBroj: dospjelo.length, dospjelo: dospjelo.slice(0, 3).map(function(z) { return { naziv: z.naziv, ponovno: z.ponovno }; }), vrijemeMs: Date.now() };
+    try { CacheService.getScriptCache().put(DNEVNI_KES_KLJUC_, JSON.stringify(out), 120); } catch (eP) {}
+    return out;
+  } catch (err) { return { status: 'error', message: 'Pregled dana nije uspio: ' + err.message }; }
+}
 function tvTokeniSpremi_(m) { PropertiesService.getScriptProperties().setProperty('TV_TOKENI', JSON.stringify(m)); }
 function tvTokenValjan_(t) {
   if (!t || String(t).indexOf('TV-') !== 0) { return false; }
