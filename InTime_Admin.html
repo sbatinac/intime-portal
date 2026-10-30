@@ -2573,6 +2573,9 @@
   #tv-ekran .kp-d{padding:1vh 1vw !important;} #tv-ekran .kp-d .n{font-size:6.2vh !important;} #tv-ekran .kp-d .l{font-size:2vh !important;margin-top:.5vh;}
   #tv-ekran .tv-st{padding:.8vh .8vw;} #tv-ekran .tv-st b{font-size:3.4vh;} #tv-ekran .tv-b{padding:.7vh .8vw;}
   #tv-ekran .tv-pod{white-space:nowrap;}
+  /* v439: brojači ponuda na TV-u — svi znakovi u jednom redu */
+  #tv-ekran .tv-b .bs-brojac .bs-m{flex-wrap:nowrap !important;gap:.25vw !important;}
+  #tv-ekran .tv-b .bs-brojac .bs-m b{font-size:1.45vh !important;padding:0 .35vw !important;white-space:nowrap;}
   /* v438: pločice „Danas čeka” — broj i tekst centrirani, broj veći i jasniji */
   #tv-ekran .kp-danas-mreza .kp-d{align-items:center !important;justify-content:center !important;text-align:center !important;}
   #tv-ekran .kp-danas-mreza .kp-d .n{font-size:7.4vh !important;font-weight:900 !important;line-height:1.05 !important;}
@@ -3717,7 +3720,7 @@
     if (ZAPISI_U_TIJEKU_ === 0 && OSVJEZI_NAKON_ZAPISA_) { OSVJEZI_NAKON_ZAPISA_ = false; try { loadEntries(); } catch (eZg) { /* nije kritično */ } }
   }
   // ===== v403: TV PRIKAZ (InTime_Admin.html?tv=1) — samo pločice „Danas čeka tebe”, velike, sat, Battleships bodovi, osvježavanje svake 2 min =====
-  var PANTHER_VERZIJA_ = 'v438';   // v433: broj verzije — Claude ga podiže pri svakoj isporuci (prikazuje se na TV-u i u adminu)
+  var PANTHER_VERZIJA_ = 'v439';   // v433: broj verzije — Claude ga podiže pri svakoj isporuci (prikazuje se na TV-u i u adminu)
   try { document.addEventListener('DOMContentLoaded', function() { var v = document.getElementById('panther-ver'); if (v) { v.textContent = '🐾 PANTHER ' + PANTHER_VERZIJA_; } }); var v0_ = document.getElementById('panther-ver'); if (v0_) { v0_.textContent = '🐾 PANTHER ' + PANTHER_VERZIJA_; } } catch (eVer) {}
   var TV_MOD_ = /[?&]tv=1(&|$)/.test(location.search);
   var TV_AKCIJE_KLIJENT_ = /^(adminDnevniCiljStanje|adminUcitajPocetno|adminListEntries|adminGetCounters|adminPismaBezOdgovora|adminPismaPogodci|tvProvjera)$/;
