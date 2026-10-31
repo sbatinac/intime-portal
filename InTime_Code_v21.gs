@@ -7165,6 +7165,10 @@ function kalkulatorZabiljeziEvidenciju(username, vrsta, ulazniPodaciJson, rezult
     var tipEvCol_ = header.indexOf('Tip'), testniEvCol_ = header.indexOf(ADMIN_ONLY_FIELDS.kalkulator_testni);
     var oznakaIzvora_ = (tipEvCol_ !== -1 && String(pronadjeno[tipEvCol_]) === OTV_TIP_ && !(testniEvCol_ !== -1 && String(pronadjeno[testniEvCol_] || '').trim() === 'PRAVI')) ? ' [Testni — otvorena ponuda]'
       : ((testniEvCol_ !== -1 && String(pronadjeno[testniEvCol_] || '').trim() === 'DA') ? ' [Testni — ponuda]' : '');
+    try {   // v453: zapis u evidenciju aktivnosti klijenata
+      aktivnostZabiljezi_(vrsta === 'Izračun' ? 'Kalkulator — izračun' : 'Kalkulator — prijava', nazivCol !== -1 ? String(pronadjeno[nazivCol] || '').trim() : username,
+        oznakaIzvora_ ? oznakaIzvora_.replace(/^ \[|\]$/g, '') : 'Klijent', 'korisnik ' + username, pronadjenoRedak_, new Date());
+    } catch (eA) { /* nije kritično */ }
     evSheet.appendRow(sheetSigRed_([
       sada,
       vrsta,
@@ -8847,6 +8851,10 @@ function doPost(e) {
       result = adminTvOpozovi(data.token, data.id);
     } else if (data.action === 'adminPodsjetniciEvidencija') {
       result = adminPodsjetniciEvidencija(data.token);
+    } else if (data.action === 'adminAktivnostKlijenataLista') {
+      result = adminAktivnostKlijenataLista(data.token);
+    } else if (data.action === 'adminAktivnostKlijenataBrisi') {
+      result = adminAktivnostKlijenataBrisi(data.token, data.razdoblje, data.ids);
     } else if (data.action === 'adminPodsjetniciEvidencijaBrisi') {
       result = adminPodsjetniciEvidencijaBrisi(data.token, data.ids);
     } else if (data.action === 'adminPismoPonovi') {
@@ -10381,6 +10389,106 @@ function tvTokeni_() { try { return JSON.parse(PropertiesService.getScriptProper
 // v437: 🎯 DNEVNI CILJ + pregled dana za TV i admin — brojevi po danu (pisma, ponude, pozivi, pogodci), rekordi,
 // ponude koje uskoro ističu i dospjeli pozivi. Samo čita; rezultat se pamti 2 min.
 // ============================================================================
+// ============================================================================
+// v453: 👁 EVIDENCIJA AKTIVNOSTI KLIJENATA — svako otvaranje ponude / dokumenata i svaka prijava / izračun u kalkulatoru
+// (testni i pravi). Zasebna tablica InTime_Aktivnost_Klijenata; brisanje briše samo zapise u njoj (brojači na ponudama
+// i evidencija kalkulatora ostaju). Prvo otvaranje popuni tablicu iz postojećih podataka.
+// ============================================================================
+var AKT_SHEET_ = 'InTime_Aktivnost_Klijenata';
+var AKT_HEADER_ = ['ID', 'Vrijeme', 'Vrsta', 'Firma', 'Odakle', 'Detalj', 'Redak'];
+function aktivnostSheet_() { return getOrCreateNacrtSheet_(AKT_SHEET_, AKT_HEADER_, [1]); }
+function aktivnostZabiljezi_(vrsta, firma, odakle, detalj, redak, kada) {
+  var sh = aktivnostSheet_();
+  sh.appendRow(sheetSigRed_(['A' + Utilities.getUuid().slice(0, 8), kada || new Date(), String(vrsta || ''), String(firma || ''), String(odakle || ''), String(detalj || ''), redak || '']));
+}
+function aktivnostPopuniStaro_() {
+  var props = PropertiesService.getScriptProperties();
+  if (props.getProperty('AKT_POPUNA_V453') === '1') { return; }
+  var redovi = [];
+  try {
+    var up = getOrCreateUpitiSheet(), lr = up.getLastRow();
+    if (lr >= 2) {
+      var ocek = izracunajOcekivanoZaglavljeUpiti_(), lc = Math.min(up.getLastColumn(), ocek.length);
+      var h = up.getRange(1, 1, 1, lc).getValues()[0], d = up.getRange(2, 1, lr - 1, lc).getValues();
+      var ix = function(n) { return h.indexOf(n); };
+      var iN = ix('Naziv tvrtke'), iT = ix('Tip'), iS = ix(ADMIN_ONLY_FIELDS.sifra_ponude), iV = ix(ADMIN_ONLY_FIELDS.ponuda_verzija);
+      var parovi = [['Ponuda otvorena', 'Pregled ponude - broj otvaranja (admin)', 'Pregled ponude - prvo otvaranje (admin)', 'Pregled ponude - zadnje otvaranje (admin)'],
+                    ['Dokumenti otvoreni', 'Dokumenti ponude - broj otvaranja (admin)', 'Dokumenti ponude - prvo otvaranje (admin)', 'Dokumenti ponude - zadnje otvaranje (admin)']];
+      d.forEach(function(row, i) {
+        var naziv = iN === -1 ? '' : String(row[iN] || ''), odakle = (iT !== -1 && String(row[iT]) === OTV_TIP_) ? 'Otvorena ponuda' : 'Ponuda';
+        var broj = iS === -1 ? '' : String(row[iS] || '').trim(); if (broj) { broj += '-P' + (iV === -1 ? '1' : (String(row[iV] || '1'))); }
+        parovi.forEach(function(p) {
+          var cB = ix(p[1]), cP = ix(p[2]), cZ = ix(p[3]); if (cB === -1) { return; }
+          var n = parseInt(row[cB], 10) || 0; if (!n) { return; }
+          var prvo = dnevniDatum_(row[cP]), zadnje = dnevniDatum_(row[cZ]);
+          if (prvo) { redovi.push([prvo, p[0], naziv, odakle, (broj ? broj + ' · ' : '') + '1. put (prvo otvaranje)', i + 2]); }
+          if (zadnje && n > 1 && (!prvo || zadnje.getTime() !== prvo.getTime())) { redovi.push([zadnje, p[0], naziv, odakle, (broj ? broj + ' · ' : '') + n + '. put (zadnje)', i + 2]); }
+        });
+      });
+    }
+  } catch (e1) { /* nastavi s kalkulatorom */ }
+  try {
+    var ev = getOrCreateKalkulatorEvidencijaSheet_(), el = ev.getLastRow();
+    if (el >= 2) {
+      var od = Math.max(2, el - 2999);
+      ev.getRange(od, 1, el - od + 1, 5).getValues().forEach(function(r) {
+        var v = String(r[1]); if (v !== 'Prijava' && v !== 'Izračun') { return; }
+        var t = dnevniDatum_(r[0]); if (!t) { return; }
+        var naz = String(r[3] || ''), m = /\[(Testni[^\]]*)\]\s*$/.exec(naz);
+        redovi.push([t, v === 'Izračun' ? 'Kalkulator — izračun' : 'Kalkulator — prijava', naz.replace(/\s*\[[^\]]*\]\s*$/, ''), m ? m[1] : 'Klijent', 'korisnik ' + String(r[4] || ''), '']);
+      });
+    }
+  } catch (e2) { /* nije kritično */ }
+  redovi.sort(function(a, b) { return a[0].getTime() - b[0].getTime(); });
+  if (redovi.length) {
+    var sh = aktivnostSheet_();
+    var vals = redovi.map(function(x) { return sheetSigRed_(['A' + Utilities.getUuid().slice(0, 8)].concat(x)); });
+    sh.getRange(sh.getLastRow() + 1, 1, vals.length, AKT_HEADER_.length).setValues(vals);
+  }
+  props.setProperty('AKT_POPUNA_V453', '1');
+}
+function adminAktivnostKlijenataLista(token) {
+  if (!isValidAdminToken_(token)) { return pismaAuthGreska_(); }
+  try {
+    var lock = LockService.getScriptLock(); if (lock.tryLock(15000)) { try { aktivnostPopuniStaro_(); } finally { lock.releaseLock(); } }
+    var sh = aktivnostSheet_(), l = sh.getLastRow(), out = [];
+    if (l >= 2) {
+      var od = Math.max(2, l - 2999);
+      sh.getRange(od, 1, l - od + 1, AKT_HEADER_.length).getValues().forEach(function(r) {
+        var t = dnevniDatum_(r[1]); if (!t) { return; }
+        out.push({ id: String(r[0]), ms: t.getTime(), datum: Utilities.formatDate(t, PISMA_TZ_, 'dd.MM.yyyy. HH:mm'), vrsta: String(r[2]), firma: String(r[3]), odakle: String(r[4]), detalj: String(r[5]), redak: r[6] || '' });
+      });
+    }
+    out.sort(function(a, b) { return b.ms - a.ms; });
+    return { status: 'ok', lista: out };
+  } catch (err) { return { status: 'error', message: 'Učitavanje nije uspjelo: ' + err.message }; }
+}
+// razdoblje: 'sve' | 'danas' | 'tjedan' | 'mjesec' | 'kvartal' (tekuće razdoblje) ili ids = [...] (pojedinačni zapisi)
+function adminAktivnostKlijenataBrisi(token, razdoblje, ids) {
+  if (!isValidAdminToken_(token) || TV_PRISTUP_TOKEN_) { return pismaAuthGreska_(); }
+  var lock = LockService.getScriptLock(); lock.waitLock(20000);
+  try {
+    var sh = aktivnostSheet_(), l = sh.getLastRow();
+    if (l < 2) { return { status: 'ok', obrisano: 0 }; }
+    var sada = new Date(), od = 0;
+    var p0 = new Date(sada.getFullYear(), sada.getMonth(), sada.getDate());
+    if (razdoblje === 'danas') { od = p0.getTime(); }
+    else if (razdoblje === 'tjedan') { var dw = (p0.getDay() + 6) % 7; od = p0.getTime() - dw * 86400000; }
+    else if (razdoblje === 'mjesec') { od = new Date(sada.getFullYear(), sada.getMonth(), 1).getTime(); }
+    else if (razdoblje === 'kvartal') { od = new Date(sada.getFullYear(), Math.floor(sada.getMonth() / 3) * 3, 1).getTime(); }
+    else if (razdoblje !== 'sve' && !(ids && ids.length)) { return { status: 'error', message: 'Nepoznato razdoblje.' }; }
+    var skup = null; if (ids && ids.length) { skup = {}; ids.forEach(function(x) { skup[String(x)] = true; }); }
+    var vals = sh.getRange(2, 1, l - 1, AKT_HEADER_.length).getValues(), ostaje = [], obrisano = 0;
+    vals.forEach(function(r) {
+      var t = dnevniDatum_(r[1]), ms = t ? t.getTime() : 0;
+      var brisi = skup ? !!skup[String(r[0])] : (razdoblje === 'sve' || ms >= od);
+      if (brisi) { obrisano++; } else { ostaje.push(r); }
+    });
+    sh.getRange(2, 1, l - 1, AKT_HEADER_.length).clearContent();
+    if (ostaje.length) { sh.getRange(2, 1, ostaje.length, AKT_HEADER_.length).setValues(ostaje); }
+    return { status: 'ok', obrisano: obrisano };
+  } finally { lock.releaseLock(); }
+}
 var DNEVNI_CILJ_KLJUC_ = 'DNEVNI_CILJ', DNEVNI_KES_KLJUC_ = 'dnevni_v437';
 function dnevniDatum_(v, krajDana) {
   if (v instanceof Date) { return isNaN(v.getTime()) ? null : v; }
@@ -24722,6 +24830,12 @@ function otvaranjeZabiljezi_(token, vrsta, found) {
     var broj = (parseInt(found.row[cB], 10) || 0) + 1;
     var prvo = found.row[cP] || sada;
     getOrCreateUpitiSheet().getRange(found.rowIndex, cB + 1, 1, 3).setValues([[broj, prvo, sada]]);
+    try {   // v453: zapis u evidenciju aktivnosti klijenata
+      var g_ = function(n) { var ix = found.header.indexOf(n); return ix === -1 ? '' : String(found.row[ix] || '').trim(); };
+      var sif_ = g_(ADMIN_ONLY_FIELDS.sifra_ponude), ver_ = g_(ADMIN_ONLY_FIELDS.ponuda_verzija) || '1';
+      aktivnostZabiljezi_(vrsta === 'dok' ? 'Dokumenti otvoreni' : 'Ponuda otvorena', g_('Naziv tvrtke'), g_('Tip') === OTV_TIP_ ? 'Otvorena ponuda' : 'Ponuda',
+        (sif_ ? sif_ + '-P' + ver_ + ' · ' : '') + broj + '. put', found.rowIndex, sada);
+    } catch (eA) { /* nije kritično */ }
   } catch (e) { /* praćenje je dodatak */ }
 }
 // Javno (bez admin tokena): stranica InTime_Otvori.html zove ovo kad klijent klikne poveznicu na dokumente u mailu.

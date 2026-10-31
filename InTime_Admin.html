@@ -3757,7 +3757,7 @@
     if (ZAPISI_U_TIJEKU_ === 0 && OSVJEZI_NAKON_ZAPISA_) { OSVJEZI_NAKON_ZAPISA_ = false; try { loadEntries(); } catch (eZg) { /* nije kritično */ } }
   }
   // ===== v403: TV PRIKAZ (InTime_Admin.html?tv=1) — samo pločice „Danas čeka tebe”, velike, sat, Battleships bodovi, osvježavanje svake 2 min =====
-  var PANTHER_VERZIJA_ = 'v452';   // v433: broj verzije — Claude ga podiže pri svakoj isporuci (prikazuje se na TV-u i u adminu)
+  var PANTHER_VERZIJA_ = 'v453';   // v433: broj verzije — Claude ga podiže pri svakoj isporuci (prikazuje se na TV-u i u adminu)
   try { document.addEventListener('DOMContentLoaded', function() { var v = document.getElementById('panther-ver'); if (v) { v.textContent = '🐾 PANTHER ' + PANTHER_VERZIJA_; } }); var v0_ = document.getElementById('panther-ver'); if (v0_) { v0_.textContent = '🐾 PANTHER ' + PANTHER_VERZIJA_; } } catch (eVer) {}
   var TV_MOD_ = /[?&]tv=1(&|$)/.test(location.search);
   var TV_AKCIJE_KLIJENT_ = /^(adminDnevniCiljStanje|adminUcitajPocetno|adminListEntries|adminGetCounters|adminPismaBezOdgovora|adminPismaPogodci|tvProvjera)$/;
@@ -7034,6 +7034,66 @@
     bOz.addEventListener('click', function() { brisi(oznaceni()); });
     Array.prototype.forEach.call(t.querySelectorAll('.pe-brisi'), function(b) { b.addEventListener('click', function() { brisi([b.closest('tr').getAttribute('data-id')]); }); });
   }
+  // v453: 👁 AKTIVNOST KLIJENATA — otvaranja ponuda / dokumenata i kalkulator (prijave, izračuni); filtri + brisanje po razdoblju
+  var AK_PODACI_ = null, AK_UCITAVA_ = false, AK_FILTAR_ = { vrsta: '', dana: 30, q: '' };
+  function akUcitaj_() {
+    if (AK_UCITAVA_) { return; }
+    AK_UCITAVA_ = true;
+    gasCall({ action: 'adminAktivnostKlijenataLista', token: adminToken }).then(function(res) {
+      AK_UCITAVA_ = false;
+      if (handleAuthError(res)) { return; }
+      AK_PODACI_ = (res && res.status === 'ok') ? res : { greska: (res && res.message) || 'Učitavanje nije uspjelo (je li objavljen novi Code.gs?).' };
+      if (activeTab === 'Intrix' && POSEBNI_VRSTA_ === 'aktEvid') { renderEntries(); }
+    }).catch(function() { AK_UCITAVA_ = false; AK_PODACI_ = { greska: 'Nema veze s poslužiteljem.' }; if (activeTab === 'Intrix' && POSEBNI_VRSTA_ === 'aktEvid') { renderEntries(); } });
+  }
+  var AK_IKONE_ = { 'Ponuda otvorena': '👁', 'Dokumenti otvoreni': '📁', 'Kalkulator — prijava': '🧮', 'Kalkulator — izračun': '🧮' };
+  function akIscrtaj_(container) {
+    var glava = document.createElement('div'); glava.className = 'ix-prikaz-glava'; glava.style.background = 'linear-gradient(90deg,#0b3d91,#1565c0 60%,#1e88e5)';
+    var f = AK_FILTAR_;
+    var sel = function(cls, opcije, v) { return '<select class="' + cls + '" style="padding:5px 8px;border-radius:8px;border:0;font:inherit;font-weight:700;">' + opcije.map(function(o) { return '<option value="' + o[0] + '"' + (String(o[0]) === String(v) ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('') + '</select>'; };
+    glava.innerHTML = '<span><b>👁 AKTIVNOST KLIJENATA</b> — tko je otvorio ponudu, dokumente ili cjenik</span><span style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">' +
+      sel('ak-vrsta', [['', 'sve vrste'], ['ponuda', '👁 ponude'], ['dok', '📁 dokumenti'], ['kalk', '🧮 kalkulator / cjenik']], f.vrsta) +
+      sel('ak-dana', [[1, 'danas'], [7, 'zadnjih 7 dana'], [30, 'zadnjih 30 dana'], [90, 'zadnjih 90 dana'], [0, 'sve']], f.dana) +
+      '<input type="search" class="ak-q" placeholder="traži firmu…" value="' + esc(f.q) + '" style="padding:5px 8px;border-radius:8px;border:0;font:inherit;width:150px;">' +
+      '<button type="button" class="ix-prikaz-x ak-osvjezi">⟳ Osvježi</button><button type="button" class="ix-prikaz-x ak-x">✕ Zatvori</button></span>';
+    container.appendChild(glava);
+    glava.querySelector('.ak-vrsta').addEventListener('change', function() { f.vrsta = this.value; renderEntries(); });
+    glava.querySelector('.ak-dana').addEventListener('change', function() { f.dana = parseInt(this.value, 10) || 0; renderEntries(); });
+    var qT = null; glava.querySelector('.ak-q').addEventListener('input', function() { var v = this.value; clearTimeout(qT); qT = setTimeout(function() { f.q = v; renderEntries(); var q = document.querySelector('.ak-q'); if (q) { q.focus(); q.setSelectionRange(v.length, v.length); } }, 300); });
+    glava.querySelector('.ak-osvjezi').addEventListener('click', function() { this.disabled = true; this.textContent = 'Osvježavam…'; AK_PODACI_ = null; akUcitaj_(); });
+    glava.querySelector('.ak-x').addEventListener('click', function() { switchTab('Ponude'); });
+    if (!AK_PODACI_) { var u = document.createElement('div'); u.className = 'empty-hint'; u.textContent = 'Učitavam aktivnost klijenata… (prvi put može potrajati — popunjava se iz dosadašnjih podataka)'; container.appendChild(u); akUcitaj_(); return; }
+    if (AK_PODACI_.greska) { var g = document.createElement('div'); g.className = 'empty-hint'; g.textContent = AK_PODACI_.greska; container.appendChild(g); return; }
+    var d0 = new Date(); d0.setHours(0, 0, 0, 0);
+    var gr = f.dana === 1 ? d0.getTime() : (f.dana ? Date.now() - f.dana * 86400000 : 0), q = (f.q || '').trim().toLowerCase();
+    var pasVrsta = function(v) { return !f.vrsta || (f.vrsta === 'ponuda' && v === 'Ponuda otvorena') || (f.vrsta === 'dok' && v === 'Dokumenti otvoreni') || (f.vrsta === 'kalk' && /^Kalkulator/.test(v)); };
+    var lista = (AK_PODACI_.lista || []).filter(function(x) { return pasVrsta(x.vrsta) && (!gr || x.ms >= gr) && (!q || String(x.firma).toLowerCase().indexOf(q) !== -1); });
+    var bd = function(od) { return (AK_PODACI_.lista || []).filter(function(x) { return x.ms >= od; }).length; };
+    var dw = (d0.getDay() + 6) % 7, odT = d0.getTime() - dw * 86400000, odM = new Date(d0.getFullYear(), d0.getMonth(), 1).getTime(), odQ = new Date(d0.getFullYear(), Math.floor(d0.getMonth() / 3) * 3, 1).getTime();
+    var t = document.createElement('div');
+    var bb = function(raz, txt, n) { return '<button type="button" class="ak-brisi-raz" data-raz="' + raz + '"' + (n ? '' : ' disabled') + ' style="border:1.5px solid #c0392b;background:#fff;color:#c0392b;border-radius:8px;padding:5px 10px;font:inherit;font-weight:700;cursor:pointer;">' + txt + ' (' + n + ')</button>'; };
+    t.innerHTML = '<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin:0 0 8px;"><b style="margin-right:4px;">🗑 Obriši:</b>' +
+      bb('danas', 'danas', bd(d0.getTime())) + bb('tjedan', 'ovaj tjedan', bd(odT)) + bb('mjesec', 'ovaj mjesec', bd(odM)) + bb('kvartal', 'ovaj kvartal', bd(odQ)) + bb('sve', 'sve', (AK_PODACI_.lista || []).length) +
+      '<span class="ak-st" style="font-weight:700;margin-left:6px;"></span><span style="margin-left:auto;color:#5b6664;font-size:12.5px;">Prikazano: <b>' + lista.length + '</b> · brisanje ne mijenja ponude ni evidenciju kalkulatora</span></div>' +
+      (lista.length ? '<div style="overflow-x:auto;max-height:620px;overflow-y:auto;"><table class="pb-tablica ak-tablica"><thead><tr><th>Datum i vrijeme</th><th>Što</th><th>Firma</th><th>Odakle</th><th>Detalj</th><th></th></tr></thead><tbody>' +
+      lista.map(function(x) {
+        return '<tr data-id="' + esc(x.id) + '"><td style="white-space:nowrap;">' + esc(x.datum) + '</td><td style="white-space:nowrap;">' + (AK_IKONE_[x.vrsta] || '•') + ' ' + esc(x.vrsta) + '</td><td><b>' + esc(x.firma || '—') + '</b></td><td>' + esc(x.odakle) + '</td><td style="color:#5b6664;">' + esc(x.detalj) + '</td><td><button type="button" class="ak-brisi1" title="Obriši ovaj zapis" style="border:0;background:transparent;color:#c0392b;cursor:pointer;font-size:15px;">✕</button></td></tr>';
+      }).join('') + '</tbody></table></div>' : '<div class="empty-hint">' + ((AK_PODACI_.lista || []).length ? 'Nema zapisa za odabrane filtre.' : 'Još nema zapisa — čim klijent otvori ponudu ili cjenik, pojavit će se ovdje.') + '</div>');
+    container.appendChild(t);
+    var st = t.querySelector('.ak-st');
+    var brisi = function(raz, ids, opis) {
+      if (!confirm('Obrisati ' + opis + ' iz evidencije aktivnosti klijenata?\n\nBriše se samo ovaj popis — ponude, brojači otvaranja i evidencija kalkulatora ostaju.')) { return; }
+      st.style.color = '#1f2d3d'; st.textContent = 'Brišem…';
+      gasCall({ action: 'adminAktivnostKlijenataBrisi', token: adminToken, razdoblje: raz, ids: ids || null }).then(function(res) {
+        if (handleAuthError(res)) { return; }
+        if (!res || res.status !== 'ok') { st.style.color = '#a93226'; st.textContent = (res && res.message) || 'Brisanje nije uspjelo.'; return; }
+        AK_PODACI_ = null; akUcitaj_(); renderEntries();
+      }).catch(function() { st.style.color = '#a93226'; st.textContent = 'Nema veze s poslužiteljem.'; });
+    };
+    var opisi = { danas: 'današnje zapise', tjedan: 'zapise ovog tjedna', mjesec: 'zapise ovog mjeseca', kvartal: 'zapise ovog kvartala', sve: 'SVE zapise' };
+    Array.prototype.forEach.call(t.querySelectorAll('.ak-brisi-raz'), function(b) { b.addEventListener('click', function() { var raz = b.getAttribute('data-raz'); brisi(raz, null, opisi[raz] + ' (' + b.textContent.replace(/^.*\((\d+)\)$/, '$1') + ')'); }); });
+    Array.prototype.forEach.call(t.querySelectorAll('.ak-brisi1'), function(b) { b.addEventListener('click', function() { brisi('', [b.closest('tr').getAttribute('data-id')], 'ovaj zapis'); }); });
+  }
   // v388: isti prikaz (popis ispod) i za kućice „Danas čeka tebe”: čeka odgovor, rok ističe u 48 h, otvorene prihvaćene bez podataka
   var POSEBNI_VRSTA_ = 'intrix';
   var POSEBNI_NASLOVI_ = { intrix: ['INTRIX', 'ponude koje čekaju odobrenje', 'linear-gradient(90deg,#5b1fc7,#7b2ff7 60%,#9d5cff)'],
@@ -7484,6 +7544,7 @@
     // v380: INTRIX prikaz — sve prihvaćene ponude u INTRIX-u, i iz Ponuda i iz Otvorenih ponuda, na jednom mjestu
     if (activeTab === 'Intrix' && POSEBNI_VRSTA_ === 'pismaBez') { pbIscrtaj_(container); return; }   // v395
     if (activeTab === 'Intrix' && POSEBNI_VRSTA_ === 'podsEvid') { peIscrtaj_(container); return; }   // v401
+    if (activeTab === 'Intrix' && POSEBNI_VRSTA_ === 'aktEvid') { akIscrtaj_(container); return; }   // v453
     if (activeTab === 'Intrix') {
       var ixLista_ = intrixListaZaPrikaz_();
       var ixGlava_ = document.createElement('div');
@@ -31605,7 +31666,7 @@
       var box = document.getElementById('kp-danas');
       if (box) {
         var ukupno = kar.reduce(function(z, k) { return z + (k.info ? 0 : k.n); }, 0);
-        box.innerHTML = '<h3>📌 Danas čeka tebe<small>klik na kućicu vodi na pravu karticu</small><button type="button" class="kp-pe-gumb" onclick="posebniOtvori_(\'podsEvid\')" title="Svi poslani podsjetnici (na ponudu, na upitnik, kratki upitnik)">📋 Evidencija podsjetnika</button></h3><div class="kp-danas-mreza">' +
+        box.innerHTML = '<h3>📌 Danas čeka tebe<small>klik na kućicu vodi na pravu karticu</small><button type="button" class="kp-pe-gumb" onclick="posebniOtvori_(\'podsEvid\')" title="Svi poslani podsjetnici (na ponudu, na upitnik, kratki upitnik)">📋 Evidencija podsjetnika</button><button type="button" class="kp-pe-gumb" style="margin-right:6px;" onclick="posebniOtvori_(\'aktEvid\')" title="Tko je i kad otvorio ponudu, dokumente ili cjenik (kalkulator)">👁 Aktivnost klijenata</button></h3><div class="kp-danas-mreza">' +
           kar.map(function(k, i) { return '<div class="kp-d ' + k.kl + (k.n ? '' : ' nula') + '" data-i="' + i + '"><div class="n">' + k.n + '</div><div class="l">' + esc(k.l) + '</div><div class="a">' + esc(k.a) + '</div></div>'; }).join('') +
           '</div>' + (ukupno === 0 ? '<div class="kp-danas-ok">✓ Sve je čisto — ništa ne čeka.</div>' : '');
         Array.prototype.forEach.call(box.querySelectorAll('.kp-d'), function(el) { el.addEventListener('click', function() { kpIdiNaKarticu_(kar[parseInt(el.getAttribute('data-i'), 10)].tab); }); });
