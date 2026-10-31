@@ -8833,7 +8833,8 @@ function doPost(e) {
     } else if (data.action === 'adminKampanjaNacrtBrisi') {
       result = adminKampanjaNacrtBrisi(data.token, data.id);
     } else if (data.action === 'tvProvjera') {
-      result = { status: 'ok' };
+      var tvX_ = TV_PRISTUP_TOKEN_ ? tvTokeni_()[TV_PRISTUP_TOKEN_] : null;   // v446: TV vidi do kad vrijedi prijava
+      result = { status: 'ok', istekMs: tvX_ ? tvX_.istek : null };
     } else if (data.action === 'adminDnevniCiljStanje') {
       result = adminDnevniCiljStanje(data.token);
     } else if (data.action === 'adminDnevniCiljSpremi') {
