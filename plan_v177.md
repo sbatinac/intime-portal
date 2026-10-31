@@ -102,3 +102,4 @@
 - v444 (30.10.2026.): Pisma namjere → arhiva kampanja: na dnu tablice red „Σ UKUPNO (N kampanja)” — zbroj adresa, ✉ poslano ukupno, čeka, zaustavljeno, greške, preskočeno.
 - v445 (31.10.2026.): TV prijava vrijedi 365 dana (prije 90); postojeći TV ključevi se sami produže na 365 dana od izdavanja pri sljedećem osvježavanju. Code.gs: TV_TRAJANJE_MS_ + tvTokenValjan_ — DEPLOY. Tekstovi u adminu (TV prijava) i InTime_TV.html.
 - v446 (31.10.2026.): TV — dolje desno uz potpis „🔑 prijava još N dana” (crveno kad je ≤ 14 dana); poslužitelj u tvProvjera vraća istekMs. Code.gs — DEPLOY.
+- v447 (31.10.2026.): kratka adresa za TV: sbatinac.github.io/intime-portal/tv (tv/index.html preusmjerava na InTime_TV.html).
