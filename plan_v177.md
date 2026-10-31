@@ -104,3 +104,4 @@
 - v446 (31.10.2026.): TV — dolje desno uz potpis „🔑 prijava još N dana” (crveno kad je ≤ 14 dana); poslužitelj u tvProvjera vraća istekMs. Code.gs — DEPLOY.
 - v447 (31.10.2026.): kratka adresa za TV: sbatinac.github.io/intime-portal/tv (tv/index.html preusmjerava na InTime_TV.html).
 - v447 (dopuna): u uputama „📺 TV prijava” i na stranici InTime_TV.html dodana kratka adresa batinac.com/IntimeTV (+ sbatinac.github.io/intime-portal/tv).
+- v448 (31.10.2026.): InTime_TV.html — prijava za TV dobila banner PANTHER „TV Login – Command Bridge” (tv_login_banner.jpg) iznad obrasca.
