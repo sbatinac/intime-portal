@@ -2633,6 +2633,16 @@
   #tv-dan .tv-red.tv-ix,#tv-dan .tv-red.tv-ob{display:grid;grid-template-columns:1fr auto;align-items:center;padding:.25vh .5vw;} #tv-dan .tv-red.tv-ix{border-left:.5vh solid #7b2ff7;} #tv-dan .tv-red.tv-ix b{color:#c9a7ff;font-size:1.5vh;}
   #tv-dan .tv-red.tv-ix.ok{background:rgba(64,192,87,.18);} #tv-dan .tv-red.tv-ix.ok b{color:#8ce99a;}
   #tv-dan .tv-red.tv-ob{border-left:.5vh solid #e8459a;} #tv-dan .tv-red.tv-ob b{color:#ff9cc8;font-size:1.5vh;}
+  /* v452: obavijesti „klijent upravo otvara ponudu / cjenik” */
+  #tv-obavijesti{position:fixed;right:2.5vw;top:17vh;z-index:58;display:flex;flex-direction:column;gap:1.2vh;width:min(34vw,620px);pointer-events:none;}
+  #tv-obavijesti .tv-obav{display:flex;align-items:center;gap:1.2vw;background:linear-gradient(135deg,#0b3d91,#1565c0 60%,#1e88e5);border:2px solid #90caf9;border-radius:2vh;padding:1.6vh 1.4vw;color:#fff;box-shadow:0 2vh 6vh rgba(0,0,0,.6),0 0 40px rgba(66,165,245,.7);animation:tvObavUlaz .7s cubic-bezier(.2,1.3,.4,1);font-family:Inter,"Segoe UI",Arial,sans-serif;}
+  #tv-obavijesti .tv-obav.van{opacity:0;transform:translateX(40vw);transition:all .7s ease-in;}
+  #tv-obavijesti .tv-obav-i{font-size:7vh;line-height:1;animation:tvObavPuls 1.2s ease-in-out infinite;}
+  #tv-obavijesti .tv-obav-n{font-size:1.5vh;font-weight:900;letter-spacing:.25em;color:#ffd75e;}
+  #tv-obavijesti .tv-obav-t b{display:block;font-size:3vh;font-weight:900;line-height:1.15;}
+  #tv-obavijesti .tv-obav-t span{font-size:2.2vh;color:#e3f2fd;} #tv-obavijesti .tv-obav-t em{font-style:normal;color:#bbdefb;}
+  @keyframes tvObavUlaz{from{transform:translateX(40vw);opacity:0}to{transform:none;opacity:1}}
+  @keyframes tvObavPuls{0%,100%{transform:scale(1)}50%{transform:scale(1.15)}}
   /* v437: malo slavlje (cilj / rekord) */
   .tv-mslavlje{z-index:99996 !important;overflow:hidden;}
   .tv-mslavlje .tv-ms-k{position:relative;z-index:2;background:linear-gradient(135deg,#1b2b5e,#2d1b5e);border:4px solid #ffd43b;border-radius:3vh;padding:4vh 4vw;text-align:center;color:#fff;box-shadow:0 0 120px rgba(255,212,59,.6);animation:ukpSkoci .6s cubic-bezier(.2,1.4,.4,1);font-family:Inter,"Segoe UI",Arial,sans-serif;max-width:80vw;}
@@ -3747,7 +3757,7 @@
     if (ZAPISI_U_TIJEKU_ === 0 && OSVJEZI_NAKON_ZAPISA_) { OSVJEZI_NAKON_ZAPISA_ = false; try { loadEntries(); } catch (eZg) { /* nije kritično */ } }
   }
   // ===== v403: TV PRIKAZ (InTime_Admin.html?tv=1) — samo pločice „Danas čeka tebe”, velike, sat, Battleships bodovi, osvježavanje svake 2 min =====
-  var PANTHER_VERZIJA_ = 'v451';   // v433: broj verzije — Claude ga podiže pri svakoj isporuci (prikazuje se na TV-u i u adminu)
+  var PANTHER_VERZIJA_ = 'v452';   // v433: broj verzije — Claude ga podiže pri svakoj isporuci (prikazuje se na TV-u i u adminu)
   try { document.addEventListener('DOMContentLoaded', function() { var v = document.getElementById('panther-ver'); if (v) { v.textContent = '🐾 PANTHER ' + PANTHER_VERZIJA_; } }); var v0_ = document.getElementById('panther-ver'); if (v0_) { v0_.textContent = '🐾 PANTHER ' + PANTHER_VERZIJA_; } } catch (eVer) {}
   var TV_MOD_ = /[?&]tv=1(&|$)/.test(location.search);
   var TV_AKCIJE_KLIJENT_ = /^(adminDnevniCiljStanje|adminUcitajPocetno|adminListEntries|adminGetCounters|adminPismaBezOdgovora|adminPismaPogodci|tvProvjera)$/;
@@ -3769,7 +3779,7 @@
       '<i><b class="kz-v">5</b>čeka odgovor</i><i><b class="kz kz-p">✓</b>prihvaćene</i><i><b class="kz kz-o">✗</b>odbijene</i><i><b class="kz kz-i">INTRIX</b>čeka odobrenje</i><i><b class="kz kz-ob">⭐</b>čeka OB ulaz</i><i><b class="kz kz-u">Σ</b>ukupno</i></span>';
     ekran.appendChild(od3);
     var trB = document.createElement('div'); trB.id = 'tv-broj'; trB.className = 'tv-traka'; ekran.appendChild(trB);
-    tvSazetak_(); setInterval(function() { tvSazetak_(); try { tvPromjeneOznaci_(); } catch (eTp) {} try { tvOstaloRender_(); } catch (eTo) {} }, 2000);
+    tvSazetak_(); setInterval(function() { tvSazetak_(); try { tvPromjeneOznaci_(); } catch (eTp) {} try { tvOstaloRender_(); } catch (eTo) {} try { tvOtvaranjaProvjeri_(); } catch (eTov) {} }, 2000);
     tvVrijemeUcitaj_(); setInterval(tvVrijemeUcitaj_, 15 * 60000);
     // v437: dnevni cilj, ističe uskoro, pozivi, tjedan, rekordi (svake 3 min) + noćni način + zvuk promjene
     dnevniUcitaj_(); setInterval(dnevniUcitaj_, 3 * 60000); setInterval(tvDnevniRender_, 30000);
@@ -4071,6 +4081,42 @@
     s.innerHTML = '<div class="tv-ms-konf">' + konf + '</div><div class="tv-ms-k"><div class="tv-ms-i">' + ikona + '</div><h2>' + naslov + '</h2><p>' + tekst + '</p></div>';
     s.addEventListener('click', function() { if (s.parentNode) { s.parentNode.removeChild(s); } });
     document.body.appendChild(s); tvPing_(true);
+  }
+  // v452: 👁 klijent upravo otvara ponudu / dokumente / testira cjenik — TV pokaže obavijest (60 s) s pingom.
+  // Usporedba s prošlim stanjem (pamti se na TV-u); prvo učitavanje samo zapamti stanje, ne javlja staro.
+  var TV_OTV_SNAP_KLJUC_ = 'intime_tv_otv_snap';
+  function tvOtvaranjaProvjeri_() {
+    if (!TV_MOD_ || !allEntries || !allEntries.length) { return; }
+    var br = function(f, k) { return parseInt(f[k], 10) || 0; };
+    var sad = {};
+    allEntries.forEach(function(e) {
+      var f = e.fields || {}, oznaka = (e.status === 'Otvorena' ? 'O' : 'P') + e.rowIndex;
+      var v = [br(f, 'Pregled ponude - broj otvaranja (admin)'), br(f, 'Dokumenti ponude - broj otvaranja (admin)'), br(f, 'Testni kalkulator - broj prijava (admin)'), br(f, 'Testni kalkulator - broj izračuna (admin)')];
+      if (v[0] || v[1] || v[2] || v[3]) { sad[oznaka] = { v: v, n: String(f['Naziv tvrtke'] || '(bez naziva)'), otv: e.status === 'Otvorena' }; }
+    });
+    var staro = null; try { staro = JSON.parse(localStorage.getItem(TV_OTV_SNAP_KLJUC_) || 'null'); } catch (eS) { staro = null; }
+    var zaSpremiti = {}; Object.keys(sad).forEach(function(k) { zaSpremiti[k] = sad[k].v; });
+    try { localStorage.setItem(TV_OTV_SNAP_KLJUC_, JSON.stringify(zaSpremiti)); } catch (eS2) {}
+    if (!staro) { return; }
+    Object.keys(sad).forEach(function(k) {
+      var a = sad[k].v, b = staro[k] || [0, 0, 0, 0], vrste = [];
+      if (a[0] > b[0]) { vrste.push(['👁', 'otvara ' + (sad[k].otv ? 'otvorenu ponudu' : 'ponudu'), a[0] + '. put']); }
+      if (a[1] > b[1]) { vrste.push(['📁', 'otvara dokumente ponude', a[1] + '. put']); }
+      if (a[2] > b[2]) { vrste.push(['🧮', 'se prijavio u kalkulator', a[2] + '. prijava']); }
+      else if (a[3] > b[3]) { vrste.push(['🧮', 'računa u kalkulatoru', a[3] + ' izračuna']); }
+      vrste.forEach(function(x) { tvObavijest_(x[0], sad[k].n, x[1], x[2]); });
+    });
+  }
+  function tvObavijest_(ikona, firma, sto, kolko) {
+    if (document.documentElement.classList.contains('tv-noc')) { return; }
+    var box = document.getElementById('tv-obavijesti');
+    if (!box) { box = document.createElement('div'); box.id = 'tv-obavijesti'; (document.getElementById('tv-ekran') || document.body).appendChild(box); }
+    var o = document.createElement('div'); o.className = 'tv-obav';
+    o.innerHTML = '<div class="tv-obav-i">' + ikona + '</div><div class="tv-obav-t"><div class="tv-obav-n">UPRAVO SAD</div><b>' + esc(firma) + '</b><span>' + esc(sto) + ' <em>· ' + esc(kolko) + '</em></span></div>';
+    box.insertBefore(o, box.firstChild);
+    while (box.children.length > 4) { box.removeChild(box.lastChild); }
+    tvPing_();
+    setTimeout(function() { o.classList.add('van'); setTimeout(function() { if (o.parentNode) { o.parentNode.removeChild(o); } }, 700); }, 60000);
   }
   // v446: 🔑 koliko još dana vrijedi prijava TV-a (pita poslužitelj jednom na sat, odbrojava lokalno)
   var TV_PRIJAVA_ISTEK_ = 0;

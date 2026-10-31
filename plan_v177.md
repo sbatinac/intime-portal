@@ -108,3 +108,4 @@
 - v449 (31.10.2026.): TV prijava — banner manji (širina 760 px, najviše 30 % visine ekrana).
 - v450 (31.10.2026.): TV prijava — banner točno širine kartice za prijavu.
 - v451 (31.10.2026.): TV prijava — banner srednje veličine (626 px, između v449 i v450), kartica za prijavu ostaje 492 px.
+- v452 (31.10.2026.): TV — obavijest „UPRAVO SAD” desno gore kad klijent otvori ponudu (obična/otvorena), dokumente ponude, prijavi se u testni kalkulator ili računa u njemu; 60 s, ping, najviše 4 odjednom, noću tiho. Prvo učitavanje samo zapamti stanje.
