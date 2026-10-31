@@ -107,3 +107,4 @@
 - v448 (31.10.2026.): InTime_TV.html — prijava za TV dobila banner PANTHER „TV Login – Command Bridge” (tv_login_banner.jpg) iznad obrasca.
 - v449 (31.10.2026.): TV prijava — banner manji (širina 760 px, najviše 30 % visine ekrana).
 - v450 (31.10.2026.): TV prijava — banner točno širine kartice za prijavu.
+- v451 (31.10.2026.): TV prijava — banner srednje veličine (626 px, između v449 i v450), kartica za prijavu ostaje 492 px.
