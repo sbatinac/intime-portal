@@ -10374,7 +10374,7 @@ function saveAdminSessions_(sessions) {
 // v403: TV PRIKAZ — TV ključ (samo čitanje) vrijedi samo za popis dopuštenih akcija; doPost ga postavi ovdje za trajanje jednog zahtjeva
 var TV_PRISTUP_TOKEN_ = null;
 var TV_AKCIJE_RE_ = /^(adminDnevniCiljStanje|adminUcitajPocetno|adminListEntries|adminGetCounters|adminPismaBezOdgovora|adminPismaPogodci|tvProvjera)$/;
-var TV_TRAJANJE_MS_ = 90 * 24 * 3600 * 1000;
+var TV_TRAJANJE_MS_ = 365 * 24 * 3600 * 1000;   // v445: 365 dana (prije 90)
 function tvTokeni_() { try { return JSON.parse(PropertiesService.getScriptProperties().getProperty('TV_TOKENI') || '{}'); } catch (e) { return {}; } }
 // ============================================================================
 // v437: 🎯 DNEVNI CILJ + pregled dana za TV i admin — brojevi po danu (pisma, ponude, pozivi, pogodci), rekordi,
@@ -10465,6 +10465,8 @@ function tvTokenValjan_(t) {
   if (!t || String(t).indexOf('TV-') !== 0) { return false; }
   var m = tvTokeni_(), x = m[t];
   if (!x || x.istek < Date.now()) { return false; }
+  // v445: postojeći ključevi (izdani na 90 dana) produžuju se na 365 dana od izdavanja
+  if (x.kreirano && x.istek < x.kreirano + TV_TRAJANJE_MS_) { x.istek = x.kreirano + TV_TRAJANJE_MS_; x.zadnje = 0; }
   if (!x.zadnje || Date.now() - x.zadnje > 10 * 60 * 1000) { x.zadnje = Date.now(); try { tvTokeniSpremi_(m); } catch (e) {} }
   return true;
 }

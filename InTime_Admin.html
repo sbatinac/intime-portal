@@ -3187,14 +3187,14 @@
         <ol style="margin:4px 0 8px 18px;padding:0;">
           <li>Na TV-u otvori preglednik i upiši adresu: <code id="tv-adresa" style="background:#fff;padding:1px 5px;border-radius:4px;"></code> <button type="button" class="btn btn-outline btn-small" onclick="tvKopirajAdresu_(this)">📋 Kopiraj</button></li>
           <li>Upiši svoje admin korisničko ime i lozinku i naziv uređaja (npr. „TV ured”) → <b>PRIJAVI TV</b>.</li>
-          <li>Pritisni <b>F11</b> (cijeli zaslon). Gotovo — TV ostaje prijavljen 90 dana, i nakon gašenja.</li>
+          <li>Pritisni <b>F11</b> (cijeli zaslon). Gotovo — TV ostaje prijavljen 365 dana, i nakon gašenja.</li>
         </ol>
         <b>Ili s ovog računala</b> (ako je ovo računalo spojeno na TV):
         <div style="margin:6px 0 8px;"><button type="button" class="btn btn-primary btn-small" onclick="tvOtvoriOvdje_(this)">📺 Otvori TV prikaz na ovom računalu</button></div>
         <b>Sigurnost</b>
         <ul style="margin:4px 0 8px 18px;padding:0;">
           <li>TV dobiva vlastiti ključ <b>samo za gledanje</b> — ne može ništa slati, mijenjati ni brisati; lozinka se na TV-u ne pamti.</li>
-          <li>Ključ vrijedi 90 dana, zatim TV sam traži novu prijavu.</li>
+          <li>Ključ vrijedi 365 dana, zatim TV sam traži novu prijavu.</li>
           <li>Ako TV više ne koristiš ili sumnjaš da ga netko drugi vidi — klikni <b>Opozovi</b> niže; TV se odmah odjavljuje (najkasnije za 2 min).</li>
           <li>Ručna odjava na samom TV-u: adresa <code>InTime_TV.html?odjava=1</code>.</li>
         </ul>
@@ -3746,7 +3746,7 @@
     if (ZAPISI_U_TIJEKU_ === 0 && OSVJEZI_NAKON_ZAPISA_) { OSVJEZI_NAKON_ZAPISA_ = false; try { loadEntries(); } catch (eZg) { /* nije kritično */ } }
   }
   // ===== v403: TV PRIKAZ (InTime_Admin.html?tv=1) — samo pločice „Danas čeka tebe”, velike, sat, Battleships bodovi, osvježavanje svake 2 min =====
-  var PANTHER_VERZIJA_ = 'v444';   // v433: broj verzije — Claude ga podiže pri svakoj isporuci (prikazuje se na TV-u i u adminu)
+  var PANTHER_VERZIJA_ = 'v445';   // v433: broj verzije — Claude ga podiže pri svakoj isporuci (prikazuje se na TV-u i u adminu)
   try { document.addEventListener('DOMContentLoaded', function() { var v = document.getElementById('panther-ver'); if (v) { v.textContent = '🐾 PANTHER ' + PANTHER_VERZIJA_; } }); var v0_ = document.getElementById('panther-ver'); if (v0_) { v0_.textContent = '🐾 PANTHER ' + PANTHER_VERZIJA_; } } catch (eVer) {}
   var TV_MOD_ = /[?&]tv=1(&|$)/.test(location.search);
   var TV_AKCIJE_KLIJENT_ = /^(adminDnevniCiljStanje|adminUcitajPocetno|adminListEntries|adminGetCounters|adminPismaBezOdgovora|adminPismaPogodci|tvProvjera)$/;
