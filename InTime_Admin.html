@@ -3076,6 +3076,8 @@
         <button type="button" class="btn btn-outline btn-small" id="bulk-otkrij-btn" onclick="startSakrijSelected(false)" hidden>👁 Otkrij odabrano</button>
         <button type="button" class="btn btn-prebaci btn-small" id="bulk-revizije-btn" onclick="startRevizijaTabSkupno_(true)" hidden>📑 Prebaci u Revizije</button>
         <button type="button" class="btn btn-prebaci btn-small" id="bulk-revizije-vrati-btn" onclick="startRevizijaTabSkupno_(false)" hidden>↩ Vrati među klijente</button>
+        <button type="button" class="btn btn-small" id="bulk-produzi-btn" style="background:#1a73c8;border-color:#1a73c8;color:#fff;" onclick="bulkProduziRok_()" hidden>⏱ Produži rok</button>
+        <button type="button" class="btn btn-small" id="bulk-arhiva-btn" style="background:#6b4f2a;border-color:#6b4f2a;color:#fff;" onclick="bulkUArhivu_()" hidden>🗄 Prebaci u arhivu</button>
         <button type="button" class="btn btn-danger btn-small" onclick="startBulkDelete()">Obriši odabrano</button>
       </div>
     </div>
@@ -3757,7 +3759,7 @@
     if (ZAPISI_U_TIJEKU_ === 0 && OSVJEZI_NAKON_ZAPISA_) { OSVJEZI_NAKON_ZAPISA_ = false; try { loadEntries(); } catch (eZg) { /* nije kritično */ } }
   }
   // ===== v403: TV PRIKAZ (InTime_Admin.html?tv=1) — samo pločice „Danas čeka tebe”, velike, sat, Battleships bodovi, osvježavanje svake 2 min =====
-  var PANTHER_VERZIJA_ = 'v454';   // v433: broj verzije — Claude ga podiže pri svakoj isporuci (prikazuje se na TV-u i u adminu)
+  var PANTHER_VERZIJA_ = 'v455';   // v433: broj verzije — Claude ga podiže pri svakoj isporuci (prikazuje se na TV-u i u adminu)
   try { document.addEventListener('DOMContentLoaded', function() { var v = document.getElementById('panther-ver'); if (v) { v.textContent = '🐾 PANTHER ' + PANTHER_VERZIJA_; } }); var v0_ = document.getElementById('panther-ver'); if (v0_) { v0_.textContent = '🐾 PANTHER ' + PANTHER_VERZIJA_; } } catch (eVer) {}
   var TV_MOD_ = /[?&]tv=1(&|$)/.test(location.search);
   var TV_AKCIJE_KLIJENT_ = /^(adminDnevniCiljStanje|adminUcitajPocetno|adminListEntries|adminGetCounters|adminPismaBezOdgovora|adminPismaPogodci|tvProvjera)$/;
@@ -31077,6 +31079,9 @@
     var imaSakrivanje = ['Interes', 'Ponude', 'Arhiva', 'Odbijenica', 'NoviKlijenti', 'Revizije', 'Ankete'].indexOf(activeTab) !== -1;
     var revBulkBtn_ = document.getElementById('bulk-revizije-btn'); if (revBulkBtn_) { revBulkBtn_.hidden = (activeTab !== 'NoviKlijenti'); }
     var revBulkVratiBtn_ = document.getElementById('bulk-revizije-vrati-btn'); if (revBulkVratiBtn_) { revBulkVratiBtn_.hidden = (activeTab !== 'Revizije'); }
+    var naPonudama_ = (activeTab === 'Ponude' || activeTab === 'Otvorene');   // v455: skupne radnje na ponudama
+    var bpB_ = document.getElementById('bulk-produzi-btn'); if (bpB_) { bpB_.hidden = !naPonudama_; }
+    var baB_ = document.getElementById('bulk-arhiva-btn'); if (baB_) { baB_.hidden = !naPonudama_; }
     if (sakrijBtnOpci) { sakrijBtnOpci.hidden = !imaSakrivanje; }
     if (otkrijBtnOpci) { otkrijBtnOpci.hidden = !imaSakrivanje; }
   }
@@ -31105,6 +31110,87 @@
     return superheroSpremnik.pop();
   }
 
+  // ===== v455: SKUPNE RADNJE NA PONUDAMA (Ponude + Otvorene ponude) — prebaci u arhivu / produži rok svima označenima =====
+  function bulkOdabraneP_() {
+    var idx = {}; Object.keys(selectedRowIndexes).forEach(function(k) { idx[parseInt(k, 10)] = true; });
+    return (allEntries || []).filter(function(e) { return idx[e.rowIndex]; });
+  }
+  function bulkRedom_(lista, fn, gumb, tekstRada) {
+    var i = 0, ok = [], lose = [], staro = gumb ? gumb.textContent : '';
+    if (gumb) { gumb.disabled = true; }
+    return new Promise(function(gotovo) {
+      var dalje = function() {
+        if (i >= lista.length) { if (gumb) { gumb.disabled = false; gumb.textContent = staro; } gotovo({ ok: ok, lose: lose }); return; }
+        var e = lista[i++]; if (gumb) { gumb.textContent = tekstRada + ' ' + i + '/' + lista.length + '…'; }
+        fn(e).then(function(res) {
+          if (handleAuthError(res)) { lose.push([e, 'sesija istekla']); i = lista.length; dalje(); return; }
+          if (res && res.status === 'ok') { ok.push([e, res]); } else { lose.push([e, (res && res.message) || 'greška']); }
+          dalje();
+        }).catch(function() { lose.push([e, 'veza s poslužiteljem']); dalje(); });
+      };
+      dalje();
+    });
+  }
+  function bulkSazetak_(naslov, rez, preskoceno) {
+    var ime = function(e) { return fieldVal(e, 'Naziv tvrtke') || ('redak ' + e.rowIndex); };
+    var t = naslov + '\n\n✓ Uspjelo: ' + rez.ok.length;
+    if (rez.lose.length) { t += '\n✗ Nije uspjelo: ' + rez.lose.length + '\n' + rez.lose.map(function(x) { return '  • ' + ime(x[0]) + ' — ' + x[1]; }).join('\n'); }
+    if (preskoceno.length) { t += '\n↷ Preskočeno: ' + preskoceno.length + '\n' + preskoceno.map(function(x) { return '  • ' + ime(x[0]) + ' — ' + x[1]; }).join('\n'); }
+    alert(t);
+  }
+  function bulkUArhivu_() {
+    var sve = bulkOdabraneP_(), preskoceno = [], lista = [];
+    sve.forEach(function(e) {
+      if (jeArhiva(e)) { preskoceno.push([e, 'već je u arhivi']); return; }
+      if (ponudaStatusSazetak_(e) === 'potvrdjena') { preskoceno.push([e, 'prihvaćena ponuda se ne arhivira']); return; }
+      lista.push(e);
+    });
+    if (!lista.length) { bulkSazetak_('Ništa za prebaciti u arhivu.', { ok: [], lose: [] }, preskoceno); return; }
+    var opis = lista.length + (lista.length === 1 ? ' ponuda ide' : ' ponuda ide') + ' u karticu „Arhiva”' + (preskoceno.length ? ' (' + preskoceno.length + ' se preskače)' : '') + '.';
+    openSuperheroWordConfirmModal('Prebacivanje u arhivu (' + lista.length + ')', opis + ' Za potvrdu upišite riječ ispod — nakon toga tražit će se i admin lozinka.', function() {
+      openAdminPasswordConfirmModal('Prebacivanje u arhivu (' + lista.length + ')', opis + ' Zabilježit će se datum i vrijeme prebacivanja. Za potvrdu unesite admin lozinku.', function() {
+        bulkRedom_(lista, function(e) { return gasCall({ action: 'adminPrebaciUArhivu', token: adminToken, rowIndex: e.rowIndex }); }, document.getElementById('bulk-arhiva-btn'), 'Arhiviram').then(function(rez) {
+          rez.ok.forEach(function(x) { x[0].fields['Datum prebacivanja u arhivu (admin)'] = x[1].datumPrikaz; x[0].fields['Kategorija arhiviranja (admin)'] = x[1].kategorija || ''; });
+          clearSelection(); try { loadAll(); } catch (eL) {}
+          bulkSazetak_('🗄 Prebacivanje u arhivu gotovo.', rez, preskoceno);
+        });
+      });
+    });
+  }
+  function bulkProduziRok_() {
+    var sve = bulkOdabraneP_(), preskoceno = [], lista = [];
+    var OPIS_ = { nije_poslano: 'ponuda još nije poslana (rok se postavlja u kartici)', potvrdjena: 'već prihvaćena', odbijena: 'odbijena', ponistena: 'poništena', ponistena_nakon_prihvata: 'poništena nakon prihvata' };
+    sve.forEach(function(e) {
+      if (jeArhiva(e)) { preskoceno.push([e, 'u arhivi je']); return; }
+      var st = ponudaStatusSazetak_(e);
+      if (st === 'na_cekanju' || st === 'istekla') { lista.push(e); } else { preskoceno.push([e, OPIS_[st] || st]); }
+    });
+    if (!lista.length) { bulkSazetak_('Nijednoj označenoj ponudi ne može se produžiti rok.', { ok: [], lose: [] }, preskoceno); return; }
+    var o = document.createElement('div');
+    o.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:100000;display:flex;align-items:center;justify-content:center;padding:16px;';
+    o.innerHTML = '<div style="background:#fff;border-radius:14px;max-width:460px;width:100%;box-shadow:0 12px 40px rgba(0,0,0,.3);overflow:hidden;font-size:14px;color:#1f2d3d;">' +
+      '<div style="background:#1a73c8;color:#fff;padding:12px 16px;font-weight:800;font-size:16px;">⏱ Produži rok — ' + lista.length + (lista.length === 1 ? ' ponuda' : ' ponuda') + '</div>' +
+      '<div style="padding:14px 16px;line-height:1.5;">Novi rok vrijedi <b>od danas</b> (do kraja zadnjeg dana). Isti linkovi za klijente ostaju.' +
+      '<div style="margin:10px 0;display:flex;gap:8px;align-items:center;flex-wrap:wrap;"><select class="bp-dana" style="padding:7px 10px;border-radius:8px;border:1px solid #bcd;font:inherit;"><option value="7">7 dana</option><option value="15" selected>15 dana</option><option value="21">21 dan</option><option value="30">30 dana</option><option value="x">drugo…</option></select>' +
+      '<input type="number" class="bp-dana-x" min="1" max="365" placeholder="dana" style="width:80px;padding:7px;border-radius:8px;border:1px solid #bcd;font:inherit;" hidden></div>' +
+      '<div style="max-height:150px;overflow:auto;background:#f4f8fc;border-radius:8px;padding:6px 10px;font-size:12.5px;">' + lista.map(function(e) { return '• ' + esc(fieldVal(e, 'Naziv tvrtke') || '') + ' <span style="color:#6b7280;">(ističe ' + esc(fieldVal(e, 'Datum isteka ponude (admin)') || '—') + ')</span>'; }).join('<br>') + '</div>' +
+      (preskoceno.length ? '<div style="margin-top:6px;font-size:12px;color:#8a5a00;">↷ Preskače se ' + preskoceno.length + ' (prihvaćene, odbijene, neposlane…).</div>' : '') +
+      '<div style="display:flex;gap:8px;margin-top:12px;"><button type="button" class="bp-da" style="background:#1a73c8;color:#fff;border:0;border-radius:8px;padding:9px 14px;font:inherit;font-weight:800;cursor:pointer;">Produži</button><button type="button" class="bp-ne" style="background:#eee;border:0;border-radius:8px;padding:9px 14px;font:inherit;cursor:pointer;">Odustani</button></div></div></div>';
+    document.body.appendChild(o);
+    var sel = o.querySelector('.bp-dana'), x = o.querySelector('.bp-dana-x');
+    sel.addEventListener('change', function() { x.hidden = sel.value !== 'x'; if (!x.hidden) { x.focus(); } });
+    o.querySelector('.bp-ne').addEventListener('click', function() { o.remove(); });
+    o.querySelector('.bp-da').addEventListener('click', function() {
+      var dana = sel.value === 'x' ? parseInt(x.value, 10) : parseInt(sel.value, 10);
+      if (!dana || dana < 1 || dana > 365) { x.hidden = false; x.focus(); x.style.borderColor = '#c0392b'; return; }
+      o.remove();
+      bulkRedom_(lista, function(e) { return gasCall({ action: 'adminPostaviRokPonude', token: adminToken, rowIndex: e.rowIndex, brojDana: dana, ukupnoSati: 0 }); }, document.getElementById('bulk-produzi-btn'), 'Produžujem').then(function(rez) {
+        rez.ok.forEach(function(y) { y[0].fields['Datum isteka ponude (admin)'] = y[1].datumIstekaPrikaz; y[0].fields['Rok važenja ponude (dana, admin)'] = dana; });
+        clearSelection(); try { loadAll(); } catch (eL) {}
+        bulkSazetak_('⏱ Rok produžen na ' + dana + ' dana od danas.', rez, preskoceno);
+      });
+    });
+  }
   function startBulkDelete() {
     var rowIndexes = Object.keys(selectedRowIndexes);
     if (rowIndexes.length === 0) { return; }
