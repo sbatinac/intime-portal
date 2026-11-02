@@ -8433,7 +8433,7 @@ function doPost(e) {
     } else if (data.action === 'adminPosaljiKlijentPristupTest') {
       result = adminPosaljiKlijentPristupTest(data.token, data.testMail, data.predmet, data.tijelo, data.jeHtml);
     } else if (data.action === 'adminPosaljiKlijentPristupMail') {
-      result = adminPosaljiKlijentPristupMail(data.token, data.rowIndex, data.primatelji, data.predmet, data.tijelo, data.kopijaSebi, data.jeHtml);
+      result = adminPosaljiKlijentPristupMail(data.token, data.rowIndex, data.primatelji, data.predmet, data.tijelo, data.kopijaSebi, data.jeHtml, data.prilozi);
     } else if (data.action === 'adminUploadKlijentPristupOpciDokument') {
       result = adminUploadKlijentPristupOpciDokument(data.token, data.base64Data, data.mimeType, data.filename);
     } else if (data.action === 'adminDohvatiKlijentPristupOpceDokumente') {
@@ -15484,7 +15484,7 @@ function adminPosaljiKlijentPristupTest(token, testMail, predmet, tijelo, jeHtml
 // upis padne, slanje maila i dalje broji kao uspješno) — TO polje pokreće
 // otključavanje zelenog panela "Pošalji obavijest poslovnicama" (vidi
 // InTime_Admin.html, kredGuardRecheck_/poslGuardRecheck_).
-function adminPosaljiKlijentPristupMail(token, rowIndex, primatelji, predmet, tijelo, kopijaSebi, jeHtml) {
+function adminPosaljiKlijentPristupMail(token, rowIndex, primatelji, predmet, tijelo, kopijaSebi, jeHtml, prilozi) {
   if (!isValidAdminToken_(token)) { return { status: 'error', message: 'Sesija je istekla — prijavite se ponovno.' }; }
   var primateljiLista = validirajViseMailova_(primatelji);
   if (!primateljiLista) { return { status: 'error', message: 'Upišite barem jednu ispravnu adresu primatelja (odvojene zarezom).' }; }
@@ -15496,6 +15496,14 @@ function adminPosaljiKlijentPristupMail(token, rowIndex, primatelji, predmet, ti
     if (kopijaSebi) { opcije.bcc = adminMailKopije_(); }
     var plainTijelo = tijelo;
     if (jeHtml) { opcije.htmlBody = tijelo; plainTijelo = skiniHtmlTagoveZaFallback_(tijelo); }
+    // v467: privici iz „Ostale poslovnice klijenta” — samo datoteke zapisane uz TOG klijenta
+    if (prilozi && prilozi.length) {
+      var rP_ = otvCitajRed_(rowIndex), dozvoljeno_ = {};
+      if (rP_) { poslovnicePodaci_(rP_).datoteke.forEach(function(d) { if (d.id) { dozvoljeno_[d.id] = true; } }); }
+      var blobs_ = [];
+      prilozi.forEach(function(id) { id = String(id); if (!dozvoljeno_[id]) { return; } try { blobs_.push(DriveApp.getFileById(id).getBlob()); } catch (eB) { /* datoteka obrisana s Drivea */ } });
+      if (blobs_.length) { opcije.attachments = blobs_; }
+    }
     posaljiMail_(primateljiLista.join(','), predmet || '(bez predmeta)', plainTijelo, opcije);
     try {
       var rowIndexKred_ = parseInt(rowIndex, 10);

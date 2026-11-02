@@ -752,6 +752,7 @@
   .oznaci-sve-traka button:hover{background:#0f6b5e;color:#fff;}
   .oznaci-sve-traka span{font-size:12.5px;color:#5b6664;}
   /* v466: ostale poslovnice klijenta */
+  .af-kred-posl-prilozi{margin:0 0 10px;font-size:12.5px;} .af-kred-posl-n{font-weight:800;color:#0f6b5e;margin-bottom:3px;} .af-kred-posl-l{display:block;cursor:pointer;margin:2px 0;}
   .posl-blok{grid-column:1 / -1;margin-top:12px;padding-top:10px;border-top:1px dashed var(--line,#d9dfdd);}
   .posl-nasl{font-size:11px;font-weight:800;letter-spacing:.02em;text-transform:uppercase;color:var(--purple-dark,#0f4c45);margin-bottom:6px;}
   .posl-br{display:inline-block;background:#0f6b5e;color:#fff;border-radius:999px;padding:0 8px;margin-left:4px;font-size:11px;}
@@ -3842,7 +3843,7 @@
     if (ZAPISI_U_TIJEKU_ === 0 && OSVJEZI_NAKON_ZAPISA_) { OSVJEZI_NAKON_ZAPISA_ = false; try { loadEntries(); } catch (eZg) { /* nije kritično */ } }
   }
   // ===== v403: TV PRIKAZ (InTime_Admin.html?tv=1) — samo pločice „Danas čeka tebe”, velike, sat, Battleships bodovi, osvježavanje svake 2 min =====
-  var PANTHER_VERZIJA_ = 'v466';   // v433: broj verzije — Claude ga podiže pri svakoj isporuci (prikazuje se na TV-u i u adminu)
+  var PANTHER_VERZIJA_ = 'v467';   // v433: broj verzije — Claude ga podiže pri svakoj isporuci (prikazuje se na TV-u i u adminu)
   try { document.addEventListener('DOMContentLoaded', function() { var v = document.getElementById('panther-ver'); if (v) { v.textContent = '🐾 PANTHER ' + PANTHER_VERZIJA_; } }); var v0_ = document.getElementById('panther-ver'); if (v0_) { v0_.textContent = '🐾 PANTHER ' + PANTHER_VERZIJA_; } } catch (eVer) {}
   var TV_MOD_ = /[?&]tv=1(&|$)/.test(location.search);
   var TV_AKCIJE_KLIJENT_ = /^(adminDnevniCiljStanje|adminUcitajPocetno|adminListEntries|adminGetCounters|adminPismaBezOdgovora|adminPismaPogodci|tvProvjera)$/;
@@ -22342,7 +22343,17 @@
   // ===== v466: 🏪 OSTALE POSLOVNICE KLIJENTA — ispod „Podaci o prikupu pošiljaka”: drag & drop na Drive (mapa POSLOVNICE), tablica, pregled, izvoz =====
   var POSL_POLJE_ = 'Ostale poslovnice klijenta (admin, JSON)';
   function poslPodaci_(entry) { var p = {}; try { p = JSON.parse(fieldVal(entry, POSL_POLJE_) || '{}') || {}; } catch (e) { p = {}; } p.zaglavlje = p.zaglavlje || []; p.redci = p.redci || []; p.datoteke = p.datoteke || []; return p; }
+  function poslPriloziOsvjezi_(entry, wrap) {
+    var slot = wrap && wrap.querySelector('.af-kred-posl-prilozi'); if (!slot) { return; }
+    var d = poslPodaci_(entry).datoteke.filter(function(x) { return x.id; });
+    var kljuc = d.map(function(x) { return x.id; }).join(',');
+    if (slot._kljuc === kljuc) { return; }
+    var oznaceni = {}; Array.prototype.forEach.call(slot.querySelectorAll('.af-kred-posl-cb'), function(c) { oznaceni[c.value] = c.checked; });
+    slot._kljuc = kljuc;
+    slot.innerHTML = d.length ? '<div class="af-kred-posl-n">📎 Priloži uz mail (iz „🏪 Ostale poslovnice klijenta”):</div>' + d.map(function(x) { var ch = oznaceni[x.id] === undefined ? true : oznaceni[x.id]; return '<label class="af-kred-posl-l"><input type="checkbox" class="af-kred-posl-cb" value="' + esc(x.id) + '"' + (ch ? ' checked' : '') + '> ' + esc(x.ime) + '</label>'; }).join('') : '';
+  }
   function poslovniceUgradi_(entry, wrap) {
+    try { poslPriloziOsvjezi_(entry, wrap); } catch (ePp) {}
     if (!wrap || wrap.querySelector('.posl-blok')) { return; }
     var prikup = wrap.querySelector('.af-prikup-info-blok'); if (!prikup) { return; }
     var b = document.createElement('div'); b.className = 'posl-blok';
@@ -24984,6 +24995,7 @@
                 '<label class="af-kred-bez-kalk-red" style="display:flex;gap:6px;align-items:center;margin-top:4px;font-weight:600;"><input type="checkbox" class="af-kred-bez-kalk-cb"> Klijentu NE dodjeljujem kalkulator (blok o kalkulatoru izbacuje se iz maila)</label>' +
               '</div>' +
               kopijaAdminHtml_('af-kred-kopija-red', 'af-kred-kopija-cb') +
+              '<div class="af-kred-posl-prilozi"></div>' +   // v467: privici iz „Ostale poslovnice klijenta”
               '<button type="button" class="af-kred-btn af-kred-posalji-btn uspjeh">🔑 Pošalji pristupne podatke</button>' +
               '<div class="af-kred-slanje-status"></div>' +
             '</div>' +
@@ -29644,11 +29656,12 @@
         }
         if (kredKalkDodijeljen_()) { entry._bezKalkulatora = false; kredRenderPregled_(); }
         var kopijaSebi = !!(kredKopijaCb && kredKopijaCb.checked);
-        if (!confirm('Poslati pristupne podatke klijentu na:\n' + primateljiLista.join(', ') + '?' + (kopijaSebi ? '\n\n(+ kopija na administratorski mail: ' + ADMIN_MAIL_KOPIJE_ + ')' : ''))) { return; }
+        var priloziIds_ = Array.prototype.map.call(wrap.querySelectorAll('.af-kred-posl-cb:checked'), function(c) { return c.value; });
+        if (!confirm('Poslati pristupne podatke klijentu na:\n' + primateljiLista.join(', ') + '?' + (priloziIds_.length ? '\n\n📎 Privitaka: ' + priloziIds_.length : '') + (kopijaSebi ? '\n\n(+ kopija na administratorski mail: ' + ADMIN_MAIL_KOPIJE_ + ')' : ''))) { return; }
         kredTestBtn.disabled = true;
         kredPosaljiBtn.disabled = true;
         kredPostaviStatus_('Šaljem…', null);
-        gasCall({ action: 'adminPosaljiKlijentPristupMail', token: adminToken, rowIndex: entry.rowIndex, primatelji: primateljiLista.join(','), predmet: kredZadnjiPregled_.predmet, tijelo: kredIzgradiTijeloZaSlanje_(), kopijaSebi: kopijaSebi, jeHtml: kredZadnjiPregled_.html }).then(function(res) {
+        gasCall({ action: 'adminPosaljiKlijentPristupMail', token: adminToken, rowIndex: entry.rowIndex, primatelji: primateljiLista.join(','), predmet: kredZadnjiPregled_.predmet, tijelo: kredIzgradiTijeloZaSlanje_(), kopijaSebi: kopijaSebi, prilozi: priloziIds_, jeHtml: kredZadnjiPregled_.html }).then(function(res) {
           kredTestBtn.disabled = false;
           kredPosaljiBtn.disabled = false;
           if (handleAuthError(res)) { return; }
