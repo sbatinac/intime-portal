@@ -129,3 +129,4 @@
 - v470 (02.11.2026.): podsjetnici — kad piše „⚠ nema ispravne adrese primatelja”, uz to gumb „✉ Upiši adresu” (jedna ili više, provjera ispravnosti); sprema u „Mail adrese za slanje ponude” (podsjetnik na ponudu) ili „mail primatelja” otvorene ponude (podsjetnik na upitnik) i odmah osvježi blok.
 - v471: verzija na slici prijave (crna podloga preko 'ver. 1.2'), uvijek iz PANTHER_VERZIJA_.
 - v472: verzija i na glavnom banneru (preko 'ver. 1.2', crna podloga, uvijek iz PANTHER_VERZIJA_).
+- v473: naslov admina 'KORISNIK: SAŠA BATINAC' (bijelo, veće); maknuta značka PANTHER verzije (verzija je na banneru).
