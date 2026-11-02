@@ -128,3 +128,4 @@
 - v469 (02.11.2026.): statistika — klik na „Pozitivno odlučili”, „Negativno odlučili”, „Popunjenih anketa” i „Ukupno klijenata” otvara pripadni popis (Zainteresirani / Nisu zainteresirani / Ankete / Klijenti); pri prelasku mišem „Prikaži ›”. (Raskid i Problemi su već bili klikabilni; posjete nemaju popis.)
 - v470 (02.11.2026.): podsjetnici — kad piše „⚠ nema ispravne adrese primatelja”, uz to gumb „✉ Upiši adresu” (jedna ili više, provjera ispravnosti); sprema u „Mail adrese za slanje ponude” (podsjetnik na ponudu) ili „mail primatelja” otvorene ponude (podsjetnik na upitnik) i odmah osvježi blok.
 - v471: verzija na slici prijave (crna podloga preko 'ver. 1.2'), uvijek iz PANTHER_VERZIJA_.
+- v472: verzija i na glavnom banneru (preko 'ver. 1.2', crna podloga, uvijek iz PANTHER_VERZIJA_).

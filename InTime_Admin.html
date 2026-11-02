@@ -2593,6 +2593,9 @@
   .pz-zona{position:relative;border-radius:20px;padding:14px 14px 4px;margin-bottom:22px;border:1px solid rgba(70,150,255,.4);animation:prijavaSjaj 4.5s ease-in-out infinite;
     background:radial-gradient(900px 420px at 10% -20%,rgba(20,90,230,.35) 0%,rgba(20,90,230,0) 60%),radial-gradient(700px 400px at 100% 110%,rgba(0,150,255,.22) 0%,rgba(0,150,255,0) 60%),linear-gradient(160deg,#01030c 0%,#030a24 55%,#01040f 100%);}
   .pz-banner{position:relative;overflow:hidden;border-radius:12px;margin-bottom:14px;line-height:0;box-shadow:0 0 0 1px rgba(90,160,255,.35),0 0 30px rgba(40,120,255,.35);}
+  .pz-banner{container-type:inline-size;}
+  .pz-ver{position:absolute;z-index:3;left:73.4%;top:88.0%;width:6.6%;height:6.4%;background:#000;color:#e8eef8;font:500 1.5cqw/1 system-ui,Segoe UI,Arial,sans-serif;display:flex;align-items:center;justify-content:flex-start;padding-left:.3%;box-sizing:border-box;white-space:nowrap;border-radius:2px;}
+  .pz-ver b{color:#2f9bff;font-style:italic;font-weight:800;margin-left:.35em;}
   .pz-banner .dashboard-banner{border-radius:12px;margin:0;}
   .pz-banner::before{content:"";position:absolute;top:0;bottom:0;left:0;width:26%;z-index:1;pointer-events:none;background:linear-gradient(100deg,rgba(120,190,255,0) 0%,rgba(150,210,255,.2) 50%,rgba(120,190,255,0) 100%);animation:prijavaPrelijev 8s ease-in-out infinite;}
   .pz-zona header.topbar{margin-bottom:14px;}
@@ -2985,7 +2988,7 @@
   <div class="wrap">
 
     <div class="pz-zona">
-    <div class="pz-banner"><img src="https://i.imgur.com/vpWf3IL.png" alt="In Time — PANTHER" class="dashboard-banner"></div>
+    <div class="pz-banner"><img src="https://i.imgur.com/vpWf3IL.png" alt="In Time — PANTHER" class="dashboard-banner"><span class="pz-ver" id="pz-ver">ver. <b></b></span></div>
 
     <header class="topbar">
       <h1>In Time — Admin pregled upita <span id="panther-ver" class="panther-ver" title="Verzija programa — izradio Saša Batinac"></span></h1>
@@ -3852,8 +3855,8 @@
     if (ZAPISI_U_TIJEKU_ === 0 && OSVJEZI_NAKON_ZAPISA_) { OSVJEZI_NAKON_ZAPISA_ = false; try { loadEntries(); } catch (eZg) { /* nije kritično */ } }
   }
   // ===== v403: TV PRIKAZ (InTime_Admin.html?tv=1) — samo pločice „Danas čeka tebe”, velike, sat, Battleships bodovi, osvježavanje svake 2 min =====
-  var PANTHER_VERZIJA_ = 'v471';
-  (function(){ try{ var e=document.getElementById('prijava-ver'); if(e) e.textContent='ver. '+PANTHER_VERZIJA_.replace(/^v/,''); }catch(_){} })();   // v471: verzija na slici prijave   // v433: broj verzije — Claude ga podiže pri svakoj isporuci (prikazuje se na TV-u i u adminu)
+  var PANTHER_VERZIJA_ = 'v472';
+  (function(){ try{ var e=document.getElementById('prijava-ver'); if(e) e.textContent='ver. '+PANTHER_VERZIJA_.replace(/^v/,''); var z=document.querySelector('#pz-ver b'); if(z) z.textContent=PANTHER_VERZIJA_.replace(/^v/,''); }catch(_){} })();   // v471: verzija na slici prijave   // v433: broj verzije — Claude ga podiže pri svakoj isporuci (prikazuje se na TV-u i u adminu)
   try { document.addEventListener('DOMContentLoaded', function() { var v = document.getElementById('panther-ver'); if (v) { v.textContent = '🐾 PANTHER ' + PANTHER_VERZIJA_; } }); var v0_ = document.getElementById('panther-ver'); if (v0_) { v0_.textContent = '🐾 PANTHER ' + PANTHER_VERZIJA_; } } catch (eVer) {}
   var TV_MOD_ = /[?&]tv=1(&|$)/.test(location.search);
   var TV_AKCIJE_KLIJENT_ = /^(adminDnevniCiljStanje|adminUcitajPocetno|adminListEntries|adminGetCounters|adminPismaBezOdgovora|adminPismaPogodci|tvProvjera)$/;
