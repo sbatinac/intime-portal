@@ -115,3 +115,4 @@
 - v456 (02.11.2026.): siva značka „⌛ N” = istekle ponude (rok prošao, bez odgovora) na brojačima Ponude / Otvorene ponude, u adminu i na TV-u; klik = popis isteklih (sivi prikaz). Dodano u kazalo (admin i TV). Na TV-u oznake malo manje da sve stane u jedan red.
 - v457 (02.11.2026.): gumbi „⏱ Produži rok” i „🗄 Prebaci u arhivu” vide se i u popisima ponuda (⌛ istekle, čeka odgovor, ističe, INTRIX, ⭐ čeka OB, prihvaćene…), ne samo u karticama Ponude / Otvorene.
 - v458 (02.11.2026.): Admin — 📝 napomena na kartici svake ponude (Ponude, Otvorene, svi popisi): vidi se na zaglavlju bez otvaranja; uređivač s bojama (crvena, plava, žuta-označivač, zelena, ljubičasta), podebljano, bez boje; spremi / obriši. Code.gs: novo polje „Napomena na kartici (admin)” (napomena_kartica) — DEPLOY.
+- v459 (02.11.2026.): mali gumb „📋 naziv” na zaglavlju kartice ponude (uz naziv firme) — kopira naziv ponude (REVIZIJA - šifra - firma - MJESTO) bez otvaranja kartice.

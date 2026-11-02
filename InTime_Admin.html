@@ -741,6 +741,10 @@
   .bs-brojac .bs-ist{background:#7d838c;color:#fff;cursor:pointer;}   /* v456: sivo — istekle */
   .bs-brojac .bs-ob{background:#e8459a;color:#fff;box-shadow:0 0 6px rgba(232,69,154,.75);cursor:pointer;}   /* v422: ružičasto */
   .pm-akb-zbroj td{position:sticky;bottom:0;background:#eef6ff;border-top:2px solid #1a73c8;font-weight:700;padding-top:8px;padding-bottom:8px;}
+  /* v459: mali gumb kopiraj naziv ponude */
+  .kop-naziv-mini{margin-left:6px;border:1.5px solid #5b6664;background:#fff;color:#3c4d4a;border-radius:999px;padding:1px 9px;font:inherit;font-size:11.5px;font-weight:800;cursor:pointer;vertical-align:middle;line-height:1.6;}
+  .kop-naziv-mini:hover{background:#3c4d4a;color:#fff;}
+  .kop-naziv-mini.ok{background:#1e8449;border-color:#1e8449;color:#fff;}
   /* v458: napomena na kartici */
   .nk-prikaz{display:flex;gap:6px;align-items:flex-start;margin-top:5px;padding:4px 8px;border-radius:8px;background:#fffbea;border:1px dashed #e6c65c;font-size:13px;line-height:1.4;cursor:pointer;max-width:100%;color:#1f2d3d;}
   .nk-prikaz.prazno{background:transparent;border-color:transparent;padding:0 2px;opacity:.55;font-size:12px;}
@@ -3780,7 +3784,7 @@
     if (ZAPISI_U_TIJEKU_ === 0 && OSVJEZI_NAKON_ZAPISA_) { OSVJEZI_NAKON_ZAPISA_ = false; try { loadEntries(); } catch (eZg) { /* nije kritično */ } }
   }
   // ===== v403: TV PRIKAZ (InTime_Admin.html?tv=1) — samo pločice „Danas čeka tebe”, velike, sat, Battleships bodovi, osvježavanje svake 2 min =====
-  var PANTHER_VERZIJA_ = 'v458';   // v433: broj verzije — Claude ga podiže pri svakoj isporuci (prikazuje se na TV-u i u adminu)
+  var PANTHER_VERZIJA_ = 'v459';   // v433: broj verzije — Claude ga podiže pri svakoj isporuci (prikazuje se na TV-u i u adminu)
   try { document.addEventListener('DOMContentLoaded', function() { var v = document.getElementById('panther-ver'); if (v) { v.textContent = '🐾 PANTHER ' + PANTHER_VERZIJA_; } }); var v0_ = document.getElementById('panther-ver'); if (v0_) { v0_.textContent = '🐾 PANTHER ' + PANTHER_VERZIJA_; } } catch (eVer) {}
   var TV_MOD_ = /[?&]tv=1(&|$)/.test(location.search);
   var TV_AKCIJE_KLIJENT_ = /^(adminDnevniCiljStanje|adminUcitajPocetno|adminListEntries|adminGetCounters|adminPismaBezOdgovora|adminPismaPogodci|tvProvjera)$/;
@@ -22213,6 +22217,29 @@
     if (zadnji) { t += '[[/]]'; }
     return t.replace(/\s+$/, '').slice(0, 2000);
   }
+  // v459: mali gumb „📋 naziv” na zaglavlju kartice ponude — kopira naziv ponude (isti kao „Kopiraj naziv ponude” u kartici)
+  function kopNazivPonude_(entry) {
+    var sif = sifraPonudeFormat_(fieldVal(entry, 'Šifra ponude (admin)'));
+    var klijent = String(fieldVal(entry, 'Naziv tvrtke') || '').trim() || '(bez naziva)';
+    var grad = String(fieldVal(entry, 'Mjesto') || '').trim().toUpperCase() || '(bez mjesta)';
+    var rev = fieldVal(entry, 'Ponuda je revizija (admin)') === 'DA';
+    return ((rev ? 'REVIZIJA - ' : '') + sif + ' - ' + klijent + ' - ' + grad).replace(/[\\\/]/g, '-');
+  }
+  function kopNazivUgradi_(entry, head) {
+    if (!nkJePonuda_(entry) || !fieldVal(entry, 'Šifra ponude (admin)')) { return; }
+    var t = head.querySelector('.entry-card-title'); if (!t) { return; }
+    var b = document.createElement('button'); b.type = 'button'; b.className = 'kop-naziv-mini';
+    var naziv = kopNazivPonude_(entry);
+    b.title = 'Kopiraj naziv ponude:\n' + naziv; b.textContent = '📋 naziv';
+    b.addEventListener('click', function(ev) {
+      ev.stopPropagation(); ev.preventDefault();
+      var tx = kopNazivPonude_(entry);
+      var gotovo = function(ok) { b.textContent = ok ? '✓ kopirano' : '⚠ nije uspjelo'; b.classList.toggle('ok', !!ok); setTimeout(function() { b.textContent = '📋 naziv'; b.classList.remove('ok'); }, 2000); };
+      var rezerva = function() { try { var ta = document.createElement('textarea'); ta.value = tx; ta.style.cssText = 'position:fixed;left:-9999px;top:0;'; document.body.appendChild(ta); ta.select(); var ok = document.execCommand('copy'); ta.remove(); gotovo(ok); } catch (e2) { gotovo(false); } };
+      try { if (navigator.clipboard && navigator.clipboard.writeText) { navigator.clipboard.writeText(tx).then(function() { gotovo(true); }, rezerva); } else { rezerva(); } } catch (e1) { rezerva(); }
+    });
+    t.appendChild(b);
+  }
   function nkUgradi_(entry, head) {
     if (!nkJePonuda_(entry)) { return; }
     var tekst = String(fieldVal(entry, NK_POLJE_) || '');
@@ -22360,6 +22387,7 @@
     selectCb.addEventListener('click', function(ev){ ev.stopPropagation(); });
     selectCb.addEventListener('change', function(){ toggleRowSelection(entry.rowIndex, 'upit', selectCb.checked); });
     try { nkUgradi_(entry, head); } catch (eNk) { /* v458: napomena na kartici — nije kritično */ }
+    try { kopNazivUgradi_(entry, head); } catch (eKn) { /* v459 */ }
     head.addEventListener('click', function() {
       card.classList.toggle('expanded');
       izgradiTijeloKartice_();
