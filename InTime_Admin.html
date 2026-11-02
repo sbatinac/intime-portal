@@ -741,6 +741,7 @@
   .bs-brojac .bs-ist{background:#7d838c;color:#fff;cursor:pointer;}   /* v456: sivo — istekle */
   .bs-brojac .bs-ob{background:#e8459a;color:#fff;box-shadow:0 0 6px rgba(232,69,154,.75);cursor:pointer;}   /* v422: ružičasto */
   .pm-akb-zbroj td{position:sticky;bottom:0;background:#eef6ff;border-top:2px solid #1a73c8;font-weight:700;padding-top:8px;padding-bottom:8px;}
+  .jedn-rev-cip{margin-left:6px;background:#d32f2f;color:#fff;border-radius:999px;padding:1px 9px;font-size:11.5px;font-weight:900;letter-spacing:.03em;vertical-align:middle;}
   /* v459: mali gumb kopiraj naziv ponude */
   .kop-naziv-mini{margin-left:6px;border:1.5px solid #5b6664;background:#fff;color:#3c4d4a;border-radius:999px;padding:1px 9px;font:inherit;font-size:11.5px;font-weight:800;cursor:pointer;vertical-align:middle;line-height:1.6;}
   .kop-naziv-mini:hover{background:#3c4d4a;color:#fff;}
@@ -3789,7 +3790,7 @@
     if (ZAPISI_U_TIJEKU_ === 0 && OSVJEZI_NAKON_ZAPISA_) { OSVJEZI_NAKON_ZAPISA_ = false; try { loadEntries(); } catch (eZg) { /* nije kritično */ } }
   }
   // ===== v403: TV PRIKAZ (InTime_Admin.html?tv=1) — samo pločice „Danas čeka tebe”, velike, sat, Battleships bodovi, osvježavanje svake 2 min =====
-  var PANTHER_VERZIJA_ = 'v460';   // v433: broj verzije — Claude ga podiže pri svakoj isporuci (prikazuje se na TV-u i u adminu)
+  var PANTHER_VERZIJA_ = 'v461';   // v433: broj verzije — Claude ga podiže pri svakoj isporuci (prikazuje se na TV-u i u adminu)
   try { document.addEventListener('DOMContentLoaded', function() { var v = document.getElementById('panther-ver'); if (v) { v.textContent = '🐾 PANTHER ' + PANTHER_VERZIJA_; } }); var v0_ = document.getElementById('panther-ver'); if (v0_) { v0_.textContent = '🐾 PANTHER ' + PANTHER_VERZIJA_; } } catch (eVer) {}
   var TV_MOD_ = /[?&]tv=1(&|$)/.test(location.search);
   var TV_AKCIJE_KLIJENT_ = /^(adminDnevniCiljStanje|adminUcitajPocetno|adminListEntries|adminGetCounters|adminPismaBezOdgovora|adminPismaPogodci|tvProvjera)$/;
@@ -7213,6 +7214,7 @@
       '<label style="display:block;margin-top:10px;font-weight:700;">Tko je kod klijenta prihvatio (neobavezno)</label><input type="text" class="pu-ime" placeholder="npr. Ivo Ivić" style="width:100%;box-sizing:border-box;padding:8px 10px;border:1px solid #c9d3d1;border-radius:8px;font:inherit;">' +
       '<label style="display:block;margin-top:8px;font-weight:700;">Funkcija (neobavezno)</label><input type="text" class="pu-fun" placeholder="npr. direktor" style="width:100%;box-sizing:border-box;padding:8px 10px;border:1px solid #c9d3d1;border-radius:8px;font:inherit;">' +
       '<label style="display:flex;gap:8px;align-items:center;margin-top:12px;font-weight:700;cursor:pointer;"><input type="checkbox" class="pu-potvrda"> Klijent je prihvatio ponudu (telefonom, mailom ili osobno)</label>' +
+      (fieldVal(entry, 'Ponuda je revizija (admin)') === 'DA' ? '<label class="pu-jedn-l" style="display:flex;gap:8px;align-items:flex-start;margin-top:8px;font-weight:800;cursor:pointer;padding:8px 10px;border:2px solid #e0b4b4;border-radius:10px;color:#8b1a1a;"><input type="checkbox" class="pu-jedn" style="margin-top:3px;"> <span>📑 REVIZIJA — klijent ne mora prihvatiti ponudu<br><small style="font-weight:600;">ponuda je dana jednostrano; status odmah postaje „prihvaćena”</small></span></label>' : '') +
       '<div class="pu-st" style="margin-top:8px;font-weight:700;"></div>' +
       '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;"><button type="button" class="pu-ok" style="background:#2e9e5b;color:#fff;border:0;border-radius:8px;padding:9px 14px;font:inherit;font-weight:800;cursor:pointer;">✍ Prihvati</button>' +
       '<button type="button" class="pu-x" style="background:#eef1f0;color:#333;border:0;border-radius:8px;padding:9px 14px;font:inherit;font-weight:700;cursor:pointer;">Odustani</button></div></div></div>';
@@ -7221,15 +7223,22 @@
     function zatvori() { if (o.parentNode) { o.parentNode.removeChild(o); } }
     o.querySelector('.pu-x').addEventListener('click', zatvori);
     o.addEventListener('click', function(ev) { if (ev.target === o) { zatvori(); } });
+    var jedn = o.querySelector('.pu-jedn');   // v461: jednostrana revizija — pocrveni
+    if (jedn) { jedn.addEventListener('change', function() {
+      var l = o.querySelector('.pu-jedn-l');
+      l.style.background = jedn.checked ? '#d32f2f' : ''; l.style.color = jedn.checked ? '#fff' : '#8b1a1a'; l.style.borderColor = jedn.checked ? '#b71c1c' : '#e0b4b4';
+      var ok = o.querySelector('.pu-ok'); ok.style.background = jedn.checked ? '#d32f2f' : '#2e9e5b'; ok.textContent = jedn.checked ? '📑 Jednostrano — prihvaćeno' : '✍ Prihvati';
+      if (jedn.checked) { o.querySelector('.pu-potvrda').checked = false; }
+    }); }
     o.querySelector('.pu-ok').addEventListener('click', function() {
-      var b = this;
-      if (!o.querySelector('.pu-potvrda').checked) { st.style.color = '#a93226'; st.textContent = 'Označi kvačicu da je klijent prihvatio ponudu.'; return; }
+      var b = this, jeJedn = !!(jedn && jedn.checked);
+      if (!jeJedn && !o.querySelector('.pu-potvrda').checked) { st.style.color = '#a93226'; st.textContent = 'Označi kvačicu da je klijent prihvatio ponudu' + (jedn ? ' ili da je revizija jednostrana.' : '.'); return; }
       b.disabled = true; st.style.color = '#1f2d3d'; st.textContent = 'Spremam…';
-      gasCall({ action: 'adminPrihvatiUImeKlijenta', token: adminToken, rowIndex: entry.rowIndex, imeOsobe: o.querySelector('.pu-ime').value.trim(), funkcijaOsobe: o.querySelector('.pu-fun').value.trim() }).then(function(res) {
+      gasCall({ action: 'adminPrihvatiUImeKlijenta', token: adminToken, rowIndex: entry.rowIndex, imeOsobe: jeJedn ? '' : o.querySelector('.pu-ime').value.trim(), funkcijaOsobe: jeJedn ? 'JEDNOSTRANA REVIZIJA — klijent ne mora prihvatiti' : o.querySelector('.pu-fun').value.trim() }).then(function(res) {
         b.disabled = false;
         if (handleAuthError(res)) { zatvori(); return; }
         if (!res || res.status !== 'ok') { st.style.color = '#a93226'; st.textContent = (res && res.message) || 'Nije uspjelo.'; return; }
-        st.style.color = '#2e9e5b'; st.textContent = '✓ Ponuda je prihvaćena ' + res.datum + '. Klijent nije obaviješten.';
+        st.style.color = jeJedn ? '#b71c1c' : '#2e9e5b'; st.textContent = (jeJedn ? '📑 Jednostrana revizija — ponuda je prihvaćena ' : '✓ Ponuda je prihvaćena ') + res.datum + '. Klijent nije obaviješten.';
         setTimeout(function() { zatvori(); try { loadEntries(); } catch (eL) {} try { otvStanje_.lista = null; } catch (eO) {} }, 1300);
       }).catch(function() { b.disabled = false; st.style.color = '#a93226'; st.textContent = 'Nema veze s poslužiteljem — pokušaj ponovno.'; });
     });
@@ -22524,6 +22533,8 @@
         card.classList.add('prihv');
         var dPr_ = String(fieldVal(entry, 'Datum prihvaćanja ponude (admin)') || ''), tP_ = head.querySelector('.entry-card-title');
         var prAdm_ = String(fieldVal(entry, 'Prihvat unio admin u ime klijenta (admin)') || '');
+        var jednR_ = /JEDNOSTRAN/i.test(String(fieldVal(entry, 'Funkcija osobe koja je potvrdila ponudu (admin)') || ''));   // v461
+        if (tP_ && jednR_) { tP_.insertAdjacentHTML('beforeend', '<span class="jedn-rev-cip" title="Revizija dana jednostrano — klijent ne mora prihvatiti ponudu">📑 JEDNOSTRANO</span>'); }
         if (tP_) { tP_.insertAdjacentHTML('beforeend', '<span class="rok-cip prh' + (prAdm_ ? ' prh-adm' : '') + '" title="' + (prAdm_ ? 'Prihvat unio admin u ime klijenta: ' + esc(prAdm_) : 'Klijent je prihvatio ponudu') + '">✅ PRIHVAĆENA' + (prAdm_ ? ' ✍ (Saša)' : '') + (dPr_ ? ' ' + esc(dPr_.replace(/\.\s*\d{1,2}:\d{2}.*$/, '.').replace(/^(\d{2}\.\d{2}\.)\d{4}\.$/, '$1')) : '') + '</span>'); }
         rokPokreni_();
         // v374: prekidač INTRIX (samo prihvaćene ponude) — uključen: ljubičasta kartica + ljubičasti broj na gumbu; dodjelom TM broja se sam gasi
