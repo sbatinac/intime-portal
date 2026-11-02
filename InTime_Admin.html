@@ -742,6 +742,11 @@
   .bs-brojac .bs-ob{background:#e8459a;color:#fff;box-shadow:0 0 6px rgba(232,69,154,.75);cursor:pointer;}   /* v422: ružičasto */
   .pm-akb-zbroj td{position:sticky;bottom:0;background:#eef6ff;border-top:2px solid #1a73c8;font-weight:700;padding-top:8px;padding-bottom:8px;}
   .jedn-rev-cip{margin-left:6px;background:#d32f2f;color:#fff;border-radius:999px;padding:1px 9px;font-size:11.5px;font-weight:900;letter-spacing:.03em;vertical-align:middle;}
+  .oznaci-sve-traka{display:flex;gap:8px;align-items:center;margin:0 0 8px;flex-wrap:wrap;}
+  .oznaci-sve-traka[hidden]{display:none;}
+  .oznaci-sve-traka button{border:1.5px solid #0f6b5e;background:#fff;color:#0f6b5e;border-radius:8px;padding:5px 12px;font:inherit;font-size:13px;font-weight:700;cursor:pointer;}
+  .oznaci-sve-traka button:hover{background:#0f6b5e;color:#fff;}
+  .oznaci-sve-traka span{font-size:12.5px;color:#5b6664;}
   /* v459: mali gumb kopiraj naziv ponude */
   .kop-naziv-mini{margin-left:6px;border:1.5px solid #5b6664;background:#fff;color:#3c4d4a;border-radius:999px;padding:1px 9px;font:inherit;font-size:11.5px;font-weight:800;cursor:pointer;vertical-align:middle;line-height:1.6;}
   .kop-naziv-mini:hover{background:#3c4d4a;color:#fff;}
@@ -3115,6 +3120,7 @@
 
     <div id="anketa-statistika-panel" class="anketa-stat-panel" hidden></div>
 
+    <div id="oznaci-sve-traka" class="oznaci-sve-traka" hidden><button type="button" onclick="oznaciSveKartice_(true)">☑ Označi sve</button><button type="button" onclick="oznaciSveKartice_(false)">☐ Odznači sve</button><span id="oznaci-sve-br"></span></div>
     <div id="entries-list"></div>
 
   </div>
@@ -3790,7 +3796,7 @@
     if (ZAPISI_U_TIJEKU_ === 0 && OSVJEZI_NAKON_ZAPISA_) { OSVJEZI_NAKON_ZAPISA_ = false; try { loadEntries(); } catch (eZg) { /* nije kritično */ } }
   }
   // ===== v403: TV PRIKAZ (InTime_Admin.html?tv=1) — samo pločice „Danas čeka tebe”, velike, sat, Battleships bodovi, osvježavanje svake 2 min =====
-  var PANTHER_VERZIJA_ = 'v461';   // v433: broj verzije — Claude ga podiže pri svakoj isporuci (prikazuje se na TV-u i u adminu)
+  var PANTHER_VERZIJA_ = 'v462';   // v433: broj verzije — Claude ga podiže pri svakoj isporuci (prikazuje se na TV-u i u adminu)
   try { document.addEventListener('DOMContentLoaded', function() { var v = document.getElementById('panther-ver'); if (v) { v.textContent = '🐾 PANTHER ' + PANTHER_VERZIJA_; } }); var v0_ = document.getElementById('panther-ver'); if (v0_) { v0_.textContent = '🐾 PANTHER ' + PANTHER_VERZIJA_; } } catch (eVer) {}
   var TV_MOD_ = /[?&]tv=1(&|$)/.test(location.search);
   var TV_AKCIJE_KLIJENT_ = /^(adminDnevniCiljStanje|adminUcitajPocetno|adminListEntries|adminGetCounters|adminPismaBezOdgovora|adminPismaPogodci|tvProvjera)$/;
@@ -31296,6 +31302,23 @@
     updateBulkActionsBar();
   }
 
+  // v462: ☑ Označi sve / ☐ Odznači sve — sve kartice s kućicom koje se trenutno vide u popisu
+  function oznaciSveKartice_(da) {
+    Array.prototype.forEach.call(document.querySelectorAll('#entries-list .entry-select-cb'), function(cb) {
+      if (cb.offsetParent === null || cb.checked === da) { return; }
+      cb.checked = da; cb.dispatchEvent(new Event('change', { bubbles: true }));
+    });
+    if (!da) { try { clearSelection(); } catch (e) {} }
+    oznaciSveOsvjezi_();
+  }
+  function oznaciSveOsvjezi_() {
+    var t = document.getElementById('oznaci-sve-traka'); if (!t) { return; }
+    var cbs = Array.prototype.filter.call(document.querySelectorAll('#entries-list .entry-select-cb'), function(cb) { return cb.offsetParent !== null; });
+    t.hidden = cbs.length < 2;
+    var n = cbs.filter(function(c) { return c.checked; }).length;
+    var br = document.getElementById('oznaci-sve-br'); if (br) { br.textContent = cbs.length + ' kartica' + (n ? ' · označeno ' + n : ''); }
+  }
+  setInterval(oznaciSveOsvjezi_, 1000);
   function updateBulkActionsBar() {
     var bar = document.getElementById('bulk-actions-bar');
     var count = Object.keys(selectedRowIndexes).length;
