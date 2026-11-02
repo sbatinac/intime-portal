@@ -3762,7 +3762,7 @@
     if (ZAPISI_U_TIJEKU_ === 0 && OSVJEZI_NAKON_ZAPISA_) { OSVJEZI_NAKON_ZAPISA_ = false; try { loadEntries(); } catch (eZg) { /* nije kritično */ } }
   }
   // ===== v403: TV PRIKAZ (InTime_Admin.html?tv=1) — samo pločice „Danas čeka tebe”, velike, sat, Battleships bodovi, osvježavanje svake 2 min =====
-  var PANTHER_VERZIJA_ = 'v456';   // v433: broj verzije — Claude ga podiže pri svakoj isporuci (prikazuje se na TV-u i u adminu)
+  var PANTHER_VERZIJA_ = 'v457';   // v433: broj verzije — Claude ga podiže pri svakoj isporuci (prikazuje se na TV-u i u adminu)
   try { document.addEventListener('DOMContentLoaded', function() { var v = document.getElementById('panther-ver'); if (v) { v.textContent = '🐾 PANTHER ' + PANTHER_VERZIJA_; } }); var v0_ = document.getElementById('panther-ver'); if (v0_) { v0_.textContent = '🐾 PANTHER ' + PANTHER_VERZIJA_; } } catch (eVer) {}
   var TV_MOD_ = /[?&]tv=1(&|$)/.test(location.search);
   var TV_AKCIJE_KLIJENT_ = /^(adminDnevniCiljStanje|adminUcitajPocetno|adminListEntries|adminGetCounters|adminPismaBezOdgovora|adminPismaPogodci|tvProvjera)$/;
@@ -31085,7 +31085,7 @@
     var imaSakrivanje = ['Interes', 'Ponude', 'Arhiva', 'Odbijenica', 'NoviKlijenti', 'Revizije', 'Ankete'].indexOf(activeTab) !== -1;
     var revBulkBtn_ = document.getElementById('bulk-revizije-btn'); if (revBulkBtn_) { revBulkBtn_.hidden = (activeTab !== 'NoviKlijenti'); }
     var revBulkVratiBtn_ = document.getElementById('bulk-revizije-vrati-btn'); if (revBulkVratiBtn_) { revBulkVratiBtn_.hidden = (activeTab !== 'Revizije'); }
-    var naPonudama_ = (activeTab === 'Ponude' || activeTab === 'Otvorene');   // v455: skupne radnje na ponudama
+    var naPonudama_ = (activeTab === 'Ponude' || activeTab === 'Otvorene' || (activeTab === 'Intrix' && ['podsEvid', 'aktEvid', 'pismaBez'].indexOf(POSEBNI_VRSTA_) === -1));   // v455/v457: skupne radnje na ponudama (i u popisima ⌛ istekle, čeka odgovor, INTRIX…)
     var bpB_ = document.getElementById('bulk-produzi-btn'); if (bpB_) { bpB_.hidden = !naPonudama_; }
     var baB_ = document.getElementById('bulk-arhiva-btn'); if (baB_) { baB_.hidden = !naPonudama_; }
     if (sakrijBtnOpci) { sakrijBtnOpci.hidden = !imaSakrivanje; }
