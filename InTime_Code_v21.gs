@@ -8851,6 +8851,10 @@ function doPost(e) {
       result = adminTvOpozovi(data.token, data.id);
     } else if (data.action === 'adminPodsjetniciEvidencija') {
       result = adminPodsjetniciEvidencija(data.token);
+    } else if (data.action === 'adminPoslovniceUpload') {
+      result = adminPoslovniceUpload(data.token, data.rowIndex, data.ime, data.mime, data.base64);
+    } else if (data.action === 'adminPoslovniceSpremi') {
+      result = adminPoslovniceSpremi(data.token, data.rowIndex, data.podaci);
     } else if (data.action === 'adminNapomeneKlijenataLista') {
       result = adminNapomeneKlijenataLista(data.token);
     } else if (data.action === 'adminNapomenaKlijentaSpremi') {
@@ -9810,7 +9814,8 @@ var ADMIN_ONLY_FIELDS = {
   kratki_upitnik: 'Kratki upitnik - dopušten (admin)',
   prihvat_admin: 'Prihvat unio admin u ime klijenta (admin)',   // v383: Saša prihvatio ponudu u ime klijenta (bez obavijesti klijentu)   // v381: datum kad je Saša klijentu dopustio/poslao kratki upitnik (samo osnovni podaci)
   intrix_odobren: 'INTRIX odobren (admin)',
-  napomena_kartica: 'Napomena na kartici (admin)',   // v458: obojena napomena vidljiva na zaglavlju kartice ponude ([[r]]…[[/]] oznake boja)   // v412: datum kad je ponuda ručno izbačena iz INTRIX-a (odobreno); TM broj INTRIX više ne gasi sam
+  napomena_kartica: 'Napomena na kartici (admin)',
+  poslovnice_json: 'Ostale poslovnice klijenta (admin, JSON)',   // v466: tablica ostalih poslovnica + popis datoteka (Drive: <klijent>/POSLOVNICE)   // v458: obojena napomena vidljiva na zaglavlju kartice ponude ([[r]]…[[/]] oznake boja)   // v412: datum kad je ponuda ručno izbačena iz INTRIX-a (odobreno); TM broj INTRIX više ne gasi sam
   intrix: 'INTRIX (admin)'   // v374: prihvaćena ponuda je u INTRIX-u (prekidač na kartici); poništava se kad ponuda dobije TM broj
   // (30.9.2026., ISPRAVAK ISTI DAN: polje "dokumenti_klijent_pristup" koje je
   // ovdje kratko postojalo — po-klijentu JSON popis mail-priloga — u
@@ -10396,6 +10401,62 @@ function tvTokeni_() { try { return JSON.parse(PropertiesService.getScriptProper
 // v437: 🎯 DNEVNI CILJ + pregled dana za TV i admin — brojevi po danu (pisma, ponude, pozivi, pogodci), rekordi,
 // ponude koje uskoro ističu i dospjeli pozivi. Samo čita; rezultat se pamti 2 min.
 // ============================================================================
+// ============================================================================
+// v466: 🏪 OSTALE POSLOVNICE KLIJENTA — datoteke (drag & drop) idu u klijentov direktorij na Driveu (podmapa POSLOVNICE);
+// Excel/CSV tablica se pročita i spremi uz klijenta (pregled + izvoz u adminu).
+// ============================================================================
+function poslovnicePodaci_(r) {
+  var p = {}; try { p = JSON.parse(String(r.get(ADMIN_ONLY_FIELDS.poslovnice_json) || '{}')) || {}; } catch (e) { p = {}; }
+  p.zaglavlje = p.zaglavlje || []; p.redci = p.redci || []; p.datoteke = p.datoteke || [];
+  return p;
+}
+function adminPoslovniceUpload(token, rowIndex, ime, mime, base64) {
+  if (!isValidAdminToken_(token) || TV_PRISTUP_TOKEN_) { return pismaAuthGreska_(); }
+  var r = otvCitajRed_(rowIndex); if (!r) { return { status: 'error', message: 'Redak ne postoji.' }; }
+  if (r.header.indexOf(ADMIN_ONLY_FIELDS.poslovnice_json) === -1) { return { status: 'error', message: 'Tablica još nema stupac za poslovnice — osvježi admin (Ctrl+F5) i pokušaj ponovno.' }; }
+  ime = String(ime || 'datoteka').replace(/[\\\/:*?"<>|]+/g, '-').slice(0, 150);
+  if (!base64) { return { status: 'error', message: 'Datoteka je prazna.' }; }
+  var tempId = null;
+  try {
+    var blob = Utilities.newBlob(Utilities.base64Decode(base64), mime || 'application/octet-stream', ime);
+    var folder = getOrCreateChildFolder_(revKlijentFolder_(r), 'POSLOVNICE');
+    var file = folder.createFile(blob);
+    var p = poslovnicePodaci_(r), sada = new Date();
+    p.datoteke.unshift({ ime: ime, url: file.getUrl(), id: file.getId(), datum: Utilities.formatDate(sada, PISMA_TZ_, 'dd.MM.yyyy. HH:mm') });
+    p.datoteke = p.datoteke.slice(0, 50);
+    p.mapaUrl = folder.getUrl();
+    var tablica = false;
+    if (/\.(xlsx|xls|csv)$/i.test(ime)) {
+      var vals = null;
+      if (/\.csv$/i.test(ime)) { vals = Utilities.parseCsv(blob.getDataAsString('UTF-8'), /;/.test(blob.getDataAsString('UTF-8').split('\n')[0]) ? ';' : ','); }
+      else { tempId = pretvoriXlsxUSheet_(blob); var sh = SpreadsheetApp.openById(tempId).getSheets()[0]; if (sh.getLastRow() >= 1) { vals = sh.getRange(1, 1, sh.getLastRow(), Math.max(sh.getLastColumn(), 1)).getDisplayValues(); } }
+      if (vals && vals.length) {
+        vals = vals.filter(function(row) { return row.some(function(c) { return String(c).trim(); }); });
+        p.zaglavlje = (vals[0] || []).map(function(c) { return String(c).trim(); });
+        p.redci = vals.slice(1, 501).map(function(row) { return row.map(function(c) { return String(c).trim(); }); });
+        p.izvor = ime; p.azurirano = Utilities.formatDate(sada, PISMA_TZ_, 'dd.MM.yyyy. HH:mm');
+        tablica = true;
+      }
+    }
+    var js = JSON.stringify(p);
+    if (js.length > 48000) { p.redci = p.redci.slice(0, 200); js = JSON.stringify(p); }
+    r.set(ADMIN_ONLY_FIELDS.poslovnice_json, js);
+    return { status: 'ok', podaci: p, tablica: tablica };
+  } catch (err) {
+    return { status: 'error', message: 'Učitavanje nije uspjelo: ' + err.message };
+  } finally { if (tempId) { try { DriveApp.getFileById(tempId).setTrashed(true); } catch (e2) {} } }
+}
+// spremanje izmjena tablice (uređivanje ćelija, brisanje redaka/tablice, uklanjanje datoteke s popisa — datoteka na Driveu ostaje)
+function adminPoslovniceSpremi(token, rowIndex, podaci) {
+  if (!isValidAdminToken_(token) || TV_PRISTUP_TOKEN_) { return pismaAuthGreska_(); }
+  var r = otvCitajRed_(rowIndex); if (!r) { return { status: 'error', message: 'Redak ne postoji.' }; }
+  if (r.header.indexOf(ADMIN_ONLY_FIELDS.poslovnice_json) === -1) { return { status: 'error', message: 'Tablica još nema stupac za poslovnice.' }; }
+  var p = podaci || {}; p.zaglavlje = (p.zaglavlje || []).slice(0, 40); p.redci = (p.redci || []).slice(0, 500); p.datoteke = (p.datoteke || []).slice(0, 50);
+  p.azurirano = Utilities.formatDate(new Date(), PISMA_TZ_, 'dd.MM.yyyy. HH:mm');
+  var js = JSON.stringify(p); if (js.length > 49000) { return { status: 'error', message: 'Tablica je prevelika za spremanje (najviše oko 500 redaka).' }; }
+  r.set(ADMIN_ONLY_FIELDS.poslovnice_json, js);
+  return { status: 'ok', podaci: p };
+}
 // ============================================================================
 // v460: 📝 NAPOMENE KLIJENATA PO OIB-u — jedna trenutna napomena po OIB-u (vidi se na svim karticama tog klijenta:
 // ponude, otvorene ponude, nove verzije…) + evidencija svih izmjena i brisanja (ništa se iz evidencije ne briše).
@@ -16182,6 +16243,7 @@ function izracunajOcekivanoZaglavljeUpiti_() {
   header.push('Prihvat unio admin u ime klijenta (admin)');   // v383
   header.push('INTRIX odobren (admin)');   // v412
   header.push('Napomena na kartici (admin)');   // v458
+  header.push('Ostale poslovnice klijenta (admin, JSON)');   // v466
   // (30.9.2026., ISPRAVAK ISTI DAN: stupac "Dokumenti uz pristupne podatke
   // (admin, JSON)" koji je ovdje kratko bio dodan uklonjen je zajedno s
   // ADMIN_ONLY_FIELDS.dokumenti_klijent_pristup gore — vidi napomenu ondje.

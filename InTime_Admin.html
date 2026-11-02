@@ -751,6 +751,29 @@
   .oznaci-sve-traka button{border:1.5px solid #0f6b5e;background:#fff;color:#0f6b5e;border-radius:8px;padding:5px 12px;font:inherit;font-size:13px;font-weight:700;cursor:pointer;}
   .oznaci-sve-traka button:hover{background:#0f6b5e;color:#fff;}
   .oznaci-sve-traka span{font-size:12.5px;color:#5b6664;}
+  /* v466: ostale poslovnice klijenta */
+  .posl-blok{grid-column:1 / -1;margin-top:12px;padding-top:10px;border-top:1px dashed var(--line,#d9dfdd);}
+  .posl-nasl{font-size:11px;font-weight:800;letter-spacing:.02em;text-transform:uppercase;color:var(--purple-dark,#0f4c45);margin-bottom:6px;}
+  .posl-br{display:inline-block;background:#0f6b5e;color:#fff;border-radius:999px;padding:0 8px;margin-left:4px;font-size:11px;}
+  .posl-saz{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;font-size:13px;margin-bottom:8px;}
+  .posl-gumbi{display:inline-flex;gap:6px;margin-left:auto;flex-wrap:wrap;}
+  .posl-gumbi button,.posl-blok .posl-d button{border:1.5px solid #0f6b5e;background:#fff;color:#0f6b5e;border-radius:8px;padding:4px 10px;font:inherit;font-size:12.5px;font-weight:700;cursor:pointer;}
+  .posl-gumbi button.crv{border-color:#c0392b;color:#c0392b;}
+  .posl-drop{border:2px dashed #8fb8b2;border-radius:12px;background:#f3faf8;padding:14px;text-align:center;cursor:pointer;color:#2b4a46;font-size:13.5px;line-height:1.5;transition:background .2s,border-color .2s;}
+  .posl-drop small{color:#5b6664;} .posl-drop.nad{background:#dff3ee;border-color:#0f6b5e;}
+  .posl-st{font-size:12.5px;font-weight:700;margin-top:6px;}
+  .posl-dat{margin-top:8px;font-size:12.5px;line-height:1.9;} .posl-d{display:inline-block;margin-right:10px;background:#f6f8fa;border:1px solid #e1e6ea;border-radius:8px;padding:0 6px;}
+  .posl-blok .posl-d button{border:0;padding:0 4px;color:#c0392b;} .posl-mapa{font-weight:800;}
+  #posl-sloj{position:fixed;inset:0;z-index:100001;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;padding:16px;}
+  #posl-sloj .posl-kutija{background:#fff;border-radius:14px;width:min(1400px,98vw);max-height:92vh;display:flex;flex-direction:column;box-shadow:0 12px 40px rgba(0,0,0,.35);}
+  #posl-sloj .posl-k-nasl{display:flex;align-items:center;gap:8px;padding:12px 14px;border-bottom:1px solid #e5e7eb;font-weight:800;font-size:16px;flex-wrap:wrap;}
+  #posl-sloj .posl-k-nasl input{padding:6px 8px;border:1px solid #cbd5e1;border-radius:8px;font:inherit;font-size:13px;}
+  #posl-sloj .posl-k-nasl button{border:1px solid #cbd5e1;background:#fff;border-radius:8px;padding:6px 10px;font:inherit;font-size:13px;font-weight:700;cursor:pointer;}
+  #posl-sloj .posl-tw{overflow:auto;padding:0 6px 10px;}
+  #posl-sloj .posl-t{border-collapse:collapse;font-size:12.5px;width:100%;}
+  #posl-sloj .posl-t th{position:sticky;top:0;background:#0f6b5e;color:#fff;text-align:left;padding:7px 8px;white-space:nowrap;}
+  #posl-sloj .posl-t td{border-bottom:1px solid #edf0f2;padding:6px 8px;white-space:nowrap;}
+  #posl-sloj .posl-t tr:nth-child(even) td{background:#f8fafb;}
   /* v459: mali gumb kopiraj naziv ponude */
   .kop-naziv-mini{margin-left:6px;border:1.5px solid #5b6664;background:#fff;color:#3c4d4a;border-radius:999px;padding:1px 9px;font:inherit;font-size:11.5px;font-weight:800;cursor:pointer;vertical-align:middle;line-height:1.6;}
   .kop-naziv-mini:hover{background:#3c4d4a;color:#fff;}
@@ -3819,7 +3842,7 @@
     if (ZAPISI_U_TIJEKU_ === 0 && OSVJEZI_NAKON_ZAPISA_) { OSVJEZI_NAKON_ZAPISA_ = false; try { loadEntries(); } catch (eZg) { /* nije kritično */ } }
   }
   // ===== v403: TV PRIKAZ (InTime_Admin.html?tv=1) — samo pločice „Danas čeka tebe”, velike, sat, Battleships bodovi, osvježavanje svake 2 min =====
-  var PANTHER_VERZIJA_ = 'v465';   // v433: broj verzije — Claude ga podiže pri svakoj isporuci (prikazuje se na TV-u i u adminu)
+  var PANTHER_VERZIJA_ = 'v466';   // v433: broj verzije — Claude ga podiže pri svakoj isporuci (prikazuje se na TV-u i u adminu)
   try { document.addEventListener('DOMContentLoaded', function() { var v = document.getElementById('panther-ver'); if (v) { v.textContent = '🐾 PANTHER ' + PANTHER_VERZIJA_; } }); var v0_ = document.getElementById('panther-ver'); if (v0_) { v0_.textContent = '🐾 PANTHER ' + PANTHER_VERZIJA_; } } catch (eVer) {}
   var TV_MOD_ = /[?&]tv=1(&|$)/.test(location.search);
   var TV_AKCIJE_KLIJENT_ = /^(adminDnevniCiljStanje|adminUcitajPocetno|adminListEntries|adminGetCounters|adminPismaBezOdgovora|adminPismaPogodci|tvProvjera)$/;
@@ -22316,6 +22339,100 @@
       }).catch(function() { alert('Nema veze s poslužiteljem.'); Array.prototype.forEach.call(st.querySelectorAll('button'), function(x) { x.disabled = false; }); });
     });
   }
+  // ===== v466: 🏪 OSTALE POSLOVNICE KLIJENTA — ispod „Podaci o prikupu pošiljaka”: drag & drop na Drive (mapa POSLOVNICE), tablica, pregled, izvoz =====
+  var POSL_POLJE_ = 'Ostale poslovnice klijenta (admin, JSON)';
+  function poslPodaci_(entry) { var p = {}; try { p = JSON.parse(fieldVal(entry, POSL_POLJE_) || '{}') || {}; } catch (e) { p = {}; } p.zaglavlje = p.zaglavlje || []; p.redci = p.redci || []; p.datoteke = p.datoteke || []; return p; }
+  function poslovniceUgradi_(entry, wrap) {
+    if (!wrap || wrap.querySelector('.posl-blok')) { return; }
+    var prikup = wrap.querySelector('.af-prikup-info-blok'); if (!prikup) { return; }
+    var b = document.createElement('div'); b.className = 'posl-blok';
+    prikup.parentNode.insertBefore(b, prikup.nextSibling);
+    poslovniceCrtaj_(entry, b);
+  }
+  function poslovniceCrtaj_(entry, b) {
+    var p = poslPodaci_(entry), imaStupac = Object.prototype.hasOwnProperty.call(entry.fields, POSL_POLJE_);
+    b.innerHTML = '<div class="posl-nasl">🏪 Ostale poslovnice klijenta' + (p.redci.length ? ' <span class="posl-br">' + p.redci.length + '</span>' : '') + '</div>' +
+      (p.redci.length ? '<div class="posl-saz">📋 Tablica: <b>' + p.redci.length + ' poslovnica</b>' + (p.izvor ? ' · iz <i>' + esc(p.izvor) + '</i>' : '') + (p.azurirano ? ' · ' + esc(p.azurirano) : '') +
+        '<span class="posl-gumbi"><button type="button" data-a="pogledaj">👁 Pogledaj</button><button type="button" data-a="izvoz">⬇ Izvoz u Excel</button><button type="button" data-a="obrisi" class="crv">🗑 Obriši tablicu</button></span></div>' : '') +
+      '<div class="posl-drop" tabindex="0"><b>📥 Povuci datoteke ovdje</b> ili klikni za odabir<br><small>Excel tablica poslovnica (.xlsx / .csv) se pročita i spremi uz klijenta · sve datoteke (PDF, slike, Excel…) idu u klijentov direktorij na Google Driveu → mapa <b>POSLOVNICE</b></small><input type="file" multiple hidden></div>' +
+      '<div class="posl-st"></div>' +
+      (p.datoteke.length ? '<div class="posl-dat"><b>📎 Datoteke:</b> ' + p.datoteke.map(function(d, i) { return '<span class="posl-d"><a href="' + esc(d.url) + '" target="_blank" rel="noopener">' + esc(d.ime) + '</a> <small>' + esc(d.datum || '') + '</small> <button type="button" data-a="makni" data-i="' + i + '" title="Makni s popisa (datoteka na Driveu ostaje)">✕</button></span>'; }).join('') + (p.mapaUrl ? ' <a class="posl-mapa" href="' + esc(p.mapaUrl) + '" target="_blank" rel="noopener">📁 Mapa na Driveu</a>' : '') + '</div>' : '') +
+      (imaStupac ? '' : '<div class="posl-st" style="color:#c0392b;">Najprije objavi novi Code.gs (Deploy → New version), pa osvježi admin.</div>');
+    var drop = b.querySelector('.posl-drop'), inp = drop.querySelector('input'), st = b.querySelectorAll('.posl-st')[0];
+    var posalji = function(files) {
+      files = Array.prototype.slice.call(files || []); if (!files.length) { return; }
+      var i = 0, ok = 0, greske = [];
+      var dalje = function() {
+        if (i >= files.length) { st.style.color = greske.length ? '#c0392b' : '#0b7a4b'; st.textContent = '✓ Učitano ' + ok + '/' + files.length + (greske.length ? ' · greške: ' + greske.join('; ') : '') + '.'; if (ok) { poslovniceCrtaj_(entry, b); b.querySelectorAll('.posl-st')[0].textContent = st.textContent; } return; }
+        var f = files[i++];
+        if (f.size > 25 * 1024 * 1024) { greske.push(f.name + ' (veća od 25 MB)'); dalje(); return; }
+        st.style.color = '#1f2d3d'; st.textContent = '⏫ Učitavam ' + i + '/' + files.length + ': ' + f.name + '…';
+        var rd = new FileReader();
+        rd.onload = function() {
+          var b64 = String(rd.result).split(',')[1] || '';
+          gasCall({ action: 'adminPoslovniceUpload', token: adminToken, rowIndex: entry.rowIndex, ime: f.name, mime: f.type || '', base64: b64 }).then(function(res) {
+            if (handleAuthError(res)) { return; }
+            if (!res || res.status !== 'ok') { greske.push(f.name + ': ' + ((res && res.message) || 'greška')); }
+            else { ok++; entry.fields[POSL_POLJE_] = JSON.stringify(res.podaci); }
+            dalje();
+          }).catch(function() { greske.push(f.name + ': veza'); dalje(); });
+        };
+        rd.onerror = function() { greske.push(f.name + ': čitanje'); dalje(); };
+        rd.readAsDataURL(f);
+      };
+      dalje();
+    };
+    drop.addEventListener('click', function() { inp.click(); });
+    inp.addEventListener('change', function() { posalji(inp.files); inp.value = ''; });
+    ['dragenter', 'dragover'].forEach(function(ev) { drop.addEventListener(ev, function(e) { e.preventDefault(); e.stopPropagation(); drop.classList.add('nad'); }); });
+    ['dragleave', 'drop'].forEach(function(ev) { drop.addEventListener(ev, function(e) { e.preventDefault(); e.stopPropagation(); drop.classList.remove('nad'); }); });
+    drop.addEventListener('drop', function(e) { posalji(e.dataTransfer && e.dataTransfer.files); });
+    var spremi = function(nova, poruka) {
+      st.style.color = '#1f2d3d'; st.textContent = 'Spremam…';
+      gasCall({ action: 'adminPoslovniceSpremi', token: adminToken, rowIndex: entry.rowIndex, podaci: nova }).then(function(res) {
+        if (handleAuthError(res)) { return; }
+        if (!res || res.status !== 'ok') { st.style.color = '#c0392b'; st.textContent = (res && res.message) || 'Nije spremljeno.'; return; }
+        entry.fields[POSL_POLJE_] = JSON.stringify(res.podaci); poslovniceCrtaj_(entry, b); var s2 = b.querySelectorAll('.posl-st')[0]; s2.style.color = '#0b7a4b'; s2.textContent = poruka;
+      }).catch(function() { st.style.color = '#c0392b'; st.textContent = 'Nema veze s poslužiteljem.'; });
+    };
+    b._p = p; b._spremi = spremi;
+    if (b._vezano) { return; } b._vezano = true;
+    b.addEventListener('click', function(ev) {
+      var t = ev.target.closest('button[data-a]'); if (!t || !b.contains(t)) { return; }
+      var p = b._p, spremi = b._spremi;
+      ev.stopPropagation();
+      var a = t.getAttribute('data-a');
+      if (a === 'pogledaj') { poslovnicePregled_(entry, p); }
+      else if (a === 'izvoz') { poslovniceIzvoz_(entry, p); }
+      else if (a === 'obrisi') { if (confirm('Obrisati tablicu poslovnica (' + p.redci.length + ' redaka) za ovog klijenta?\nDatoteke na Google Driveu ostaju.')) { var n = JSON.parse(JSON.stringify(p)); n.zaglavlje = []; n.redci = []; n.izvor = ''; spremi(n, '✓ Tablica obrisana.'); } }
+      else if (a === 'makni') { var n2 = JSON.parse(JSON.stringify(p)); n2.datoteke.splice(parseInt(t.getAttribute('data-i'), 10), 1); spremi(n2, '✓ Maknuto s popisa (na Driveu ostaje).'); }
+    });
+  }
+  function poslovnicePregled_(entry, p) {
+    var tajni = p.zaglavlje.map(function(h) { return /pass|lozink|šifr|sifr/i.test(h); });
+    var o = document.createElement('div'); o.id = 'posl-sloj';
+    o.innerHTML = '<div class="posl-kutija"><div class="posl-k-nasl">🏪 Poslovnice — ' + esc(fieldVal(entry, 'Naziv tvrtke') || '') + ' <small>(' + p.redci.length + ')</small><span style="margin-left:auto;display:flex;gap:6px;"><input type="search" class="posl-q" placeholder="traži…"><button type="button" class="posl-oko">👁 lozinke</button><button type="button" class="posl-izv">⬇ Excel</button><button type="button" class="posl-x">✕</button></span></div>' +
+      '<div class="posl-tw"><table class="posl-t"><thead><tr><th>#</th>' + p.zaglavlje.map(function(h) { return '<th>' + esc(h) + '</th>'; }).join('') + '</tr></thead><tbody>' +
+      p.redci.map(function(row, i) { return '<tr><td>' + (i + 1) + '</td>' + row.map(function(c, j) { return '<td' + (tajni[j] ? ' class="tajno" data-v="' + esc(c) + '"' : '') + '>' + (tajni[j] ? (c ? '••••••' : '') : esc(c)) + '</td>'; }).join('') + '</tr>'; }).join('') + '</tbody></table></div></div>';
+    document.body.appendChild(o);
+    var vidi = false;
+    o.querySelector('.posl-x').addEventListener('click', function() { o.remove(); });
+    o.addEventListener('click', function(ev) { if (ev.target === o) { o.remove(); } });
+    o.querySelector('.posl-izv').addEventListener('click', function() { poslovniceIzvoz_(entry, p); });
+    o.querySelector('.posl-oko').addEventListener('click', function() { vidi = !vidi; Array.prototype.forEach.call(o.querySelectorAll('td.tajno'), function(td) { var v = td.getAttribute('data-v'); td.textContent = vidi ? v : (v ? '••••••' : ''); }); this.textContent = vidi ? '🙈 sakrij' : '👁 lozinke'; });
+    o.querySelector('.posl-q').addEventListener('input', function() { var q = this.value.trim().toLowerCase(); Array.prototype.forEach.call(o.querySelectorAll('tbody tr'), function(tr) { tr.style.display = !q || tr.textContent.toLowerCase().indexOf(q) !== -1 ? '' : 'none'; }); });
+  }
+  function poslovniceIzvoz_(entry, p) {
+    var ime = ('Poslovnice - ' + (fieldVal(entry, 'Naziv tvrtke') || 'klijent')).replace(/[\\\/:*?"<>|]+/g, '-');
+    var podaci = [p.zaglavlje].concat(p.redci);
+    var csv = function() {
+      var t = '\ufeff' + podaci.map(function(r) { return r.map(function(c) { c = String(c == null ? '' : c); return /[;"\n]/.test(c) ? '"' + c.replace(/"/g, '""') + '"' : c; }).join(';'); }).join('\r\n');
+      var a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([t], { type: 'text/csv;charset=utf-8' })); a.download = ime + '.csv'; document.body.appendChild(a); a.click(); a.remove();
+    };
+    var xlsx = function() { try { var ws = XLSX.utils.aoa_to_sheet(podaci); ws['!cols'] = p.zaglavlje.map(function(h, j) { return { wch: Math.min(40, Math.max(10, String(h).length, Math.max.apply(null, p.redci.map(function(r) { return String(r[j] || '').length; }).concat([0])))) }; }); var wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'Poslovnice'); XLSX.writeFile(wb, ime + '.xlsx'); } catch (e) { csv(); } };
+    if (window.XLSX) { xlsx(); return; }
+    var sc = document.createElement('script'); sc.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js'; sc.onload = xlsx; sc.onerror = csv; document.head.appendChild(sc);
+  }
   function nkJePonuda_(entry) { return !!(entry && (entry.otvorena || entry.status === 'Otvorena' || (typeof jePonuda === 'function' && jePonuda(entry)))); }
   // zapis: običan tekst + oznake [[r]] [[b]] [[y]] [[g]] [[p]] [[B]] (podebljano) i [[/]] (kraj)
   function nkUHtml_(t) {
@@ -25583,7 +25700,7 @@
       var hint = blok.querySelector('.af-kred-guard-hint');
       if (hint) { hint.remove(); }
     };
-    (function() { var bio_ = false, t_ = setInterval(function() { if (document.body.contains(wrap)) { bio_ = true; try { kredGuardRecheck_(); } catch (e) {} try { intrixPitajAkoTreba_(entry, wrap); } catch (eIxP) {} } else if (bio_) { clearInterval(t_); } }, 1000); })();   // v411
+    (function() { var bio_ = false, t_ = setInterval(function() { if (document.body.contains(wrap)) { bio_ = true; try { kredGuardRecheck_(); } catch (e) {} try { intrixPitajAkoTreba_(entry, wrap); } catch (eIxP) {} try { poslovniceUgradi_(entry, wrap); } catch (ePo) {} } else if (bio_) { clearInterval(t_); } }, 1000); })();   // v411
     var kredOsvjeziPregledAkoPostoji_ = function() {
       if (typeof wrap._kredPregledOsvjezi_ === 'function') { wrap._kredPregledOsvjezi_(); }
     };
