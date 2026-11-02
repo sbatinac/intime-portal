@@ -741,6 +741,24 @@
   .bs-brojac .bs-ist{background:#7d838c;color:#fff;cursor:pointer;}   /* v456: sivo — istekle */
   .bs-brojac .bs-ob{background:#e8459a;color:#fff;box-shadow:0 0 6px rgba(232,69,154,.75);cursor:pointer;}   /* v422: ružičasto */
   .pm-akb-zbroj td{position:sticky;bottom:0;background:#eef6ff;border-top:2px solid #1a73c8;font-weight:700;padding-top:8px;padding-bottom:8px;}
+  /* v458: napomena na kartici */
+  .nk-prikaz{display:flex;gap:6px;align-items:flex-start;margin-top:5px;padding:4px 8px;border-radius:8px;background:#fffbea;border:1px dashed #e6c65c;font-size:13px;line-height:1.4;cursor:pointer;max-width:100%;color:#1f2d3d;}
+  .nk-prikaz.prazno{background:transparent;border-color:transparent;padding:0 2px;opacity:.55;font-size:12px;}
+  .nk-prikaz.prazno:hover{opacity:1;border-color:#e6c65c;}
+  .nk-prikaz .nk-gumb{border:0;background:transparent;padding:0;font-size:14px;cursor:pointer;line-height:1.3;}
+  .nk-r{color:#d32f2f;font-weight:700;} .nk-b{color:#1565c0;font-weight:700;} .nk-y{background:#ffe066;color:#5c4400;font-weight:700;border-radius:3px;padding:0 2px;} .nk-g{color:#2e7d32;font-weight:700;} .nk-p{color:#7b2ff7;font-weight:700;} .nk-B{font-weight:800;}
+  #nk-sloj{position:fixed;inset:0;z-index:100001;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;padding:16px;}
+  #nk-sloj .nk-kutija{background:#fff;border-radius:14px;max-width:560px;width:100%;box-shadow:0 12px 40px rgba(0,0,0,.3);padding:14px 16px;font-size:14px;color:#1f2d3d;}
+  #nk-sloj .nk-nasl{font-weight:800;font-size:16px;margin-bottom:8px;}
+  #nk-sloj .nk-alati{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;}
+  #nk-sloj .nk-alat{border:1px solid #d0d7de;background:#f6f8fa;border-radius:8px;padding:5px 9px;font:inherit;font-size:12.5px;cursor:pointer;}
+  #nk-sloj .nk-ured{min-height:90px;max-height:260px;overflow:auto;border:1.5px solid #c7d2fe;border-radius:10px;padding:8px 10px;outline:none;line-height:1.5;white-space:pre-wrap;}
+  #nk-sloj .nk-ured:focus{border-color:#4f46e5;box-shadow:0 0 0 3px rgba(79,70,229,.15);}
+  #nk-sloj .nk-mali{font-size:12px;color:#6b7280;margin-top:6px;}
+  #nk-sloj .nk-gumbi{display:flex;gap:8px;align-items:center;margin-top:10px;flex-wrap:wrap;}
+  #nk-sloj .nk-gumbi button{border:0;border-radius:8px;padding:8px 12px;font:inherit;font-weight:700;cursor:pointer;}
+  #nk-sloj .nk-spremi{background:#0b7a4b;color:#fff;} #nk-sloj .nk-brisi{background:#fdecea;color:#b71c1c;} #nk-sloj .nk-odustani{background:#eee;}
+  #nk-sloj .nk-st{font-size:12.5px;font-weight:700;}
   .ix-prekidac{display:inline-flex;gap:6px;margin-left:auto;margin-right:8px;}
   .ix-prekidac button{border:2px solid rgba(255,255,255,.7);background:rgba(255,255,255,.15);color:#fff;border-radius:999px;padding:4px 12px;font:inherit;font-weight:800;cursor:pointer;}
   .ix-prekidac button.akt{background:#fff;color:#4a1d96;}
@@ -3762,7 +3780,7 @@
     if (ZAPISI_U_TIJEKU_ === 0 && OSVJEZI_NAKON_ZAPISA_) { OSVJEZI_NAKON_ZAPISA_ = false; try { loadEntries(); } catch (eZg) { /* nije kritično */ } }
   }
   // ===== v403: TV PRIKAZ (InTime_Admin.html?tv=1) — samo pločice „Danas čeka tebe”, velike, sat, Battleships bodovi, osvježavanje svake 2 min =====
-  var PANTHER_VERZIJA_ = 'v457';   // v433: broj verzije — Claude ga podiže pri svakoj isporuci (prikazuje se na TV-u i u adminu)
+  var PANTHER_VERZIJA_ = 'v458';   // v433: broj verzije — Claude ga podiže pri svakoj isporuci (prikazuje se na TV-u i u adminu)
   try { document.addEventListener('DOMContentLoaded', function() { var v = document.getElementById('panther-ver'); if (v) { v.textContent = '🐾 PANTHER ' + PANTHER_VERZIJA_; } }); var v0_ = document.getElementById('panther-ver'); if (v0_) { v0_.textContent = '🐾 PANTHER ' + PANTHER_VERZIJA_; } } catch (eVer) {}
   var TV_MOD_ = /[?&]tv=1(&|$)/.test(location.search);
   var TV_AKCIJE_KLIJENT_ = /^(adminDnevniCiljStanje|adminUcitajPocetno|adminListEntries|adminGetCounters|adminPismaBezOdgovora|adminPismaPogodci|tvProvjera)$/;
@@ -22155,6 +22173,104 @@
     if (!kart.length && rokTik_) { clearInterval(rokTik_); rokTik_ = null; }
   }
   function rokPokreni_() { if (!rokTik_) { rokTik_ = setInterval(rokTikni_, 1000); setTimeout(rokTikni_, 50); } }
+  // ===== v458: 📝 NAPOMENA NA KARTICI PONUDE — obojeni tekst (crvena, plava, žuta, zelena, ljubičasta, podebljano), vidi se na zaglavlju =====
+  var NK_POLJE_ = 'Napomena na kartici (admin)';
+  var NK_BOJE_ = [['r', 'crvena', '#d32f2f'], ['b', 'plava', '#1565c0'], ['y', 'žuta', '#b8860b'], ['g', 'zelena', '#2e7d32'], ['p', 'ljubičasta', '#7b2ff7']];
+  function nkJePonuda_(entry) { return !!(entry && (entry.otvorena || entry.status === 'Otvorena' || (typeof jePonuda === 'function' && jePonuda(entry)))); }
+  // zapis: običan tekst + oznake [[r]] [[b]] [[y]] [[g]] [[p]] [[B]] (podebljano) i [[/]] (kraj)
+  function nkUHtml_(t) {
+    var out = '', otv = 0;
+    String(t || '').split(/(\[\[[rbygpB\/]\]\])/).forEach(function(d) {
+      var m = /^\[\[([rbygpB\/])\]\]$/.exec(d);
+      if (!m) { out += esc(d).replace(/\n/g, '<br>'); return; }
+      if (m[1] === '/') { if (otv > 0) { out += '</span>'; otv--; } return; }
+      out += '<span class="nk-' + m[1] + '">'; otv++;
+    });
+    while (otv-- > 0) { out += '</span>'; }
+    return out;
+  }
+  function nkIzHtml_(el) {
+    var dijelovi = [];
+    (function hod(n, kod) {
+      Array.prototype.forEach.call(n.childNodes, function(c) {
+        if (c.nodeType === 3) { if (c.nodeValue) { dijelovi.push([kod, c.nodeValue.replace(/\[\[/g, '[ [')]); } return; }
+        if (c.nodeType !== 1) { return; }
+        var tag = c.tagName;
+        if (tag === 'BR') { dijelovi.push(['', '\n']); return; }
+        var k = kod, m = /(?:^|\s)nk-([rbygpB])(?:\s|$)/.exec(c.className || '');
+        if (m) { k = m[1]; }
+        else if (tag === 'B' || tag === 'STRONG') { k = 'B'; }
+        else if (c.style && c.style.color) { var col = c.style.color.replace(/\s/g, ''); NK_BOJE_.forEach(function(x) { var h = x[2]; var rgb = 'rgb(' + parseInt(h.substr(1, 2), 16) + ',' + parseInt(h.substr(3, 2), 16) + ',' + parseInt(h.substr(5, 2), 16) + ')'; if (col === rgb || col === h) { k = x[0]; } }); }
+        if ((tag === 'DIV' || tag === 'P') && dijelovi.length && dijelovi[dijelovi.length - 1][1].slice(-1) !== '\n') { dijelovi.push(['', '\n']); }
+        hod(c, k);
+      });
+    })(el, '');
+    var t = '', zadnji = '';
+    dijelovi.forEach(function(d) {
+      if (d[0] !== zadnji) { if (zadnji) { t += '[[/]]'; } if (d[0]) { t += '[[' + d[0] + ']]'; } zadnji = d[0]; }
+      t += d[1];
+    });
+    if (zadnji) { t += '[[/]]'; }
+    return t.replace(/\s+$/, '').slice(0, 2000);
+  }
+  function nkUgradi_(entry, head) {
+    if (!nkJePonuda_(entry)) { return; }
+    var tekst = String(fieldVal(entry, NK_POLJE_) || '');
+    var mjesto = head.querySelector('.entry-card-sub'); if (!mjesto) { return; }
+    var prikaz = document.createElement('div'); prikaz.className = 'nk-prikaz' + (tekst ? '' : ' prazno');
+    prikaz.innerHTML = '<button type="button" class="nk-gumb" title="Napomena na kartici — klik za uređivanje">📝</button><span class="nk-tekst">' + (tekst ? nkUHtml_(tekst) : '<i>dodaj napomenu</i>') + '</span>';
+    mjesto.parentNode.insertBefore(prikaz, mjesto.nextSibling);
+    prikaz.addEventListener('click', function(ev) { ev.stopPropagation(); ev.preventDefault(); nkUredi_(entry, prikaz); });
+  }
+  function nkUredi_(entry, prikaz) {
+    if (document.getElementById('nk-sloj')) { return; }
+    var o = document.createElement('div'); o.id = 'nk-sloj';
+    o.innerHTML = '<div class="nk-kutija"><div class="nk-nasl">📝 Napomena — ' + esc(fieldVal(entry, 'Naziv tvrtke') || '') + '</div>' +
+      '<div class="nk-alati">' + NK_BOJE_.map(function(x) { return '<button type="button" data-k="' + x[0] + '" class="nk-alat nk-' + x[0] + '" title="Označi tekst pa klikni — ' + x[1] + '">● ' + x[1] + '</button>'; }).join('') +
+      '<button type="button" data-k="B" class="nk-alat" title="Podebljano"><b>B</b></button><button type="button" data-k="0" class="nk-alat" title="Makni boju s označenog teksta">⨯ bez boje</button></div>' +
+      '<div class="nk-ured" contenteditable="true">' + nkUHtml_(fieldVal(entry, NK_POLJE_) || '') + '</div>' +
+      '<div class="nk-mali">Označi riječi mišem pa klikni boju. Napomena se vidi na kartici odmah, bez otvaranja.</div>' +
+      '<div class="nk-gumbi"><button type="button" class="nk-spremi">💾 Spremi</button><button type="button" class="nk-brisi">🗑 Obriši napomenu</button><button type="button" class="nk-odustani">Odustani</button><span class="nk-st"></span></div></div>';
+    document.body.appendChild(o);
+    var ured = o.querySelector('.nk-ured'), st = o.querySelector('.nk-st');
+    setTimeout(function() { ured.focus(); }, 50);
+    Array.prototype.forEach.call(o.querySelectorAll('.nk-alat'), function(b) {
+      b.addEventListener('mousedown', function(ev) { ev.preventDefault(); });
+      b.addEventListener('click', function() {
+        var sel = window.getSelection(); if (!sel.rangeCount || sel.isCollapsed || !ured.contains(sel.anchorNode)) { st.textContent = 'Prvo mišem označi tekst.'; return; }
+        st.textContent = '';
+        var k = b.getAttribute('data-k'), rng = sel.getRangeAt(0), frag = rng.extractContents();
+        // makni postojeće boje unutar označenog
+        Array.prototype.forEach.call(frag.querySelectorAll ? frag.querySelectorAll('span[class^="nk-"],b,strong,font') : [], function(x) { while (x.firstChild) { x.parentNode.insertBefore(x.firstChild, x); } x.parentNode.removeChild(x); });
+        var novi;
+        if (k === '0') { novi = document.createDocumentFragment(); novi.appendChild(frag); }
+        else { novi = document.createElement('span'); novi.className = 'nk-' + k; novi.appendChild(frag); }
+        rng.insertNode(novi); sel.removeAllRanges();
+      });
+    });
+    var zatvori = function() { o.remove(); };
+    o.querySelector('.nk-odustani').addEventListener('click', zatvori);
+    o.addEventListener('click', function(ev) { if (ev.target === o) { zatvori(); } });
+    var spremi = function(vrijednost) {
+      if (!Object.prototype.hasOwnProperty.call(entry.fields, NK_POLJE_)) { st.textContent = 'Najprije objavi novi Code.gs (Deploy → New version).'; st.style.color = '#c0392b'; return; }
+      st.style.color = ''; st.textContent = 'Spremam…';
+      var staro = entry.fields[NK_POLJE_];
+      gasCall({ action: 'adminUpdateFields', token: adminToken, rowIndex: entry.rowIndex, fields: { napomena_kartica: vrijednost } }).then(function(res) {
+        if (handleAuthError(res)) { return; }
+        if (!res || res.status !== 'ok') { st.style.color = '#c0392b'; st.textContent = (res && res.message) || 'Nije spremljeno.'; return; }
+        entry.fields[NK_POLJE_] = vrijednost;
+        (allEntries || []).forEach(function(e) { if (e.rowIndex === entry.rowIndex && e !== entry) { e.fields[NK_POLJE_] = vrijednost; } });
+        Array.prototype.forEach.call(document.querySelectorAll('.entry-card[data-row-index="' + entry.rowIndex + '"] .nk-prikaz'), function(pr) {
+          pr.classList.toggle('prazno', !vrijednost);
+          pr.querySelector('.nk-tekst').innerHTML = vrijednost ? nkUHtml_(vrijednost) : '<i>dodaj napomenu</i>';
+        });
+        if (prikaz && !prikaz.closest('.entry-card[data-row-index]')) { prikaz.classList.toggle('prazno', !vrijednost); prikaz.querySelector('.nk-tekst').innerHTML = vrijednost ? nkUHtml_(vrijednost) : '<i>dodaj napomenu</i>'; }
+        zatvori();
+      }).catch(function() { entry.fields[NK_POLJE_] = staro; st.style.color = '#c0392b'; st.textContent = 'Nema veze s poslužiteljem.'; });
+    };
+    o.querySelector('.nk-spremi').addEventListener('click', function() { spremi(nkIzHtml_(ured)); });
+    o.querySelector('.nk-brisi').addEventListener('click', function() { if (confirm('Obrisati napomenu s ove kartice?')) { spremi(''); } });
+  }
   function buildEntryCard(entry) {
     var card = document.createElement('div');
     card.className = 'entry-card';
@@ -22243,6 +22359,7 @@
     var selectCb = head.querySelector('.entry-select-cb');
     selectCb.addEventListener('click', function(ev){ ev.stopPropagation(); });
     selectCb.addEventListener('change', function(){ toggleRowSelection(entry.rowIndex, 'upit', selectCb.checked); });
+    try { nkUgradi_(entry, head); } catch (eNk) { /* v458: napomena na kartici — nije kritično */ }
     head.addEventListener('click', function() {
       card.classList.toggle('expanded');
       izgradiTijeloKartice_();

@@ -9803,7 +9803,8 @@ var ADMIN_ONLY_FIELDS = {
   izvor_kontakta: 'Izvor kontakta (admin)',
   kratki_upitnik: 'Kratki upitnik - dopušten (admin)',
   prihvat_admin: 'Prihvat unio admin u ime klijenta (admin)',   // v383: Saša prihvatio ponudu u ime klijenta (bez obavijesti klijentu)   // v381: datum kad je Saša klijentu dopustio/poslao kratki upitnik (samo osnovni podaci)
-  intrix_odobren: 'INTRIX odobren (admin)',   // v412: datum kad je ponuda ručno izbačena iz INTRIX-a (odobreno); TM broj INTRIX više ne gasi sam
+  intrix_odobren: 'INTRIX odobren (admin)',
+  napomena_kartica: 'Napomena na kartici (admin)',   // v458: obojena napomena vidljiva na zaglavlju kartice ponude ([[r]]…[[/]] oznake boja)   // v412: datum kad je ponuda ručno izbačena iz INTRIX-a (odobreno); TM broj INTRIX više ne gasi sam
   intrix: 'INTRIX (admin)'   // v374: prihvaćena ponuda je u INTRIX-u (prekidač na kartici); poništava se kad ponuda dobije TM broj
   // (30.9.2026., ISPRAVAK ISTI DAN: polje "dokumenti_klijent_pristup" koje je
   // ovdje kratko postojalo — po-klijentu JSON popis mail-priloga — u
@@ -16114,6 +16115,7 @@ function izracunajOcekivanoZaglavljeUpiti_() {
   header.push('Kratki upitnik - dopušten (admin)');   // v381
   header.push('Prihvat unio admin u ime klijenta (admin)');   // v383
   header.push('INTRIX odobren (admin)');   // v412
+  header.push('Napomena na kartici (admin)');   // v458
   // (30.9.2026., ISPRAVAK ISTI DAN: stupac "Dokumenti uz pristupne podatke
   // (admin, JSON)" koji je ovdje kratko bio dodan uklonjen je zajedno s
   // ADMIN_ONLY_FIELDS.dokumenti_klijent_pristup gore — vidi napomenu ondje.
