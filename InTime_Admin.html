@@ -711,6 +711,8 @@
   .entry-card.ob-ceka:not(.intrix) > .entry-card-head{background:linear-gradient(90deg,#ffd3ea 0%,#fff0f7 45%,#ffffff 100%) !important;box-shadow:inset 8px 0 0 #e8459a !important;}
   .entry-card.ob-ceka:not(.intrix) > .entry-card-head:hover{background:linear-gradient(90deg,#ffbadd 0%,#ffe3f1 45%,#fff9fc 100%) !important;}
   /* v418: čeka OB ulaz */
+  .ob-poslan-cip{display:inline-flex;align-items:center;gap:5px;margin-left:8px;padding:2px 10px;border-radius:999px;border:1.5px solid #e8459a;background:#ffe9f4;color:#b0186a;font-size:11.5px;font-weight:900;letter-spacing:.06em;vertical-align:middle;white-space:nowrap;}
+  .ob-poslan-cip small{font-weight:700;letter-spacing:0;color:#c2185b;}
   .ob-ceka-cip{display:inline-flex;align-items:center;margin-left:8px;padding:2px 10px;border-radius:999px;background:#ffe0f0;border:1.5px solid #e8459a;color:#9d1a5c;font-size:11.5px;font-weight:900;white-space:nowrap;vertical-align:middle;}
   /* v422: kazalo brojača */
   .bs-kazalo{display:flex;flex-wrap:wrap;align-items:center;gap:6px 14px;margin:10px 4px 0;padding:8px 12px;border-radius:10px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);font-size:12px;color:#cfdcf0;}
@@ -3817,7 +3819,7 @@
     if (ZAPISI_U_TIJEKU_ === 0 && OSVJEZI_NAKON_ZAPISA_) { OSVJEZI_NAKON_ZAPISA_ = false; try { loadEntries(); } catch (eZg) { /* nije kritično */ } }
   }
   // ===== v403: TV PRIKAZ (InTime_Admin.html?tv=1) — samo pločice „Danas čeka tebe”, velike, sat, Battleships bodovi, osvježavanje svake 2 min =====
-  var PANTHER_VERZIJA_ = 'v464';   // v433: broj verzije — Claude ga podiže pri svakoj isporuci (prikazuje se na TV-u i u adminu)
+  var PANTHER_VERZIJA_ = 'v465';   // v433: broj verzije — Claude ga podiže pri svakoj isporuci (prikazuje se na TV-u i u adminu)
   try { document.addEventListener('DOMContentLoaded', function() { var v = document.getElementById('panther-ver'); if (v) { v.textContent = '🐾 PANTHER ' + PANTHER_VERZIJA_; } }); var v0_ = document.getElementById('panther-ver'); if (v0_) { v0_.textContent = '🐾 PANTHER ' + PANTHER_VERZIJA_; } } catch (eVer) {}
   var TV_MOD_ = /[?&]tv=1(&|$)/.test(location.search);
   var TV_AKCIJE_KLIJENT_ = /^(adminDnevniCiljStanje|adminUcitajPocetno|adminListEntries|adminGetCounters|adminPismaBezOdgovora|adminPismaPogodci|tvProvjera)$/;
@@ -7340,6 +7342,14 @@
       Array.prototype.forEach.call(document.querySelectorAll('.entry-card[data-row-index]'), function(c) {
         var e = poRetku[c.dataset.rowIndex]; if (!e) { return; }
         var t = c.querySelector('.entry-card-title'); if (!t) { return; }
+        // v465: trajni ružičasti status „📤 OB podaci poslani” čim je poslan OB mail (ostaje i nakon upisa OB lozinke)
+        var obDat_ = String(e.fields['Datum slanja zahtjeva za OB (admin)'] || '').trim(), obCip_ = t.querySelector('.ob-poslan-cip');
+        if (obDat_ && !obCip_) {
+          var htmlOb_ = '<span class="ob-poslan-cip" title="OB mail (zahtjev za Online Booking) poslan ' + esc(obDat_) + '">📤 OB PODACI POSLANI <small>' + esc(obDat_.split(' ')[0]) + '</small></span>';
+          var ixB_ = t.querySelector('.ix-bio-cip');   // odmah iza „BIO U INTRIX-u”
+          if (ixB_) { ixB_.insertAdjacentHTML('afterend', htmlOb_); } else { t.insertAdjacentHTML('beforeend', htmlOb_); }
+        }
+        else if (!obDat_ && obCip_) { obCip_.remove(); }
         var cip = t.querySelector('.ob-ceka-cip'), treba = obCeka_(e);
         c.classList.toggle('ob-ceka', treba);   // v420: ružičasta kartica dok čeka OB ulaz
         if (treba && !cip) { var d = String(e.fields['Datum slanja zahtjeva za OB (admin)'] || ''); t.insertAdjacentHTML('beforeend', '<span class="ob-ceka-cip" title="Mail za OB zahtjev poslan ' + esc(d) + ' — čeka se otvaranje Online Bookinga (nestaje kad upišeš OB lozinku)">⭐ čeka OB ulaz</span>'); }
