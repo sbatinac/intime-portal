@@ -10396,7 +10396,7 @@ function saveAdminSessions_(sessions) {
 // ne raste neograničeno.
 // v403: TV PRIKAZ — TV ključ (samo čitanje) vrijedi samo za popis dopuštenih akcija; doPost ga postavi ovdje za trajanje jednog zahtjeva
 var TV_PRISTUP_TOKEN_ = null;
-var TV_AKCIJE_RE_ = /^(adminDnevniCiljStanje|adminUcitajPocetno|adminListEntries|adminGetCounters|adminPismaBezOdgovora|adminPismaPogodci|tvProvjera)$/;
+var TV_AKCIJE_RE_ = /^(adminAktivnostKlijenataLista|adminDnevniCiljStanje|adminUcitajPocetno|adminListEntries|adminGetCounters|adminPismaBezOdgovora|adminPismaPogodci|tvProvjera)$/;
 var TV_TRAJANJE_MS_ = 365 * 24 * 3600 * 1000;   // v445: 365 dana (prije 90)
 function tvTokeni_() { try { return JSON.parse(PropertiesService.getScriptProperties().getProperty('TV_TOKENI') || '{}'); } catch (e) { return {}; } }
 // ============================================================================

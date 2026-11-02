@@ -14,6 +14,11 @@
   input { width: 100%; box-sizing: border-box; padding: 12px 14px; border-radius: 10px; border: 1px solid rgba(120, 170, 255, .35); background: #071233; color: #fff; font: inherit; font-size: 16px; }
   button { width: 100%; margin-top: 20px; padding: 14px; border: 0; border-radius: 12px; background: linear-gradient(90deg, #2563eb, #06b6d4); color: #fff; font: inherit; font-size: 16px; font-weight: 800; letter-spacing: .06em; cursor: pointer; }
   button[disabled] { opacity: .6; cursor: wait; }
+  .raspored { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .raspored .rsp { margin: 0; padding: 12px 8px; background: #071233; border: 2px solid rgba(120,170,255,.35); border-radius: 10px; font-size: 14px; line-height: 1.3; }
+  .raspored .rsp small { display: block; font-size: 11px; font-weight: 600; letter-spacing: 0; color: #9bb4dd; margin-top: 3px; }
+  .raspored .rsp.akt { background: linear-gradient(90deg, #1d4ed8, #0891b2); border-color: #7dd3fc; }
+  .raspored .rsp.akt small { color: #e0f2fe; }
   .greska { margin-top: 12px; color: #ff8a80; font-weight: 700; font-size: 14px; min-height: 1em; }
   /* banner PANTHER — TV Login */
   body { flex-direction: column; background: radial-gradient(circle at 30% 20%, #10224a 0%, #050b1f 60%), #050b1f; }
@@ -33,6 +38,11 @@
     <label for="u">Korisničko ime</label><input id="u" autocomplete="username">
     <label for="p">Lozinka</label><input id="p" type="password" autocomplete="current-password">
     <label for="n">Naziv uređaja</label><input id="n" value="TV ured" maxlength="60">
+    <label>Prikaz na TV-u</label>
+    <div class="raspored" id="raspored">
+      <button type="button" data-r="1" class="rsp">🖥 JEDAN EKRAN<small>sve stane odjednom</small></button>
+      <button type="button" data-r="2" class="rsp">🔁 DVA EKRANA<small>izmjena svakih 20 s · veće brojke</small></button>
+    </div>
     <button type="submit" id="b">PRIJAVI TV</button>
     <div class="greska" id="g"></div>
   </form>
@@ -45,6 +55,14 @@
   var tok = ''; try { tok = localStorage.getItem('intime_tv_token') || ''; } catch (e) {}
   if (/[?&]odjava=1/.test(location.search)) { try { localStorage.removeItem('intime_tv_token'); } catch (e) {} tok = ''; }
   if (tok) { location.replace('InTime_Admin.html?tv=1'); }
+  // v479: izbor prikaza (1 ekran = zadano, 2 ekrana = izmjena svakih 20 s) — pamti se na ovom uređaju
+  (function() {
+    var r = '1'; try { r = localStorage.getItem('intime_tv_raspored') === '2' ? '2' : '1'; } catch (e) {}
+    var bb = document.querySelectorAll('#raspored .rsp');
+    var oznaci = function(v) { Array.prototype.forEach.call(bb, function(x) { x.classList.toggle('akt', x.getAttribute('data-r') === v); }); try { localStorage.setItem('intime_tv_raspored', v); } catch (e) {} };
+    Array.prototype.forEach.call(bb, function(x) { x.addEventListener('click', function() { oznaci(x.getAttribute('data-r')); }); });
+    oznaci(r);
+  })();
   document.getElementById('forma').addEventListener('submit', function(ev) {
     ev.preventDefault();
     var b = document.getElementById('b'), g = document.getElementById('g');
