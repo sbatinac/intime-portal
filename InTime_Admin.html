@@ -2808,7 +2808,7 @@
   html.tv-1e #tv-ekran .tv-kaz{gap:.7vw;font-size:1.35vh;}
   html.tv-1e #tv-ekran .tv-b{padding:.6vh .4vw !important;}
   html.tv-1e #tv-ekran .tv-st{padding:.5vh .6vw !important;gap:.1vh;} html.tv-1e #tv-ekran .tv-st b{font-size:2.6vh !important;}
-  html.tv-1e #tv-ekran .tv-st .tv-st-l,html.tv-1e #tv-ekran .tv-st span{font-size:1.35vh !important;line-height:1.15 !important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;}
+  html.tv-1e #tv-ekran .tv-st .tv-st-l{font-size:1.35vh !important;line-height:1.15 !important;white-space:normal;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;max-width:100%;}
   html.tv-1e #tv-ekran .tv-st .tv-st-i{font-size:1.8vh !important;}
   html.tv-1e #tv-ekran .tv-glavni{gap:.9vh;}
   /* 2 ekrana: izmjena svakih 20 s, sve veće */
@@ -2876,6 +2876,7 @@
   #tv-ekran .tv-st{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.14);border-radius:1.4vh;padding:1.1vh .8vw;display:flex;flex-direction:column;align-items:flex-start;gap:.3vh;min-width:0;}
   #tv-ekran .tv-st b{font-size:4.2vh;line-height:1;font-weight:900;color:#fff;}
   #tv-ekran .tv-st .tv-st-i{font-size:1.8vh;opacity:.85;}
+  #tv-ekran .tv-st .tv-st-tr{font-size:1.35vh;font-weight:800;color:#9bb4dd;line-height:1.15;} #tv-ekran .tv-st .tv-st-tr.gore{color:#69db7c;}
   #tv-ekran .tv-st .tv-st-l{font-size:1.55vh;color:#a9c0e8;line-height:1.2;}
   #tv-ekran .tv-st.zel b{color:#5fe39a;} #tv-ekran .tv-st.crv b{color:#ff7b7b;} #tv-ekran .tv-st.ljub b{color:#c9a4ff;} #tv-ekran .tv-st.nar b{color:#ffb15c;}
   #tv-ekran .tv-b{background:linear-gradient(160deg,rgba(40,70,140,.55),rgba(10,25,60,.75));border:1px solid rgba(120,170,255,.3);border-radius:1.4vh;padding:1vh .8vw;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.5vh;min-width:0;text-align:center;}
@@ -3919,7 +3920,7 @@
     if (ZAPISI_U_TIJEKU_ === 0 && OSVJEZI_NAKON_ZAPISA_) { OSVJEZI_NAKON_ZAPISA_ = false; try { loadEntries(); } catch (eZg) { /* nije kritično */ } }
   }
   // ===== v403: TV PRIKAZ (InTime_Admin.html?tv=1) — samo pločice „Danas čeka tebe”, velike, sat, Battleships bodovi, osvježavanje svake 2 min =====
-  var PANTHER_VERZIJA_ = 'v479';
+  var PANTHER_VERZIJA_ = 'v480';
   (function(){ try{ var e=document.getElementById('prijava-ver'); if(e) e.textContent='ver. '+PANTHER_VERZIJA_.replace(/^v/,''); var z=document.querySelector('#pz-ver b'); if(z) z.textContent=PANTHER_VERZIJA_.replace(/^v/,''); }catch(_){} })();   // v471: verzija na slici prijave   // v433: broj verzije — Claude ga podiže pri svakoj isporuci (prikazuje se na TV-u i u adminu)
   try { document.addEventListener('DOMContentLoaded', function() { var v = document.getElementById('panther-ver'); if (v) { v.textContent = '🐾 PANTHER ' + PANTHER_VERZIJA_; } }); var v0_ = document.getElementById('panther-ver'); if (v0_) { v0_.textContent = '🐾 PANTHER ' + PANTHER_VERZIJA_; } } catch (eVer) {}
   var TV_MOD_ = /[?&]tv=1(&|$)/.test(location.search);
@@ -4110,11 +4111,11 @@
     var st = [
       ['👁', br(t('stat-posjete-danas')), 'posjeta danas', ''], ['👥', br(t('stat-posjete')), 'posjeta ukupno', ''],
       ['👍', br(t('stat-pozitivno')), 'pozitivno odlučili', 'zel'], ['👎', br(t('stat-negativno')), 'negativno odlučili', 'crv'],
-      ['⭐', br(t('stat-ankete')), 'anketa kvalitete', 'ljub'], ['❤️', br(t('stat-klijenti-ukupno')), 'klijenata u bazi' + (t('trend-klijenti') ? ' · ' + t('trend-klijenti') : ''), 'zel'],
+      ['⭐', br(t('stat-ankete')), 'anketa kvalitete', 'ljub'], ['❤️', br(t('stat-klijenti-ukupno')), 'klijenata u bazi', 'zel', t('trend-klijenti')],
       ['✖', br(t('stat-raskid')), 'raskinuli suradnju', 'crv'], ['🎧', br(t('stat-problemi')), 'otvoreni problemi', 'nar']
     ];
     var s1 = document.getElementById('tv-stat');
-    if (s1) { s1.innerHTML = st.map(function(x) { return '<div class="tv-st ' + x[3] + '"><span class="tv-st-i">' + x[0] + '</span><b>' + esc(x[1]) + '</b><span class="tv-st-l">' + esc(x[2]) + '</span></div>'; }).join(''); }
+    if (s1) { s1.innerHTML = st.map(function(x) { return '<div class="tv-st ' + x[3] + '"><span class="tv-st-i">' + x[0] + '</span><b>' + esc(x[1]) + '</b><span class="tv-st-l">' + esc(x[2]) + '</span>' + (x[4] ? '<span class="tv-st-tr' + (/^▲/.test(x[4]) ? ' gore' : '') + '">' + esc(x[4]) + '</span>' : '') + '</div>'; }).join(''); }
     var bp = [
       ['Zainteresirani', '<b class="tv-b-v">' + esc(br(t('tab-count-interes'))) + '</b>'],
       ['Ponude', '<span class="bs-brojac">' + h('tab-count-ponude') + '</span>'],

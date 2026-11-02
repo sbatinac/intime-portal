@@ -136,3 +136,4 @@
 - v477: trendovi 'ovaj mjesec' broje od 1. u mjesecu, 'ovaj tjedan' od ponedjeljka (prije zadnjih 30/7 dana).
 - v478: TV se sam osvježi kad izađe nova verzija (provjera svakih 5 min).
 - v479: TV — desni stupac 👁 UŽIVO (aktivnost klijenata, stalno), raspored 1 ekran (zadano) / 2 ekrana (izmjena 20 s) — bira se pri prijavi TV-a i gumbom u stupcu; PANTHER verzija i prijava u zaglavlju; .gs: TV smije čitati adminAktivnostKlijenataLista.
+- v480: TV — kod 'klijenata u bazi' trend 'ovaj mjesec' u posebnom retku (više se ne skraćuje).
