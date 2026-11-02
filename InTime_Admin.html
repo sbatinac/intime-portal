@@ -3272,6 +3272,12 @@
       <span id="broj-panel-status" class="broj-toggle-label-test" hidden>Testni način uključen — novi unosi dobivaju fiksni testni broj, pravi brojač se ne diže.</span>
     </div>
     </div>
+    <!-- v476: prazna tablica za Ostale poslovnice -->
+    <div id="posl-predlozak-kartica" style="border:2px solid #0f766e;background:#ecfdf5;border-radius:10px;padding:10px 12px;margin-bottom:14px;">
+      <b style="color:#134e4a;font-size:15px;">🏪 Ostale poslovnice — prazna tablica</b>
+      <p class="settings-hint" style="margin:4px 0 8px;">Preuzmi praznu tablicu, upiši poslovnice klijenta i ubaci je na kartici klijenta u blok „🏪 Ostale poslovnice klijenta” (drag &amp; drop). Stupci su isti kao u tablici koju program čita.</p>
+      <button type="button" class="btn btn-small" onclick="poslPredlozakIzvoz_()">⬇ Preuzmi praznu tablicu (.xlsx)</button>
+    </div>
     <!-- v403: TV prijava (Sašin zahtjev: kartica u Postavkama s cijelom uputom) -->
     <div id="tv-kartica" style="border:2px solid #0f172a;background:#eef2ff;border-radius:10px;padding:10px 12px;margin-bottom:14px;">
       <button type="button" onclick="tvKarticaOtvori_()" style="all:unset;cursor:pointer;display:flex;align-items:center;justify-content:space-between;width:100%;font-weight:800;color:#1e1b4b;font-size:15px;">📺 TV prijava <span id="tv-kartica-strelica">▸</span></button>
@@ -3856,7 +3862,7 @@
     if (ZAPISI_U_TIJEKU_ === 0 && OSVJEZI_NAKON_ZAPISA_) { OSVJEZI_NAKON_ZAPISA_ = false; try { loadEntries(); } catch (eZg) { /* nije kritično */ } }
   }
   // ===== v403: TV PRIKAZ (InTime_Admin.html?tv=1) — samo pločice „Danas čeka tebe”, velike, sat, Battleships bodovi, osvježavanje svake 2 min =====
-  var PANTHER_VERZIJA_ = 'v475';
+  var PANTHER_VERZIJA_ = 'v476';
   (function(){ try{ var e=document.getElementById('prijava-ver'); if(e) e.textContent='ver. '+PANTHER_VERZIJA_.replace(/^v/,''); var z=document.querySelector('#pz-ver b'); if(z) z.textContent=PANTHER_VERZIJA_.replace(/^v/,''); }catch(_){} })();   // v471: verzija na slici prijave   // v433: broj verzije — Claude ga podiže pri svakoj isporuci (prikazuje se na TV-u i u adminu)
   try { document.addEventListener('DOMContentLoaded', function() { var v = document.getElementById('panther-ver'); if (v) { v.textContent = '🐾 PANTHER ' + PANTHER_VERZIJA_; } }); var v0_ = document.getElementById('panther-ver'); if (v0_) { v0_.textContent = '🐾 PANTHER ' + PANTHER_VERZIJA_; } } catch (eVer) {}
   var TV_MOD_ = /[?&]tv=1(&|$)/.test(location.search);
@@ -22475,6 +22481,18 @@
     o.querySelector('.posl-izv').addEventListener('click', function() { poslovniceIzvoz_(entry, p); });
     o.querySelector('.posl-oko').addEventListener('click', function() { vidi = !vidi; Array.prototype.forEach.call(o.querySelectorAll('td.tajno'), function(td) { var v = td.getAttribute('data-v'); td.textContent = vidi ? v : (v ? '••••••' : ''); }); this.textContent = vidi ? '🙈 sakrij' : '👁 lozinke'; });
     o.querySelector('.posl-q').addEventListener('input', function() { var q = this.value.trim().toLowerCase(); Array.prototype.forEach.call(o.querySelectorAll('tbody tr'), function(tr) { tr.style.display = !q || tr.textContent.toLowerCase().indexOf(q) !== -1 ? '' : 'none'; }); });
+  }
+  var POSL_PREDLOZAK_ZAGL_ = ['Poslovnica', 'Grad', 'Adresa', 'Telefon', 'E-mail', 'Prikup – unos naloga', 'Vrsta računa', 'Username', 'Password', 'ID kupca'];
+  var POSL_PREDLOZAK_SIR_ = [32, 18, 34, 14, 38, 22, 26, 36, 14, 13];
+  function poslPredlozakIzvoz_() {   // v476: prazna tablica za Ostale poslovnice
+    var ime = 'Poslovnice - PREDLOZAK';
+    var csv = function() {
+      var t = '\ufeff' + POSL_PREDLOZAK_ZAGL_.join(';') + '\r\n';
+      var a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([t], { type: 'text/csv;charset=utf-8' })); a.download = ime + '.csv'; document.body.appendChild(a); a.click(); a.remove();
+    };
+    var xlsx = function() { try { var ws = XLSX.utils.aoa_to_sheet([POSL_PREDLOZAK_ZAGL_]); ws['!cols'] = POSL_PREDLOZAK_SIR_.map(function(w) { return { wch: w }; }); var wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'Poslovnice'); XLSX.writeFile(wb, ime + '.xlsx'); } catch (e) { csv(); } };
+    if (window.XLSX) { xlsx(); return; }
+    var sc = document.createElement('script'); sc.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js'; sc.onload = xlsx; sc.onerror = csv; document.head.appendChild(sc);
   }
   function poslovniceIzvoz_(entry, p) {
     var ime = ('Poslovnice - ' + (fieldVal(entry, 'Naziv tvrtke') || 'klijent')).replace(/[\\\/:*?"<>|]+/g, '-');

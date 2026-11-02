@@ -132,3 +132,4 @@
 - v473: naslov admina 'KORISNIK: SAŠA BATINAC' (bijelo, veće); maknuta značka PANTHER verzije (verzija je na banneru).
 - v474: verzija na banneru centrirana u crnoj podlozi, žuta slova (i na slici prijave).
 - v475: naslov KORISNIK malo odmaknut od ruba.
+- v476: Postavke → '🏪 Ostale poslovnice — prazna tablica' (preuzimanje praznog .xlsx predloška).
