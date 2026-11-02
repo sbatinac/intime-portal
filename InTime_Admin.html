@@ -673,6 +673,8 @@
   .intrix-prek{position:absolute;right:14px;bottom:8px;z-index:2;padding:6px 22px;border-radius:999px;border:2px solid #9aa3ad;background:#f1f3f5;color:#7d8791;font:inherit;font-size:16px;font-weight:900;letter-spacing:.18em;cursor:pointer;transition:all .25s;}
   .kart-prihvati-mini{border-color:#2e9e5b !important;color:#2e9e5b !important;}
   .kart-prihvati-mini:hover{background:#2e9e5b !important;color:#fff !important;}
+  .kratki-pre-btn{background:#fff;color:#5b6664;border:1.5px dashed #9aa5a3;border-radius:999px;padding:2px 11px;font:inherit;font-size:12px;font-weight:700;cursor:pointer;vertical-align:middle;}
+  .kratki-pre-btn.on{background:#0b7a4b;color:#fff;border:1.5px solid #0b7a4b;}
   .kratki-kart-btn{background:#0b7a4b;color:#fff;border:0;border-radius:999px;padding:3px 12px;font:inherit;font-size:12px;font-weight:800;cursor:pointer;vertical-align:middle;}
   .kratki-kart-btn:hover{background:#086039;}
   .kratki-kart-btn.poslan{background:#e3f4ea;color:#0b7a4b;border:1.5px solid #0b7a4b;}
@@ -3113,6 +3115,7 @@
         <button type="button" class="btn btn-prebaci btn-small" id="bulk-revizije-btn" onclick="startRevizijaTabSkupno_(true)" hidden>📑 Prebaci u Revizije</button>
         <button type="button" class="btn btn-prebaci btn-small" id="bulk-revizije-vrati-btn" onclick="startRevizijaTabSkupno_(false)" hidden>↩ Vrati među klijente</button>
         <button type="button" class="btn btn-small" id="bulk-produzi-btn" style="background:#1a73c8;border-color:#1a73c8;color:#fff;" onclick="bulkProduziRok_()" hidden>⏱ Produži rok</button>
+        <button type="button" class="btn btn-small" id="bulk-kratki-btn" style="background:#0b7a4b;border-color:#0b7a4b;color:#fff;" onclick="bulkKratki_()" hidden>📝 Kratki upitnik nakon prihvata</button>
         <button type="button" class="btn btn-small" id="bulk-arhiva-btn" style="background:#6b4f2a;border-color:#6b4f2a;color:#fff;" onclick="bulkUArhivu_()" hidden>🗄 Prebaci u arhivu</button>
         <button type="button" class="btn btn-danger btn-small" onclick="startBulkDelete()">Obriši odabrano</button>
       </div>
@@ -3796,7 +3799,7 @@
     if (ZAPISI_U_TIJEKU_ === 0 && OSVJEZI_NAKON_ZAPISA_) { OSVJEZI_NAKON_ZAPISA_ = false; try { loadEntries(); } catch (eZg) { /* nije kritično */ } }
   }
   // ===== v403: TV PRIKAZ (InTime_Admin.html?tv=1) — samo pločice „Danas čeka tebe”, velike, sat, Battleships bodovi, osvježavanje svake 2 min =====
-  var PANTHER_VERZIJA_ = 'v462';   // v433: broj verzije — Claude ga podiže pri svakoj isporuci (prikazuje se na TV-u i u adminu)
+  var PANTHER_VERZIJA_ = 'v463';   // v433: broj verzije — Claude ga podiže pri svakoj isporuci (prikazuje se na TV-u i u adminu)
   try { document.addEventListener('DOMContentLoaded', function() { var v = document.getElementById('panther-ver'); if (v) { v.textContent = '🐾 PANTHER ' + PANTHER_VERZIJA_; } }); var v0_ = document.getElementById('panther-ver'); if (v0_) { v0_.textContent = '🐾 PANTHER ' + PANTHER_VERZIJA_; } } catch (eVer) {}
   var TV_MOD_ = /[?&]tv=1(&|$)/.test(location.search);
   var TV_AKCIJE_KLIJENT_ = /^(adminDnevniCiljStanje|adminUcitajPocetno|adminListEntries|adminGetCounters|adminPismaBezOdgovora|adminPismaPogodci|tvProvjera)$/;
@@ -7208,6 +7211,21 @@
     }
     o.querySelector('.kr-salji').addEventListener('click', function() { pozovi(false, this); });
     o.querySelector('.kr-link').addEventListener('click', function() { pozovi(true, this); });
+  }
+  // v463: prekidač „nakon prihvata — kratki upitnik” (otvorena ponuda prije prihvata); upitnik stranica sama prikaže kratku verziju
+  function kratkiPrePrekidac_(entry, b) {
+    var ukljuceno = !!fieldVal(entry, 'Kratki upitnik - dopušten (admin)'), novo = ukljuceno ? '' : formatirajSadaHr_();
+    if (!ukljuceno && !confirm('Uključiti KRATKI upitnik za „' + (fieldVal(entry, 'Naziv tvrtke') || '') + '”?\n\nKad klijent prihvati ponudu, umjesto punog upitnika dobit će kratki (samo osnovni podaci: tvrtka i IBAN, kontakt osoba, osoba za pripremu robe, adresa i vrijeme prikupa).')) { return; }
+    var staro = entry.fields['Kratki upitnik - dopušten (admin)'] || '';
+    b.disabled = true; b.textContent = 'Spremam…';
+    gasCall({ action: 'adminUpdateFields', token: adminToken, rowIndex: entry.rowIndex, fields: { kratki_upitnik: novo } }).then(function(res) {
+      b.disabled = false;
+      if (handleAuthError(res)) { return; }
+      if (!res || res.status !== 'ok') { entry.fields['Kratki upitnik - dopušten (admin)'] = staro; alert('Nije spremljeno: ' + ((res && res.message) || 'greška')); }
+      else { entry.fields['Kratki upitnik - dopušten (admin)'] = novo; (allEntries || []).forEach(function(e) { if (e.rowIndex === entry.rowIndex) { e.fields['Kratki upitnik - dopušten (admin)'] = novo; } }); }
+      var on = !!entry.fields['Kratki upitnik - dopušten (admin)'];
+      b.classList.toggle('on', on); b.innerHTML = '📝 Nakon prihvata: ' + (on ? '<b>kratki upitnik ✓</b>' : 'puni upitnik');
+    }).catch(function() { b.disabled = false; entry.fields['Kratki upitnik - dopušten (admin)'] = staro; alert('Nije spremljeno (veza s poslužiteljem).'); });
   }
   // v383: prozor „Prihvati u ime klijenta”
   function prihvatUImeKlijentaProzor_(entry) {
@@ -22449,6 +22467,14 @@
           subParts.push('<button type="button" class="kratki-kart-btn' + (krDat_ ? ' poslan' : '') + '" title="' + (krDat_ ? 'Kratki upitnik je uključen ' + esc(krDat_) + ' — klik za ponovno slanje ili kopiranje linka' : 'Pošalji klijentu kratki upitnik (samo osnovni podaci)') + '">📝 Kratki upitnik' + (krDat_ ? ' ✓' : '') + '</button>');
         }
       } catch (eKrB_) { /* nije kritično */ }
+      // v463: otvorena ponuda PRIJE prihvata — unaprijed odredi da nakon prihvata klijent popunjava KRATKI upitnik
+      try {
+        var stKrP_ = ponudaStatusSazetak_(entry);
+        if (entry.otvorena && (stKrP_ === 'nije_poslano' || stKrP_ === 'na_cekanju' || stKrP_ === 'istekla') && !fieldVal(entry, 'Otvorena ponuda - datum popunjenog upitnika (admin)')) {
+          var krPre_ = fieldVal(entry, 'Kratki upitnik - dopušten (admin)');
+          subParts.push('<button type="button" class="kratki-pre-btn' + (krPre_ ? ' on' : '') + '" title="' + (krPre_ ? 'UKLJUČENO: nakon prihvata klijent dobiva KRATKI upitnik (samo osnovni podaci). Klik = isključi (puni upitnik).' : 'Klik = nakon prihvata klijent dobiva KRATKI upitnik umjesto punog') + '">📝 Nakon prihvata: ' + (krPre_ ? '<b>kratki upitnik ✓</b>' : 'puni upitnik') + '</button>');
+        }
+      } catch (eKrP_) { /* nije kritično */ }
       if (mobitel) { subParts.push('Mobitel: ' + kontaktTelHtml_(mobitel)); }
     } else {
       var tel = fieldVal(entry, 'Telefon (odbijenica)');
@@ -22588,6 +22614,7 @@
         card.classList.add('ix-bio');
       }
     } catch (eIxB_) { /* nije kritično */ }
+    try { var krPreB_ = head.querySelector('.kratki-pre-btn'); if (krPreB_) { krPreB_.addEventListener('click', function(ev) { ev.stopPropagation(); ev.preventDefault(); kratkiPrePrekidac_(entry, krPreB_); }); } } catch (eKrPL_) {}
     try { var krBtn_ = head.querySelector('.kratki-kart-btn'); if (krBtn_) { krBtn_.addEventListener('click', function(ev) { ev.stopPropagation(); ev.preventDefault(); kratkiUpitnikProzor_(entry, krBtn_); }); } } catch (eKrL_) {}
     var body = document.createElement('div');
     body.className = 'entry-card-body';
@@ -31342,6 +31369,7 @@
     var naPonudama_ = (activeTab === 'Ponude' || activeTab === 'Otvorene' || (activeTab === 'Intrix' && ['podsEvid', 'aktEvid', 'pismaBez'].indexOf(POSEBNI_VRSTA_) === -1));   // v455/v457: skupne radnje na ponudama (i u popisima ⌛ istekle, čeka odgovor, INTRIX…)
     var bpB_ = document.getElementById('bulk-produzi-btn'); if (bpB_) { bpB_.hidden = !naPonudama_; }
     var baB_ = document.getElementById('bulk-arhiva-btn'); if (baB_) { baB_.hidden = !naPonudama_; }
+    var bkB_ = document.getElementById('bulk-kratki-btn'); if (bkB_) { bkB_.hidden = !(activeTab === 'Otvorene' || (activeTab === 'Intrix' && naPonudama_)); }
     if (sakrijBtnOpci) { sakrijBtnOpci.hidden = !imaSakrivanje; }
     if (otkrijBtnOpci) { otkrijBtnOpci.hidden = !imaSakrivanje; }
   }
@@ -31415,6 +31443,25 @@
           bulkSazetak_('🗄 Prebacivanje u arhivu gotovo.', rez, preskoceno);
         });
       });
+    });
+  }
+  // v463: skupno — označenim OTVORENIM ponudama (još nisu prihvaćene / upitnik nije popunjen) uključi kratki upitnik
+  function bulkKratki_() {
+    var sve = bulkOdabraneP_(), preskoceno = [], lista = [];
+    sve.forEach(function(e) {
+      var otv = e.status === 'Otvorena' || e.otvorena;
+      if (!otv) { preskoceno.push([e, 'nije otvorena ponuda']); return; }
+      if (fieldVal(e, 'Otvorena ponuda - datum popunjenog upitnika (admin)')) { preskoceno.push([e, 'upitnik je već popunjen']); return; }
+      if (fieldVal(e, 'Kratki upitnik - dopušten (admin)')) { preskoceno.push([e, 'kratki upitnik je već uključen']); return; }
+      lista.push(e);
+    });
+    if (!lista.length) { bulkSazetak_('Nema otvorenih ponuda za uključiti kratki upitnik.', { ok: [], lose: [] }, preskoceno); return; }
+    if (!confirm('Uključiti KRATKI upitnik za ' + lista.length + ' otvorenih ponuda?\n\nNakon prihvata klijent dobiva kratki upitnik (samo osnovni podaci) umjesto punog.' + (preskoceno.length ? '\n(' + preskoceno.length + ' se preskače)' : ''))) { return; }
+    var dat = formatirajSadaHr_();
+    bulkRedom_(lista, function(e) { return gasCall({ action: 'adminUpdateFields', token: adminToken, rowIndex: e.rowIndex, fields: { kratki_upitnik: dat } }); }, document.getElementById('bulk-kratki-btn'), 'Uključujem').then(function(rez) {
+      rez.ok.forEach(function(x) { x[0].fields['Kratki upitnik - dopušten (admin)'] = dat; });
+      clearSelection(); try { renderEntries(); } catch (eR) {}
+      bulkSazetak_('📝 Kratki upitnik uključen.', rez, preskoceno);
     });
   }
   function bulkProduziRok_() {
