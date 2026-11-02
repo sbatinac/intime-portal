@@ -750,6 +750,9 @@
   .stat-card.stat-klik:hover{transform:translateY(-2px);box-shadow:0 0 0 2px rgba(124,196,255,.55),0 8px 22px rgba(0,0,0,.25);}
   .stat-card.stat-klik::after{content:'Prikaži ›';position:absolute;right:10px;bottom:8px;font-size:11px;font-weight:800;color:#9fd2ff;opacity:0;transition:opacity .15s;}
   .stat-card.stat-klik:hover::after{opacity:1;}
+  .pods-adr-btn{margin-left:6px;border:1.5px solid #c0392b;background:#fff;color:#c0392b;border-radius:8px;padding:2px 9px;font:inherit;font-size:12px;font-weight:800;cursor:pointer;}
+  .pods-adr-unos{display:inline-flex;gap:5px;align-items:center;margin-left:6px;flex-wrap:wrap;} .pods-adr-unos input{min-width:260px;padding:4px 7px;border:1px solid #bcd;border-radius:7px;font:inherit;font-size:12.5px;}
+  .pods-adr-unos button{border:1px solid #bcd;background:#fff;border-radius:7px;padding:3px 8px;font:inherit;font-size:12px;font-weight:700;cursor:pointer;} .pods-adr-unos .ok{background:#0b7a4b;color:#fff;border-color:#0b7a4b;} .pods-adr-unos .st{font-size:12px;font-weight:700;color:#c0392b;}
   .oznaci-sve-traka{display:flex;gap:8px;align-items:center;margin:0 0 8px;flex-wrap:wrap;}
   .oznaci-sve-traka[hidden]{display:none;}
   .oznaci-sve-traka button{border:1.5px solid #0f6b5e;background:#fff;color:#0f6b5e;border-radius:8px;padding:5px 12px;font:inherit;font-size:13px;font-weight:700;cursor:pointer;}
@@ -3848,7 +3851,7 @@
     if (ZAPISI_U_TIJEKU_ === 0 && OSVJEZI_NAKON_ZAPISA_) { OSVJEZI_NAKON_ZAPISA_ = false; try { loadEntries(); } catch (eZg) { /* nije kritično */ } }
   }
   // ===== v403: TV PRIKAZ (InTime_Admin.html?tv=1) — samo pločice „Danas čeka tebe”, velike, sat, Battleships bodovi, osvježavanje svake 2 min =====
-  var PANTHER_VERZIJA_ = 'v469';   // v433: broj verzije — Claude ga podiže pri svakoj isporuci (prikazuje se na TV-u i u adminu)
+  var PANTHER_VERZIJA_ = 'v470';   // v433: broj verzije — Claude ga podiže pri svakoj isporuci (prikazuje se na TV-u i u adminu)
   try { document.addEventListener('DOMContentLoaded', function() { var v = document.getElementById('panther-ver'); if (v) { v.textContent = '🐾 PANTHER ' + PANTHER_VERZIJA_; } }); var v0_ = document.getElementById('panther-ver'); if (v0_) { v0_.textContent = '🐾 PANTHER ' + PANTHER_VERZIJA_; } } catch (eVer) {}
   var TV_MOD_ = /[?&]tv=1(&|$)/.test(location.search);
   var TV_AKCIJE_KLIJENT_ = /^(adminDnevniCiljStanje|adminUcitajPocetno|adminListEntries|adminGetCounters|adminPismaBezOdgovora|adminPismaPogodci|tvProvjera)$/;
@@ -16627,6 +16630,35 @@
     var t = res.cekaSlanje ? 'uključeni — počinju nakon slanja ponude' : (res.sljedeci ? 'sljedeći: ' + res.sljedeci : 'svi su poslani/prošli');
     return plan + ' · ' + t;
   }
+  // v470: „✉ Upiši adresu” kad podsjetnik nema ispravnog primatelja — spremi i odmah osvježi blok
+  function podsAdresaGumb_(saz, rowIndex, kljuc, label, gotovo) {
+    var b = document.createElement('button'); b.type = 'button'; b.className = 'pods-adr-btn'; b.textContent = '✉ Upiši adresu';
+    saz.appendChild(document.createTextNode(' ')); saz.appendChild(b);
+    b.addEventListener('click', function(ev) {
+      ev.stopPropagation();
+      var e = (allEntries || []).filter(function(x) { return x.rowIndex === rowIndex; })[0];
+      var w = document.createElement('span'); w.className = 'pods-adr-unos';
+      w.innerHTML = '<input type="text" placeholder="npr. info@firma.hr (više adresa odvoji zarezom)" value="' + esc(e ? (fieldVal(e, label) || '') : '') + '"><button type="button" class="ok">💾 Spremi</button><button type="button" class="x">✕</button><span class="st"></span>';
+      b.replaceWith(w);
+      var inp = w.querySelector('input'); inp.focus();
+      w.querySelector('.x').addEventListener('click', function() { w.replaceWith(b); });
+      var spremi = function() {
+        var v = inp.value.split(/[,;\s]+/).map(function(a) { return a.trim(); }).filter(Boolean);
+        var lose = v.filter(function(a) { return !/^[^\s@,;]+@[^\s@,;]+\.[^\s@,;]{2,}$/.test(a); });
+        if (!v.length || lose.length) { w.querySelector('.st').textContent = lose.length ? 'Neispravno: ' + lose.join(', ') : 'Upiši adresu.'; return; }
+        var f = {}; f[kljuc] = v.join(', ');
+        w.querySelector('.st').textContent = 'Spremam…';
+        gasCall({ action: 'adminUpdateFields', token: adminToken, rowIndex: rowIndex, fields: f }).then(function(res) {
+          if (handleAuthError(res)) { return; }
+          if (!res || res.status !== 'ok') { w.querySelector('.st').textContent = (res && res.message) || 'Nije spremljeno.'; return; }
+          (allEntries || []).forEach(function(x) { if (x.rowIndex === rowIndex) { x.fields[label] = v.join(', '); } });
+          if (gotovo) { gotovo(); }
+        }).catch(function() { w.querySelector('.st').textContent = 'Nema veze s poslužiteljem.'; });
+      };
+      w.querySelector('.ok').addEventListener('click', spremi);
+      inp.addEventListener('keydown', function(k) { if (k.key === 'Enter') { k.preventDefault(); spremi(); } });
+    });
+  }
   function podsBlokGradi_(mjesto, rowIndex, status, sig, kadaPlan) {
     if (!mjesto) { return; }
     if (status !== 'nije_poslano' && status !== 'na_cekanju') { mjesto.innerHTML = ''; mjesto.removeAttribute('data-sig'); return; }
@@ -16645,7 +16677,7 @@
         }
       } catch (ePodsCip_) { /* oznaka je dodatak */ }
       saz.textContent = podsPlanOpis_(res);
-      if (res.bezPrimatelja) { saz.innerHTML += ' <span style="color:#c0392b;font-weight:700;">⚠ nema ispravne adrese primatelja</span>'; }
+      if (res.bezPrimatelja) { saz.innerHTML += ' <span style="color:#c0392b;font-weight:700;">⚠ nema ispravne adrese primatelja</span>'; podsAdresaGumb_(saz, rowIndex, 'mail_adrese_ponude', 'Mail adrese za slanje ponude (admin)', function() { mjesto.removeAttribute('data-sig'); podsBlokGradi_(mjesto, rowIndex, status, sig, kadaPlan); }); }
       if (kadaPlan) { try { kadaPlan(res.plan || ''); } catch (e) { /* prikaz */ } }
     }
     otvPoziv_('adminPodsjetniciPregled', { rowIndex: rowIndex }).then(function(res) {
@@ -16792,7 +16824,7 @@
     var saz = mjesto.querySelector('.pods-sazetak');
     function crtaj(res) {
       saz.textContent = podsUpOpis_(res);
-      if (res.bezPrimatelja) { saz.innerHTML += ' <span style="color:#c0392b;font-weight:700;">⚠ nema ispravne adrese primatelja</span>'; }
+      if (res.bezPrimatelja) { saz.innerHTML += ' <span style="color:#c0392b;font-weight:700;">⚠ nema ispravne adrese primatelja</span>'; podsAdresaGumb_(saz, rowIndex, 'otv_primatelj', 'Otvorena ponuda - mail primatelja (admin)', function() { mjesto.removeAttribute('data-sig'); podsUpBlokGradi_(mjesto, rowIndex, sig); }); }
     }
     otvPoziv_('otvUpPodsPregled', { rowIndex: rowIndex }).then(function(res) {
       if (res.status !== 'ok') { saz.textContent = res.message || 'nije moguće učitati.'; return; }
