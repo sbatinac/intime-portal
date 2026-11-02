@@ -134,3 +134,4 @@
 - v475: naslov KORISNIK malo odmaknut od ruba.
 - v476: Postavke → '🏪 Ostale poslovnice — prazna tablica' (preuzimanje praznog .xlsx predloška).
 - v477: trendovi 'ovaj mjesec' broje od 1. u mjesecu, 'ovaj tjedan' od ponedjeljka (prije zadnjih 30/7 dana).
+- v478: TV se sam osvježi kad izađe nova verzija (provjera svakih 5 min).

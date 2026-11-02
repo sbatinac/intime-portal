@@ -3862,10 +3862,21 @@
     if (ZAPISI_U_TIJEKU_ === 0 && OSVJEZI_NAKON_ZAPISA_) { OSVJEZI_NAKON_ZAPISA_ = false; try { loadEntries(); } catch (eZg) { /* nije kritično */ } }
   }
   // ===== v403: TV PRIKAZ (InTime_Admin.html?tv=1) — samo pločice „Danas čeka tebe”, velike, sat, Battleships bodovi, osvježavanje svake 2 min =====
-  var PANTHER_VERZIJA_ = 'v477';
+  var PANTHER_VERZIJA_ = 'v478';
   (function(){ try{ var e=document.getElementById('prijava-ver'); if(e) e.textContent='ver. '+PANTHER_VERZIJA_.replace(/^v/,''); var z=document.querySelector('#pz-ver b'); if(z) z.textContent=PANTHER_VERZIJA_.replace(/^v/,''); }catch(_){} })();   // v471: verzija na slici prijave   // v433: broj verzije — Claude ga podiže pri svakoj isporuci (prikazuje se na TV-u i u adminu)
   try { document.addEventListener('DOMContentLoaded', function() { var v = document.getElementById('panther-ver'); if (v) { v.textContent = '🐾 PANTHER ' + PANTHER_VERZIJA_; } }); var v0_ = document.getElementById('panther-ver'); if (v0_) { v0_.textContent = '🐾 PANTHER ' + PANTHER_VERZIJA_; } } catch (eVer) {}
   var TV_MOD_ = /[?&]tv=1(&|$)/.test(location.search);
+  // v478: TV se sam osvježi kad izađe nova verzija programa (provjera svakih 5 min)
+  if (TV_MOD_) {
+    setInterval(function() {
+      try {
+        fetch('InTime_Admin.html?nv=' + Date.now(), { cache: 'no-store' }).then(function(r) { return r.ok ? r.text() : ''; }).then(function(t) {
+          var m = /var PANTHER_VERZIJA_ = '([^']+)'/.exec(t || '');
+          if (m && m[1] && typeof PANTHER_VERZIJA_ !== 'undefined' && m[1] !== PANTHER_VERZIJA_) { location.reload(); }
+        }).catch(function() {});
+      } catch (eNv) {}
+    }, 5 * 60 * 1000);
+  }
   var TV_AKCIJE_KLIJENT_ = /^(adminDnevniCiljStanje|adminUcitajPocetno|adminListEntries|adminGetCounters|adminPismaBezOdgovora|adminPismaPogodci|tvProvjera)$/;
   function tvOdjava_(poruka) { try { localStorage.removeItem('intime_tv_token'); } catch (e) {} location.replace('InTime_TV.html' + (poruka ? '?odjava=1' : '')); }
   function tvPokreni_() {
