@@ -130,3 +130,4 @@
 - v471: verzija na slici prijave (crna podloga preko 'ver. 1.2'), uvijek iz PANTHER_VERZIJA_.
 - v472: verzija i na glavnom banneru (preko 'ver. 1.2', crna podloga, uvijek iz PANTHER_VERZIJA_).
 - v473: naslov admina 'KORISNIK: SAŠA BATINAC' (bijelo, veće); maknuta značka PANTHER verzije (verzija je na banneru).
+- v474: verzija na banneru centrirana u crnoj podlozi, žuta slova (i na slici prijave).
