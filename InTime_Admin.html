@@ -757,6 +757,24 @@
   .nk-prikaz{display:flex;gap:6px;align-items:flex-start;margin-top:5px;padding:4px 8px;border-radius:8px;background:#fffbea;border:1px dashed #e6c65c;font-size:13px;line-height:1.4;cursor:pointer;max-width:100%;color:#1f2d3d;}
   .nk-prikaz.prazno{background:transparent;border-color:transparent;padding:0 2px;opacity:.55;font-size:12px;}
   .nk-prikaz.prazno:hover{opacity:1;border-color:#e6c65c;}
+  .nk-ps{display:inline-block;margin-left:6px;background:#e8f1fc;color:#0d47a1;border-radius:999px;padding:0 8px;font-size:11.5px;font-weight:800;white-space:nowrap;}
+  .nk-ps.dosp{background:#d32f2f;color:#fff;animation:nkPsPuls 1.2s ease-in-out infinite;}
+  @keyframes nkPsPuls{0%,100%{opacity:1}50%{opacity:.6}}
+  #nk-sloj .nk-ps-red{margin-top:8px;padding:8px 10px;background:#f4f8fc;border:1px solid #c7d7ee;border-radius:10px;font-size:13px;}
+  #nk-sloj .nk-ps-red input{padding:5px 7px;border:1px solid #bcd;border-radius:7px;font:inherit;}
+  #nk-sloj .nk-ps-brzo{margin-left:4px;border:1px solid #bcd;background:#fff;border-radius:7px;padding:4px 8px;font:inherit;font-size:12px;cursor:pointer;}
+  #nk-ps-sloj{position:fixed;inset:0;z-index:100002;background:rgba(10,20,40,.5);display:flex;align-items:center;justify-content:center;padding:16px;}
+  #nk-ps-sloj .nk-ps-kutija{background:#fff;border:4px solid #1a73c8;border-radius:16px;max-width:620px;width:100%;max-height:88vh;overflow:auto;padding:14px 16px;box-shadow:0 20px 60px rgba(0,0,0,.4);font-size:14px;color:#1f2d3d;animation:ukpSkoci .4s;}
+  #nk-ps-sloj .nk-ps-nasl{display:flex;justify-content:space-between;align-items:center;font-size:19px;font-weight:900;color:#0d47a1;margin-bottom:8px;}
+  #nk-ps-sloj .nk-ps-x{border:0;background:transparent;font-size:18px;cursor:pointer;color:#6b7280;}
+  #nk-ps-sloj .nk-ps-st{border:1px solid #dbe4f0;border-radius:12px;padding:10px 12px;margin:8px 0;background:#fafcff;}
+  #nk-ps-sloj .nk-ps-f small{color:#b71c1c;font-weight:700;}
+  #nk-ps-sloj .nk-ps-t{margin:6px 0;padding:6px 8px;background:#fffbea;border:1px dashed #e6c65c;border-radius:8px;line-height:1.45;}
+  #nk-ps-sloj .nk-ps-g{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:6px;}
+  #nk-ps-sloj .nk-ps-g button{border:1px solid #bcd;background:#fff;border-radius:8px;padding:6px 10px;font:inherit;font-size:12.5px;font-weight:700;cursor:pointer;}
+  #nk-ps-sloj .nk-ps-g button.ok{background:#0b7a4b;border-color:#0b7a4b;color:#fff;}
+  #nk-ps-sloj .nk-ps-g input{padding:5px 6px;border:1px solid #bcd;border-radius:7px;font:inherit;font-size:12.5px;}
+  #nk-ps-sloj .nk-mali{font-size:12px;color:#6b7280;margin-top:6px;}
   .nk-prikaz .nk-kada{color:#8a8f98;font-size:11px;font-weight:600;white-space:nowrap;}
   #nk-sloj .nk-datum{border:1px solid #1a73c8;background:#e8f1fc;color:#0d47a1;border-radius:8px;padding:5px 9px;font:inherit;font-size:12.5px;font-weight:700;cursor:pointer;}
   #nk-sloj .nk-povijest{margin-top:8px;font-size:12.5px;} #nk-sloj .nk-povijest summary{cursor:pointer;font-weight:700;color:#374151;}
@@ -3799,7 +3817,7 @@
     if (ZAPISI_U_TIJEKU_ === 0 && OSVJEZI_NAKON_ZAPISA_) { OSVJEZI_NAKON_ZAPISA_ = false; try { loadEntries(); } catch (eZg) { /* nije kritično */ } }
   }
   // ===== v403: TV PRIKAZ (InTime_Admin.html?tv=1) — samo pločice „Danas čeka tebe”, velike, sat, Battleships bodovi, osvježavanje svake 2 min =====
-  var PANTHER_VERZIJA_ = 'v463';   // v433: broj verzije — Claude ga podiže pri svakoj isporuci (prikazuje se na TV-u i u adminu)
+  var PANTHER_VERZIJA_ = 'v464';   // v433: broj verzije — Claude ga podiže pri svakoj isporuci (prikazuje se na TV-u i u adminu)
   try { document.addEventListener('DOMContentLoaded', function() { var v = document.getElementById('panther-ver'); if (v) { v.textContent = '🐾 PANTHER ' + PANTHER_VERZIJA_; } }); var v0_ = document.getElementById('panther-ver'); if (v0_) { v0_.textContent = '🐾 PANTHER ' + PANTHER_VERZIJA_; } } catch (eVer) {}
   var TV_MOD_ = /[?&]tv=1(&|$)/.test(location.search);
   var TV_AKCIJE_KLIJENT_ = /^(adminDnevniCiljStanje|adminUcitajPocetno|adminListEntries|adminGetCounters|adminPismaBezOdgovora|adminPismaPogodci|tvProvjera)$/;
@@ -22223,26 +22241,71 @@
   function nkOib_(entry) { var o = String(fieldVal(entry, 'OIB') || '').replace(/\D/g, ''); return o.length === 11 ? o : ''; }
   function nkTekst_(entry) {
     var o = nkOib_(entry);
-    if (o && NAP_MAPA_ && NAP_MAPA_[o]) { return { t: NAP_MAPA_[o].t, kada: NAP_MAPA_[o].kada }; }
-    return { t: String(fieldVal(entry, NK_POLJE_) || ''), kada: '' };
+    if (o && NAP_MAPA_ && NAP_MAPA_[o]) { return { t: NAP_MAPA_[o].t, kada: NAP_MAPA_[o].kada, ps: NAP_MAPA_[o].podsjetnikMs || 0 }; }
+    return { t: String(fieldVal(entry, NK_POLJE_) || ''), kada: '', ps: 0 };
   }
+  function nkPsFmt_(ms) { var d = new Date(ms), p2 = function(n) { return (n < 10 ? '0' : '') + n; }; return p2(d.getDate()) + '.' + p2(d.getMonth() + 1) + '. ' + p2(d.getHours()) + ':' + p2(d.getMinutes()); }
+  function nkPsHtml_(ms) { return ms ? ' <span class="nk-ps' + (ms <= Date.now() ? ' dosp' : '') + '" title="Podsjetnik">⏰ ' + nkPsFmt_(ms) + '</span>' : ''; }
   function nkOsvjeziPrikaze_(oib) {
     Array.prototype.forEach.call(document.querySelectorAll('.nk-prikaz' + (oib ? '[data-oib="' + oib + '"]' : '[data-oib]')), function(pr) {
       var o = pr.getAttribute('data-oib'), x = NAP_MAPA_ && NAP_MAPA_[o];
       if (!x && !oib) { return; }
-      var t = x ? x.t : '';
-      pr.classList.toggle('prazno', !t);
-      pr.querySelector('.nk-tekst').innerHTML = t ? nkUHtml_(t) + (x && x.kada ? ' <small class="nk-kada">· ' + esc(x.kada) + '</small>' : '') : '<i>dodaj napomenu</i>';
+      var t = x ? x.t : '', ps = x ? (x.podsjetnikMs || 0) : 0;
+      pr.classList.toggle('prazno', !t && !ps);
+      pr.querySelector('.nk-tekst').innerHTML = (t ? nkUHtml_(t) + (x && x.kada ? ' <small class="nk-kada">· ' + esc(x.kada) + '</small>' : '') : (ps ? '' : '<i>dodaj napomenu</i>')) + nkPsHtml_(ps);
     });
   }
   function napUcitaj_() {
     if (!adminToken || TV_MOD_) { return; }
     gasCall({ action: 'adminNapomeneKlijenataLista', token: adminToken }).then(function(res) {
       if (!res || res.status !== 'ok') { return; }
-      NAP_MAPA_ = res.napomene || {}; nkOsvjeziPrikaze_('');
+      NAP_MAPA_ = res.napomene || {}; nkOsvjeziPrikaze_(''); try { napPodsjetnikProvjeri_(false); } catch (ePs) {}
     }).catch(function() {});
   }
   (function() { var t0 = setInterval(function() { if (adminToken && !TV_MOD_) { clearInterval(t0); napUcitaj_(); } }, 3000); setInterval(function() { if (adminToken && !TV_MOD_ && document.visibilityState === 'visible') { napUcitaj_(); } }, 5 * 60000); })();
+  // v464: ⏰ PODSJETNICI NA NAPOMENAMA — prozor iskače čim otvoriš Panther (kad je podsjetnik dospio) i svakih 15 min dok ne klikneš „Uređeno” ili ga ne pomakneš
+  var NAP_PS_ZADNJE_ = 0;
+  function napPodsjetnikProvjeri_(tiho) {
+    if (TV_MOD_ || !NAP_MAPA_ || document.getElementById('nk-ps-sloj')) { return; }
+    var sada = Date.now(), dosp = Object.keys(NAP_MAPA_).filter(function(o) { var x = NAP_MAPA_[o]; return x && x.podsjetnikMs && x.podsjetnikMs <= sada; });
+    if (!dosp.length) { return; }
+    if (tiho && NAP_PS_ZADNJE_) { return; }
+    if (NAP_PS_ZADNJE_ && sada - NAP_PS_ZADNJE_ < 15 * 60000) { return; }
+    NAP_PS_ZADNJE_ = sada;
+    napPodsjetnikProzor_(dosp);
+  }
+  setInterval(function() { try { napPodsjetnikProvjeri_(false); } catch (e) {} }, 60000);
+  function napPodsjetnikProzor_(oibi) {
+    var o = document.createElement('div'); o.id = 'nk-ps-sloj';
+    var firmaZa = function(oib) { var x = NAP_MAPA_[oib] || {}; if (x.firma) { return x.firma; } var e = (allEntries || []).filter(function(y) { return nkOib_(y) === oib; })[0]; return e ? fieldVal(e, 'Naziv tvrtke') : ('OIB ' + oib); };
+    var crtaj = function() {
+      var sada = Date.now(), lista = oibi.filter(function(b) { var x = NAP_MAPA_[b]; return x && x.podsjetnikMs && x.podsjetnikMs <= sada; });
+      if (!lista.length) { o.remove(); return; }
+      o.innerHTML = '<div class="nk-ps-kutija"><div class="nk-ps-nasl">⏰ Podsjetnik' + (lista.length > 1 ? 'i (' + lista.length + ')' : '') + ' <button type="button" class="nk-ps-x" title="Zatvori — javit će se opet za 15 min">✕</button></div>' +
+        lista.map(function(b) { var x = NAP_MAPA_[b];
+          return '<div class="nk-ps-st" data-oib="' + b + '"><div class="nk-ps-f"><b>' + esc(firmaZa(b)) + '</b> <small>· bilo za ' + nkPsFmt_(x.podsjetnikMs) + '</small></div>' + (x.t ? '<div class="nk-ps-t">' + nkUHtml_(x.t) + '</div>' : '') +
+            '<div class="nk-ps-g"><button type="button" data-a="ok" class="ok">✓ Uređeno</button><button type="button" data-a="1h">+1 h</button><button type="button" data-a="sutra">sutra 9:00</button><input type="datetime-local" class="nk-ps-dan"><button type="button" data-a="dan">📅 pomakni</button><button type="button" data-a="nadji">🔎 kartica</button></div></div>';
+        }).join('') + '<div class="nk-mali">Zatvoriš li prozor bez odluke, javit će se opet za 15 minuta.</div></div>';
+    };
+    crtaj(); document.body.appendChild(o);
+    o.addEventListener('click', function(ev) {
+      var b = ev.target.closest('button'); if (!b) { return; }
+      if (b.classList.contains('nk-ps-x')) { o.remove(); return; }
+      var st = b.closest('.nk-ps-st'); if (!st) { return; }
+      var oib = st.getAttribute('data-oib'), a = b.getAttribute('data-a'), ms = 0;
+      if (a === 'nadji') { o.remove(); try { var q = document.getElementById('kp-trazi'); if (q) { q.value = oib; q.dispatchEvent(new Event('input', { bubbles: true })); q.focus(); } } catch (eQ) {} return; }
+      if (a === '1h') { ms = Date.now() + 3600000; }
+      else if (a === 'sutra') { var d = new Date(); ms = new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1, 9, 0).getTime(); }
+      else if (a === 'dan') { var v = st.querySelector('.nk-ps-dan').value; if (!v) { st.querySelector('.nk-ps-dan').focus(); return; } ms = new Date(v).getTime(); }
+      Array.prototype.forEach.call(st.querySelectorAll('button'), function(x) { x.disabled = true; });
+      gasCall({ action: 'adminNapomenaKlijentaSpremi', token: adminToken, oib: oib, firma: firmaZa(oib), tekst: null, podsjetnikMs: ms }).then(function(res) {
+        if (handleAuthError(res)) { return; }
+        if (!res || res.status !== 'ok') { alert('Nije spremljeno: ' + ((res && res.message) || 'greška')); Array.prototype.forEach.call(st.querySelectorAll('button'), function(x) { x.disabled = false; }); return; }
+        NAP_MAPA_[oib] = NAP_MAPA_[oib] || { t: '' }; NAP_MAPA_[oib].podsjetnikMs = ms;
+        nkOsvjeziPrikaze_(oib); crtaj();
+      }).catch(function() { alert('Nema veze s poslužiteljem.'); Array.prototype.forEach.call(st.querySelectorAll('button'), function(x) { x.disabled = false; }); });
+    });
+  }
   function nkJePonuda_(entry) { return !!(entry && (entry.otvorena || entry.status === 'Otvorena' || (typeof jePonuda === 'function' && jePonuda(entry)))); }
   // zapis: običan tekst + oznake [[r]] [[b]] [[y]] [[g]] [[p]] [[B]] (podebljano) i [[/]] (kraj)
   function nkUHtml_(t) {
@@ -22305,11 +22368,11 @@
   }
   function nkUgradi_(entry, head) {
     if (!nkJePonuda_(entry)) { return; }
-    var nt = nkTekst_(entry), tekst = nt.t, oibN = nkOib_(entry);
+    var nt = nkTekst_(entry), tekst = nt.t, oibN = nkOib_(entry), psN = nt.ps || 0;
     var mjesto = head.querySelector('.entry-card-sub'); if (!mjesto) { return; }
-    var prikaz = document.createElement('div'); prikaz.className = 'nk-prikaz' + (tekst ? '' : ' prazno');
+    var prikaz = document.createElement('div'); prikaz.className = 'nk-prikaz' + (tekst || psN ? '' : ' prazno');
     if (oibN) { prikaz.setAttribute('data-oib', oibN); }
-    prikaz.innerHTML = '<button type="button" class="nk-gumb" title="Napomena klijenta (veže se uz OIB) — klik za uređivanje">📝</button><span class="nk-tekst">' + (tekst ? nkUHtml_(tekst) + (nt.kada ? ' <small class="nk-kada">· ' + esc(nt.kada) + '</small>' : '') : '<i>dodaj napomenu</i>') + '</span>';
+    prikaz.innerHTML = '<button type="button" class="nk-gumb" title="Napomena klijenta (veže se uz OIB) — klik za uređivanje">📝</button><span class="nk-tekst">' + (tekst ? nkUHtml_(tekst) + (nt.kada ? ' <small class="nk-kada">· ' + esc(nt.kada) + '</small>' : '') : (psN ? '' : '<i>dodaj napomenu</i>')) + nkPsHtml_(psN) + '</span>';
     mjesto.parentNode.insertBefore(prikaz, mjesto.nextSibling);
     prikaz.addEventListener('click', function(ev) { ev.stopPropagation(); ev.preventDefault(); nkUredi_(entry, prikaz); });
   }
@@ -22321,6 +22384,7 @@
       '<button type="button" data-k="B" class="nk-alat" title="Podebljano"><b>B</b></button><button type="button" class="nk-datum" title="Upiši današnji datum i vrijeme na mjesto kursora">🕒 datum i vrijeme</button><button type="button" data-k="0" class="nk-alat" title="Makni boju s označenog teksta">⨯ bez boje</button></div>' +
       '<div class="nk-ured" contenteditable="true">' + nkUHtml_(nkTekst_(entry).t) + '</div>' +
       '<div class="nk-mali">Označi riječi mišem pa klikni boju. ' + (nkOib_(entry) ? 'Napomena se veže uz <b>OIB ' + esc(nkOib_(entry)) + '</b> — vidi se na svim karticama tog klijenta, a svaka izmjena i brisanje ostaje u evidenciji.' : '<b style="color:#c0392b;">Klijent nema OIB</b> — napomena ostaje samo na ovoj kartici.') + '</div>' +
+      (nkOib_(entry) ? '<div class="nk-ps-red">⏰ <b>Podsjetnik:</b> <input type="datetime-local" class="nk-ps-in" value="' + (function() { var ms = nkTekst_(entry).ps; if (!ms) { return ''; } var d = new Date(ms), p2 = function(n) { return (n < 10 ? '0' : '') + n; }; return d.getFullYear() + '-' + p2(d.getMonth() + 1) + '-' + p2(d.getDate()) + 'T' + p2(d.getHours()) + ':' + p2(d.getMinutes()); })() + '"> <button type="button" class="nk-ps-brzo" data-h="1">+1 h</button><button type="button" class="nk-ps-brzo" data-h="sutra">sutra 9:00</button><button type="button" class="nk-ps-brzo" data-h="0">bez podsjetnika</button><div class="nk-mali">Kad dođe vrijeme, poruka iskače čim otvoriš Panther i svakih 15 min — dok ne klikneš „✓ Uređeno” ili ga prebaciš na drugi dan.</div></div>' : '') +
       (nkOib_(entry) ? '<details class="nk-povijest"><summary>🕘 Evidencija napomena ovog klijenta</summary><div class="nk-pov-lista">Učitavam…</div></details>' : '') +
       '<div class="nk-gumbi"><button type="button" class="nk-spremi">💾 Spremi</button><button type="button" class="nk-brisi">🗑 Obriši napomenu</button><button type="button" class="nk-odustani">Odustani</button><span class="nk-st"></span></div></div>';
     document.body.appendChild(o);
@@ -22346,6 +22410,13 @@
       if (prije.replace(/\s+$/, '') && !/\n$/.test(prije) && !imaBrPrije) { sp.parentNode.insertBefore(document.createElement('br'), sp); }
       var nr = document.createRange(); nr.setStartAfter(razmak); nr.collapse(true); sl.removeAllRanges(); sl.addRange(nr); zadnjiRng = nr.cloneRange(); ured.focus();
     });
+    // v464: brzi odabir podsjetnika
+    Array.prototype.forEach.call(o.querySelectorAll('.nk-ps-brzo'), function(b) { b.addEventListener('click', function() {
+      var inp = o.querySelector('.nk-ps-in'), h = b.getAttribute('data-h'), d = new Date(), p2 = function(n) { return (n < 10 ? '0' : '') + n; };
+      if (h === '0') { inp.value = ''; return; }
+      if (h === 'sutra') { d = new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1, 9, 0); } else { d = new Date(Date.now() + 3600000); }
+      inp.value = d.getFullYear() + '-' + p2(d.getMonth() + 1) + '-' + p2(d.getDate()) + 'T' + p2(d.getHours()) + ':' + p2(d.getMinutes());
+    }); });
     // v460: evidencija napomena (po OIB-u)
     var povD = o.querySelector('.nk-povijest');
     if (povD) { povD.addEventListener('toggle', function() {
@@ -22353,7 +22424,7 @@
       gasCall({ action: 'adminNapomenaKlijentaPovijest', token: adminToken, oib: nkOib_(entry) }).then(function(res) {
         var l = povD.querySelector('.nk-pov-lista');
         if (!res || res.status !== 'ok') { l.textContent = (res && res.message) || 'Nije dostupno (je li objavljen novi Code.gs?).'; return; }
-        l.innerHTML = (res.povijest || []).length ? res.povijest.map(function(x) { return '<div class="nk-pov-red"><b>' + esc(x.kada) + '</b> ' + (x.radnja === 'obrisano' ? '<span style="color:#b71c1c;">🗑 obrisano</span>' : '💾') + (x.t ? '<div>' + nkUHtml_(x.t) + '</div>' : '') + '</div>'; }).join('') : '<i>Još nema zapisa.</i>';
+        l.innerHTML = (res.povijest || []).length ? res.povijest.map(function(x) { return '<div class="nk-pov-red"><b>' + esc(x.kada) + '</b> ' + (x.radnja === 'obrisano' ? '<span style="color:#b71c1c;">🗑 obrisano</span>' : (x.radnja === 'spremljeno' ? '💾' : '<span style="color:#1a73c8;">' + (x.radnja.indexOf('podsjetnik') === 0 ? '⏰ ' : '💾 ') + esc(x.radnja) + '</span>')) + (x.t ? '<div>' + nkUHtml_(x.t) + '</div>' : '') + '</div>'; }).join('') : '<i>Još nema zapisa.</i>';
       }).catch(function() { povD.querySelector('.nk-pov-lista').textContent = 'Nema veze s poslužiteljem.'; });
     }); }
     Array.prototype.forEach.call(o.querySelectorAll('.nk-alat'), function(b) {
@@ -22377,11 +22448,13 @@
       var oibS = nkOib_(entry);
       if (oibS) {   // v460: po OIB-u
         st.style.color = ''; st.textContent = 'Spremam…';
-        gasCall({ action: 'adminNapomenaKlijentaSpremi', token: adminToken, oib: oibS, firma: fieldVal(entry, 'Naziv tvrtke') || '', tekst: vrijednost }).then(function(res) {
+        var psIn = o.querySelector('.nk-ps-in'), psMs = (psIn && psIn.value && vrijednost !== '') ? new Date(psIn.value).getTime() : 0;
+        gasCall({ action: 'adminNapomenaKlijentaSpremi', token: adminToken, oib: oibS, firma: fieldVal(entry, 'Naziv tvrtke') || '', tekst: vrijednost, podsjetnikMs: psMs || 0 }).then(function(res) {
           if (handleAuthError(res)) { return; }
           if (!res || res.status !== 'ok') { st.style.color = '#c0392b'; st.textContent = (res && res.message) || 'Nije spremljeno (je li objavljen novi Code.gs?).'; return; }
           NAP_MAPA_ = NAP_MAPA_ || {};
-          if (vrijednost) { NAP_MAPA_[oibS] = { t: vrijednost, kada: res.kada || '', firma: fieldVal(entry, 'Naziv tvrtke') || '' }; } else { NAP_MAPA_[oibS] = { t: '', kada: '' }; }
+          if (vrijednost || psMs) { NAP_MAPA_[oibS] = { t: vrijednost, kada: res.kada || '', firma: fieldVal(entry, 'Naziv tvrtke') || '', podsjetnikMs: psMs || 0 }; } else { NAP_MAPA_[oibS] = { t: '', kada: '', podsjetnikMs: 0 }; }
+          try { napPodsjetnikProvjeri_(true); } catch (ePs) {}
           nkOsvjeziPrikaze_(oibS);
           zatvori();
         }).catch(function() { st.style.color = '#c0392b'; st.textContent = 'Nema veze s poslužiteljem.'; });

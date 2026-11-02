@@ -8854,7 +8854,7 @@ function doPost(e) {
     } else if (data.action === 'adminNapomeneKlijenataLista') {
       result = adminNapomeneKlijenataLista(data.token);
     } else if (data.action === 'adminNapomenaKlijentaSpremi') {
-      result = adminNapomenaKlijentaSpremi(data.token, data.oib, data.firma, data.tekst);
+      result = adminNapomenaKlijentaSpremi(data.token, data.oib, data.firma, data.tekst, data.podsjetnikMs);
     } else if (data.action === 'adminNapomenaKlijentaPovijest') {
       result = adminNapomenaKlijentaPovijest(data.token, data.oib);
     } else if (data.action === 'adminAktivnostKlijenataLista') {
@@ -10400,37 +10400,43 @@ function tvTokeni_() { try { return JSON.parse(PropertiesService.getScriptProper
 // v460: 📝 NAPOMENE KLIJENATA PO OIB-u — jedna trenutna napomena po OIB-u (vidi se na svim karticama tog klijenta:
 // ponude, otvorene ponude, nove verzije…) + evidencija svih izmjena i brisanja (ništa se iz evidencije ne briše).
 // ============================================================================
-var NAP_SHEET_ = 'InTime_Napomene_Klijenata', NAP_HEADER_ = ['OIB', 'Napomena', 'Izmijenjeno', 'Firma'];
+var NAP_SHEET_ = 'InTime_Napomene_Klijenata', NAP_HEADER_ = ['OIB', 'Napomena', 'Izmijenjeno', 'Firma', 'Podsjetnik'];
+function napSheet_() { var sh = getOrCreateNacrtSheet_(NAP_SHEET_, NAP_HEADER_, [1]); if (String(sh.getRange(1, 5).getValue() || '') !== 'Podsjetnik') { sh.getRange(1, 5).setValue('Podsjetnik').setFontWeight('bold'); } return sh; }
 var NAP_LOG_SHEET_ = 'InTime_Napomene_Evidencija', NAP_LOG_HEADER_ = ['Vrijeme', 'OIB', 'Firma', 'Radnja', 'Napomena'];
 function napOib_(o) { var x = String(o || '').replace(/\D/g, ''); return x.length === 11 ? x : ''; }
 function adminNapomeneKlijenataLista(token) {
   if (!isValidAdminToken_(token)) { return pismaAuthGreska_(); }
   try {
-    var sh = getOrCreateNacrtSheet_(NAP_SHEET_, NAP_HEADER_, [1]), l = sh.getLastRow(), m = {};
+    var sh = napSheet_(), l = sh.getLastRow(), m = {};
     if (l >= 2) {
-      sh.getRange(2, 1, l - 1, 4).getValues().forEach(function(r) {
-        var o = napOib_(r[0]); if (!o || !String(r[1] || '')) { return; }
-        var t = dnevniDatum_(r[2]);
-        m[o] = { t: String(r[1]), kada: t ? Utilities.formatDate(t, PISMA_TZ_, 'dd.MM.yyyy. HH:mm') : '', firma: String(r[3] || '') };
+      sh.getRange(2, 1, l - 1, 5).getValues().forEach(function(r) {
+        var o = napOib_(r[0]); if (!o || (!String(r[1] || '') && !r[4])) { return; }
+        var t = dnevniDatum_(r[2]), ps = r[4] ? dnevniDatum_(r[4]) : null;
+        m[o] = { t: String(r[1]), kada: t ? Utilities.formatDate(t, PISMA_TZ_, 'dd.MM.yyyy. HH:mm') : '', firma: String(r[3] || ''), podsjetnikMs: ps ? ps.getTime() : 0 };
       });
     }
     return { status: 'ok', napomene: m };
   } catch (err) { return { status: 'error', message: 'Učitavanje napomena nije uspjelo: ' + err.message }; }
 }
-function adminNapomenaKlijentaSpremi(token, oib, firma, tekst) {
+function adminNapomenaKlijentaSpremi(token, oib, firma, tekst, podsjetnikMs) {
   if (!isValidAdminToken_(token) || TV_PRISTUP_TOKEN_) { return pismaAuthGreska_(); }
   var o = napOib_(oib); if (!o) { return { status: 'error', message: 'Klijent nema ispravan OIB (11 znamenki).' }; }
   tekst = String(tekst || '').slice(0, 4000); firma = String(firma || '').slice(0, 200);
   var lock = LockService.getScriptLock(); lock.waitLock(20000);
   try {
-    var sh = getOrCreateNacrtSheet_(NAP_SHEET_, NAP_HEADER_, [1]), l = sh.getLastRow(), red = 0;
+    var sh = napSheet_(), l = sh.getLastRow(), red = 0;
     if (l >= 2) { var oibi = sh.getRange(2, 1, l - 1, 1).getValues(); for (var i = 0; i < oibi.length; i++) { if (napOib_(oibi[i][0]) === o) { red = i + 2; break; } } }
     var sada = new Date();
-    if (red) { sh.getRange(red, 2, 1, 3).setValues([sheetSigRed_([tekst, sada, firma])]); }
-    else if (tekst) { sh.getRange(sh.getLastRow() + 1, 1, 1, 1).setNumberFormat('@'); sh.appendRow(sheetSigRed_([o, tekst, sada, firma])); }
+    var samoPodsjetnik = tekst === null || tekst === undefined;   // v464: samo promjena podsjetnika (Uređeno / odgodi)
+    var psVal = podsjetnikMs === undefined ? undefined : (Number(podsjetnikMs) > 0 ? new Date(Number(podsjetnikMs)) : '');
+    if (red) {
+      if (!samoPodsjetnik) { sh.getRange(red, 2, 1, 3).setValues([sheetSigRed_([tekst, sada, firma])]); }
+      if (psVal !== undefined) { sh.getRange(red, 5).setValue(psVal); }
+    } else if (!samoPodsjetnik && (tekst || psVal)) { sh.getRange(sh.getLastRow() + 1, 1, 1, 1).setNumberFormat('@'); sh.appendRow(sheetSigRed_([o, tekst, sada, firma]).concat([psVal || ''])); }
     var lg = getOrCreateNacrtSheet_(NAP_LOG_SHEET_, NAP_LOG_HEADER_, [2]);
     lg.getRange(lg.getLastRow() + 1, 2, 1, 1).setNumberFormat('@');
-    lg.appendRow(sheetSigRed_([sada, o, firma, tekst ? 'spremljeno' : 'obrisano', tekst]));
+    var radnja = samoPodsjetnik ? (psVal ? 'podsjetnik pomaknut na ' + Utilities.formatDate(psVal, PISMA_TZ_, 'dd.MM.yyyy. HH:mm') : 'podsjetnik uređen ✓') : ((tekst ? 'spremljeno' : 'obrisano') + (psVal ? ' · podsjetnik ' + Utilities.formatDate(psVal, PISMA_TZ_, 'dd.MM.yyyy. HH:mm') : ''));
+    lg.appendRow(sheetSigRed_([sada, o, firma, radnja, samoPodsjetnik ? '' : tekst]));
     return { status: 'ok', kada: Utilities.formatDate(sada, PISMA_TZ_, 'dd.MM.yyyy. HH:mm') };
   } finally { lock.releaseLock(); }
 }
