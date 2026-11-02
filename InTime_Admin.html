@@ -3862,7 +3862,7 @@
     if (ZAPISI_U_TIJEKU_ === 0 && OSVJEZI_NAKON_ZAPISA_) { OSVJEZI_NAKON_ZAPISA_ = false; try { loadEntries(); } catch (eZg) { /* nije kritično */ } }
   }
   // ===== v403: TV PRIKAZ (InTime_Admin.html?tv=1) — samo pločice „Danas čeka tebe”, velike, sat, Battleships bodovi, osvježavanje svake 2 min =====
-  var PANTHER_VERZIJA_ = 'v476';
+  var PANTHER_VERZIJA_ = 'v477';
   (function(){ try{ var e=document.getElementById('prijava-ver'); if(e) e.textContent='ver. '+PANTHER_VERZIJA_.replace(/^v/,''); var z=document.querySelector('#pz-ver b'); if(z) z.textContent=PANTHER_VERZIJA_.replace(/^v/,''); }catch(_){} })();   // v471: verzija na slici prijave   // v433: broj verzije — Claude ga podiže pri svakoj isporuci (prikazuje se na TV-u i u adminu)
   try { document.addEventListener('DOMContentLoaded', function() { var v = document.getElementById('panther-ver'); if (v) { v.textContent = '🐾 PANTHER ' + PANTHER_VERZIJA_; } }); var v0_ = document.getElementById('panther-ver'); if (v0_) { v0_.textContent = '🐾 PANTHER ' + PANTHER_VERZIJA_; } } catch (eVer) {}
   var TV_MOD_ = /[?&]tv=1(&|$)/.test(location.search);
@@ -32275,7 +32275,12 @@
     t.setAttribute('data-grupirano', '1');
   }
 
-  function kpTjedanOd_(dana) { return Date.now() - dana * 86400000; }
+  function kpTjedanOd_(dana) {   // v477: 'ovaj mjesec' = od 1. u mjesecu, 'ovaj tjedan' = od ponedjeljka
+    var d = new Date(); d.setHours(0, 0, 0, 0);
+    if (dana === 30) { d.setDate(1); return d.getTime(); }
+    if (dana === 7) { d.setDate(d.getDate() - ((d.getDay() + 6) % 7)); return d.getTime(); }
+    return Date.now() - dana * 86400000;
+  }
   function kpBroji_(lista, polje, dana) {
     var od = kpTjedanOd_(dana), n = 0;
     lista.forEach(function(e) { var d = parsirajDatumUnosa_(fieldVal(e, polje)); if (d && d.getTime() >= od) { n++; } });
@@ -32376,7 +32381,7 @@
         lj.innerHTML = '<div class="kp-l-st"><div class="n">' + upiti.length + '</div><div class="l">Zainteresirani (svi upiti)</div></div><div class="kp-l-str">→ ' + p1 + '%</div>' +
           '<div class="kp-l-st"><div class="n">' + uPonudi.length + '</div><div class="l">došlo do ponude</div></div><div class="kp-l-str">→ ' + p2 + '%</div>' +
           '<div class="kp-l-st"><div class="n">' + kl.length + '</div><div class="l">postali klijenti</div></div>' +
-          '<div class="kp-l-st zadnji"><div class="n">' + noviMj + '</div><div class="l">novih klijenata (30 dana)</div></div>';
+          '<div class="kp-l-st zadnji"><div class="n">' + noviMj + '</div><div class="l">novih klijenata (ovaj mjesec)</div></div>';
       }
     } catch (eKp) { /* komandna ploča je pomoćni prikaz — greška ne smije srušiti admin */ }
   }
