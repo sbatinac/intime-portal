@@ -3159,6 +3159,7 @@
         <button type="button" class="btn btn-prebaci btn-small" id="bulk-revizije-btn" onclick="startRevizijaTabSkupno_(true)" hidden>📑 Prebaci u Revizije</button>
         <button type="button" class="btn btn-prebaci btn-small" id="bulk-revizije-vrati-btn" onclick="startRevizijaTabSkupno_(false)" hidden>↩ Vrati među klijente</button>
         <button type="button" class="btn btn-small" id="bulk-produzi-btn" style="background:#1a73c8;border-color:#1a73c8;color:#fff;" onclick="bulkProduziRok_()" hidden>⏱ Produži rok</button>
+        <button type="button" class="btn btn-small" id="bulk-pods-btn" style="background:#8b5cf6;border-color:#8b5cf6;color:#fff;" onclick="bulkPodsjetnik_()" hidden>🔔 Pošalji podsjetnik</button>
         <button type="button" class="btn btn-small" id="bulk-kratki-btn" style="background:#0b7a4b;border-color:#0b7a4b;color:#fff;" onclick="bulkKratki_()" hidden>📝 Kratki upitnik nakon prihvata</button>
         <button type="button" class="btn btn-small" id="bulk-arhiva-btn" style="background:#6b4f2a;border-color:#6b4f2a;color:#fff;" onclick="bulkUArhivu_()" hidden>🗄 Prebaci u arhivu</button>
         <button type="button" class="btn btn-danger btn-small" onclick="startBulkDelete()">Obriši odabrano</button>
@@ -3843,7 +3844,7 @@
     if (ZAPISI_U_TIJEKU_ === 0 && OSVJEZI_NAKON_ZAPISA_) { OSVJEZI_NAKON_ZAPISA_ = false; try { loadEntries(); } catch (eZg) { /* nije kritično */ } }
   }
   // ===== v403: TV PRIKAZ (InTime_Admin.html?tv=1) — samo pločice „Danas čeka tebe”, velike, sat, Battleships bodovi, osvježavanje svake 2 min =====
-  var PANTHER_VERZIJA_ = 'v467';   // v433: broj verzije — Claude ga podiže pri svakoj isporuci (prikazuje se na TV-u i u adminu)
+  var PANTHER_VERZIJA_ = 'v468';   // v433: broj verzije — Claude ga podiže pri svakoj isporuci (prikazuje se na TV-u i u adminu)
   try { document.addEventListener('DOMContentLoaded', function() { var v = document.getElementById('panther-ver'); if (v) { v.textContent = '🐾 PANTHER ' + PANTHER_VERZIJA_; } }); var v0_ = document.getElementById('panther-ver'); if (v0_) { v0_.textContent = '🐾 PANTHER ' + PANTHER_VERZIJA_; } } catch (eVer) {}
   var TV_MOD_ = /[?&]tv=1(&|$)/.test(location.search);
   var TV_AKCIJE_KLIJENT_ = /^(adminDnevniCiljStanje|adminUcitajPocetno|adminListEntries|adminGetCounters|adminPismaBezOdgovora|adminPismaPogodci|tvProvjera)$/;
@@ -31582,6 +31583,7 @@
     var naPonudama_ = (activeTab === 'Ponude' || activeTab === 'Otvorene' || (activeTab === 'Intrix' && ['podsEvid', 'aktEvid', 'pismaBez'].indexOf(POSEBNI_VRSTA_) === -1));   // v455/v457: skupne radnje na ponudama (i u popisima ⌛ istekle, čeka odgovor, INTRIX…)
     var bpB_ = document.getElementById('bulk-produzi-btn'); if (bpB_) { bpB_.hidden = !naPonudama_; }
     var baB_ = document.getElementById('bulk-arhiva-btn'); if (baB_) { baB_.hidden = !naPonudama_; }
+    var bpsB_ = document.getElementById('bulk-pods-btn'); if (bpsB_) { bpsB_.hidden = !naPonudama_; }
     var bkB_ = document.getElementById('bulk-kratki-btn'); if (bkB_) { bkB_.hidden = !(activeTab === 'Otvorene' || (activeTab === 'Intrix' && naPonudama_)); }
     if (sakrijBtnOpci) { sakrijBtnOpci.hidden = !imaSakrivanje; }
     if (otkrijBtnOpci) { otkrijBtnOpci.hidden = !imaSakrivanje; }
@@ -31656,6 +31658,24 @@
           bulkSazetak_('🗄 Prebacivanje u arhivu gotovo.', rez, preskoceno);
         });
       });
+    });
+  }
+  // v468: skupno — pošalji podsjetnik odmah svim označenim (čeka odgovor → podsjetnik na ponudu; otvorena prihvaćena bez upitnika → podsjetnik na upitnik)
+  function bulkPodsjetnik_() {
+    var sve = bulkOdabraneP_(), preskoceno = [], lista = [];
+    sve.forEach(function(e) {
+      if (jeArhiva(e)) { preskoceno.push([e, 'u arhivi je']); return; }
+      var st = ponudaStatusSazetak_(e), otv = e.status === 'Otvorena' || e.otvorena;
+      if (st === 'na_cekanju') { lista.push(e); return; }
+      if (otv && st === 'potvrdjena' && !fieldVal(e, 'Otvorena ponuda - datum popunjenog upitnika (admin)')) { lista.push(e); return; }
+      preskoceno.push([e, st === 'istekla' ? 'istekla (prvo produži rok)' : (st === 'potvrdjena' ? 'već prihvaćena' : (st === 'nije_poslano' ? 'još nije poslana' : st))]);
+    });
+    if (!lista.length) { bulkSazetak_('Nijednoj označenoj ponudi ne može se poslati podsjetnik.', { ok: [], lose: [] }, preskoceno); return; }
+    var naPon = lista.filter(function(e) { return ponudaStatusSazetak_(e) === 'na_cekanju'; }).length, naUp = lista.length - naPon;
+    if (!confirm('Poslati podsjetnik ODMAH za ' + lista.length + ' ponuda?\n\n🔔 podsjetnik na ponudu (čeka odgovor): ' + naPon + '\n📝 podsjetnik na upitnik (otvorena prihvaćena, podaci nisu stigli): ' + naUp + (preskoceno.length ? '\n\n↷ preskače se: ' + preskoceno.length : '') + '\n\nKlijenti dobivaju mail odmah.')) { return; }
+    bulkRedom_(lista, function(e) { return gasCall({ action: 'adminPodsjetnikPosaljiSad', token: adminToken, rowIndex: e.rowIndex }); }, document.getElementById('bulk-pods-btn'), 'Šaljem').then(function(rez) {
+      clearSelection(); try { loadAll(); } catch (eL) {}
+      bulkSazetak_('🔔 Podsjetnici poslani.', rez, preskoceno);
     });
   }
   // v463: skupno — označenim OTVORENIM ponudama (još nisu prihvaćene / upitnik nije popunjen) uključi kratki upitnik

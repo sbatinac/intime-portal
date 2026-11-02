@@ -8851,6 +8851,8 @@ function doPost(e) {
       result = adminTvOpozovi(data.token, data.id);
     } else if (data.action === 'adminPodsjetniciEvidencija') {
       result = adminPodsjetniciEvidencija(data.token);
+    } else if (data.action === 'adminPodsjetnikPosaljiSad') {
+      result = adminPodsjetnikPosaljiSad(data.token, data.rowIndex, data.kopijaSebi);
     } else if (data.action === 'adminPoslovniceUpload') {
       result = adminPoslovniceUpload(data.token, data.rowIndex, data.ime, data.mime, data.base64);
     } else if (data.action === 'adminPoslovniceSpremi') {
@@ -18752,6 +18754,29 @@ function ponudePodsjetniciObrada_() {
     }
     if (poslano) { Logger.log('Podsjetnici ponuda poslani: ' + poslano); }
   } finally { lock.releaseLock(); }
+}
+
+// v468: RUČNI PODSJETNIK ODMAH (i skupno iz admina) — ponuda čeka odgovor → „Podsjetnik na ponudu” (isti mail kao automatski);
+// otvorena ponuda prihvaćena, a upitnik nije stigao → „Podsjetnik na upitnik”.
+function adminPodsjetnikPosaljiSad(token, rowIndex, kopijaSebi) {
+  if (!isValidAdminToken_(token) || TV_PRISTUP_TOKEN_) { return { status: 'error', message: 'Sesija je istekla — prijavite se ponovno.' }; }
+  var r = otvCitajRed_(rowIndex);
+  if (!r) { return { status: 'error', message: 'Redak ne postoji.' }; }
+  if (String(r.get(ADMIN_ONLY_FIELDS.datum_prebacivanja_arhiva) || '').trim()) { return { status: 'error', message: 'u arhivi je' }; }
+  var st = izracunajStatusPonude_(r.header, r.row);
+  if (st === 'potvrdjena' && String(r.get('Tip')) === OTV_TIP_) {
+    var o = otvPonudePodsjetnik(token, rowIndex, kopijaSebi); if (o && o.status === 'ok') { o.vrsta = 'na upitnik'; } return o;
+  }
+  if (st !== 'na_cekanju') { return { status: 'error', message: 'ponuda ' + (OPIS_STATUSA_PONUDE_[st] || st) + ' — podsjetnik se šalje samo dok čeka odgovor' }; }
+  var primatelji = ponPodsPrimatelji_(r);
+  if (!primatelji.length) { return { status: 'error', message: 'nema ispravne adrese primatelja' }; }
+  var mail = ponPodsRender_(r, new Date());
+  try {
+    var opc = { htmlBody: mail.html }; if (kopijaSebi) { opc.bcc = adminMailKopije_(); }
+    posaljiMail_(primatelji.join(','), mail.predmet, skiniHtmlTagoveZaFallback_(mail.html), opc);
+  } catch (err) { podsZabiljezi_(r, 'Podsjetnik na ponudu', primatelji.join(', '), false, err.message, 'ručno'); return { status: 'error', message: 'slanje nije uspjelo: ' + err.message }; }
+  podsZabiljezi_(r, 'Podsjetnik na ponudu', primatelji.join(', '), true, '', 'ručno');
+  return { status: 'ok', vrsta: 'na ponudu', poslanoNa: primatelji.join(', ') };
 }
 
 // Admin: pregled rasporeda za jedan redak.
