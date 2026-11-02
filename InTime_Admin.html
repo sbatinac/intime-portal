@@ -746,6 +746,10 @@
   .bs-brojac .bs-ob{background:#e8459a;color:#fff;box-shadow:0 0 6px rgba(232,69,154,.75);cursor:pointer;}   /* v422: ružičasto */
   .pm-akb-zbroj td{position:sticky;bottom:0;background:#eef6ff;border-top:2px solid #1a73c8;font-weight:700;padding-top:8px;padding-bottom:8px;}
   .jedn-rev-cip{margin-left:6px;background:#d32f2f;color:#fff;border-radius:999px;padding:1px 9px;font-size:11.5px;font-weight:900;letter-spacing:.03em;vertical-align:middle;}
+  .stat-card.stat-klik{cursor:pointer;position:relative;transition:transform .15s,box-shadow .15s;}
+  .stat-card.stat-klik:hover{transform:translateY(-2px);box-shadow:0 0 0 2px rgba(124,196,255,.55),0 8px 22px rgba(0,0,0,.25);}
+  .stat-card.stat-klik::after{content:'Prikaži ›';position:absolute;right:10px;bottom:8px;font-size:11px;font-weight:800;color:#9fd2ff;opacity:0;transition:opacity .15s;}
+  .stat-card.stat-klik:hover::after{opacity:1;}
   .oznaci-sve-traka{display:flex;gap:8px;align-items:center;margin:0 0 8px;flex-wrap:wrap;}
   .oznaci-sve-traka[hidden]{display:none;}
   .oznaci-sve-traka button{border:1.5px solid #0f6b5e;background:#fff;color:#0f6b5e;border-radius:8px;padding:5px 12px;font:inherit;font-size:13px;font-weight:700;cursor:pointer;}
@@ -3009,21 +3013,21 @@
         <div class="stat-label">Posjeta stranici ukupno</div>
         <button type="button" class="stat-reset-btn" onclick="openResetModal('ukupno')" title="Resetiraj ukupni brojač">↺ Resetiraj</button>
       </div>
-      <div class="stat-card" style="--kp-c:#e6a800;">
+      <div class="stat-card stat-klik" style="--kp-c:#e6a800;" onclick="statIdi_('Interes', 'tab-btn-interes')" title="Klik = prikaži zainteresirane">
         <div class="stat-value" id="stat-pozitivno" style="color:var(--green);">—</div>
         <div class="stat-label">Pozitivno odlučili (zainteresirani)</div>
         <div class="kp-trend" id="trend-pozitivno"></div>
       </div>
-      <div class="stat-card" style="--kp-c:#d64545;">
+      <div class="stat-card stat-klik" style="--kp-c:#d64545;" onclick="statIdi_('Odbijenica', 'tab-btn-odbijenica')" title="Klik = prikaži one koji nisu zainteresirani">
         <div class="stat-value" id="stat-negativno" style="color:var(--red);">—</div>
         <div class="stat-label">Negativno odlučili (nisu zainteresirani)</div>
         <div class="kp-trend" id="trend-negativno"></div>
       </div>
-      <div class="stat-card" style="--kp-c:#8e44ad;">
+      <div class="stat-card stat-klik" style="--kp-c:#8e44ad;" onclick="statIdi_('Ankete', 'tab-btn-ankete')" title="Klik = prikaži popunjene ankete">
         <div class="stat-value" id="stat-ankete" style="color:#8a6d00;">—</div>
         <div class="stat-label">Popunjenih anketa kvalitete</div>
       </div>
-      <div class="stat-card stat-card-klijenti">
+      <div class="stat-card stat-card-klijenti stat-klik" onclick="statIdi_('NoviKlijenti', 'tab-btn-novi-klijenti')" title="Klik = prikaži sve klijente">
         <div class="stat-value" id="stat-klijenti-ukupno">—</div>
         <div class="stat-label">Ukupno klijenata u bazi</div>
         <div class="kp-trend" id="trend-klijenti"></div>
@@ -3844,7 +3848,7 @@
     if (ZAPISI_U_TIJEKU_ === 0 && OSVJEZI_NAKON_ZAPISA_) { OSVJEZI_NAKON_ZAPISA_ = false; try { loadEntries(); } catch (eZg) { /* nije kritično */ } }
   }
   // ===== v403: TV PRIKAZ (InTime_Admin.html?tv=1) — samo pločice „Danas čeka tebe”, velike, sat, Battleships bodovi, osvježavanje svake 2 min =====
-  var PANTHER_VERZIJA_ = 'v468';   // v433: broj verzije — Claude ga podiže pri svakoj isporuci (prikazuje se na TV-u i u adminu)
+  var PANTHER_VERZIJA_ = 'v469';   // v433: broj verzije — Claude ga podiže pri svakoj isporuci (prikazuje se na TV-u i u adminu)
   try { document.addEventListener('DOMContentLoaded', function() { var v = document.getElementById('panther-ver'); if (v) { v.textContent = '🐾 PANTHER ' + PANTHER_VERZIJA_; } }); var v0_ = document.getElementById('panther-ver'); if (v0_) { v0_.textContent = '🐾 PANTHER ' + PANTHER_VERZIJA_; } } catch (eVer) {}
   var TV_MOD_ = /[?&]tv=1(&|$)/.test(location.search);
   var TV_AKCIJE_KLIJENT_ = /^(adminDnevniCiljStanje|adminUcitajPocetno|adminListEntries|adminGetCounters|adminPismaBezOdgovora|adminPismaPogodci|tvProvjera)$/;
@@ -31560,6 +31564,12 @@
     var br = document.getElementById('oznaci-sve-br'); if (br) { br.textContent = cbs.length + ' kartica' + (n ? ' · označeno ' + n : ''); }
   }
   setInterval(oznaciSveOsvjezi_, 1000);
+  // v469: statistika — klik na kućicu otvara pripadni popis
+  function statIdi_(tab, btnId) {
+    try { switchTab(tab); } catch (e) {}
+    var b = document.getElementById(btnId);
+    if (b) { window.scrollTo({ top: b.getBoundingClientRect().top + window.pageYOffset - 20, behavior: 'smooth' }); }
+  }
   function updateBulkActionsBar() {
     var bar = document.getElementById('bulk-actions-bar');
     var count = Object.keys(selectedRowIndexes).length;
