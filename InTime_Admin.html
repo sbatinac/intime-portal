@@ -674,6 +674,8 @@
   .intrix-prek{position:absolute;right:14px;bottom:8px;z-index:2;padding:6px 22px;border-radius:999px;border:2px solid #9aa3ad;background:#f1f3f5;color:#7d8791;font:inherit;font-size:16px;font-weight:900;letter-spacing:.18em;cursor:pointer;transition:all .25s;}
   .kart-prihvati-mini{border-color:#2e9e5b !important;color:#2e9e5b !important;}
   .kart-prihvati-mini:hover{background:#2e9e5b !important;color:#fff !important;}
+  .kart-odbij-mini{border-color:#c0392b !important;color:#c0392b !important;}
+  .kart-odbij-mini:hover{background:#c0392b !important;color:#fff !important;}
   .kratki-pre-btn{background:#fff;color:#5b6664;border:1.5px dashed #9aa5a3;border-radius:999px;padding:2px 11px;font:inherit;font-size:12px;font-weight:700;cursor:pointer;vertical-align:middle;}
   .kratki-pre-btn.on{background:#0b7a4b;color:#fff;border:1.5px solid #0b7a4b;}
   .kratki-kart-btn{background:#0b7a4b;color:#fff;border:0;border-radius:999px;padding:3px 12px;font:inherit;font-size:12px;font-weight:800;cursor:pointer;vertical-align:middle;}
@@ -3920,7 +3922,7 @@
     if (ZAPISI_U_TIJEKU_ === 0 && OSVJEZI_NAKON_ZAPISA_) { OSVJEZI_NAKON_ZAPISA_ = false; try { loadEntries(); } catch (eZg) { /* nije kritično */ } }
   }
   // ===== v403: TV PRIKAZ (InTime_Admin.html?tv=1) — samo pločice „Danas čeka tebe”, velike, sat, Battleships bodovi, osvježavanje svake 2 min =====
-  var PANTHER_VERZIJA_ = 'v480';
+  var PANTHER_VERZIJA_ = 'v481';
   (function(){ try{ var e=document.getElementById('prijava-ver'); if(e) e.textContent='ver. '+PANTHER_VERZIJA_.replace(/^v/,''); var z=document.querySelector('#pz-ver b'); if(z) z.textContent=PANTHER_VERZIJA_.replace(/^v/,''); }catch(_){} })();   // v471: verzija na slici prijave   // v433: broj verzije — Claude ga podiže pri svakoj isporuci (prikazuje se na TV-u i u adminu)
   try { document.addEventListener('DOMContentLoaded', function() { var v = document.getElementById('panther-ver'); if (v) { v.textContent = '🐾 PANTHER ' + PANTHER_VERZIJA_; } }); var v0_ = document.getElementById('panther-ver'); if (v0_) { v0_.textContent = '🐾 PANTHER ' + PANTHER_VERZIJA_; } } catch (eVer) {}
   var TV_MOD_ = /[?&]tv=1(&|$)/.test(location.search);
@@ -7477,6 +7479,40 @@
         if (!res || res.status !== 'ok') { st.style.color = '#a93226'; st.textContent = (res && res.message) || 'Nije uspjelo.'; return; }
         st.style.color = jeJedn ? '#b71c1c' : '#2e9e5b'; st.textContent = (jeJedn ? '📑 Jednostrana revizija — ponuda je prihvaćena ' : '✓ Ponuda je prihvaćena ') + res.datum + '. Klijent nije obaviješten.';
         setTimeout(function() { zatvori(); try { loadEntries(); } catch (eL) {} try { otvStanje_.lista = null; } catch (eO) {} }, 1300);
+      }).catch(function() { b.disabled = false; st.style.color = '#a93226'; st.textContent = 'Nema veze s poslužiteljem — pokušaj ponovno.'; });
+    });
+  }
+  // v481: ✋ ODBIJ U IME KLIJENTA
+  function odbijUImeKlijentaProzor_(entry) {
+    var o = document.createElement('div');
+    o.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:100000;display:flex;align-items:center;justify-content:center;padding:16px;';
+    var inp = 'width:100%;box-sizing:border-box;padding:8px 10px;border:1px solid #c9d3d1;border-radius:8px;font:inherit;';
+    o.innerHTML = '<div style="background:#fff;border-radius:14px;max-width:520px;width:100%;box-shadow:0 12px 40px rgba(0,0,0,.3);overflow:hidden;font-size:14px;color:#1f2d3d;">' +
+      '<div style="background:#c0392b;color:#fff;padding:12px 16px;font-weight:800;font-size:16px;">✋ Odbij ponudu u ime klijenta</div>' +
+      '<div style="padding:14px 16px;line-height:1.5;"><b>' + esc(fieldVal(entry, 'Naziv tvrtke') || '') + '</b>' + (fieldVal(entry, 'OIB') ? ' · OIB ' + esc(fieldVal(entry, 'OIB')) : '') +
+      '<div style="margin-top:8px;">Ponuda dobiva status <b style="color:#c0392b;">ODBIJENA</b>, uz zapis da si to unio ti i kada. Napravi se dokument odbijanja u mapi ponude, a link na dokumente se gasi (može se vratiti 🔓). <b>Klijent ne dobiva nikakvu obavijest.</b> Nakon toga ponudu možeš prebaciti u arhivu.</div>' +
+      '<label style="display:block;margin-top:10px;font-weight:700;">Razlog (neobavezno)</label><input type="text" class="po-razlog" placeholder="npr. ostaju kod sadašnjeg prijevoznika" style="' + inp + '">' +
+      '<label style="display:block;margin-top:8px;font-weight:700;">Tko je kod klijenta odbio (neobavezno)</label><input type="text" class="po-ime" placeholder="npr. Ivo Ivić" style="' + inp + '">' +
+      '<label style="display:block;margin-top:8px;font-weight:700;">Funkcija (neobavezno)</label><input type="text" class="po-fun" placeholder="npr. direktor" style="' + inp + '">' +
+      '<label style="display:flex;gap:8px;align-items:center;margin-top:12px;font-weight:700;cursor:pointer;"><input type="checkbox" class="po-potvrda"> Klijent je odbio ponudu (telefonom, mailom ili osobno)</label>' +
+      '<div class="po-st" style="margin-top:8px;font-weight:700;"></div>' +
+      '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;"><button type="button" class="po-ok" style="background:#c0392b;color:#fff;border:0;border-radius:8px;padding:9px 14px;font:inherit;font-weight:800;cursor:pointer;">✋ Odbij</button>' +
+      '<button type="button" class="po-x" style="background:#eef1f0;color:#333;border:0;border-radius:8px;padding:9px 14px;font:inherit;font-weight:700;cursor:pointer;">Odustani</button></div></div></div>';
+    document.body.appendChild(o);
+    var st = o.querySelector('.po-st');
+    function zatvori() { if (o.parentNode) { o.parentNode.removeChild(o); } }
+    o.querySelector('.po-x').addEventListener('click', zatvori);
+    o.addEventListener('click', function(ev) { if (ev.target === o) { zatvori(); } });
+    o.querySelector('.po-ok').addEventListener('click', function() {
+      var b = this;
+      if (!o.querySelector('.po-potvrda').checked) { st.style.color = '#a93226'; st.textContent = 'Označi kvačicu da je klijent odbio ponudu.'; return; }
+      b.disabled = true; st.style.color = '#1f2d3d'; st.textContent = 'Spremam…';
+      gasCall({ action: 'adminOdbijUImeKlijenta', token: adminToken, rowIndex: entry.rowIndex, imeOsobe: o.querySelector('.po-ime').value.trim(), funkcijaOsobe: o.querySelector('.po-fun').value.trim(), razlog: o.querySelector('.po-razlog').value.trim() }).then(function(res) {
+        b.disabled = false;
+        if (handleAuthError(res)) { zatvori(); return; }
+        if (!res || res.status !== 'ok') { st.style.color = '#a93226'; st.textContent = (res && res.message) || 'Nije uspjelo (je li objavljen novi Code.gs?).'; return; }
+        st.style.color = '#c0392b'; st.textContent = '✓ Ponuda je odbijena ' + res.datum + '. Klijent nije obaviješten — sad je možeš prebaciti u arhivu.';
+        setTimeout(function() { zatvori(); try { loadEntries(); } catch (eL) {} try { otvStanje_.lista = null; } catch (eO) {} }, 1600);
       }).catch(function() { b.disabled = false; st.style.color = '#a93226'; st.textContent = 'Nema veze s poslužiteljem — pokušaj ponovno.'; });
     });
   }
@@ -22976,6 +23012,11 @@
           bPrU_.title = 'Označi ponudu prihvaćenom umjesto klijenta — bilježi se da si to ti napravio i kada; klijent NE dobiva obavijest';
           bPrU_.addEventListener('click', function(ev) { ev.stopPropagation(); ev.preventDefault(); prihvatUImeKlijentaProzor_(entry); });
           tPrU_.appendChild(bPrU_);
+          var bOdU_ = document.createElement('button');   // v481: ✋ Odbij u ime klijenta
+          bOdU_.type = 'button'; bOdU_.className = 'kart-ponovi-mini kart-odbij-mini'; bOdU_.textContent = '✋ Odbij u ime klijenta';
+          bOdU_.title = 'Klijent je javio da NE prihvaća — ponuda dobiva status „odbijena” (može se zatim prebaciti u arhivu); klijent NE dobiva obavijest';
+          bOdU_.addEventListener('click', function(ev) { ev.stopPropagation(); ev.preventDefault(); odbijUImeKlijentaProzor_(entry); });
+          tPrU_.appendChild(bOdU_);
         }
       }
     } catch (ePrU) { /* nije kritično */ }

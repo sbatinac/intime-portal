@@ -9127,6 +9127,8 @@ function doPost(e) {
       result = otvPonudePonovi(data.token, data.rowIndex, data.noviMail, data.kopijaSebi);
     } else if (data.action === 'otvPonudeNovaVerzija') {
       result = otvPonudeNovaVerzija(data.token, data.rowIndex, data.rokDana);
+    } else if (data.action === 'adminOdbijUImeKlijenta') {
+      result = adminOdbijUImeKlijenta(data.token, data.rowIndex, data.imeOsobe, data.funkcijaOsobe, data.razlog);
     } else if (data.action === 'adminPrihvatiUImeKlijenta') {
       result = adminPrihvatiUImeKlijenta(data.token, data.rowIndex, data.imeOsobe, data.funkcijaOsobe);
     } else if (data.action === 'otvPonudeKratkiUpitnik') {
@@ -24059,6 +24061,35 @@ function otvPonudePodsjetnik(token, rowIndex, kopijaSebi) {
 // v383: PRIHVAT U IME KLIJENTA (Sašin zahtjev 26.10.2026.) — Saša u adminu označi ponudu (obična ili otvorena) prihvaćenom.
 // Bilježi se datum i da je to unio admin; klijent NE dobiva nikakav mail (ni potvrdu, ni upitnik), a automatski podsjetnici na upitnik
 // kod otvorene ponude ostaju isključeni (Saša ih može uključiti ili poslati kratki upitnik). Dokument potvrde na Driveu se stvara kao i inače.
+// v481: ✋ ODBIJ U IME KLIJENTA — klijent je javio (telefonom, mailom, osobno) da ne prihvaća; klijent ne dobiva obavijest.
+// Isto kao odbijanje preko poveznice: datum/ime/razlog, dokument odbijanja u mapi ponude, link na dokumente se gasi.
+function adminOdbijUImeKlijenta(token, rowIndex, imeOsobe, funkcijaOsobe, razlog) {
+  if (!isValidAdminToken_(token) || TV_PRISTUP_TOKEN_) { return { status: 'error', message: 'Sesija je istekla — prijavite se ponovno.' }; }
+  var r = otvCitajRed_(rowIndex);
+  if (!r) { return { status: 'error', message: 'Redak ne postoji.' }; }
+  var stanje = izracunajStatusPonude_(r.header, r.row);
+  if (stanje !== 'na_cekanju' && stanje !== 'istekla') { return { status: 'error', message: 'Ponuda se može odbiti samo dok čeka odgovor ili je istekla (sada: ' + (OPIS_STATUSA_PONUDE_[stanje] || stanje) + ').' }; }
+  if (r.header.indexOf('Datum odbijanja ponude (admin)') === -1) { return { status: 'error', message: 'Tablica nema stupac za datum odbijanja.' }; }
+  var sada = new Date(), tz = Session.getScriptTimeZone();
+  imeOsobe = String(imeOsobe || '').trim(); funkcijaOsobe = String(funkcijaOsobe || '').trim(); razlog = String(razlog || '').trim();
+  var ime = (imeOsobe || 'Saša Batinac (u ime klijenta)') + (funkcijaOsobe ? ' (' + funkcijaOsobe + ')' : '');
+  r.set('Datum odbijanja ponude (admin)', sada);
+  try { r.set('Ime i prezime osobe koja je odbila ponudu (admin)', ime); } catch (e1) {}
+  try { r.set('Razlog odbijanja ponude (admin)', (razlog ? razlog + ' · ' : '') + 'odbijanje unio Saša Batinac ' + Utilities.formatDate(sada, tz, 'dd.MM.yyyy. HH:mm')); } catch (e2) {}
+  try { r.set('IP adresa prilikom odbijanja ponude (admin)', 'admin – Saša Batinac'); } catch (e3) {}
+  try {
+    var naziv = String(r.get('Naziv tvrtke') || '').trim() || '(bez naziva)', grad = String(r.get('Mjesto') || '').trim() || '(bez mjesta)';
+    var sifra = String(r.get(ADMIN_ONLY_FIELDS.sifra_ponude) || '').trim(), verz = parseInt(r.get(ADMIN_ONLY_FIELDS.ponuda_verzija), 10) || 1;
+    var dokUrl = stvoriDokumentOdbijanjaPonude_(naziv, String(r.get('OIB') || '').trim(), grad, ime, razlog || 'odbijanje unio admin u ime klijenta', 'admin – Saša Batinac', sada, sifra ? (sifra + '-P' + verz) : '', r.rowIndex);
+    if (dokUrl) { r.set('Poveznica na dokument odbijanja ponude (admin)', dokUrl); }
+  } catch (eDok) { /* dokument je dodatak */ }
+  try {   // kao kod odbijanja preko poveznice: link na dokumente se gasi (može se vratiti gumbom 🔓)
+    var fId = String(r.get(ADMIN_ONLY_FIELDS.aktivni_folder_dokumenti_id) || '').trim();
+    if (fId) { DriveApp.getFolderById(fId).setSharing(DriveApp.Access.PRIVATE, DriveApp.Permission.NONE); }
+  } catch (eF) { /* gašenje linka je dodatak */ }
+  return { status: 'ok', datum: Utilities.formatDate(sada, tz, 'dd.MM.yyyy. HH:mm') };
+}
+
 function adminPrihvatiUImeKlijenta(token, rowIndex, imeOsobe, funkcijaOsobe) {
   if (!isValidAdminToken_(token)) { return { status: 'error', message: 'Sesija je istekla — prijavite se ponovno.' }; }
   var r = otvCitajRed_(rowIndex);
