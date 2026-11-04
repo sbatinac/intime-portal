@@ -674,6 +674,11 @@
   .intrix-prek{position:absolute;right:14px;bottom:8px;z-index:2;padding:6px 22px;border-radius:999px;border:2px solid #9aa3ad;background:#f1f3f5;color:#7d8791;font:inherit;font-size:16px;font-weight:900;letter-spacing:.18em;cursor:pointer;transition:all .25s;}
   .kart-prihvati-mini{border-color:#2e9e5b !important;color:#2e9e5b !important;}
   .kart-prihvati-mini:hover{background:#2e9e5b !important;color:#fff !important;}
+  .pm-slanja{border:1.5px solid #9aa5a3;background:#fff;color:#4b5563;border-radius:999px;padding:1px 8px;font:inherit;font-size:12px;font-weight:800;cursor:pointer;white-space:nowrap;}
+  .pm-slanja.vise,.pm-slanja-n.vise{border-color:#7b2ff7;color:#fff;background:#7b2ff7;}
+  .pm-slanja-n{display:inline-block;border:1px solid #9aa5a3;border-radius:999px;padding:0 6px;font-weight:800;cursor:help;}
+  .pm-slanja-pop{margin-top:4px;background:#f5f0ff;border:1px solid #c4b5fd;border-radius:8px;padding:6px 8px;font-size:12px;white-space:nowrap;}
+  .pm-slanja-pop ol{margin:4px 0 0 18px;padding:0;}
   .kart-odbij-mini{border-color:#c0392b !important;color:#c0392b !important;}
   .kart-odbij-mini:hover{background:#c0392b !important;color:#fff !important;}
   .kratki-pre-btn{background:#fff;color:#5b6664;border:1.5px dashed #9aa5a3;border-radius:999px;padding:2px 11px;font:inherit;font-size:12px;font-weight:700;cursor:pointer;vertical-align:middle;}
@@ -3922,7 +3927,7 @@
     if (ZAPISI_U_TIJEKU_ === 0 && OSVJEZI_NAKON_ZAPISA_) { OSVJEZI_NAKON_ZAPISA_ = false; try { loadEntries(); } catch (eZg) { /* nije kritično */ } }
   }
   // ===== v403: TV PRIKAZ (InTime_Admin.html?tv=1) — samo pločice „Danas čeka tebe”, velike, sat, Battleships bodovi, osvježavanje svake 2 min =====
-  var PANTHER_VERZIJA_ = 'v482';
+  var PANTHER_VERZIJA_ = 'v483';
   (function(){ try{ var e=document.getElementById('prijava-ver'); if(e) e.textContent='ver. '+PANTHER_VERZIJA_.replace(/^v/,''); var z=document.querySelector('#pz-ver b'); if(z) z.textContent=PANTHER_VERZIJA_.replace(/^v/,''); }catch(_){} })();   // v471: verzija na slici prijave   // v433: broj verzije — Claude ga podiže pri svakoj isporuci (prikazuje se na TV-u i u adminu)
   try { document.addEventListener('DOMContentLoaded', function() { var v = document.getElementById('panther-ver'); if (v) { v.textContent = '🐾 PANTHER ' + PANTHER_VERZIJA_; } }); var v0_ = document.getElementById('panther-ver'); if (v0_) { v0_.textContent = '🐾 PANTHER ' + PANTHER_VERZIJA_; } } catch (eVer) {}
   var TV_MOD_ = /[?&]tv=1(&|$)/.test(location.search);
@@ -7176,7 +7181,7 @@
       lista.map(function(x, i) {
         var dana = Math.floor((sada - x.ms) / 86400000);
         var tel = x.mobitel ? '<a href="tel:' + esc(x.mobitel) + '" class="pb-tel">' + esc(x.mobitel) + '</a> <button type="button" class="pb-mob-uredi" title="Promijeni broj">✎</button>' : '<span class="pb-mob-unos"><input type="tel" class="pb-mob-inp" placeholder="upiši broj"><button type="button" class="pb-mob-spremi">💾</button></span>';
-        return '<tr data-oib="' + esc(x.oib) + '" class="' + (x.nazvan ? 'pb-nazvan' : '') + (x.ishod ? ' pb-is-' + x.ishod : '') + '"><td>' + (i + 1) + '</td><td><label class="pb-zvao"><input type="checkbox" class="pb-zvao-cb"' + (x.nazvan ? ' checked' : '') + '><span class="pb-zvao-dat">' + pbZvaoTekst_(x) + '</span></label></td><td>' + pbStatusHtml_(x) + '</td><td><b>' + esc(x.naziv) + '</b><div style="font-size:11px;color:#6b7472;">OIB ' + esc(x.oib) + (x.pisama > 1 ? ' · pisama: ' + x.pisama : '') + '</div></td><td>' + tel + '</td><td>' + esc(x.osoba || '') + '</td><td style="white-space:nowrap;">' + esc(x.datum) + '</td><td style="white-space:nowrap;font-weight:800;color:' + (dana >= 14 ? '#c0392b' : (dana >= 7 ? '#b45309' : '#1f2d3d')) + ';">' + dana + ' d</td><td><button type="button" class="pb-ponovi" title="Pošalji isto pismo ponovno (npr. kad kažu da ga nisu dobili)">↻ Ponovi pismo</button></td><td style="font-size:12px;">' + kontaktMailHtml_(x.email) + '</td><td>' + esc(x.grad || '') + '</td><td style="font-size:12px;">' + esc(x.kampanja || '') + (x.izvor ? '<div style="color:#6b7472;">📍 ' + esc(x.izvor) + '</div>' : '') + '</td></tr>';
+        return '<tr data-oib="' + esc(x.oib) + '" class="' + (x.nazvan ? 'pb-nazvan' : '') + (x.ishod ? ' pb-is-' + x.ishod : '') + '"><td>' + (i + 1) + '</td><td><label class="pb-zvao"><input type="checkbox" class="pb-zvao-cb"' + (x.nazvan ? ' checked' : '') + '><span class="pb-zvao-dat">' + pbZvaoTekst_(x) + '</span></label></td><td>' + pbStatusHtml_(x) + '</td><td><b>' + esc(x.naziv) + '</b><div style="font-size:11px;color:#6b7472;">OIB ' + esc(x.oib) + ' · <span class="pm-slanja-n' + (x.pisama > 1 ? ' vise' : '') + '" title="Poslano ' + x.pisama + '×' + (x.slanjaDatumi && x.slanjaDatumi.length ? ':&#10;' + esc(x.slanjaDatumi.join('\n')) : '') + '">✉ ' + x.pisama + '×</span></div></td><td>' + tel + '</td><td>' + esc(x.osoba || '') + '</td><td style="white-space:nowrap;">' + esc(x.datum) + '</td><td style="white-space:nowrap;font-weight:800;color:' + (dana >= 14 ? '#c0392b' : (dana >= 7 ? '#b45309' : '#1f2d3d')) + ';">' + dana + ' d</td><td><button type="button" class="pb-ponovi" title="Pošalji isto pismo ponovno (npr. kad kažu da ga nisu dobili)">↻ Ponovi pismo</button></td><td style="font-size:12px;">' + kontaktMailHtml_(x.email) + '</td><td>' + esc(x.grad || '') + '</td><td style="font-size:12px;">' + esc(x.kampanja || '') + (x.izvor ? '<div style="color:#6b7472;">📍 ' + esc(x.izvor) + '</div>' : '') + '</td></tr>';
       }).join('') + '</tbody></table></div>';
     container.appendChild(t);
     // v396: kvačica „nazvao” (bilježi datum i vrijeme) i ručni unos mobitela
@@ -21418,7 +21423,7 @@
     }
     function arhivaNacrtaj() {
       if (!arhivaRedci.length) { $('pm-arh-lista').innerHTML = '<div class="empty-hint">Nema pisama koja odgovaraju pretrazi.</div>'; arhivaBrojac(); return; }
-      $('pm-arh-lista').innerHTML = '<div class="pm-skrol" style="max-height:560px;"><table class="pm-tablica"><thead><tr><th><input type="checkbox" id="pm-arh-sve" title="Označi sve prikazano"></th><th>Datum slanja</th><th>Kampanja</th><th>Firma</th><th>OIB</th><th>E-mail</th><th>Pošt. br.</th><th>Grad</th><th>Ime i prezime</th><th>Izvor</th><th>Status</th><th>Odgovor</th><th>Klijent 🎯</th></tr></thead><tbody>' +
+      $('pm-arh-lista').innerHTML = '<div class="pm-skrol" style="max-height:560px;"><table class="pm-tablica"><thead><tr><th><input type="checkbox" id="pm-arh-sve" title="Označi sve prikazano"></th><th>Datum slanja</th><th title="Koliko je puta toj firmi poslano pismo namjere (sva slanja)">Poslano</th><th>Kampanja</th><th>Firma</th><th>OIB</th><th>E-mail</th><th>Pošt. br.</th><th>Grad</th><th>Ime i prezime</th><th>Izvor</th><th>Status</th><th>Odgovor</th><th>Klijent 🎯</th></tr></thead><tbody>' +
         arhivaRedci.map(function(r, i) {
           var odgCip = r.odgovor === 'zainteresiran' ? '<span class="pm-odg da">✓ Zainteresiran' + (r.odgovorDatum ? ' <small>' + esc(r.odgovorDatum) + '</small>' : '') + (r.odgovorDirektno ? ' <small>(ručno)</small>' : '') + '</span>' : (r.odgovor === 'odbio' ? '<span class="pm-odg ne">✗ Odbio' + (r.odgovorDatum ? ' <small>' + esc(r.odgovorDatum) + '</small>' : '') + '</span>' : '');
           var pd = r.ponDatumi || {};
@@ -21430,8 +21435,19 @@
           var prihCip = pd.prihvaceno ? '<span class="pm-odg ponda" title="Firma je prihvatila ponudu">✓ Prihvaćena' + dm(pd.prihvaceno) + '</span>' : '';
           var neCip = r.ponuda === 'odbijena' ? '<span class="pm-odg ponne" title="Firma je odbila ponudu">✗ Ponuda odbijena' + dm(pd.odbijeno) + '</span>' : '';
           var rklasa = r.status === 'Greška' ? 'lose' : ((klDat || r.ponuda === 'klijent') ? 'odg-kl' : (r.odgovor === 'zainteresiran' ? 'odg-da' : (r.odgovor === 'odbio' ? 'odg-ne' : '')));
-          return '<tr class="' + rklasa + '"><td><input type="checkbox" class="pm-arh-cb" data-i="' + i + '"></td><td>' + esc(r.datum) + '</td><td>' + esc(r.kampanja) + '</td><td>' + esc(r.naziv) + '</td><td>' + esc(r.oib) + '</td><td>' + esc(r.email) + '</td><td>' + esc(r.posta) + '</td><td>' + esc(r.grad) + '</td><td>' + esc(r.osoba) + '</td><td>' + esc(r.izvor || '') + '</td><td>' + esc(r.status + (r.poruka ? ': ' + r.poruka : '')) + '</td><td class="pm-odg-td">' + odgCip + ponCip + otvCip + prihCip + neCip + klCip + '</td><td>' + esc(klDat) + '</td></tr>';
+          var sl = r.slanja || [], slCip = sl.length ? '<button type="button" class="pm-slanja' + (sl.length > 1 ? ' vise' : '') + '" data-i="' + i + '" title="Poslano ' + sl.length + '×:&#10;' + esc(sl.join('\n')) + '">' + sl.length + '×</button>' : '';
+          return '<tr class="' + rklasa + '"><td><input type="checkbox" class="pm-arh-cb" data-i="' + i + '"></td><td>' + esc(r.datum) + '</td><td>' + slCip + '</td><td>' + esc(r.kampanja) + '</td><td>' + esc(r.naziv) + '</td><td>' + esc(r.oib) + '</td><td>' + esc(r.email) + '</td><td>' + esc(r.posta) + '</td><td>' + esc(r.grad) + '</td><td>' + esc(r.osoba) + '</td><td>' + esc(r.izvor || '') + '</td><td>' + esc(r.status + (r.poruka ? ': ' + r.poruka : '')) + '</td><td class="pm-odg-td">' + odgCip + ponCip + otvCip + prihCip + neCip + klCip + '</td><td>' + esc(klDat) + '</td></tr>';
         }).join('') + '</tbody></table></div>';
+      Array.prototype.forEach.call(wrap.querySelectorAll('.pm-slanja'), function(bt) {
+        bt.addEventListener('click', function(ev) {
+          ev.stopPropagation();
+          var x = arhivaRedci[bt.getAttribute('data-i')], st = bt.nextElementSibling;
+          if (st && st.classList.contains('pm-slanja-pop')) { st.remove(); return; }
+          var d = document.createElement('div'); d.className = 'pm-slanja-pop';
+          d.innerHTML = '<b>' + esc(x.naziv) + '</b> — poslano ' + x.slanja.length + '×<ol>' + x.slanja.map(function(t) { return '<li>' + esc(t) + '</li>'; }).join('') + '</ol>';
+          bt.insertAdjacentElement('afterend', d);
+        });
+      });
       Array.prototype.forEach.call(wrap.querySelectorAll('.pm-arh-cb'), function(cb) {
         cb.addEventListener('change', function() { if (cb.checked) { oznaceno[cb.getAttribute('data-i')] = true; } else { delete oznaceno[cb.getAttribute('data-i')]; } arhivaBrojac(); });
       });

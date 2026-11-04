@@ -21096,12 +21096,14 @@ function adminPismaBezOdgovora(token) {
         var st = poOib[oib];
         var x = { oib: oib, naziv: String(r[5] || ''), email: String(r[6] || ''), grad: String(r[7] || ''), osoba: String(r[8] || ''), mobitel: String(sirina >= 16 ? (r[15] || '') : ''),
           kampanja: String(r[3]) === 'Ručno' ? 'Pojedinačno pismo' : String(r[1] || ''), izvor: String(sirina >= 15 ? (r[14] || '') : ''), ms: d.getTime(), datum: Utilities.formatDate(d, tz, 'dd.MM.yyyy. HH:mm'), pisama: 1 };
-        if (st) { x.pisama = st.pisama + 1; if (!x.mobitel) { x.mobitel = st.mobitel; } if (st.ms > x.ms) { st.pisama = x.pisama; if (!st.mobitel) { st.mobitel = x.mobitel; } return; } }
+        x.slanja = [d.getTime()];   // v483: svi datumi slanja
+        if (st) { x.pisama = st.pisama + 1; x.slanja = st.slanja.concat([d.getTime()]); if (!x.mobitel) { x.mobitel = st.mobitel; } if (st.ms > x.ms) { st.pisama = x.pisama; st.slanja = x.slanja; if (!st.mobitel) { st.mobitel = x.mobitel; } return; } }
         poOib[oib] = x;
       });
     }
     var pozivi = pismaPoziviMapa_();   // v396
-    var lista = Object.keys(poOib).map(function(k) { var x = poOib[k], pz = pozivi[k]; if (pz) { x.nazvan = pz.nazvan; x.ishod = pz.ishod; x.ishodDatum = pz.ishodDatum; x.poziva = pz.poziva; if (pz.mobitel) { x.mobitel = pz.mobitel; } } return x; }).sort(function(a, b) { return a.ms - b.ms; });
+    var lista = Object.keys(poOib).map(function(k) { var x = poOib[k], pz = pozivi[k];
+      x.slanjaDatumi = (x.slanja || []).sort(function(a, b) { return a - b; }).slice(-30).map(function(ms) { return Utilities.formatDate(new Date(ms), tz, 'dd.MM.yyyy. HH:mm'); }); delete x.slanja; if (pz) { x.nazvan = pz.nazvan; x.ishod = pz.ishod; x.ishodDatum = pz.ishodDatum; x.poziva = pz.poziva; if (pz.mobitel) { x.mobitel = pz.mobitel; } } return x; }).sort(function(a, b) { return a.ms - b.ms; });
     return { status: 'ok', lista: lista };
   } catch (err) { return { status: 'error', message: 'Popis nije uspio: ' + err.message }; }
 }
@@ -22300,8 +22302,16 @@ function adminPismaArhiva(token, q, datumOd, datumDo, kampanja, statusFilter, vr
   var saz = { redaka: 0, zainteresiranih: 0, odbilo: 0, klijenata: 0 };
   var odgF = String(odgovorFilter || '');
   var izvorF = String(izvorFilter || '').trim(), izvoriSet_ = {};   // v306: filter po izvoru kontakta ('__bez' = bez izvora)
+  var slanjaMapa_ = {};   // v483: koliko je puta i kada firmi poslano pismo (sva poslana, neovisno o filtrima)
   if (lastRow >= 2) {
     var vals = sheet.getRange(2, 1, lastRow - 1, Math.max(PISMA_HEADER_.length, Math.min(15, sheet.getLastColumn()))).getValues();
+    vals.forEach(function(rS) {
+      if (String(rS[9]) !== 'Poslano') { return; }
+      var oS = oibNorm_(rS[4]); if (oS.length !== 11) { return; }
+      var dS = pismaDatum_(rS[10]) || pismaDatum_(rS[2]); if (!dS) { return; }
+      (slanjaMapa_[oS] = slanjaMapa_[oS] || []).push(dS.getTime());
+    });
+    Object.keys(slanjaMapa_).forEach(function(k) { slanjaMapa_[k] = slanjaMapa_[k].sort(function(a, b) { return a - b; }).slice(-30).map(function(ms) { return Utilities.formatDate(new Date(ms), PISMA_TZ_, 'dd.MM.yyyy. HH:mm'); }); });
     for (var i = 0; i < vals.length; i++) {
       var r = vals[i];
       var izvKontRed_ = String(r[14] || '').trim();   // 15. stupac „Izvor kontakta”
@@ -22334,7 +22344,7 @@ function adminPismaArhiva(token, q, datumOd, datumDo, kampanja, statusFilter, vr
       if (odgF === 'klijenti' && !klRed_) { continue; }
       ukupno++;
       if (redci.length < 500) {
-        redci.push({ ponuda: ponMapa[oibRed_] ? ponMapa[oibRed_].stanje : '', ponDatumi: ponMapa[oibRed_] || null, odgovor: odgRed_ ? odgRed_.odg : '', odgovorDatum: odgRed_ ? odgRed_.datum : '', odgovorDirektno: !!(odgRed_ && odgRed_.direktno), klijentDatum: klRed_, red: i + 2, kampanja: kName, datum: d ? Utilities.formatDate(d, PISMA_TZ_, 'dd.MM.yyyy. HH:mm') : '', oib: String(r[4]), naziv: String(r[5]), email: String(r[6]), grad: String(r[7]), posta: String(r[12] || ''), osoba: String(r[8]), status: String(r[9]), poruka: String(r[11] || ''), izvor: izvKontRed_ });
+        redci.push({ ponuda: ponMapa[oibRed_] ? ponMapa[oibRed_].stanje : '', ponDatumi: ponMapa[oibRed_] || null, odgovor: odgRed_ ? odgRed_.odg : '', odgovorDatum: odgRed_ ? odgRed_.datum : '', odgovorDirektno: !!(odgRed_ && odgRed_.direktno), klijentDatum: klRed_, red: i + 2, kampanja: kName, datum: d ? Utilities.formatDate(d, PISMA_TZ_, 'dd.MM.yyyy. HH:mm') : '', oib: String(r[4]), naziv: String(r[5]), email: String(r[6]), grad: String(r[7]), posta: String(r[12] || ''), osoba: String(r[8]), status: String(r[9]), poruka: String(r[11] || ''), izvor: izvKontRed_, slanja: slanjaMapa_[oibRed_] || [] });
       }
     }
   }
