@@ -138,3 +138,4 @@
 - v479: TV — desni stupac 👁 UŽIVO (aktivnost klijenata, stalno), raspored 1 ekran (zadano) / 2 ekrana (izmjena 20 s) — bira se pri prijavi TV-a i gumbom u stupcu; PANTHER verzija i prijava u zaglavlju; .gs: TV smije čitati adminAktivnostKlijenataLista.
 - v480: TV — kod 'klijenata u bazi' trend 'ovaj mjesec' u posebnom retku (više se ne skraćuje).
 - v481: '✋ Odbij u ime klijenta' na kartici ponude (obična i otvorena, čeka/istekla) — status odbijena, dokument odbijanja, link na dokumente se gasi, klijent ne dobiva obavijest; .gs adminOdbijUImeKlijenta.
+- v482: Pretraga svih pisama — '↻ Ponovi pismo namjere (n)' za označene retke (svaka firma jednom, predložak po izboru, redom, sažetak poslano/nije).

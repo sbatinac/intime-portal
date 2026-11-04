@@ -3922,7 +3922,7 @@
     if (ZAPISI_U_TIJEKU_ === 0 && OSVJEZI_NAKON_ZAPISA_) { OSVJEZI_NAKON_ZAPISA_ = false; try { loadEntries(); } catch (eZg) { /* nije kritično */ } }
   }
   // ===== v403: TV PRIKAZ (InTime_Admin.html?tv=1) — samo pločice „Danas čeka tebe”, velike, sat, Battleships bodovi, osvježavanje svake 2 min =====
-  var PANTHER_VERZIJA_ = 'v481';
+  var PANTHER_VERZIJA_ = 'v482';
   (function(){ try{ var e=document.getElementById('prijava-ver'); if(e) e.textContent='ver. '+PANTHER_VERZIJA_.replace(/^v/,''); var z=document.querySelector('#pz-ver b'); if(z) z.textContent=PANTHER_VERZIJA_.replace(/^v/,''); }catch(_){} })();   // v471: verzija na slici prijave   // v433: broj verzije — Claude ga podiže pri svakoj isporuci (prikazuje se na TV-u i u adminu)
   try { document.addEventListener('DOMContentLoaded', function() { var v = document.getElementById('panther-ver'); if (v) { v.textContent = '🐾 PANTHER ' + PANTHER_VERZIJA_; } }); var v0_ = document.getElementById('panther-ver'); if (v0_) { v0_.textContent = '🐾 PANTHER ' + PANTHER_VERZIJA_; } } catch (eVer) {}
   var TV_MOD_ = /[?&]tv=1(&|$)/.test(location.search);
@@ -20507,7 +20507,7 @@
           '</div>' +
           '<div class="pm-saz" id="pm-arh-saz"></div>' +
           '<div id="pm-arh-kamp-info"></div>' +
-          '<div id="pm-arh-akcije" style="margin-bottom:8px;"><button type="button" class="pm-gumb opasan" id="pm-arh-brisi" disabled>🗑 Obriši označeno (0)</button></div>' +
+          '<div id="pm-arh-akcije" style="margin-bottom:8px;"><button type="button" class="pm-gumb" id="pm-arh-ponovi" disabled style="margin-right:6px;">↻ Ponovi pismo namjere (0)</button><button type="button" class="pm-gumb opasan" id="pm-arh-brisi" disabled>🗑 Obriši označeno (0)</button></div>' +
           '<div class="pm-brisanje" id="pm-arh-potvrda" hidden>' +
             '<div style="font-weight:800;color:#a93226;margin-bottom:8px;">Trajno brisanje <span id="pm-arh-potvrda-n"></span> zapisa iz arhive. Obrisani primatelji više neće biti zaštićeni od ponovnog slanja.</div>' +
             '<div class="pm-red"><label class="pm-polje">Admin lozinka<input type="password" id="pm-arh-loz" autocomplete="current-password"></label>' +
@@ -21445,8 +21445,52 @@
     function arhivaBrojac() {
       var n = Object.keys(oznaceno).length;
       $('pm-arh-brisi').textContent = '🗑 Obriši označeno (' + n + ')'; $('pm-arh-brisi').disabled = !n;
+      var nF = arhivaPonoviFirme().length; $('pm-arh-ponovi').textContent = '↻ Ponovi pismo namjere (' + nF + ')'; $('pm-arh-ponovi').disabled = !nF;
       if (!n) { $('pm-arh-potvrda').hidden = true; }
     }
+    // v482: ↻ ponovi pismo namjere svim označenim firmama (po OIB-u jednom, na e-mail iz retka)
+    function arhivaPonoviFirme() {
+      var vid = {}, out = [];
+      Object.keys(oznaceno).forEach(function(i) { var r = arhivaRedci[i]; if (!r) { return; } var o = String(r.oib || '').replace(/\D/g, ''); if (o.length !== 11 || vid[o]) { return; } vid[o] = 1; out.push({ oib: o, naziv: r.naziv, email: r.email }); });
+      return out;
+    }
+    function arhivaPonoviProzor() {
+      var firme = arhivaPonoviFirme(); if (!firme.length) { return; }
+      var o = document.createElement('div');
+      o.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:100000;display:flex;align-items:center;justify-content:center;padding:16px;';
+      o.innerHTML = '<div style="background:#fff;border-radius:14px;max-width:560px;width:100%;box-shadow:0 12px 40px rgba(0,0,0,.3);overflow:hidden;font-size:14px;color:#1f2d3d;">' +
+        '<div style="background:#4d148c;color:#fff;padding:12px 16px;font-weight:800;font-size:16px;">↻ Ponovi pismo namjere — ' + firme.length + (firme.length === 1 ? ' firma' : ' firmi') + '</div>' +
+        '<div style="padding:14px 16px;line-height:1.5;">Svakoj označenoj firmi ponovno se šalje pismo namjere na e-mail iz tablice (svaka firma samo jednom, i kad je označeno više redaka iste firme).' +
+        '<div style="max-height:170px;overflow:auto;margin-top:8px;border:1px solid #e3e7e6;border-radius:8px;padding:6px 10px;font-size:12.5px;">' + firme.map(function(f) { return '<div><b>' + esc(f.naziv) + '</b> · ' + esc(f.email) + '</div>'; }).join('') + '</div>' +
+        '<label style="display:block;margin-top:10px;font-weight:700;">Predložak</label><select class="pr-tpl" style="width:100%;box-sizing:border-box;padding:8px 10px;border:1px solid #c9d3d1;border-radius:8px;font:inherit;"><option value="zadano">Zadani predložak</option></select>' +
+        '<div class="pr-st" style="margin-top:8px;font-weight:700;"></div>' +
+        '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;"><button type="button" class="pr-ok" style="background:#4d148c;color:#fff;border:0;border-radius:8px;padding:9px 14px;font:inherit;font-weight:800;cursor:pointer;">✉ Pošalji ' + firme.length + (firme.length === 1 ? ' pismo' : ' pisama') + '</button>' +
+        '<button type="button" class="pr-x" style="background:#eef1f0;color:#333;border:0;border-radius:8px;padding:9px 14px;font:inherit;font-weight:700;cursor:pointer;">Odustani</button></div></div></div>';
+      document.body.appendChild(o);
+      var st = o.querySelector('.pr-st'), sel = o.querySelector('.pr-tpl'), radi = false;
+      function zatvori() { if (!radi && o.parentNode) { o.parentNode.removeChild(o); } }
+      o.querySelector('.pr-x').addEventListener('click', zatvori);
+      o.addEventListener('click', function(ev) { if (ev.target === o) { zatvori(); } });
+      poziv({ action: 'adminPismaPostavke' }).then(function(res) { if (res && res.status === 'ok' && Array.isArray(res.popis)) { sel.innerHTML = res.popis.map(function(t) { return '<option value="' + esc(t.id) + '">' + esc(t.naziv) + '</option>'; }).join(''); } }).catch(function() {});
+      o.querySelector('.pr-ok').addEventListener('click', function() {
+        var b = this; b.disabled = true; o.querySelector('.pr-x').disabled = true; radi = true;
+        var ok = 0, greske = [], i = 0;
+        (function sljedeci() {
+          if (i >= firme.length) {
+            radi = false; o.querySelector('.pr-x').disabled = false; o.querySelector('.pr-x').textContent = 'Zatvori';
+            st.style.color = greske.length ? '#a93226' : '#1e8449';
+            st.innerHTML = '✓ Poslano: ' + ok + (greske.length ? '<br>✗ Nije poslano: ' + greske.length + '<div style="font-weight:600;font-size:12.5px;">' + greske.map(function(g) { return esc(g); }).join('<br>') + '</div>' : '');
+            arhivaUcitaj(); return;
+          }
+          var f = firme[i++]; st.style.color = '#1f2d3d'; st.textContent = 'Šaljem ' + i + ' / ' + firme.length + ' — ' + f.naziv + '…';
+          poziv({ action: 'adminPismoPonovi', oib: f.oib, email: f.email, predlozakId: sel.value }).then(function(res) {
+            if (res && res.status === 'ok') { ok++; } else { greske.push(f.naziv + ': ' + ((res && res.message) || 'nije uspjelo')); }
+            sljedeci();
+          }).catch(function(e) { greske.push(f.naziv + ': ' + (e.message || 'nema veze')); sljedeci(); });
+        })();
+      });
+    }
+    $('pm-arh-ponovi').addEventListener('click', arhivaPonoviProzor);
     var arhivaTimer = null;
     ['pm-arh-q'].forEach(function(id) { $(id).addEventListener('input', function() { clearTimeout(arhivaTimer); arhivaTimer = setTimeout(arhivaUcitaj, 350); }); });
     ['pm-arh-od', 'pm-arh-do', 'pm-arh-vrsta', 'pm-arh-kamp', 'pm-arh-status', 'pm-arh-odg', 'pm-arh-izvor'].forEach(function(id) { $(id).addEventListener('change', arhivaUcitaj); });
