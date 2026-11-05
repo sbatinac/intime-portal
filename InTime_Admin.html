@@ -679,6 +679,7 @@
   .pm-slanja-n{display:inline-block;border:1px solid #9aa5a3;border-radius:999px;padding:0 6px;font-weight:800;cursor:help;}
   .pm-slanja-pop{margin-top:4px;background:#f5f0ff;border:1px solid #c4b5fd;border-radius:8px;padding:6px 8px;font-size:12px;white-space:nowrap;}
   .pm-slanja-pop ol{margin:4px 0 0 18px;padding:0;}
+  .arh-status-cip{display:inline-block;color:#fff;font-weight:900;font-size:12.5px;letter-spacing:.05em;padding:3px 10px;border-radius:999px;vertical-align:middle;margin-left:4px;box-shadow:0 1px 3px rgba(0,0,0,.25);}
   .kart-odbij-mini{border-color:#c0392b !important;color:#c0392b !important;}
   .kart-odbij-mini:hover{background:#c0392b !important;color:#fff !important;}
   .kratki-pre-btn{background:#fff;color:#5b6664;border:1.5px dashed #9aa5a3;border-radius:999px;padding:2px 11px;font:inherit;font-size:12px;font-weight:700;cursor:pointer;vertical-align:middle;}
@@ -3927,7 +3928,7 @@
     if (ZAPISI_U_TIJEKU_ === 0 && OSVJEZI_NAKON_ZAPISA_) { OSVJEZI_NAKON_ZAPISA_ = false; try { loadEntries(); } catch (eZg) { /* nije kritično */ } }
   }
   // ===== v403: TV PRIKAZ (InTime_Admin.html?tv=1) — samo pločice „Danas čeka tebe”, velike, sat, Battleships bodovi, osvježavanje svake 2 min =====
-  var PANTHER_VERZIJA_ = 'v483';
+  var PANTHER_VERZIJA_ = 'v484';
   (function(){ try{ var e=document.getElementById('prijava-ver'); if(e) e.textContent='ver. '+PANTHER_VERZIJA_.replace(/^v/,''); var z=document.querySelector('#pz-ver b'); if(z) z.textContent=PANTHER_VERZIJA_.replace(/^v/,''); }catch(_){} })();   // v471: verzija na slici prijave   // v433: broj verzije — Claude ga podiže pri svakoj isporuci (prikazuje se na TV-u i u adminu)
   try { document.addEventListener('DOMContentLoaded', function() { var v = document.getElementById('panther-ver'); if (v) { v.textContent = '🐾 PANTHER ' + PANTHER_VERZIJA_; } }); var v0_ = document.getElementById('panther-ver'); if (v0_) { v0_.textContent = '🐾 PANTHER ' + PANTHER_VERZIJA_; } } catch (eVer) {}
   var TV_MOD_ = /[?&]tv=1(&|$)/.test(location.search);
@@ -6848,7 +6849,9 @@
       info = ARHIVA_KATEGORIJA_BADGE_.ABANDON;
     }
     if (!info) { return ''; }
-    return ' <span style="color:' + info.boja + ';font-weight:800;font-size:11px;letter-spacing:.03em;">' + esc(info.tekst) + '</span>';
+    // v484: veća, jasna značka statusa u Arhivi (prije sitan tekst — Saša ga nije primijetio)
+    var ik = { ODBIJENA: '✗ ', ABANDON: '⛔ ', PONISTENA: '⊘ ', NIJE_DOVRSENA: '⚠ ' }[kategorija] || '';
+    return ' <span class="arh-status-cip" style="background:' + info.boja + ';">' + ik + esc(info.tekst) + '</span>';
   }
 
   // Status ponude na SAŽETKU kartice dok je klijent u "Ponude" tabu (Sašin

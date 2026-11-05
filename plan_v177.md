@@ -140,3 +140,4 @@
 - v481: '✋ Odbij u ime klijenta' na kartici ponude (obična i otvorena, čeka/istekla) — status odbijena, dokument odbijanja, link na dokumente se gasi, klijent ne dobiva obavijest; .gs adminOdbijUImeKlijenta.
 - v482: Pretraga svih pisama — '↻ Ponovi pismo namjere (n)' za označene retke (svaka firma jednom, predložak po izboru, redom, sažetak poslano/nije).
 - v483: evidencija slanja pisma namjere — stupac 'Poslano N×' u Pretrazi svih pisama (klik = svi datumi), '✉ N×' s datumima na listi NAZVATI; .gs vraća datume slanja po OIB-u.
+- v484: Arhiva — status (ODBIJENA / PONIŠTENA / NIJE DOVRŠENO / ABANDON) kao velika obojena značka uz naziv.
