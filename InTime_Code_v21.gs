@@ -8853,6 +8853,10 @@ function doPost(e) {
       result = adminPodsjetniciEvidencija(data.token);
     } else if (data.action === 'adminPodsjetnikPosaljiSad') {
       result = adminPodsjetnikPosaljiSad(data.token, data.rowIndex, data.kopijaSebi);
+    } else if (data.action === 'adminPriviciMailUpload') {
+      result = adminPriviciMailUpload(data.token, data.rowIndex, data.ime, data.mime, data.base64);
+    } else if (data.action === 'adminPriviciMailMakni') {
+      result = adminPriviciMailMakni(data.token, data.rowIndex, data.id);
     } else if (data.action === 'adminPoslovniceUpload') {
       result = adminPoslovniceUpload(data.token, data.rowIndex, data.ime, data.mime, data.base64);
     } else if (data.action === 'adminPoslovniceSpremi') {
@@ -9819,6 +9823,7 @@ var ADMIN_ONLY_FIELDS = {
   prihvat_admin: 'Prihvat unio admin u ime klijenta (admin)',   // v383: Saša prihvatio ponudu u ime klijenta (bez obavijesti klijentu)   // v381: datum kad je Saša klijentu dopustio/poslao kratki upitnik (samo osnovni podaci)
   intrix_odobren: 'INTRIX odobren (admin)',
   napomena_kartica: 'Napomena na kartici (admin)',
+  privici_mail_json: 'Privici uz mail pristupa (admin, JSON)',   // v485: datoteke koje idu kao PRIVITAK u mailu s pristupnim podacima (Drive: <klijent>/PRIVICI MAIL)
   poslovnice_json: 'Ostale poslovnice klijenta (admin, JSON)',   // v466: tablica ostalih poslovnica + popis datoteka (Drive: <klijent>/POSLOVNICE)   // v458: obojena napomena vidljiva na zaglavlju kartice ponude ([[r]]…[[/]] oznake boja)   // v412: datum kad je ponuda ručno izbačena iz INTRIX-a (odobreno); TM broj INTRIX više ne gasi sam
   intrix: 'INTRIX (admin)'   // v374: prihvaćena ponuda je u INTRIX-u (prekidač na kartici); poništava se kad ponuda dobije TM broj
   // (30.9.2026., ISPRAVAK ISTI DAN: polje "dokumenti_klijent_pristup" koje je
@@ -10414,6 +10419,33 @@ function poslovnicePodaci_(r) {
   p.zaglavlje = p.zaglavlje || []; p.redci = p.redci || []; p.datoteke = p.datoteke || [];
   return p;
 }
+// ===== v485: 📎 PRIVICI UZ MAIL PRISTUPA — samo za ovog klijenta; datoteke idu kao privitak (ne poveznica) =====
+function priviciMailLista_(r) { var l = []; try { l = JSON.parse(String(r.get(ADMIN_ONLY_FIELDS.privici_mail_json) || '[]')) || []; } catch (e) { l = []; } return Array.isArray(l) ? l : []; }
+function adminPriviciMailUpload(token, rowIndex, ime, mime, base64) {
+  if (!isValidAdminToken_(token) || TV_PRISTUP_TOKEN_) { return pismaAuthGreska_(); }
+  var r = otvCitajRed_(rowIndex); if (!r) { return { status: 'error', message: 'Redak ne postoji.' }; }
+  if (r.header.indexOf(ADMIN_ONLY_FIELDS.privici_mail_json) === -1) { return { status: 'error', message: 'Tablica još nema stupac za privitke — osvježi admin (Ctrl+F5) i pokušaj ponovno.' }; }
+  ime = String(ime || 'datoteka').replace(/[\\\/:*?"<>|]+/g, '-').slice(0, 150);
+  if (!base64) { return { status: 'error', message: 'Datoteka je prazna.' }; }
+  try {
+    var blob = Utilities.newBlob(Utilities.base64Decode(base64), mime || 'application/octet-stream', ime);
+    var folder = getOrCreateChildFolder_(revKlijentFolder_(r), 'PRIVICI MAIL');
+    var file = folder.createFile(blob);
+    var l = priviciMailLista_(r);
+    l.unshift({ ime: ime, id: file.getId(), url: file.getUrl(), vel: blob.getBytes().length, datum: Utilities.formatDate(new Date(), PISMA_TZ_, 'dd.MM.yyyy. HH:mm') });
+    l = l.slice(0, 30);
+    r.set(ADMIN_ONLY_FIELDS.privici_mail_json, JSON.stringify(l));
+    return { status: 'ok', lista: l, mapaUrl: folder.getUrl() };
+  } catch (err) { return { status: 'error', message: 'Učitavanje nije uspjelo: ' + err.message }; }
+}
+function adminPriviciMailMakni(token, rowIndex, id) {
+  if (!isValidAdminToken_(token) || TV_PRISTUP_TOKEN_) { return pismaAuthGreska_(); }
+  var r = otvCitajRed_(rowIndex); if (!r) { return { status: 'error', message: 'Redak ne postoji.' }; }
+  var l = priviciMailLista_(r).filter(function(x) { return String(x.id) !== String(id); });
+  r.set(ADMIN_ONLY_FIELDS.privici_mail_json, JSON.stringify(l));
+  return { status: 'ok', lista: l };
+}
+
 function adminPoslovniceUpload(token, rowIndex, ime, mime, base64) {
   if (!isValidAdminToken_(token) || TV_PRISTUP_TOKEN_) { return pismaAuthGreska_(); }
   var r = otvCitajRed_(rowIndex); if (!r) { return { status: 'error', message: 'Redak ne postoji.' }; }
@@ -15503,7 +15535,7 @@ function adminPosaljiKlijentPristupMail(token, rowIndex, primatelji, predmet, ti
     // v467: privici iz „Ostale poslovnice klijenta” — samo datoteke zapisane uz TOG klijenta
     if (prilozi && prilozi.length) {
       var rP_ = otvCitajRed_(rowIndex), dozvoljeno_ = {};
-      if (rP_) { poslovnicePodaci_(rP_).datoteke.forEach(function(d) { if (d.id) { dozvoljeno_[d.id] = true; } }); }
+      if (rP_) { poslovnicePodaci_(rP_).datoteke.forEach(function(d) { if (d.id) { dozvoljeno_[d.id] = true; } }); priviciMailLista_(rP_).forEach(function(d) { if (d.id) { dozvoljeno_[d.id] = true; } }); }   // v485: + privici uz mail
       var blobs_ = [];
       prilozi.forEach(function(id) { id = String(id); if (!dozvoljeno_[id]) { return; } try { blobs_.push(DriveApp.getFileById(id).getBlob()); } catch (eB) { /* datoteka obrisana s Drivea */ } });
       if (blobs_.length) { opcije.attachments = blobs_; }

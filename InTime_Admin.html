@@ -768,6 +768,14 @@
   .oznaci-sve-traka button:hover{background:#0f6b5e;color:#fff;}
   .oznaci-sve-traka span{font-size:12.5px;color:#5b6664;}
   /* v466: ostale poslovnice klijenta */
+  .af-kred-priv-okvir{margin:12px 0;padding:10px 12px;border:2px solid #0f766e;border-radius:10px;background:#f0fdfa;}
+  .af-kred-priv-drop{border:2px dashed #14b8a6;border-radius:10px;padding:12px;text-align:center;cursor:pointer;background:#fff;color:#0f766e;font-size:13px;margin-top:6px;}
+  .af-kred-priv-drop.nad{background:#ccfbf1;border-color:#0f766e;} .af-kred-priv-drop small{color:#5b6664;}
+  .af-kred-priv-st{font-size:12.5px;font-weight:700;margin-top:6px;}
+  .af-kred-priv-lista{margin-top:8px;font-size:13px;} .af-kred-priv-red{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:4px 0;border-bottom:1px dashed #b7e4dc;}
+  .af-kred-priv-red label{cursor:pointer;} .af-kred-priv-red small{color:#6b7472;} .af-kred-priv-red a{color:#0f766e;font-weight:700;font-size:12px;}
+  .af-kred-priv-x{border:0;background:#fde2e1;color:#c0392b;border-radius:6px;cursor:pointer;font-weight:800;padding:1px 7px;}
+  .af-kred-priv-uk{font-size:12px;color:#0f766e;font-weight:700;margin-top:6px;}
   .af-kred-posl-prilozi{margin:0 0 10px;font-size:12.5px;} .af-kred-posl-n{font-weight:800;color:#0f6b5e;margin-bottom:3px;} .af-kred-posl-l{display:block;cursor:pointer;margin:2px 0;}
   .posl-blok{grid-column:1 / -1;margin-top:12px;padding-top:10px;border-top:1px dashed var(--line,#d9dfdd);}
   .posl-nasl{font-size:11px;font-weight:800;letter-spacing:.02em;text-transform:uppercase;color:var(--purple-dark,#0f4c45);margin-bottom:6px;}
@@ -3928,7 +3936,7 @@
     if (ZAPISI_U_TIJEKU_ === 0 && OSVJEZI_NAKON_ZAPISA_) { OSVJEZI_NAKON_ZAPISA_ = false; try { loadEntries(); } catch (eZg) { /* nije kritično */ } }
   }
   // ===== v403: TV PRIKAZ (InTime_Admin.html?tv=1) — samo pločice „Danas čeka tebe”, velike, sat, Battleships bodovi, osvježavanje svake 2 min =====
-  var PANTHER_VERZIJA_ = 'v484';
+  var PANTHER_VERZIJA_ = 'v485';
   (function(){ try{ var e=document.getElementById('prijava-ver'); if(e) e.textContent='ver. '+PANTHER_VERZIJA_.replace(/^v/,''); var z=document.querySelector('#pz-ver b'); if(z) z.textContent=PANTHER_VERZIJA_.replace(/^v/,''); }catch(_){} })();   // v471: verzija na slici prijave   // v433: broj verzije — Claude ga podiže pri svakoj isporuci (prikazuje se na TV-u i u adminu)
   try { document.addEventListener('DOMContentLoaded', function() { var v = document.getElementById('panther-ver'); if (v) { v.textContent = '🐾 PANTHER ' + PANTHER_VERZIJA_; } }); var v0_ = document.getElementById('panther-ver'); if (v0_) { v0_.textContent = '🐾 PANTHER ' + PANTHER_VERZIJA_; } } catch (eVer) {}
   var TV_MOD_ = /[?&]tv=1(&|$)/.test(location.search);
@@ -22649,8 +22657,66 @@
     slot._kljuc = kljuc;
     slot.innerHTML = d.length ? '<div class="af-kred-posl-n">📎 Priloži uz mail (iz „🏪 Ostale poslovnice klijenta”):</div>' + d.map(function(x) { var ch = oznaceni[x.id] === undefined ? true : oznaceni[x.id]; return '<label class="af-kred-posl-l"><input type="checkbox" class="af-kred-posl-cb" value="' + esc(x.id) + '"' + (ch ? ' checked' : '') + '> ' + esc(x.ime) + '</label>'; }).join('') : '';
   }
+  // ===== v485: 📎 DOKUMENTACIJA ZA OVOG KLIJENTA — sve što ubaciš ide kao PRIVITAK u mailu s pristupnim podacima =====
+  var PRIV_POLJE_ = 'Privici uz mail pristupa (admin, JSON)';
+  function privLista_(entry) { var l = []; try { l = JSON.parse(fieldVal(entry, PRIV_POLJE_) || '[]') || []; } catch (e) { l = []; } return Array.isArray(l) ? l : []; }
+  function privVel_(b) { b = +b || 0; return b > 1048576 ? (b / 1048576).toFixed(1) + ' MB' : Math.max(1, Math.round(b / 1024)) + ' KB'; }
+  function privMailCrtaj_(entry, wrap, sila) {
+    var box = wrap && wrap.querySelector('.af-kred-priv-okvir'); if (!box) { return; }
+    var l = privLista_(entry), kljuc = l.map(function(x) { return x.id; }).join(',');
+    if (!sila && box._kljuc === kljuc) { return; }
+    var oznaceni = {}; Array.prototype.forEach.call(box.querySelectorAll('.af-kred-posl-cb'), function(c) { oznaceni[c.value] = c.checked; });
+    box._kljuc = kljuc;
+    var imaStupac = Object.prototype.hasOwnProperty.call(entry.fields, PRIV_POLJE_);
+    var uk = l.reduce(function(a, x) { return a + (+x.vel || 0); }, 0);
+    box.innerHTML = '<label class="af-kred-uvodni-label">📎 Dokumentacija za OVOG klijenta — ide kao <b>PRIVITAK</b> u mailu (ne poveznica), drugi klijenti je ne vide</label>' +
+      '<div class="af-kred-priv-drop" tabindex="0"><b>📥 Povuci datoteke ovdje</b> (s računala) ili klikni za odabir<br><small>spremaju se u klijentov direktorij na Driveu → mapa <b>PRIVICI MAIL</b> · ukupno najviše ~20 MB po mailu</small><input type="file" multiple hidden></div>' +
+      '<div class="af-kred-priv-st"></div>' +
+      (l.length ? '<div class="af-kred-priv-lista">' + l.map(function(x) { var ch = oznaceni[x.id] === undefined ? true : oznaceni[x.id]; return '<div class="af-kred-priv-red"><label><input type="checkbox" class="af-kred-posl-cb af-kred-priv-cb" value="' + esc(x.id) + '"' + (ch ? ' checked' : '') + '> 📎 <b>' + esc(x.ime) + '</b></label> <small>' + (x.vel ? privVel_(x.vel) + ' · ' : '') + esc(x.datum || '') + '</small> <a href="' + esc(x.url) + '" target="_blank" rel="noopener">otvori</a> <button type="button" class="af-kred-priv-x" data-id="' + esc(x.id) + '" title="Makni s popisa (datoteka na Driveu ostaje)">✕</button></div>'; }).join('') +
+        '<div class="af-kred-priv-uk">Označeno ide uz mail · ukupno ' + privVel_(uk) + (uk > 20 * 1048576 ? ' <b style="color:#c0392b;">— preveliko za jedan mail!</b>' : '') + '</div></div>' : '') +
+      (imaStupac ? '' : '<div class="af-kred-priv-st" style="color:#c0392b;">Najprije objavi novi Code.gs (Deploy → New version), pa osvježi admin.</div>');
+    var drop = box.querySelector('.af-kred-priv-drop'), inp = drop.querySelector('input'), st = box.querySelector('.af-kred-priv-st');
+    var posalji = function(files) {
+      files = Array.prototype.slice.call(files || []); if (!files.length) { return; }
+      var i = 0, ok = 0, greske = [];
+      var dalje = function() {
+        if (i >= files.length) { privMailCrtaj_(entry, wrap, true); var s2 = wrap.querySelector('.af-kred-priv-st'); if (s2) { s2.style.color = greske.length ? '#c0392b' : '#0b7a4b'; s2.textContent = '✓ Učitano ' + ok + '/' + files.length + (greske.length ? ' · greške: ' + greske.join('; ') : '') + '.'; } return; }
+        var f = files[i++];
+        if (f.size > 20 * 1024 * 1024) { greske.push(f.name + ' (veća od 20 MB)'); dalje(); return; }
+        st.style.color = '#1f2d3d'; st.textContent = '⏫ Učitavam ' + i + '/' + files.length + ': ' + f.name + '…';
+        var rd = new FileReader();
+        rd.onload = function() {
+          gasCall({ action: 'adminPriviciMailUpload', token: adminToken, rowIndex: entry.rowIndex, ime: f.name, mime: f.type || '', base64: String(rd.result).split(',')[1] || '' }).then(function(res) {
+            if (handleAuthError(res)) { return; }
+            if (!res || res.status !== 'ok') { greske.push(f.name + ': ' + ((res && res.message) || 'greška')); } else { ok++; entry.fields[PRIV_POLJE_] = JSON.stringify(res.lista); }
+            dalje();
+          }).catch(function() { greske.push(f.name + ': veza'); dalje(); });
+        };
+        rd.onerror = function() { greske.push(f.name + ': čitanje'); dalje(); };
+        rd.readAsDataURL(f);
+      };
+      dalje();
+    };
+    drop.addEventListener('click', function() { inp.click(); });
+    inp.addEventListener('change', function() { posalji(inp.files); inp.value = ''; });
+    ['dragenter', 'dragover'].forEach(function(ev) { drop.addEventListener(ev, function(e) { e.preventDefault(); e.stopPropagation(); drop.classList.add('nad'); }); });
+    ['dragleave', 'drop'].forEach(function(ev) { drop.addEventListener(ev, function(e) { e.preventDefault(); e.stopPropagation(); drop.classList.remove('nad'); }); });
+    drop.addEventListener('drop', function(e) { posalji(e.dataTransfer && e.dataTransfer.files); });
+    Array.prototype.forEach.call(box.querySelectorAll('.af-kred-priv-x'), function(bx) {
+      bx.addEventListener('click', function() {
+        if (!confirm('Maknuti ovu datoteku s popisa privitaka?\n(Datoteka na Google Driveu ostaje.)')) { return; }
+        st.style.color = '#1f2d3d'; st.textContent = 'Mičem…';
+        gasCall({ action: 'adminPriviciMailMakni', token: adminToken, rowIndex: entry.rowIndex, id: bx.getAttribute('data-id') }).then(function(res) {
+          if (handleAuthError(res)) { return; }
+          if (!res || res.status !== 'ok') { st.style.color = '#c0392b'; st.textContent = (res && res.message) || 'Nije uspjelo.'; return; }
+          entry.fields[PRIV_POLJE_] = JSON.stringify(res.lista); privMailCrtaj_(entry, wrap, true);
+        }).catch(function() { st.style.color = '#c0392b'; st.textContent = 'Nema veze s poslužiteljem.'; });
+      });
+    });
+  }
   function poslovniceUgradi_(entry, wrap) {
     try { poslPriloziOsvjezi_(entry, wrap); } catch (ePp) {}
+    try { privMailCrtaj_(entry, wrap); } catch (ePm) {}
     if (!wrap || wrap.querySelector('.posl-blok')) { return; }
     var prikup = wrap.querySelector('.af-prikup-info-blok'); if (!prikup) { return; }
     var b = document.createElement('div'); b.className = 'posl-blok';
@@ -25295,6 +25361,7 @@
               '<div class="af-kred-dok-lista"></div>' +
               '<div class="af-kred-dok-status"></div>' +
             '</div>' +
+            '<div class="af-kred-priv-okvir"></div>' +   // v485: 📎 privici samo za ovog klijenta (idu kao privitak)
             '<div class="af-kred-slanje-okvir">' +
               '<div class="af-kred-primatelji-red">' +
                 '<textarea class="af-kred-primatelji-textarea" placeholder="primatelji (e-mail adrese odvojene zarezom) — automatski popunjeno kao kod slanja ponude"></textarea>' +
