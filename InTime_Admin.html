@@ -3479,6 +3479,17 @@
       <label style="display:flex;align-items:flex-start;gap:8px;margin:0 0 8px;cursor:pointer;font-size:13.5px;"><input type="radio" name="mp-nacin" id="mp-google" value="GOOGLE" style="margin-top:3px;"> <span><b>Google račun</b> <span id="mp-adr-google" style="color:#4a5a57;"></span><span style="display:block;font-size:12px;color:#6a7a77;">Šalje izravno s Gmail računa na kojem radi skripta.</span></span></label>
       <div id="mp-upozorenje" hidden style="background:#fff4e0;border:1px solid #f0c36d;border-radius:8px;padding:6px 10px;font-size:12.5px;color:#7a5200;margin-bottom:8px;">⚠ Adresa In Time domene nije postavljena kao Gmail „Send mail as” alias na računu skripte — dok se to ne postavi, mailovi će i uz ovaj izbor ići s Google računa.</div>
       <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;"><button type="button" class="btn btn-small" onclick="mailPosiljateljSpremi_()">Spremi</button><span id="mp-status" style="font-size:12.5px;font-weight:700;"></span></div>
+      <!-- v487: testno slanje — provjera dolazi li mail u Primljeno ili Spam -->
+      <div id="mt-blok" style="margin-top:12px;padding-top:10px;border-top:1px dashed #9fd3ca;">
+        <label style="display:block;font-weight:700;margin-bottom:4px;color:#0b6b60;">🧪 Testno slanje — stiže li u Primljeno ili Spam?</label>
+        <p class="settings-hint" style="margin:0 0 8px;">Šalje isti mail s <b>in-time.hr</b> adrese ili s <b>Gmaila</b>, bez mijenjanja postavke iznad. Pošalji na svoje druge adrese (Gmail, in-time.hr, Outlook…) i pogledaj gdje je stigao. Za ocjenu 1–10: na <a href="https://www.mail-tester.com" target="_blank" rel="noopener">mail-tester.com</a> kopiraj njihovu adresu, pošalji test na nju i klikni „Then check your score”. U primljenom mailu <b>⋮ → Prikaži izvornik</b> pokazuje SPF / DKIM / DMARC.</p>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:6px;">
+          <input type="email" id="mt-adresa" placeholder="adresa za test" style="flex:1;min-width:220px;padding:7px 10px;border:1px solid #9fd3ca;border-radius:8px;font:inherit;">
+          <select id="mt-vrsta" style="padding:7px 10px;border:1px solid #9fd3ca;border-radius:8px;font:inherit;"><option value="kratka">Kratka testna poruka</option><option value="pismo">Pismo namjere (zadani predložak)</option></select>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;"><button type="button" class="btn btn-small" onclick="mailTestPosalji_('INTIME')">✉ Test s in-time.hr</button><button type="button" class="btn btn-small btn-outline" onclick="mailTestPosalji_('GOOGLE')">✉ Test s Gmaila</button></div>
+        <div id="mt-rez" style="margin-top:8px;font-size:12.5px;"></div>
+      </div>
     </div>
     <!-- Brzi upitnik — lozinka (v363) -->
     <div style="border:2px solid #e0a400;background:#fffbea;border-radius:10px;padding:10px 12px;margin-bottom:14px;">
@@ -3941,7 +3952,7 @@
     if (ZAPISI_U_TIJEKU_ === 0 && OSVJEZI_NAKON_ZAPISA_) { OSVJEZI_NAKON_ZAPISA_ = false; try { loadEntries(); } catch (eZg) { /* nije kritično */ } }
   }
   // ===== v403: TV PRIKAZ (InTime_Admin.html?tv=1) — samo pločice „Danas čeka tebe”, velike, sat, Battleships bodovi, osvježavanje svake 2 min =====
-  var PANTHER_VERZIJA_ = 'v486';
+  var PANTHER_VERZIJA_ = 'v487';
   (function(){ try{ var e=document.getElementById('prijava-ver'); if(e) e.textContent='ver. '+PANTHER_VERZIJA_.replace(/^v/,''); var z=document.querySelector('#pz-ver b'); if(z) z.textContent=PANTHER_VERZIJA_.replace(/^v/,''); }catch(_){} })();   // v471: verzija na slici prijave   // v433: broj verzije — Claude ga podiže pri svakoj isporuci (prikazuje se na TV-u i u adminu)
   try { document.addEventListener('DOMContentLoaded', function() { var v = document.getElementById('panther-ver'); if (v) { v.textContent = '🐾 PANTHER ' + PANTHER_VERZIJA_; } }); var v0_ = document.getElementById('panther-ver'); if (v0_) { v0_.textContent = '🐾 PANTHER ' + PANTHER_VERZIJA_; } } catch (eVer) {}
   var TV_MOD_ = /[?&]tv=1(&|$)/.test(location.search);
@@ -12850,6 +12861,21 @@
       else { st.style.color = '#a93226'; st.textContent = (r && r.message) || 'Greška.'; }
     }).catch(function() { st.style.color = '#a93226'; st.textContent = 'Greška u komunikaciji.'; });
   }
+  function mailTestPosalji_(nacin) {   // v487
+    var a = document.getElementById('mt-adresa'), rez = document.getElementById('mt-rez'), v = document.getElementById('mt-vrsta');
+    var adr = (a.value || '').trim();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(adr)) { rez.innerHTML = '<div style="color:#a93226;font-weight:700;">Upiši ispravnu adresu za test.</div>'; a.focus(); return; }
+    try { localStorage.setItem('intime_mail_test_adr', adr); } catch (e) {}
+    var red = document.createElement('div'); red.style.cssText = 'padding:4px 0;border-bottom:1px dashed #cfe9e4;';
+    red.textContent = '⏳ Šaljem s ' + (nacin === 'GOOGLE' ? 'Gmaila' : 'in-time.hr') + ' na ' + adr + '…';
+    rez.insertBefore(red, rez.firstChild);
+    gasCall({ action: 'adminMailTestPosiljatelj', token: adminToken, adresa: adr, nacin: nacin, vrsta: v.value }).then(function(r) {
+      if (handleAuthError(r)) { return; }
+      if (r && r.status === 'ok') { red.innerHTML = '✅ <b>' + esc(r.vrijeme) + '</b> — poslano <b>od ' + esc(r.od) + '</b> na ' + esc(adr) + ' · predmet: <i>' + esc(r.predmet) + '</i> → provjeri Primljeno / Spam'; red.style.color = '#0b6b60'; }
+      else { red.textContent = '✖ ' + ((r && r.message) || 'Nije uspjelo (je li objavljen novi Code.gs?).'); red.style.color = '#a93226'; }
+    }).catch(function() { red.textContent = '✖ Nema veze s poslužiteljem.'; red.style.color = '#a93226'; });
+  }
+  try { document.addEventListener('DOMContentLoaded', function() { var a = document.getElementById('mt-adresa'); if (a) { try { a.value = localStorage.getItem('intime_mail_test_adr') || ''; } catch (e) {} } }); } catch (eMt) {}
   function mailPosiljateljSpremi_() {
     var st = document.getElementById('mp-status'), g = document.getElementById('mp-google');
     st.textContent = 'Spremam…'; st.style.color = '#4a5a57';

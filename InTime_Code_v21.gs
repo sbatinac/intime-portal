@@ -8921,6 +8921,8 @@ function doPost(e) {
       result = adminUnikorniPodsjetnikVidjen(data.token);
     } else if (data.action === 'adminMailPosiljateljGet') {
       result = adminMailPosiljateljGet(data.token);
+    } else if (data.action === 'adminMailTestPosiljatelj') {
+      result = adminMailTestPosiljatelj(data.token, data.adresa, data.nacin, data.vrsta);
     } else if (data.action === 'adminMailPosiljateljSpremi') {
       result = adminMailPosiljateljSpremi(data.token, data.nacin);
     } else if (data.action === 'adminUnikorniPostavke') {
@@ -20607,6 +20609,41 @@ function adminMailPosiljateljSpremi(token, nacin) {
   MAIL_FROM_MEMO_ = null;
   try { var c = CacheService.getScriptCache(); c.remove('fromok:' + MAIL_FROM_ZADANO_.toLowerCase()); } catch (e) { /* ne smeta */ }
   return adminMailPosiljateljGet(token);
+}
+
+// v487: TESTNO SLANJE iz Postavki — isti mail s in-time.hr adrese (Gmail alias) ili s Google računa, da se provjeri dolazi li u Primljeno ili Spam.
+// Ne mijenja postavku pošiljatelja i ne bilježi se nigdje (ide izravno, bez automatske BCC kopije).
+function adminMailTestPosiljatelj(token, adresa, nacin, vrsta) {
+  if (!isValidAdminToken_(token) || TV_PRISTUP_TOKEN_) { return pismaAuthGreska_(); }
+  var to = String(adresa || '').trim();
+  if (!/^[^\s@,;]+@[^\s@,;]+\.[^\s@,;]{2,}$/.test(to)) { return { status: 'error', message: 'Upiši ispravnu adresu za test.' }; }
+  nacin = String(nacin || '').toUpperCase() === 'GOOGLE' ? 'GOOGLE' : 'INTIME';
+  var racun = pismaRacun_(), from = '';
+  if (nacin === 'INTIME') {
+    var pr = null; try { pr = PropertiesService.getScriptProperties().getProperty('MAIL_FROM_ADRESA'); } catch (e) { pr = null; }
+    var adr = (pr !== null && String(pr).trim()) ? String(pr).trim() : MAIL_FROM_ZADANO_;
+    var al = pismaAliasi_().map(function(x) { return String(x).toLowerCase(); });
+    if (al.indexOf(adr.toLowerCase()) === -1) { return { status: 'error', message: 'Adresa ' + adr + ' nije postavljena kao „Pošalji poruku kao” u Gmailu ' + racun + ' — test s in-time.hr nije moguć.' }; }
+    from = adr;
+  }
+  var tz = Session.getScriptTimeZone(), sada = Utilities.formatDate(new Date(), tz, 'dd.MM.yyyy. HH:mm:ss');
+  var iz = pismaIzlaz_(), predmet, html;
+  try {
+    if (String(vrsta || '') === 'pismo') {
+      var post = pismaPostavke_('zadano');
+      var podaci = { oib: '12345678903', naziv: 'Primjer d.o.o.', email: to, grad: 'Osijek', posta: '31000', adresa: 'Ulica kralja Zvonimira 12', osoba: 'Ivan Horvat' };
+      predmet = pismaPredmetRender_(post.predmet, podaci, post);
+      html = pismaRenderiraj_(post.tijelo, podaci, post, true);
+    } else {
+      predmet = 'In Time d.o.o. — testna poruka ' + sada;
+      html = '<p>Poštovani,</p><p>ovo je testna poruka sustava In Time d.o.o. poslana ' + sada + ' s adrese <b>' + (from || racun) + '</b>.</p><p>Ako je ova poruka stigla u mapu Neželjena pošta (Spam), označite je s „Nije spam”.</p><p>Srdačan pozdrav,<br>Saša Batinac<br>In Time d.o.o.</p>';
+    }
+    var opts = { htmlBody: html, name: iz.ime || 'Saša Batinac | In Time d.o.o.' };
+    if (from) { opts.from = from; }
+    var odg = odgovoriNaAdresa_(); if (odg) { opts.replyTo = odg; }
+    GmailApp.sendEmail(to, predmet, skiniHtmlTagoveZaFallback_(html) || ' ', opts);
+    return { status: 'ok', od: from || racun, preko: racun, vrijeme: sada, predmet: predmet };
+  } catch (err) { return { status: 'error', message: 'Slanje nije uspjelo: ' + err.message }; }
 }
 
 function pismaKvota_() {
