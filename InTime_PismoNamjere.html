@@ -6694,6 +6694,37 @@
   // v381: KRATKI UPITNIK — kad ga je In Time uključio za ovu ponudu, prikazuju se SAMO osnovna polja (isto što i brzi unos lozinkom)
   var KRATKI_IMENA_ = ['oib', 'naziv', 'adresa', 'grad', 'postanski_broj', 'iban', 'kontakt', 'kontakt_email', 'telefon', 'logistika_osoba_ime', 'logistika_osoba_email', 'logistika_osoba_telefon',
     'mjesto_prikupa_isto_kao_sjediste', 'mjesto_prikupa_adresa', 'mjesto_prikupa_grad', 'mjesto_prikupa_postanski_broj', 'mjesto_prikupa_potvrda', 'vrijeme_prikupa'];
+  // v486: KRATKI UPITNIK IZ PISMA NAMJERE (?otvori=upitnik&kratki=1) — osnovna polja + usluge, pošiljke, inozemstvo, (neobavezno) sadržaj, prijevoznik, iznos, dodatne usluge
+  var KRATKI_PISMO_DODATNA_ = ['osnovne_usluge', 'broj_usluga_domaca', 'razdoblje_usluga_domaca', 'broj_usluga_medjunarodna', 'razdoblje_usluga_medjunarodna', 'udio_izvoza_medjunarodna',
+    'broj_usluga_fedex_express', 'razdoblje_usluga_fedex_express', 'udio_izvoza_fedex_express', 'broj_usluga_fedex_economy', 'razdoblje_usluga_fedex_economy', 'udio_izvoza_fedex_economy',
+    'tezina_posiljaka', 'tezina_ostalo', 'sadrzaj_posiljki', 'sadrzaj_posiljki_ostalo', 'logisticke_sluzbe', 'logisticke_sluzbe_ostalo', 'mjesecni_iznos_logistika', 'dodatne_usluge', 'dodatne_usluge_ostalo'];
+  function pismoKratkiUkljuci_() {
+    if (window.KRATKI_UPITNIK_) { return; }
+    window.KRATKI_PISMO_ = true;
+    KRATKI_PISMO_DODATNA_.forEach(function(n) { if (KRATKI_IMENA_.indexOf(n) === -1) { KRATKI_IMENA_.push(n); } });
+    if (!document.getElementById('kratki-pismo-stil')) {
+      var st = document.createElement('style'); st.id = 'kratki-pismo-stil';
+      st.textContent = 'html.kratki-upitnik-mod [id$="-kategorije-hint"],html.kratki-upitnik-mod [id$="-kategorije-rows"],html.kratki-upitnik-mod [id$="-kategorije-blok"],html.kratki-upitnik-mod .kat-tezine-rows{display:none !important;}' +
+        'html.kratki-upitnik-mod .usluga-blok > :not(.usluga-blok-heading):not([id$="-broj-blok"]):not(.impact-slider-wrap):not(label:has(+ .impact-slider-wrap)){display:none !important;}' +
+        'html.kratki-upitnik-mod input[name="novi_klijent_bez_opsega"]{display:none;} html.kratki-upitnik-mod .form-section h3 + .sec-hint + .choice-group + .sec-hint{display:none !important;}';
+      document.head.appendChild(st);
+    }
+    kratkiUpitnikUkljuci_();
+    var hk = document.createElement('input'); hk.type = 'hidden'; hk.name = 'kratki_upitnik_pismo'; hk.value = 'Da';
+    var f = document.getElementById('panel-interes'); if (f) { f.appendChild(hk); }
+  }
+  function pismoKratkiNedostaje_(form) {
+    var ned = [], prvi = null;
+    var us = Array.prototype.filter.call(form.querySelectorAll('input[name="osnovne_usluge"]'), function(c) { return c.checked; }).map(function(c) { return c.value; });
+    if (!us.length) { ned.push('barem jedna usluga koja Vas zanima'); prvi = form.querySelector('input[name="osnovne_usluge"]'); }
+    var trazi = function(name, opis) { var el = form.querySelector('[name="' + name + '"]'); if (el && !String(el.value || '').trim()) { ned.push(opis); prvi = prvi || el; } };
+    if (us.some(function(v) { return /DOMAĆA/.test(v); })) { trazi('broj_usluga_domaca', 'broj pošiljaka u Hrvatskoj'); }
+    if (us.some(function(v) { return /Međunarodna InTime/.test(v); })) { trazi('broj_usluga_medjunarodna', 'broj pošiljaka – međunarodna InTime distribucija'); }
+    if (us.some(function(v) { return /FedEx EXPRESS/.test(v); })) { trazi('broj_usluga_fedex_express', 'broj pošiljaka – FedEx Express'); }
+    if (us.some(function(v) { return /FedEx ECONOMY/.test(v); })) { trazi('broj_usluga_fedex_economy', 'broj pošiljaka – FedEx Economy'); }
+    if (!form.querySelector('input[name="tezina_posiljaka"]:checked')) { ned.push('težina pošiljaka'); prvi = prvi || form.querySelector('input[name="tezina_posiljaka"]'); }
+    return ned.length ? { tekst: ned.join(', '), el: prvi } : null;
+  }
   function kratkiUpitnikUkljuci_() {
     var form = document.getElementById('panel-interes'); if (!form) { return; }
     window.KRATKI_UPITNIK_ = true;
@@ -6730,7 +6761,7 @@
     }
     var k = document.createElement('div'); k.id = 'kratki-kutija';
     k.style.cssText = 'border:2px solid #016579;background:#eef8f8;border-radius:10px;padding:12px 16px;margin:0 0 16px;font-size:14px;color:#0b3d3a;';
-    k.innerHTML = '<div style="font-weight:800;font-size:15px;margin-bottom:4px;">📝 Kratki upitnik</div><div>Potrebni su samo osnovni podaci: tvrtka i IBAN, kontakt osoba, osoba za pripremu robe te adresa i vrijeme prikupa. Ispunjavanje traje nekoliko minuta.</div>';
+    k.innerHTML = '<div style="font-weight:800;font-size:15px;margin-bottom:4px;">📝 Kratki upitnik</div><div>' + (window.KRATKI_PISMO_ ? 'Potrebni su samo osnovni podaci: tvrtka i kontakt osoba, usluge koje Vas zanimaju, okvirni broj i težina pošiljaka te podaci za otvaranje računa (IBAN, osoba za pripremu robe, adresa i vrijeme prikupa). Ispunjavanje traje nekoliko minuta.' : 'Potrebni su samo osnovni podaci: tvrtka i IBAN, kontakt osoba, osoba za pripremu robe te adresa i vrijeme prikupa. Ispunjavanje traje nekoliko minuta.') + '</div>';
     form.insertBefore(k, form.firstChild);
   }
   function brziKutijaUmetni_() {
@@ -6773,7 +6804,8 @@
     var _brziMod = (which === 'interes' && (!!window.BRZI_LOZINKA_ || !!window.KRATKI_UPITNIK_));   // v381: i kratki upitnik
     if (_brziMod) {
       var _bNed = brziNedostaje_(form);
-      if (_bNed) { alert('Za brzi unos obavezno je popuniti: ' + _bNed.tekst + '.'); if (_bNed.el) { _bNed.el.scrollIntoView({behavior:'smooth', block:'center'}); _bNed.el.focus(); } return false; }
+      if (!_bNed && window.KRATKI_PISMO_) { _bNed = pismoKratkiNedostaje_(form); }   // v486
+      if (_bNed) { alert((window.KRATKI_PISMO_ ? 'Obavezno je popuniti: ' : 'Za brzi unos obavezno je popuniti: ') + _bNed.tekst + '.'); if (_bNed.el) { _bNed.el.scrollIntoView({behavior:'smooth', block:'center'}); _bNed.el.focus(); } return false; }
     }
     if (!_brziMod) {
 
@@ -7113,7 +7145,7 @@
     }
     var _ponuda = !!window.PONUDA_TOKEN_;
     if (_ponuda) { payload.otvorena_token = window.PONUDA_TOKEN_; }
-    if (_brziMod) { if (window.BRZI_LOZINKA_) { payload.brzi_lozinka = window.BRZI_LOZINKA_; } else { payload.kratki_upitnik = true; } }
+    if (_brziMod) { if (window.BRZI_LOZINKA_) { payload.brzi_lozinka = window.BRZI_LOZINKA_; } else if (!window.KRATKI_PISMO_) { payload.kratki_upitnik = true; } }
     // admin popunjava umjesto klijenta (gumb "Popuni ja umjesto klijenta"): klijentu ne ide potvrdni mail
     try { if (/[?&]bez_maila=1(&|$)/.test(location.search)) { payload.bez_potvrde_klijentu = 'Da'; } } catch (eBm) { /* nebitno */ }
     var _submitBtnFinal = form.querySelector('button[type="submit"]');
@@ -7693,7 +7725,7 @@
       var nas = { upitnik: 'Prodajni upitnik', odbijenica: 'Odgovor — trenutno nas ne zanima', gorivo: '⛽ Kretanje cijena goriva' };
       var sto = h.contains('izravni-upitnik') ? 'upitnik' : (h.contains('izravni-odbijenica') ? 'odbijenica' : 'gorivo');
       document.getElementById('izravni-traka-naslov').textContent = nas[sto];
-      if (sto === 'upitnik') { showPanel('interes'); }
+      if (sto === 'upitnik') { showPanel('interes'); if (/[?&]kratki=1(&|$)/.test(location.search)) { try { pismoKratkiUkljuci_(); document.getElementById('izravni-traka-naslov').textContent = 'Kratki upitnik'; } catch (eKp) {} } }
       else if (sto === 'odbijenica') { showPanel('odbijenica'); }
       else { var gs = document.getElementById('gorivo-galerija-sadrzaj'); if (gs) { gs.hidden = false; } try { osiguirajGorivoGraf_(); } catch (eG) {} }
       setTimeout(function(){ window.scrollTo(0, 0); }, 150);

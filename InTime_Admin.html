@@ -680,6 +680,7 @@
   .pm-slanja-pop{margin-top:4px;background:#f5f0ff;border:1px solid #c4b5fd;border-radius:8px;padding:6px 8px;font-size:12px;white-space:nowrap;}
   .pm-slanja-pop ol{margin:4px 0 0 18px;padding:0;}
   .arh-status-cip{display:inline-block;color:#fff;font-weight:900;font-size:12.5px;letter-spacing:.05em;padding:3px 10px;border-radius:999px;vertical-align:middle;margin-left:4px;box-shadow:0 1px 3px rgba(0,0,0,.25);}
+  .kratki-pismo-red{display:flex;gap:6px;align-items:center;margin:6px 0 10px;font-size:13.5px;cursor:pointer;color:#0f6b5e;} .kratki-pismo-opis{color:#6b7472;font-size:12px;}
   .kart-odbij-mini{border-color:#c0392b !important;color:#c0392b !important;}
   .kart-odbij-mini:hover{background:#c0392b !important;color:#fff !important;}
   .kratki-pre-btn{background:#fff;color:#5b6664;border:1.5px dashed #9aa5a3;border-radius:999px;padding:2px 11px;font:inherit;font-size:12px;font-weight:700;cursor:pointer;vertical-align:middle;}
@@ -3914,6 +3915,10 @@
   // Adresa dolazi iz Postavki (BCC polje); kad je prazna, poslužitelj koristi zadanu. Kućica vrijedi i kad je
   // automatska skrivena kopija u Postavkama ISKLJUČENA — poslužitelj tada dodaje BCC samo za taj mail.
   var ADMIN_MAIL_KOPIJE_ = 'sbatinac.intime@gmail.com';
+  // v486: kvačica „📝 Kratki upitnik” kod slanja pisma namjere (link vodi na kratki upitnik)
+  function kratkiPismoHtml_(klasaCb) {
+    return '<label class="kratki-pismo-red" title="Klijent u upitniku vidi samo kratka pitanja: tvrtka i kontakt, usluge, broj i težina pošiljaka (+ inozemstvo), prijevoznik/iznos/dodatne usluge (neobavezno), IBAN, osoba za pripremu robe, adresa i vrijeme prikupa"><input type="checkbox" class="' + klasaCb + '"> 📝 <b>Kratki upitnik</b> <span class="kratki-pismo-opis">— link u pismu vodi na skraćeni upitnik</span></label>';
+  }
   function kopijaAdminHtml_(klasaRed, klasaCb) {
     var a = String(ADMIN_MAIL_KOPIJE_).replace(/&/g, '&amp;').replace(/</g, '&lt;');
     return '<label class="' + klasaRed + ' kopija-adm-red"><input type="checkbox" class="' + klasaCb + ' kopija-adm-cb"> 📧 Pošalji kopiju na administratorski mail <span class="kopija-adm-adr">(' + a + ')</span></label>';
@@ -3936,7 +3941,7 @@
     if (ZAPISI_U_TIJEKU_ === 0 && OSVJEZI_NAKON_ZAPISA_) { OSVJEZI_NAKON_ZAPISA_ = false; try { loadEntries(); } catch (eZg) { /* nije kritično */ } }
   }
   // ===== v403: TV PRIKAZ (InTime_Admin.html?tv=1) — samo pločice „Danas čeka tebe”, velike, sat, Battleships bodovi, osvježavanje svake 2 min =====
-  var PANTHER_VERZIJA_ = 'v485';
+  var PANTHER_VERZIJA_ = 'v486';
   (function(){ try{ var e=document.getElementById('prijava-ver'); if(e) e.textContent='ver. '+PANTHER_VERZIJA_.replace(/^v/,''); var z=document.querySelector('#pz-ver b'); if(z) z.textContent=PANTHER_VERZIJA_.replace(/^v/,''); }catch(_){} })();   // v471: verzija na slici prijave   // v433: broj verzije — Claude ga podiže pri svakoj isporuci (prikazuje se na TV-u i u adminu)
   try { document.addEventListener('DOMContentLoaded', function() { var v = document.getElementById('panther-ver'); if (v) { v.textContent = '🐾 PANTHER ' + PANTHER_VERZIJA_; } }); var v0_ = document.getElementById('panther-ver'); if (v0_) { v0_.textContent = '🐾 PANTHER ' + PANTHER_VERZIJA_; } } catch (eVer) {}
   var TV_MOD_ = /[?&]tv=1(&|$)/.test(location.search);
@@ -7141,7 +7146,7 @@
       '<div style="padding:14px 16px;line-height:1.5;">Zadnje pismo poslano: <b>' + esc(x.datum) + '</b>' + (x.pisama > 1 ? ' (ukupno ' + x.pisama + ')' : '') +
       '<label style="display:block;margin-top:10px;font-weight:700;">E-mail primatelja</label><input type="email" class="pp-mail" value="' + esc(x.email) + '" style="width:100%;box-sizing:border-box;padding:8px 10px;border:1px solid #c9d3d1;border-radius:8px;font:inherit;">' +
       '<label style="display:block;margin-top:8px;font-weight:700;">Predložak</label><select class="pp-tpl" style="width:100%;box-sizing:border-box;padding:8px 10px;border:1px solid #c9d3d1;border-radius:8px;font:inherit;"><option value="zadano">Zadani predložak</option></select>' +
-      kopijaAdminHtml_('pp-kop-red', 'pp-kop') +
+      kopijaAdminHtml_('pp-kop-red', 'pp-kop') + kratkiPismoHtml_('pp-kratki') +
       '<div class="pp-st" style="margin-top:8px;font-weight:700;"></div>' +
       '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;"><button type="button" class="pp-ok" style="background:#4d148c;color:#fff;border:0;border-radius:8px;padding:9px 14px;font:inherit;font-weight:800;cursor:pointer;">✉ Pošalji ponovno</button>' +
       '<button type="button" class="pp-x" style="background:#eef1f0;color:#333;border:0;border-radius:8px;padding:9px 14px;font:inherit;font-weight:700;cursor:pointer;">Odustani</button></div></div></div>';
@@ -7157,7 +7162,7 @@
       var b = this, mail = o.querySelector('.pp-mail').value.trim();
       if (!/^[^\s@,;]+@[^\s@,;]+\.[^\s@,;]{2,}$/.test(mail)) { st.style.color = '#a93226'; st.textContent = 'Upiši ispravnu e-mail adresu.'; return; }
       b.disabled = true; st.style.color = '#1f2d3d'; st.textContent = 'Šaljem…';
-      gasCall({ action: 'adminPismoPonovi', token: adminToken, oib: x.oib, email: mail, predlozakId: sel.value, kopijaAdminu: !!o.querySelector('.pp-kop:checked') }).then(function(res) {
+      gasCall({ action: 'adminPismoPonovi', token: adminToken, oib: x.oib, email: mail, predlozakId: sel.value, kopijaAdminu: !!o.querySelector('.pp-kop:checked'), kratkiUpitnik: !!o.querySelector('.pp-kratki:checked') }).then(function(res) {
         b.disabled = false;
         if (handleAuthError(res)) { zatvori(); return; }
         if (!res || res.status !== 'ok') { st.style.color = '#a93226'; st.textContent = (res && res.message) || 'Slanje nije uspjelo.'; return; }
@@ -20476,7 +20481,7 @@
           '<p class="af-slanje-guard-hint" id="pm-rucno-hint"></p>' +
           '<div class="af-gif-spremno" id="pm-rucno-gif" hidden><button type="button" class="vk-zvuk" hidden>🔊 Uključi zvuk</button><video playsinline preload="auto" aria-label="Sve je spremno za slanje pisma"></video><div class="af-gif-opis">⚓ Sve je spremno za slanje pisma</div></div></div>' +
         '<div style="margin-top:10px;"></div>' +
-        kopijaAdminHtml_('pm-kopija-red', 'pm-rucno-kopija') +
+        kopijaAdminHtml_('pm-kopija-red', 'pm-rucno-kopija') + kratkiPismoHtml_('pm-rucno-kratki') +
         '<button type="button" class="pm-gumb" id="pm-posalji" disabled>✉ Pošalji pismo namjere</button> ' +
         '<button type="button" class="pm-gumb sek" id="pm-nacrt-spremi" title="Spremi upisane podatke bez slanja — ostaju sa statusom „nije poslano“ i nakon osvježavanja stranice">💾 Spremi (nije poslano)</button>' +
         '<span class="pm-status" id="pm-posalji-status"></span><span class="pm-status" id="pm-nacrt-status"></span>' +
@@ -20496,7 +20501,7 @@
         '<div class="af-slanje-guard" id="pm-kamp-guard" style="margin-top:12px;"><h4>Uvjeti za slanje kampanje</h4><div class="af-slanje-guard-uvjeti" id="pm-kamp-uvjeti"></div>' +
           '<p class="af-slanje-guard-hint" id="pm-kamp-hint"></p>' +
           '<div class="af-gif-spremno" id="pm-kamp-gif" hidden><button type="button" class="vk-zvuk" hidden>🔊 Uključi zvuk</button><video playsinline preload="auto" aria-label="Sve je spremno za slanje kampanje"></video><div class="af-gif-opis">⚓ Sve je spremno za slanje kampanje</div></div></div>' +
-        '<div style="margin-top:12px;">' + kopijaAdminHtml_('pm-kopija-red', 'pm-kamp-kopija') + '<div class="pm-hint" style="margin:-4px 0 8px;">Uz svaki mail kampanje ide skrivena kopija — to troši dodatnu dnevnu kvotu slanja.</div><button type="button" class="pm-gumb" id="pm-kreni" disabled>🚀 Pošalji kampanju</button> <button type="button" class="pm-gumb sek" id="pm-kamp-nacrt-spremi" title="Spremi naziv, popis iz Excela i odabrani predložak bez slanja — ostaje sa statusom „nije poslano“ pa možeš nastaviti kasnije">💾 Spremi (nije poslano)</button><span class="pm-status" id="pm-kreni-status"></span><span class="pm-status" id="pm-kamp-nacrt-status"></span></div>' +
+        '<div style="margin-top:12px;">' + kopijaAdminHtml_('pm-kopija-red', 'pm-kamp-kopija') + kratkiPismoHtml_('pm-kamp-kratki') + '<div class="pm-hint" style="margin:-4px 0 8px;">Uz svaki mail kampanje ide skrivena kopija — to troši dodatnu dnevnu kvotu slanja.</div><button type="button" class="pm-gumb" id="pm-kreni" disabled>🚀 Pošalji kampanju</button> <button type="button" class="pm-gumb sek" id="pm-kamp-nacrt-spremi" title="Spremi naziv, popis iz Excela i odabrani predložak bez slanja — ostaje sa statusom „nije poslano“ pa možeš nastaviti kasnije">💾 Spremi (nije poslano)</button><span class="pm-status" id="pm-kreni-status"></span><span class="pm-status" id="pm-kamp-nacrt-status"></span></div>' +
         '<div id="pm-kamp-nacrti" style="margin-top:14px;"></div>' +
         '<div id="pm-slanje" style="display:none;">' +
           '<div class="pm-traka"><div id="pm-traka"></div></div>' +
@@ -20917,7 +20922,7 @@
       // test šalje SPREMLJENI predložak — prvo spremi trenutne izmjene
       spremiPredlozak().then(function(r1) {
         if (r1.status !== 'ok') { throw new Error(r1.message || 'Spremanje predloška nije uspjelo.'); }
-        return poziv({ action: 'adminPismoTest', testMail: $('pm-test-adresa').value, predlozakId: tplId });
+        return poziv({ action: 'adminPismoTest', testMail: $('pm-test-adresa').value, predlozakId: tplId, kratkiUpitnik: !!document.querySelector('.pm-rucno-kratki:checked, .pm-kamp-kratki:checked') });
       }).then(function(res) {
         b.disabled = false;
         status($('pm-test-status'), res.status === 'ok' ? 'Test poslan na ' + $('pm-test-adresa').value + '.' : (res.message || 'Slanje nije uspjelo.'), res.status === 'ok' ? 'ok' : 'greska');
@@ -21107,7 +21112,7 @@
       if (!dup && !confirm('Poslati pismo namjere na ' + p.email + ' (predložak: ' + tplNaziv($('pm-rucno-tpl').value) + ')?' + (document.querySelector('.pm-rucno-kopija:checked') ? '\n\n(+ kopija na administratorski mail: ' + ADMIN_MAIL_KOPIJE_ + ')' : ''))) { return; }
       var b = $('pm-posalji'); b.disabled = true; status($('pm-posalji-status'), 'Šaljem…');
       rucnoSlanjeUToku = true; gifPaljbaOtvori_('✉ Šaljem pismo namjere…');
-      poziv({ action: 'adminPismoPosalji', oib: p.oib, naziv: p.naziv, email: p.email, grad: p.grad, posta: p.posta, adresa: p.adresa, osoba: p.osoba, mobitel: p.mobitel || '', izvorKontakta: p.izvorKontakta, potvrdiDuplikat: dup, predlozakId: $('pm-rucno-tpl').value, kopijaAdminu: !!document.querySelector('.pm-rucno-kopija:checked') }).then(function(res) {
+      poziv({ action: 'adminPismoPosalji', oib: p.oib, naziv: p.naziv, email: p.email, grad: p.grad, posta: p.posta, adresa: p.adresa, osoba: p.osoba, mobitel: p.mobitel || '', izvorKontakta: p.izvorKontakta, potvrdiDuplikat: dup, predlozakId: $('pm-rucno-tpl').value, kopijaAdminu: !!document.querySelector('.pm-rucno-kopija:checked'), kratkiUpitnik: !!document.querySelector('.pm-rucno-kratki:checked') }).then(function(res) {
         rucnoSlanjeUToku = false; gifPaljbaZatvori_();
         b.disabled = false;
         if (res.status === 'ok') {
@@ -21180,7 +21185,7 @@
     function slanjeRucno(dup, p) {
       status($('pm-posalji-status'), 'Šaljem…');
       rucnoSlanjeUToku = true; rucnoAzuriraj(); gifPaljbaOtvori_('✉ Šaljem pismo namjere…');
-      poziv({ action: 'adminPismoPosalji', oib: p.oib, naziv: p.naziv, email: p.email, grad: p.grad, posta: p.posta, adresa: p.adresa, osoba: p.osoba, mobitel: p.mobitel || '', izvorKontakta: p.izvorKontakta, potvrdiDuplikat: true, predlozakId: $('pm-rucno-tpl').value, kopijaAdminu: !!document.querySelector('.pm-rucno-kopija:checked') }).then(function(res) {
+      poziv({ action: 'adminPismoPosalji', oib: p.oib, naziv: p.naziv, email: p.email, grad: p.grad, posta: p.posta, adresa: p.adresa, osoba: p.osoba, mobitel: p.mobitel || '', izvorKontakta: p.izvorKontakta, potvrdiDuplikat: true, predlozakId: $('pm-rucno-tpl').value, kopijaAdminu: !!document.querySelector('.pm-rucno-kopija:checked'), kratkiUpitnik: !!document.querySelector('.pm-rucno-kratki:checked') }).then(function(res) {
         rucnoSlanjeUToku = false; gifPaljbaZatvori_();
         status($('pm-posalji-status'), res.status === 'ok' ? 'Poslano na ' + p.email + '.' : (res.message || 'Slanje nije uspjelo.'), res.status === 'ok' ? 'ok' : 'greska');
         if (res.status === 'ok') { nacrtPoslan_(); rucnoOcisti_(p); nacrtajPregledOdgodeno(); kvotaPrikaz(res.kvota); osvjeziEvidenciju(); rucnoPotvrdaReset_(); } else { rucnoAzuriraj(); }
@@ -21303,7 +21308,7 @@
     function pokreniKampanjuStvarno_(naziv, ok, b) {
       b.disabled = true; status($('pm-kreni-status'), 'Pokrećem…');
       gifPaljbaOtvori_('🚀 Pokrećem kampanju…');
-      poziv({ action: 'adminKampanjaStart', kopijaAdminu: !!document.querySelector('.pm-kamp-kopija:checked'), naziv: naziv, predlozakId: $('pm-kamp-tpl').value, redci: redciKampanje.filter(function(r) { return !r.iskljuci; }).map(function(r) { return { oib: r.oib, naziv: r.naziv, email: r.email, grad: r.grad, posta: r.posta, osoba: r.osoba, izvorKontakta: r.izvorKontakta || '', mobitel: r.mobitel || '' }; }) }).then(function(res) {
+      poziv({ action: 'adminKampanjaStart', kopijaAdminu: !!document.querySelector('.pm-kamp-kopija:checked'), kratkiUpitnik: !!document.querySelector('.pm-kamp-kratki:checked'), naziv: naziv, predlozakId: $('pm-kamp-tpl').value, redci: redciKampanje.filter(function(r) { return !r.iskljuci; }).map(function(r) { return { oib: r.oib, naziv: r.naziv, email: r.email, grad: r.grad, posta: r.posta, osoba: r.osoba, izvorKontakta: r.izvorKontakta || '', mobitel: r.mobitel || '' }; }) }).then(function(res) {
         if (res.status !== 'ok') { gifPaljbaZatvoriOdmah_(); b.disabled = false; status($('pm-kreni-status'), res.message || 'Pokretanje nije uspjelo.', 'greska'); kampAzuriraj(); return; }
         status($('pm-kreni-status'), '');
         kampanjaZakljucana = true; potvrdjeno['pm-kamp'] = ''; guardiOsvjezi(); try { kampPonistiGumb_(); } catch (ePg) {}
@@ -21490,6 +21495,7 @@
         '<div style="padding:14px 16px;line-height:1.5;">Svakoj označenoj firmi ponovno se šalje pismo namjere na e-mail iz tablice (svaka firma samo jednom, i kad je označeno više redaka iste firme).' +
         '<div style="max-height:170px;overflow:auto;margin-top:8px;border:1px solid #e3e7e6;border-radius:8px;padding:6px 10px;font-size:12.5px;">' + firme.map(function(f) { return '<div><b>' + esc(f.naziv) + '</b> · ' + esc(f.email) + '</div>'; }).join('') + '</div>' +
         '<label style="display:block;margin-top:10px;font-weight:700;">Predložak</label><select class="pr-tpl" style="width:100%;box-sizing:border-box;padding:8px 10px;border:1px solid #c9d3d1;border-radius:8px;font:inherit;"><option value="zadano">Zadani predložak</option></select>' +
+        kratkiPismoHtml_('pr-kratki') +
         '<div class="pr-st" style="margin-top:8px;font-weight:700;"></div>' +
         '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;"><button type="button" class="pr-ok" style="background:#4d148c;color:#fff;border:0;border-radius:8px;padding:9px 14px;font:inherit;font-weight:800;cursor:pointer;">✉ Pošalji ' + firme.length + (firme.length === 1 ? ' pismo' : ' pisama') + '</button>' +
         '<button type="button" class="pr-x" style="background:#eef1f0;color:#333;border:0;border-radius:8px;padding:9px 14px;font:inherit;font-weight:700;cursor:pointer;">Odustani</button></div></div></div>';
@@ -21510,7 +21516,7 @@
             arhivaUcitaj(); return;
           }
           var f = firme[i++]; st.style.color = '#1f2d3d'; st.textContent = 'Šaljem ' + i + ' / ' + firme.length + ' — ' + f.naziv + '…';
-          poziv({ action: 'adminPismoPonovi', oib: f.oib, email: f.email, predlozakId: sel.value }).then(function(res) {
+          poziv({ action: 'adminPismoPonovi', oib: f.oib, email: f.email, predlozakId: sel.value, kratkiUpitnik: !!o.querySelector('.pr-kratki:checked') }).then(function(res) {
             if (res && res.status === 'ok') { ok++; } else { greske.push(f.naziv + ': ' + ((res && res.message) || 'nije uspjelo')); }
             sljedeci();
           }).catch(function(e) { greske.push(f.naziv + ': ' + (e.message || 'nema veze')); sljedeci(); });

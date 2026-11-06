@@ -50,6 +50,7 @@ function dohvatiGlobalniBccEmail_() {
 // automatska kopija u Postavkama uključena. Administratorski mail = adresa iz Postavki (ako je upisana), inače NOTIFY_EMAIL.
 // Automatska kopija svih mailova u Postavkama sad ima i prekidač (zadano UKLJUČENO kad je adresa upisana — kao i prije).
 var POSTAVKE_GLOBALNI_BCC_UKLJUCEN_KLJUC_ = 'GLOBALNI_BCC_UKLJUCEN';
+var PISMA_KRATKI_ZAHTJEV_ = false;   // v486: pismo namjere vodi na KRATKI upitnik (postavlja doPost iz data.kratkiUpitnik ili obrada kampanje)
 var KOPIJA_ADMINU_ZAHTJEV_ = false;   // postavlja doPost (ili obrada kampanje) za trenutni zahtjev
 function globalniBccUkljucen_() {
   return PropertiesService.getScriptProperties().getProperty(POSTAVKE_GLOBALNI_BCC_UKLJUCEN_KLJUC_) !== 'false';
@@ -8271,6 +8272,7 @@ function doPost(e) {
     }
     // kućica „Pošalji kopiju na administratorski mail“ — vrijedi samo uz valjani admin token
     KOPIJA_ADMINU_ZAHTJEV_ = (data.kopijaAdminu === true) && isValidAdminToken_(data.token);
+    PISMA_KRATKI_ZAHTJEV_ = (data.kratkiUpitnik === true);
 
     if (data.action === 'trackVisit') {
       trackVisit();
@@ -20703,8 +20705,12 @@ function pismaBlokPrimatelja_(podaci) {
 }
 
 // Zamjena tagova; vrijednosti se u HTML tijelu escapeaju (zaštita od HTML-a u Excelu).
+var PISMA_KRATKI_URL_ = PISMA_UPITNIK_URL_ + '&kratki=1';
+var PISMA_KRATKI_OZNAKA_ = '📝 kratki upitnik';
 function pismaRenderiraj_(tekst, podaci, postavke, jeHtml) {
   var link = postavke.linkRebrandly || postavke.linkGlavna || '#';
+  var kratki_ = !!(podaci && podaci.kratki);
+  if (kratki_) { postavke = Object.assign({}, postavke, { linkRebrandly: PISMA_KRATKI_URL_, linkGlavna: PISMA_KRATKI_URL_ }); link = PISMA_KRATKI_URL_; }
   var v = function(x) { return jeHtml ? pismaEsc_(x) : String(x == null ? '' : x); };
   var osoba = String(podaci.osoba || '').trim();
   var zamjene = {
@@ -20724,6 +20730,14 @@ function pismaRenderiraj_(tekst, podaci, postavke, jeHtml) {
   var out = String(tekst || '').replace(/\{\{([A-Z_]+)\}\}/g, function(m, k) { return Object.prototype.hasOwnProperty.call(zamjene, k) ? zamjene[k] : m; });
   // naziv firme završava točkom ("d.o.o.") + točka rečenice u predlošku → bez dvostruke točke
   if (jeHtml) { out = out.replace(/\.(<\/strong>)\./g, '.$1'); }
+  if (kratki_) {   // v486: i poveznice upisane izravno u predložak vode na kratki upitnik
+    var MARK_ = '\u0002KRATKI\u0002';
+    out = out.split(PISMA_KRATKI_URL_).join(MARK_);
+    [podaci._linkRebrandly, podaci._linkGlavna, PISMA_UPITNIK_URL_].filter(function(u) { return u && u.length > 10; }).sort(function(x, y) { return y.length - x.length; }).forEach(function(u) {
+      out = out.replace(new RegExp(u.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '(?=["\'<\\s)]|&quot;|$)', 'g'), MARK_);   // samo cijela poveznica (ne dio druge adrese)
+    });
+    out = out.split(MARK_).join(PISMA_KRATKI_URL_);
+  }
   return out;
 }
 
@@ -20740,6 +20754,7 @@ function pismaPredmetRender_(predmetTpl, podaci, postavke) {
 }
 
 function pismaPosaljiMail_(podaci, postavke) {
+  if (podaci && podaci.kratki) { podaci = Object.assign({}, podaci, { _linkRebrandly: postavke.linkRebrandly || '', _linkGlavna: postavke.linkGlavna || '' }); }
   var predmet = pismaPredmetRender_(postavke.predmet, podaci, postavke);
   var html = pismaRenderiraj_(postavke.tijelo, podaci, postavke, true);
   var plain = skiniHtmlTagoveZaFallback_(html);
@@ -21037,7 +21052,7 @@ function adminPismoTest(token, testMail, predlozakId) {
   var m = String(testMail || '').trim();
   if (!/^[^\s@,;]+@[^\s@,;]+\.[^\s@,;]{2,}$/.test(m)) { return { status: 'error', message: 'Upiši ispravnu test adresu.' }; }
   try {
-    pismaPosaljiMail_({ oib: '12345678903', naziv: 'Primjer d.o.o.', email: m, grad: 'Osijek', posta: '31000', adresa: 'Ulica kralja Zvonimira 12', osoba: 'Ivan Horvat' }, pismaPostavke_(predlozakId));
+    pismaPosaljiMail_({ oib: '12345678903', naziv: 'Primjer d.o.o.', email: m, grad: 'Osijek', posta: '31000', adresa: 'Ulica kralja Zvonimira 12', osoba: 'Ivan Horvat', kratki: PISMA_KRATKI_ZAHTJEV_ }, pismaPostavke_(predlozakId));
     return { status: 'ok' };
   } catch (err) { return { status: 'error', message: 'Slanje nije uspjelo: ' + err.message }; }
 }
@@ -21158,7 +21173,8 @@ function pismaPosaljiRucno_(ulaz, potvrdiDuplikat, predlozakId, nazivZapisa) {
     }
     var postavke = pismaPostavke_(predlozakId);
     var status = 'Poslano', poruka = '';
-    try { pismaPosaljiMail_(p, postavke); } catch (err) { status = 'Greška'; poruka = String(err && err.message || err); }
+    if (PISMA_KRATKI_ZAHTJEV_ || (ulaz && ulaz.kratki === true)) { p.kratki = true; }
+    try { pismaPosaljiMail_(p, postavke); if (p.kratki) { poruka = PISMA_KRATKI_OZNAKA_; } } catch (err) { status = 'Greška'; poruka = String(err && err.message || err); }
     sheet.appendRow(sheetSigRed_([Utilities.getUuid().slice(0, 8), nazivZapisa || 'Ručno pismo', new Date(), 'Ručno', p.oib, p.naziv, p.email, p.grad, p.osoba, status, new Date(), poruka, p.posta, p.adresa, p.izvorKontakta, p.mobitel]));
     if (status !== 'Poslano') { return { status: 'error', message: 'Slanje nije uspjelo: ' + poruka }; }
     return { status: 'ok', kvota: pismaKvota_() };
@@ -22110,6 +22126,18 @@ function pismaKampanjaKopijaSpremi_(kampanjaId) {
   var k = Object.keys(m); if (k.length > 60) { k.slice(0, k.length - 60).forEach(function(x) { delete m[x]; }); }
   props.setProperty(PISMA_KAMP_KOPIJA_KEY_, JSON.stringify(m));
 }
+// v486: kampanja s kratkim upitnikom — pamti se po id-u kampanje (vrijedi i kad slanje nastavlja okidač)
+var PISMA_KAMP_KRATKI_KEY_ = 'PISMA_KAMP_KRATKI';
+function pismaKampanjaKratkiSpremi_(kampanjaId) {
+  var props = PropertiesService.getScriptProperties(), m = {};
+  try { m = JSON.parse(props.getProperty(PISMA_KAMP_KRATKI_KEY_) || '{}'); } catch (e) { m = {}; }
+  m[kampanjaId] = 1;
+  var k = Object.keys(m); if (k.length > 60) { k.slice(0, k.length - 60).forEach(function(x) { delete m[x]; }); }
+  props.setProperty(PISMA_KAMP_KRATKI_KEY_, JSON.stringify(m));
+}
+function pismaKampanjaKratki_(kampanjaId) {
+  try { return !!JSON.parse(PropertiesService.getScriptProperties().getProperty(PISMA_KAMP_KRATKI_KEY_) || '{}')[kampanjaId]; } catch (e) { return false; }
+}
 function pismaKampanjaKopija_(kampanjaId) {
   try { return !!JSON.parse(PropertiesService.getScriptProperties().getProperty(PISMA_KAMP_KOPIJA_KEY_) || '{}')[kampanjaId]; } catch (e) { return false; }
 }
@@ -22146,6 +22174,7 @@ function adminKampanjaStart(token, naziv, redci, predlozakId) {
     if (mobRed.some(function(x) { return x[0]; })) { sheet.getRange(prviRed, 16, mobRed.length, 1).setNumberFormat('@'); sheet.getRange(prviRed, 16, mobRed.length, 1).setValues(mobRed.map(sheetSigRed_)); }   // v395
     pismaKampanjaPredlozakSpremi_(id, predlozakId);
     if (KOPIJA_ADMINU_ZAHTJEV_) { pismaKampanjaKopijaSpremi_(id); }
+    if (PISMA_KRATKI_ZAHTJEV_) { pismaKampanjaKratkiSpremi_(id); }
     pismaTrigerOsiguraj_();
     return { status: 'ok', kampanjaId: id, ceka: ceka, preskoceno: preskoceno, kvota: pismaKvota_() };
   } finally { lock.releaseLock(); }
@@ -22186,7 +22215,9 @@ function pismaObradiRedove_(kampanjaId, maxSekundi) {
           var tplId = pismaKampanjaPredlozak_(String(r[0]));
           if (!postavkeKesh[tplId]) { postavkeKesh[tplId] = pismaPostavke_(tplId); }
           KOPIJA_ADMINU_ZAHTJEV_ = pismaKampanjaKopija_(String(r[0]));
-          pismaPosaljiMail_({ oib: r[4], naziv: r[5], email: email, grad: r[7], osoba: r[8], posta: r[12] }, postavkeKesh[tplId]);
+          var kratkiK_ = pismaKampanjaKratki_(String(r[0]));
+          pismaPosaljiMail_({ oib: r[4], naziv: r[5], email: email, grad: r[7], osoba: r[8], posta: r[12], kratki: kratkiK_ }, postavkeKesh[tplId]);
+          if (kratkiK_) { poruka = PISMA_KRATKI_OZNAKA_; }
           poslaniSet[email] = true;
           if (kvota !== null) { kvota--; }
         } catch (err) { status = 'Greška'; poruka = String(err && err.message || err); }

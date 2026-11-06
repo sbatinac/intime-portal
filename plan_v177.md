@@ -142,3 +142,4 @@
 - v483: evidencija slanja pisma namjere — stupac 'Poslano N×' u Pretrazi svih pisama (klik = svi datumi), '✉ N×' s datumima na listi NAZVATI; .gs vraća datume slanja po OIB-u.
 - v484: Arhiva — status (ODBIJENA / PONIŠTENA / NIJE DOVRŠENO / ABANDON) kao velika obojena značka uz naziv.
 - v485: mail s pristupnim podacima — novi blok '📎 Dokumentacija za OVOG klijenta' (drag&drop → Drive <klijent>/PRIVICI MAIL), sve označeno ide kao PRIVITAK; .gs adminPriviciMailUpload/Makni + polje 'Privici uz mail pristupa (admin, JSON)'.
+- v486: kratki upitnik iz pisma namjere — kvačica '📝 Kratki upitnik' (pojedinačno, kampanja, ponovi, test); link ?otvori=upitnik&kratki=1 prikazuje samo: tvrtka/kontakt, usluge, broj pošiljaka po usluzi (+omjer izvoza), težina, (neob.) sadržaj/prijevoznik/iznos/dodatne usluge, IBAN, osoba za robu, adresa+vrijeme prikupa; u evidenciji 'Poslano: 📝 kratki upitnik'.
