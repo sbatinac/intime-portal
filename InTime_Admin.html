@@ -682,6 +682,9 @@
   .arh-status-cip{display:inline-block;color:#fff;font-weight:900;font-size:12.5px;letter-spacing:.05em;padding:3px 10px;border-radius:999px;vertical-align:middle;margin-left:4px;box-shadow:0 1px 3px rgba(0,0,0,.25);}
   .kratki-pismo-red{display:flex;gap:6px;align-items:center;margin:6px 0 10px;font-size:13.5px;cursor:pointer;color:#0f6b5e;} .kratki-pismo-opis{color:#6b7472;font-size:12px;}
   .vrf-izbor.akt{border-color:#7b2ff7 !important;background:#f3ecff;color:#4d148c;}
+  .od-unosi{border:2px solid #ff6200;background:#fff4ec;border-radius:10px;padding:10px 12px;margin:0 0 10px;display:grid;grid-template-columns:1fr 1fr;gap:8px 12px;}
+  .od-unosi[hidden]{display:none;} .od-unosi-nasl{grid-column:1/-1;font-weight:800;color:#c44d00;font-size:13px;}
+  .od-unos{font-family:Consolas,'Courier New',monospace !important;font-weight:700;}
   .kart-odbij-mini{border-color:#c0392b !important;color:#c0392b !important;}
   .kart-odbij-mini:hover{background:#c0392b !important;color:#fff !important;}
   .kratki-pre-btn{background:#fff;color:#5b6664;border:1.5px dashed #9aa5a3;border-radius:999px;padding:2px 11px;font:inherit;font-size:12px;font-weight:700;cursor:pointer;vertical-align:middle;}
@@ -3954,7 +3957,7 @@
     if (ZAPISI_U_TIJEKU_ === 0 && OSVJEZI_NAKON_ZAPISA_) { OSVJEZI_NAKON_ZAPISA_ = false; try { loadEntries(); } catch (eZg) { /* nije kritično */ } }
   }
   // ===== v403: TV PRIKAZ (InTime_Admin.html?tv=1) — samo pločice „Danas čeka tebe”, velike, sat, Battleships bodovi, osvježavanje svake 2 min =====
-  var PANTHER_VERZIJA_ = 'v492';
+  var PANTHER_VERZIJA_ = 'v493';
   (function(){ try{ var e=document.getElementById('prijava-ver'); if(e) e.textContent='ver. '+PANTHER_VERZIJA_.replace(/^v/,''); var z=document.querySelector('#pz-ver b'); if(z) z.textContent=PANTHER_VERZIJA_.replace(/^v/,''); }catch(_){} })();   // v471: verzija na slici prijave   // v433: broj verzije — Claude ga podiže pri svakoj isporuci (prikazuje se na TV-u i u adminu)
   try { document.addEventListener('DOMContentLoaded', function() { var v = document.getElementById('panther-ver'); if (v) { v.textContent = '🐾 PANTHER ' + PANTHER_VERZIJA_; } }); var v0_ = document.getElementById('panther-ver'); if (v0_) { v0_.textContent = '🐾 PANTHER ' + PANTHER_VERZIJA_; } } catch (eVer) {}
   var TV_MOD_ = /[?&]tv=1(&|$)/.test(location.search);
@@ -13705,6 +13708,10 @@
       azuriraj: true, azurirajAko: 'SLIKA:4',
       privitciDat: [ { url: 'fedex_nalog_billing.png', naziv: 'FedEx_nalog_0_billing.png', mime: 'image/png', inline: true }, { url: 'fedex_nalog_servis.png', naziv: 'FedEx_nalog_1_servis.png', mime: 'image/png', inline: true }, { url: 'fedex_nalog_prikup.png', naziv: 'FedEx_nalog_2_prikup.png', mime: 'image/png', inline: true }, { url: 'fedex_nalog_pakiranje.png', naziv: 'FedEx_nalog_3_pakiranje.png', mime: 'image/png', inline: true } ],
       tekst: 'u nastavku su upute kako ukucati FedEx nalog kada se prijevoz naplaćuje na račun primatelja (npr. Vašeg dobavljača).\n\nNalog ukucavate redom, svi koraci idu po zadanim postavkama — adresa prikupa je već unesena kod nas.\n\n1. Billing details: u polje za broj računa upišite broj FedEx računa koji imate od svog dobavljača (naplata ide na njihov račun). Obavezno odaberite da naplata ide na account primatelja — NE na „My account” i NE na account treće strane.\n\n{{SLIKA:1}}\n\n2. Servis: odaberite FedEx International Priority.\n\n{{SLIKA:2}}\n\n3. Prikup: odaberite „I have already scheduled a pickup at my location”.\n\n{{SLIKA:3}}\n\n4. Pakiranje: u Package details odaberite „Your Packaging”.\n\n{{SLIKA:4}}\n\nAko negdje zapnete, javite nam se odgovorom na ovaj mail.' }
+    ,{ kategorija: 'FedEx', naziv: 'FedEx račun — upute za korištenje (s pristupnim podacima)', predmet: 'Upute za korištenje vašeg FedEx računa',
+      auto: true, html: true, tekstUrl: 'odgovor_fedex_upute_racun.html', azuriraj: true, azurirajAko: 'intime-cijeli-mail',   // v490: cijeli mail (Outlook) — pri slanju se upisuju korisničko ime i lozinka
+      kljucne: 'fedex, racun, račun, upute, pristupni podaci, lozinka, korisnicko ime, fedex.com, prijava, otvoren racun, international priority, etiketa, ship, kreiranje posiljke',
+      tekst: '' }
     ,{ kategorija: 'Adresnice', naziv: 'Adresnice preko Excela — postupak učitavanja', predmet: 'In Time d.o.o. — postupak za učitavanje Excel tablice i izradu adresnica',
       auto: true, kljucne: 'adresnice, adresnica, excel, xlsx, tablica, upload, ucitavanje, ucitati, import, predlozak, shipment, masovno, 500, izrada adresnica',
       privitciDat: [ { url: 'ucitavanje_adresnica_preko_excela.pdf', naziv: 'Ucitavanje_adresnica_preko_Excela.pdf', mime: 'application/pdf' }, { url: 'ucitavanje_adresnica_preko_excela.docx', naziv: 'Ucitavanje_adresnica_preko_Excela.docx', mime: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' }, { url: 'Cycle_import_Shipment_TNR_Template.xlsx', naziv: 'Cycle import Shipment TNR Template.xlsx', mime: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' } ],
@@ -13791,8 +13798,11 @@
       var zamijeni = odStaro_(o, postoji);
       if (postoji && !zamijeni) { return; }
       redovi.push(function() {
-        return odDohvatiPrivitke_(o).then(function(priv) {
-          var odg = { naziv: o.naziv, kategorija: o.kategorija, predmet: o.predmet, tekst: o.tekst, html: false, kljucne: o.kljucne, privitci: priv };
+        var tekstP_ = o.tekstUrl ? fetch(o.tekstUrl, { cache: 'no-store' }).then(function(r) { if (!r.ok) { throw new Error('HTTP ' + r.status); } return r.text(); }) : Promise.resolve(o.tekst);
+        var tekst_ = o.tekst;
+        return tekstP_.catch(function() { return null; }).then(function(t) { tekst_ = t; return t === null ? null : odDohvatiPrivitke_(o); }).then(function(priv) {
+          if (priv === null) { return null; }   // tekst se nije mogao učitati — preskoči (pokušat će idući put)
+          var odg = { naziv: o.naziv, kategorija: o.kategorija, predmet: o.predmet, tekst: tekst_, html: !!o.html, kljucne: o.kljucne, privitci: priv };
           if (zamijeni) { odg.id = postoji.id; if (!priv.length) { odg.privitci = postoji.privitci || []; } }
           return gasCall({ action: 'adminOdgovorSpremi', token: adminToken, odgovor: odg });
         }).then(function(r) { if (r && r.status === 'ok') { dodano.odgovori++; } });
@@ -14035,6 +14045,7 @@
         '</div></div>' +
         '<div class="od-kartica"><div class="od-glava"><span>3️⃣ Pregled i slanje</span><small>što vidiš ispod, to ide klijentu</small></div><div class="od-tijelo">' +
           '<div class="od-mreza" style="grid-template-columns:1fr;margin-bottom:2px;"><label class="od-polje">Predmet<input type="text" id="od-predmet" autocomplete="off"></label></div><div class="od-hint" id="od-predmet-pr" style="margin:0 0 10px;"></div>' +
+          '<div id="od-unosi" class="od-unosi" hidden></div>' +
           '<label class="od-polje" style="margin-bottom:8px;">Tekst odgovora (možeš dotjerati za ovo slanje — biblioteka se ne mijenja)<textarea id="od-tekst" class="od-ta"></textarea></label>' +
           '<div class="od-tagovi od-hint">Oznake koje se popune same: <code data-t="{{KONTAKT_OSOBA}}">{{KONTAKT_OSOBA}}</code> <code data-t="{{NAZIV_TVRTKE}}">{{NAZIV_TVRTKE}}</code> <code data-t="{{GRAD}}">{{GRAD}}</code> <code data-t="{{OIB}}">{{OIB}}</code> <code data-t="{{SIFRA_PONUDE}}">{{SIFRA_PONUDE}}</code> <code data-t="{{DATUM}}">{{DATUM}}</code> (klik umeće u tekst)</div>' +
           '<div style="font-size:12px;font-weight:700;color:#3a4160;margin:6px 0 2px;">Privitci</div><div id="od-priv"></div>' +
@@ -14091,6 +14102,11 @@
         var d = podaci(), danas = new Date();
         var datum = ('0' + danas.getDate()).slice(-2) + '.' + ('0' + (danas.getMonth() + 1)).slice(-2) + '.' + danas.getFullYear() + '.';
         var mapa = { NAZIV_TVRTKE: [d.naziv, 'naziv tvrtke'], IME_FIRME: [d.naziv, 'naziv tvrtke'], GRAD: [d.grad, 'grad'], OIB: [d.oib, 'OIB'], KONTAKT_OSOBA: [d.kontakt, 'kontakt osoba'], IME_OSOBE: [d.kontakt, 'kontakt osoba'], SIFRA_PONUDE: [d.sifra, 'šifra ponude'], DATUM: [datum, 'datum'] };
+        tekst = String(tekst || '').replace(/\{\{\s*UNOS\s*:\s*([^}]+?)\s*\}\}/g, function(m, lab) {   // v490: polja koja upisuješ pri slanju (npr. korisničko ime i lozinka)
+          var v = (stanjeSlanja.unosi || {})[lab];
+          if (!v) { if (nedostaje.indexOf(lab) === -1) { nedostaje.push(lab); } v = '[' + lab + ']'; }
+          return html ? esc(v) : v;
+        });
         return String(tekst || '').replace(/\{\{\s*([A-Z_]+)\s*\}\}/g, function(m, k) {
           if (k === 'TEKST_ODGOVORA') { return m; }
           if (!mapa[k]) { return m; }
@@ -14171,12 +14187,28 @@
         }).join('') + '<div class="od-hint" style="margin:4px 0 0;">Ukupno: ' + (ukupno / 1048576).toFixed(1) + ' MB' + (ukupno > 24 * 1048576 ? ' — <b style="color:#c0392b;">previše (najviše 24 MB)</b>' : '') + '</div>';
         Array.prototype.forEach.call(el.querySelectorAll('input[type=checkbox]'), function(cb) { cb.addEventListener('change', function() { var p = stanjeSlanja.privitci[parseInt(cb.getAttribute('data-i'), 10)]; stanjeSlanja.iskljuceniPriv[p.id] = !cb.checked; iscrtajPrivitke(); }); });
       }
+      function iscrtajUnose() {   // v490: {{UNOS:…}} u tekstu → polja za upis iznad teksta
+        var el = $('od-unosi'); if (!el) { return; }
+        var t = ($('od-tekst').value || '') + ' ' + ($('od-predmet').value || ''), lab = [], m, re = /\{\{\s*UNOS\s*:\s*([^}]+?)\s*\}\}/g;
+        while ((m = re.exec(t))) { if (lab.indexOf(m[1]) === -1) { lab.push(m[1]); } }
+        stanjeSlanja.unosi = stanjeSlanja.unosi || {};
+        if (!lab.length) { el.hidden = true; el.innerHTML = ''; el._k = ''; return; }
+        if (el._k === lab.join('|')) { return; }
+        el._k = lab.join('|'); el.hidden = false;
+        el.innerHTML = '<div class="od-unosi-nasl">✏️ Upiši za ovo slanje (ulazi u mail na označena mjesta):</div>' + lab.map(function(l, i) {
+          return '<label class="od-polje">' + esc(l) + '<input type="text" class="od-unos" data-l="' + esc(l) + '" autocomplete="off" spellcheck="false" value="' + esc(stanjeSlanja.unosi[l] || '') + '"></label>';
+        }).join('');
+        Array.prototype.forEach.call(el.querySelectorAll('.od-unos'), function(inp) { inp.addEventListener('input', function() { stanjeSlanja.unosi[inp.getAttribute('data-l')] = inp.value.trim(); osvjeziPregled(); }); });
+      }
       function izaberiOdgovor(id) {
         odStanje_.odabraniId = id || '';
         var o = trenutniOdgovor();
         $('od-odg').value = odStanje_.odabraniId;
         $('od-tekst').value = o ? o.tekst : '';
         $('od-predmet').value = o ? o.predmet : '';
+        stanjeSlanja.unosi = {};
+        if (o && o.html && String(o.tekst || '').indexOf('<!-- intime-cijeli-mail -->') !== -1) { var sp_ = $('od-pred'); if (sp_.querySelector('option[value="bez"]')) { sp_.value = 'bez'; odStanje_.predlozakRow = 'bez'; } }   // cijeli mail — bez okvira
+        iscrtajUnose();
         stanjeSlanja.privitci = o ? o.privitci.slice() : []; stanjeSlanja.iskljuceniPriv = {};
         iscrtajPrivitke(); osvjeziPregled();
       }
@@ -14239,7 +14271,7 @@
         if (d.oib) { odStanje_.klijent = { oib: d.oib }; }
         odStanje_.odabraniId = d.odgovorId || ''; popuniOdgovore(); $('od-odg').value = odStanje_.odabraniId;
         var sel = $('od-pred'); if (d.predlozakRow && sel.querySelector('option[value="' + d.predlozakRow + '"]')) { sel.value = d.predlozakRow; odStanje_.predlozakRow = d.predlozakRow; }
-        $('od-predmet').value = d.predmet || ''; $('od-tekst').value = d.tekst || '';
+        $('od-predmet').value = d.predmet || ''; $('od-tekst').value = d.tekst || ''; try { iscrtajUnose(); } catch (eIu) {}
         stanjeSlanja.mailovi = Array.isArray(d.mailovi) ? d.mailovi : []; stanjeSlanja.odabraniMailovi = d.odabrani || {};
         stanjeSlanja.privitci = Array.isArray(d.privitci) ? d.privitci : []; stanjeSlanja.iskljuceniPriv = d.iskljuceni || {};
         $('od-kopija').checked = !!d.kopija; if ($('od-pitanje') && d.pitanje) { $('od-pitanje').value = d.pitanje; }
@@ -14266,6 +14298,7 @@
       });
       $('od-oib').addEventListener('input', function() { zadnjiOib = ''; traziKlijenta(); });
       ['od-naziv', 'od-kontakt', 'od-grad', 'od-sifra', 'od-predmet', 'od-tekst'].forEach(function(id) { $(id).addEventListener('input', osvjeziPregled); });
+      ['od-predmet', 'od-tekst'].forEach(function(id) { $(id).addEventListener('input', iscrtajUnose); });
       $('od-kat').addEventListener('change', function() { popuniOdgovore(); });
       $('od-odg').addEventListener('change', function() { izaberiOdgovor($('od-odg').value); });
       $('od-pred').addEventListener('change', function() { odStanje_.predlozakRow = $('od-pred').value; osvjeziPregled(); });
