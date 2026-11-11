@@ -3954,7 +3954,7 @@
     if (ZAPISI_U_TIJEKU_ === 0 && OSVJEZI_NAKON_ZAPISA_) { OSVJEZI_NAKON_ZAPISA_ = false; try { loadEntries(); } catch (eZg) { /* nije kritično */ } }
   }
   // ===== v403: TV PRIKAZ (InTime_Admin.html?tv=1) — samo pločice „Danas čeka tebe”, velike, sat, Battleships bodovi, osvježavanje svake 2 min =====
-  var PANTHER_VERZIJA_ = 'v491';
+  var PANTHER_VERZIJA_ = 'v492';
   (function(){ try{ var e=document.getElementById('prijava-ver'); if(e) e.textContent='ver. '+PANTHER_VERZIJA_.replace(/^v/,''); var z=document.querySelector('#pz-ver b'); if(z) z.textContent=PANTHER_VERZIJA_.replace(/^v/,''); }catch(_){} })();   // v471: verzija na slici prijave   // v433: broj verzije — Claude ga podiže pri svakoj isporuci (prikazuje se na TV-u i u adminu)
   try { document.addEventListener('DOMContentLoaded', function() { var v = document.getElementById('panther-ver'); if (v) { v.textContent = '🐾 PANTHER ' + PANTHER_VERZIJA_; } }); var v0_ = document.getElementById('panther-ver'); if (v0_) { v0_.textContent = '🐾 PANTHER ' + PANTHER_VERZIJA_; } } catch (eVer) {}
   var TV_MOD_ = /[?&]tv=1(&|$)/.test(location.search);
@@ -5046,7 +5046,7 @@
       (vf !== undefined ? '<label style="display:flex;align-items:center;gap:8px;font-weight:700;font-size:13px;color:#3c4d4a;">⏳ Vrijeme: <select class="vrf-izbor' + (vf !== 'sve' ? ' akt' : '') + '" style="padding:6px 8px;border:1px solid #c9d6d3;border-radius:8px;font:inherit;font-weight:600;">' +
         VRF_OPCIJE_.map(function(o) { return '<option value="' + o[0] + '"' + (o[0] === vf ? ' selected' : '') + '>' + o[1] + (br ? ' (' + br[o[0]] + ')' : '') + '</option>'; }).join('') + '</select></label>' +
         (vf !== 'sve' ? '<button type="button" class="vrf-x" style="border:0;background:#fde2e1;color:#a93226;border-radius:8px;padding:5px 10px;font-weight:800;cursor:pointer;">✕ makni filter</button>' : '') : '') +
-      (vf !== undefined ? '<span class="vrf-oznaci oznaci-sve-traka" style="margin:0;"><button type="button" data-oz="1">☑ Označi sve prikazane</button><button type="button" data-oz="0">☐ Odznači sve</button></span>' : '') +
+      (vf !== undefined ? '<span class="vrf-oznaci oznaci-sve-traka" style="margin:0;"><button type="button" data-oz="1">☑ Označi sve prikazane</button><button type="button" data-oz="0">☐ Odznači sve</button><button type="button" onclick="bulkPdfPopis_()" title="Skini PDF s nazivom firme, OIB-om i brojem ponude za sve označene kartice" style="background:#4d148c;color:#fff;border-color:#4d148c;">📄 PDF označenih</button></span>' : '') +
       '</div>';
   }
   var searchFilterState = {

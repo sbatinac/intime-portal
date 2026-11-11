@@ -148,3 +148,4 @@
 - v489: '☑ Označi sve prikazane / ☐ Odznači sve' uz filter ⏳ Vrijeme u Ponudama i Otvorenim ponudama (označava samo filtrirane).
 - v490: Ponude i Otvorene ponude — skupni gumb '📄 PDF popis (firma, OIB, broj ponude)' za označene kartice (ispis → Spremi kao PDF; sortirano po nazivu, revizije s prefiksom 'REVIZIJA - ').
 - v491: '📄 PDF popis' se odmah skida kao PDF (vlastiti generator, Helvetica s č/ć/đ/š/ž, A4, više stranica, zaglavlje na svakoj stranici, 'Stranica n / N').
+- v492: gumb '📄 PDF označenih' stalno vidljiv uz '☑ Označi sve prikazane / ☐ Odznači sve' (Ponude, Otvorene ponude).
