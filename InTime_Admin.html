@@ -3954,7 +3954,7 @@
     if (ZAPISI_U_TIJEKU_ === 0 && OSVJEZI_NAKON_ZAPISA_) { OSVJEZI_NAKON_ZAPISA_ = false; try { loadEntries(); } catch (eZg) { /* nije kritično */ } }
   }
   // ===== v403: TV PRIKAZ (InTime_Admin.html?tv=1) — samo pločice „Danas čeka tebe”, velike, sat, Battleships bodovi, osvježavanje svake 2 min =====
-  var PANTHER_VERZIJA_ = 'v490';
+  var PANTHER_VERZIJA_ = 'v491';
   (function(){ try{ var e=document.getElementById('prijava-ver'); if(e) e.textContent='ver. '+PANTHER_VERZIJA_.replace(/^v/,''); var z=document.querySelector('#pz-ver b'); if(z) z.textContent=PANTHER_VERZIJA_.replace(/^v/,''); }catch(_){} })();   // v471: verzija na slici prijave   // v433: broj verzije — Claude ga podiže pri svakoj isporuci (prikazuje se na TV-u i u adminu)
   try { document.addEventListener('DOMContentLoaded', function() { var v = document.getElementById('panther-ver'); if (v) { v.textContent = '🐾 PANTHER ' + PANTHER_VERZIJA_; } }); var v0_ = document.getElementById('panther-ver'); if (v0_) { v0_.textContent = '🐾 PANTHER ' + PANTHER_VERZIJA_; } } catch (eVer) {}
   var TV_MOD_ = /[?&]tv=1(&|$)/.test(location.search);
@@ -32118,38 +32118,109 @@
       dalje();
     });
   }
-  // v490: 📄 PDF popis označenih ponuda — samo naziv firme, OIB i broj ponude (Ponude i Otvorene ponude).
-  // Otvara ispis u skrivenom okviru → u prozoru ispisa odaberi „Spremi kao PDF”.
+  // v490/v491: 📄 PDF popis označenih ponuda — samo naziv firme, OIB i broj ponude (Ponude i Otvorene ponude).
+  // v491: PDF se odmah skida (vlastiti mali PDF generator, Helvetica + č/ć/đ/š/ž, bez vanjske biblioteke).
+  var PDFP_W_ = [278,278,355,556,556,889,667,191,333,333,389,584,278,333,278,278,556,556,556,556,556,556,556,556,556,556,278,278,584,584,584,556,1015,667,667,722,722,667,611,778,722,278,500,667,556,833,722,778,667,778,722,667,611,722,667,944,667,667,611,278,278,278,469,556,333,556,556,500,556,556,278,556,556,222,222,500,222,833,556,556,556,556,333,500,278,556,500,722,500,500,500,334,260,334,584];
+  var PDFP_MAP_ = { 'Č': [128, 722], 'č': [129, 500], 'Ć': [130, 722], 'ć': [131, 500], 'Đ': [132, 722], 'đ': [133, 556], '–': [134, 556], '—': [135, 1000], 'Š': [138, 667], 'š': [154, 500], 'Ž': [142, 611], 'ž': [158, 500], '·': [183, 278], 'é': [233, 556], 'ü': [252, 556], 'ö': [246, 556], 'ä': [228, 556] };
+  function pdfpKod_(ch) {   // znak → [bajt, širina/1000]
+    var c = ch.charCodeAt(0);
+    if (c >= 32 && c <= 126) { return [c, PDFP_W_[c - 32]]; }
+    return PDFP_MAP_[ch] || [63, 556];
+  }
+  function pdfpSirina_(t, vel, bold) { var w = 0; for (var i = 0; i < t.length; i++) { w += pdfpKod_(t[i])[1]; } return w * vel / 1000 * (bold ? 1.06 : 1); }
+  function pdfpLit_(t) {   // PDF literal string u kodiranju fonta
+    var o = '(';
+    for (var i = 0; i < t.length; i++) {
+      var k = pdfpKod_(t[i])[0];
+      if (k === 40 || k === 41 || k === 92) { o += '\\' + String.fromCharCode(k); }
+      else if (k > 126) { o += '\\' + k.toString(8); }
+      else { o += String.fromCharCode(k); }
+    }
+    return o + ')';
+  }
+  function pdfpPrelomi_(t, maxW, vel) {
+    var rijeci = String(t).split(/\s+/), red = '', out = [];
+    rijeci.forEach(function(r) {
+      var pok = red ? red + ' ' + r : r;
+      if (pdfpSirina_(pok, vel) <= maxW || !red) { red = pok; } else { out.push(red); red = r; }
+    });
+    if (red) { out.push(red); }
+    return out.length ? out : [''];
+  }
+  function pdfpIzradi_(naslov, podnaslov, zaglavlje, redovi, sirine) {
+    var W = 595.28, H = 841.89, M = 40, vel = 9.5, lh = 12.5, pad = 5;
+    var stranice = [], ops = [], y = 0;
+    var x0 = [M]; for (var i = 0; i < sirine.length; i++) { x0.push(x0[i] + sirine[i]); }
+    var txt = function(x, yy, t, bold, sz, rgb) { ops.push('BT /' + (bold ? 'F2' : 'F1') + ' ' + (sz || vel) + ' Tf ' + (rgb || '0.12 0.18 0.24') + ' rg ' + x.toFixed(2) + ' ' + yy.toFixed(2) + ' Td ' + pdfpLit_(t) + ' Tj ET'); };
+    var pravok = function(x, yy, w, h, rgb) { ops.push(rgb + ' rg ' + x.toFixed(2) + ' ' + yy.toFixed(2) + ' ' + w.toFixed(2) + ' ' + h.toFixed(2) + ' re f'); };
+    var zag = function() {
+      var h = lh + 2 * pad - 2;
+      pravok(M, y - h, W - 2 * M, h, '0.30 0.08 0.55');
+      zaglavlje.forEach(function(z, i) { txt(x0[i] + pad, y - h + pad + 1, z, true, vel, '1 1 1'); });
+      y -= h;
+    };
+    var nova = function(prva) {
+      if (ops.length) { stranice.push(ops); }
+      ops = []; y = H - M;
+      if (prva) {
+        txt(M, y - 14, naslov, true, 15, '0.30 0.08 0.55'); y -= 22;
+        txt(M, y - 10, podnaslov, false, 9, '0.42 0.45 0.45'); y -= 22;
+      }
+      zag();
+    };
+    nova(true);
+    redovi.forEach(function(r, ri) {
+      var stupci = r.map(function(c, i) { return pdfpPrelomi_(c, sirine[i] - 2 * pad, vel); });
+      var n = Math.max.apply(null, stupci.map(function(s) { return s.length; }));
+      var h = n * lh + 2 * pad - 2;
+      if (y - h < M + 20) { nova(false); }
+      if (ri % 2 === 1) { pravok(M, y - h, W - 2 * M, h, '0.96 0.95 0.98'); }
+      stupci.forEach(function(lin, i) { lin.forEach(function(l, j) { txt(x0[i] + pad, y - pad - (j + 1) * lh + 3, l, false); }); });
+      ops.push('0.85 0.85 0.85 RG 0.4 w ' + M + ' ' + (y - h).toFixed(2) + ' m ' + (W - M) + ' ' + (y - h).toFixed(2) + ' l S');
+      y -= h;
+    });
+    stranice.push(ops);
+    // sastavi PDF
+    var obj = [], N = stranice.length;
+    obj[1] = '<< /Type /Catalog /Pages 2 0 R >>';
+    var enc = '<< /Type /Encoding /BaseEncoding /WinAnsiEncoding /Differences [128 /Ccaron /ccaron /Cacute /cacute /Dcroat /dcroat /endash /emdash] >>';
+    obj[3] = '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding ' + enc + ' >>';
+    obj[4] = '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding ' + enc + ' >>';
+    var kids = [];
+    stranice.forEach(function(o, i) {
+      o.push('BT /F1 8 Tf 0.42 0.45 0.45 rg ' + (W - M - 60) + ' ' + (M - 18) + ' Td ' + pdfpLit_('Stranica ' + (i + 1) + ' / ' + N) + ' Tj ET');
+      var sad = o.join('\n'), pId = 5 + i * 2, cId = 6 + i * 2;
+      obj[cId] = '<< /Length ' + sad.length + ' >>\nstream\n' + sad + '\nendstream';
+      obj[pId] = '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ' + W + ' ' + H + '] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents ' + cId + ' 0 R >>';
+      kids.push(pId + ' 0 R');
+    });
+    obj[2] = '<< /Type /Pages /Kids [' + kids.join(' ') + '] /Count ' + N + ' >>';
+    var out = '%PDF-1.4\n%âãÏÓ\n', off = [];
+    for (var k = 1; k < obj.length; k++) { off[k] = out.length; out += k + ' 0 obj\n' + obj[k] + '\nendobj\n'; }
+    var xref = out.length;
+    out += 'xref\n0 ' + obj.length + '\n0000000000 65535 f \n';
+    for (var k2 = 1; k2 < obj.length; k2++) { out += ('0000000000' + off[k2]).slice(-10) + ' 00000 n \n'; }
+    out += 'trailer\n<< /Size ' + obj.length + ' /Root 1 0 R >>\nstartxref\n' + xref + '\n%%EOF';
+    var b = new Uint8Array(out.length); for (var q = 0; q < out.length; q++) { b[q] = out.charCodeAt(q) & 255; }
+    return new Blob([b], { type: 'application/pdf' });
+  }
   function bulkPdfPopis_() {
     var lista = bulkOdabraneP_();
     if (!lista.length) { alert('Nijedna ponuda nije označena.'); return; }
     var f = function(e, k) { return String(fieldVal(e, k) || '').trim(); };
-    var broj = function(e) { var b = f(e, 'Šifra ponude (admin)'); return b ? sifraPonudeFormat_(b) : ''; };
     lista = lista.slice().sort(function(a, b) { return f(a, 'Naziv tvrtke').localeCompare(f(b, 'Naziv tvrtke'), 'hr'); });
     var d = new Date(), p2 = function(n) { return (n < 10 ? '0' : '') + n; };
     var datum = p2(d.getDate()) + '.' + p2(d.getMonth() + 1) + '.' + d.getFullYear() + '.';
     var naslov = activeTab === 'Otvorene' ? 'Otvorene ponude' : 'Ponude';
     var redovi = lista.map(function(e, i) {
-      var rev = f(e, 'Ponuda je revizija (admin)') === 'DA' ? 'REVIZIJA - ' : '';
-      var b = broj(e);
-      return '<tr><td class="rb">' + (i + 1) + '.</td><td>' + esc(f(e, 'Naziv tvrtke') || '(bez naziva)') + '</td><td class="nw">' + esc(f(e, 'OIB') || '—') + '</td><td class="nw">' + (b ? esc(rev + b) : '—') + '</td></tr>';
-    }).join('');
-    var html = '<!DOCTYPE html><html lang="hr"><head><meta charset="utf-8"><title>' + esc(naslov + ' - popis - ' + datum) + '</title><style>' +
-      '@page{size:A4;margin:14mm 12mm;}body{font-family:Arial,Helvetica,sans-serif;color:#1f2d3d;font-size:11pt;}' +
-      'h1{font-size:15pt;color:#4d148c;margin:0 0 2px;}.pod{color:#6b7472;font-size:9.5pt;margin:0 0 12px;}' +
-      'table{width:100%;border-collapse:collapse;}th{background:#4d148c;color:#fff;text-align:left;padding:6px 8px;font-size:10pt;}' +
-      'td{padding:5px 8px;border-bottom:1px solid #ddd;vertical-align:top;}tr:nth-child(even) td{background:#f5f3fa;}' +
-      '.rb{width:28px;color:#6b7472;text-align:right;}.nw{white-space:nowrap;}thead{display:table-header-group;}tr{page-break-inside:avoid;}' +
-      '</style></head><body><h1>' + esc(naslov) + ' — popis</h1><div class="pod">In Time d.o.o. · ' + esc(datum) + ' · ukupno ' + lista.length + '</div>' +
-      '<table><thead><tr><th class="rb">#</th><th>Naziv firme</th><th>OIB</th><th>Broj ponude</th></tr></thead><tbody>' + redovi + '</tbody></table></body></html>';
-    var ifr = document.createElement('iframe');
-    ifr.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0;';
-    document.body.appendChild(ifr);
-    var dok = ifr.contentWindow.document; dok.open(); dok.write(html); dok.close();
-    setTimeout(function() {
-      try { ifr.contentWindow.focus(); ifr.contentWindow.print(); } catch (eP) { alert('Ispis nije uspio: ' + eP.message); }
-      setTimeout(function() { try { document.body.removeChild(ifr); } catch (eR) {} }, 60000);
-    }, 300);
+      var b = f(e, 'Šifra ponude (admin)'), rev = f(e, 'Ponuda je revizija (admin)') === 'DA' ? 'REVIZIJA - ' : '';
+      return [(i + 1) + '.', f(e, 'Naziv tvrtke') || '(bez naziva)', f(e, 'OIB') || '—', b ? rev + sifraPonudeFormat_(b) : '—'];
+    });
+    var blob = pdfpIzradi_(naslov + ' — popis', 'In Time d.o.o. · ' + datum + ' · ukupno ' + lista.length, ['#', 'Naziv firme', 'OIB', 'Broj ponude'], redovi, [28, 295, 80, 112.28]);
+    var ime = naslov + ' - popis - ' + d.getFullYear() + '-' + p2(d.getMonth() + 1) + '-' + p2(d.getDate()) + '.pdf';
+    var url = URL.createObjectURL(blob), a = document.createElement('a');
+    a.href = url; a.download = ime; document.body.appendChild(a); a.click();
+    setTimeout(function() { document.body.removeChild(a); URL.revokeObjectURL(url); }, 1500);
   }
   function bulkSazetak_(naslov, rez, preskoceno) {
     var ime = function(e) { return fieldVal(e, 'Naziv tvrtke') || ('redak ' + e.rowIndex); };
