@@ -3249,6 +3249,7 @@
         <button type="button" class="btn btn-small" id="bulk-produzi-btn" style="background:#1a73c8;border-color:#1a73c8;color:#fff;" onclick="bulkProduziRok_()" hidden>⏱ Produži rok</button>
         <button type="button" class="btn btn-small" id="bulk-pods-btn" style="background:#8b5cf6;border-color:#8b5cf6;color:#fff;" onclick="bulkPodsjetnik_()" hidden>🔔 Pošalji podsjetnik</button>
         <button type="button" class="btn btn-small" id="bulk-kratki-btn" style="background:#0b7a4b;border-color:#0b7a4b;color:#fff;" onclick="bulkKratki_()" hidden>📝 Kratki upitnik nakon prihvata</button>
+        <button type="button" class="btn btn-small" id="bulk-pdf-btn" style="background:#4d148c;border-color:#4d148c;color:#fff;" onclick="bulkPdfPopis_()" hidden>📄 PDF popis (firma, OIB, broj ponude)</button>
         <button type="button" class="btn btn-small" id="bulk-arhiva-btn" style="background:#6b4f2a;border-color:#6b4f2a;color:#fff;" onclick="bulkUArhivu_()" hidden>🗄 Prebaci u arhivu</button>
         <button type="button" class="btn btn-danger btn-small" onclick="startBulkDelete()">Obriši odabrano</button>
       </div>
@@ -3953,7 +3954,7 @@
     if (ZAPISI_U_TIJEKU_ === 0 && OSVJEZI_NAKON_ZAPISA_) { OSVJEZI_NAKON_ZAPISA_ = false; try { loadEntries(); } catch (eZg) { /* nije kritično */ } }
   }
   // ===== v403: TV PRIKAZ (InTime_Admin.html?tv=1) — samo pločice „Danas čeka tebe”, velike, sat, Battleships bodovi, osvježavanje svake 2 min =====
-  var PANTHER_VERZIJA_ = 'v489';
+  var PANTHER_VERZIJA_ = 'v490';
   (function(){ try{ var e=document.getElementById('prijava-ver'); if(e) e.textContent='ver. '+PANTHER_VERZIJA_.replace(/^v/,''); var z=document.querySelector('#pz-ver b'); if(z) z.textContent=PANTHER_VERZIJA_.replace(/^v/,''); }catch(_){} })();   // v471: verzija na slici prijave   // v433: broj verzije — Claude ga podiže pri svakoj isporuci (prikazuje se na TV-u i u adminu)
   try { document.addEventListener('DOMContentLoaded', function() { var v = document.getElementById('panther-ver'); if (v) { v.textContent = '🐾 PANTHER ' + PANTHER_VERZIJA_; } }); var v0_ = document.getElementById('panther-ver'); if (v0_) { v0_.textContent = '🐾 PANTHER ' + PANTHER_VERZIJA_; } } catch (eVer) {}
   var TV_MOD_ = /[?&]tv=1(&|$)/.test(location.search);
@@ -32064,6 +32065,7 @@
     var revBulkVratiBtn_ = document.getElementById('bulk-revizije-vrati-btn'); if (revBulkVratiBtn_) { revBulkVratiBtn_.hidden = (activeTab !== 'Revizije'); }
     var naPonudama_ = (activeTab === 'Ponude' || activeTab === 'Otvorene' || (activeTab === 'Intrix' && ['podsEvid', 'aktEvid', 'pismaBez'].indexOf(POSEBNI_VRSTA_) === -1));   // v455/v457: skupne radnje na ponudama (i u popisima ⌛ istekle, čeka odgovor, INTRIX…)
     var bpB_ = document.getElementById('bulk-produzi-btn'); if (bpB_) { bpB_.hidden = !naPonudama_; }
+    var bpdfB_ = document.getElementById('bulk-pdf-btn'); if (bpdfB_) { bpdfB_.hidden = !(activeTab === 'Ponude' || activeTab === 'Otvorene'); }   // v490
     var baB_ = document.getElementById('bulk-arhiva-btn'); if (baB_) { baB_.hidden = !naPonudama_; }
     var bpsB_ = document.getElementById('bulk-pods-btn'); if (bpsB_) { bpsB_.hidden = !naPonudama_; }
     var bkB_ = document.getElementById('bulk-kratki-btn'); if (bkB_) { bkB_.hidden = !(activeTab === 'Otvorene' || (activeTab === 'Intrix' && naPonudama_)); }
@@ -32115,6 +32117,39 @@
       };
       dalje();
     });
+  }
+  // v490: 📄 PDF popis označenih ponuda — samo naziv firme, OIB i broj ponude (Ponude i Otvorene ponude).
+  // Otvara ispis u skrivenom okviru → u prozoru ispisa odaberi „Spremi kao PDF”.
+  function bulkPdfPopis_() {
+    var lista = bulkOdabraneP_();
+    if (!lista.length) { alert('Nijedna ponuda nije označena.'); return; }
+    var f = function(e, k) { return String(fieldVal(e, k) || '').trim(); };
+    var broj = function(e) { var b = f(e, 'Šifra ponude (admin)'); return b ? sifraPonudeFormat_(b) : ''; };
+    lista = lista.slice().sort(function(a, b) { return f(a, 'Naziv tvrtke').localeCompare(f(b, 'Naziv tvrtke'), 'hr'); });
+    var d = new Date(), p2 = function(n) { return (n < 10 ? '0' : '') + n; };
+    var datum = p2(d.getDate()) + '.' + p2(d.getMonth() + 1) + '.' + d.getFullYear() + '.';
+    var naslov = activeTab === 'Otvorene' ? 'Otvorene ponude' : 'Ponude';
+    var redovi = lista.map(function(e, i) {
+      var rev = f(e, 'Ponuda je revizija (admin)') === 'DA' ? 'REVIZIJA - ' : '';
+      var b = broj(e);
+      return '<tr><td class="rb">' + (i + 1) + '.</td><td>' + esc(f(e, 'Naziv tvrtke') || '(bez naziva)') + '</td><td class="nw">' + esc(f(e, 'OIB') || '—') + '</td><td class="nw">' + (b ? esc(rev + b) : '—') + '</td></tr>';
+    }).join('');
+    var html = '<!DOCTYPE html><html lang="hr"><head><meta charset="utf-8"><title>' + esc(naslov + ' - popis - ' + datum) + '</title><style>' +
+      '@page{size:A4;margin:14mm 12mm;}body{font-family:Arial,Helvetica,sans-serif;color:#1f2d3d;font-size:11pt;}' +
+      'h1{font-size:15pt;color:#4d148c;margin:0 0 2px;}.pod{color:#6b7472;font-size:9.5pt;margin:0 0 12px;}' +
+      'table{width:100%;border-collapse:collapse;}th{background:#4d148c;color:#fff;text-align:left;padding:6px 8px;font-size:10pt;}' +
+      'td{padding:5px 8px;border-bottom:1px solid #ddd;vertical-align:top;}tr:nth-child(even) td{background:#f5f3fa;}' +
+      '.rb{width:28px;color:#6b7472;text-align:right;}.nw{white-space:nowrap;}thead{display:table-header-group;}tr{page-break-inside:avoid;}' +
+      '</style></head><body><h1>' + esc(naslov) + ' — popis</h1><div class="pod">In Time d.o.o. · ' + esc(datum) + ' · ukupno ' + lista.length + '</div>' +
+      '<table><thead><tr><th class="rb">#</th><th>Naziv firme</th><th>OIB</th><th>Broj ponude</th></tr></thead><tbody>' + redovi + '</tbody></table></body></html>';
+    var ifr = document.createElement('iframe');
+    ifr.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0;';
+    document.body.appendChild(ifr);
+    var dok = ifr.contentWindow.document; dok.open(); dok.write(html); dok.close();
+    setTimeout(function() {
+      try { ifr.contentWindow.focus(); ifr.contentWindow.print(); } catch (eP) { alert('Ispis nije uspio: ' + eP.message); }
+      setTimeout(function() { try { document.body.removeChild(ifr); } catch (eR) {} }, 60000);
+    }, 300);
   }
   function bulkSazetak_(naslov, rez, preskoceno) {
     var ime = function(e) { return fieldVal(e, 'Naziv tvrtke') || ('redak ' + e.rowIndex); };

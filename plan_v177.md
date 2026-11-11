@@ -146,3 +146,4 @@
 - v487: Postavke → Pošiljatelj mailova → '🧪 Testno slanje' (in-time.hr / Gmail, kratka poruka ili pismo namjere) bez mijenjanja postavke; .gs adminMailTestPosiljatelj.
 - v488: Ponude i Otvorene ponude (Poslano) — filter '⏳ Vrijeme': ističe u 7/30 d, istekle (sve / zadnjih 7 / 30 / >30 d), poslane u zadnjih 7 / 30 / >30 d; s brojem uz svaku opciju i slaganjem po vremenu.
 - v489: '☑ Označi sve prikazane / ☐ Odznači sve' uz filter ⏳ Vrijeme u Ponudama i Otvorenim ponudama (označava samo filtrirane).
+- v490: Ponude i Otvorene ponude — skupni gumb '📄 PDF popis (firma, OIB, broj ponude)' za označene kartice (ispis → Spremi kao PDF; sortirano po nazivu, revizije s prefiksom 'REVIZIJA - ').
