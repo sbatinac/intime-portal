@@ -145,3 +145,4 @@
 - v486: kratki upitnik iz pisma namjere — kvačica '📝 Kratki upitnik' (pojedinačno, kampanja, ponovi, test); link ?otvori=upitnik&kratki=1 prikazuje samo: tvrtka/kontakt, usluge, broj pošiljaka po usluzi (+omjer izvoza), težina, (neob.) sadržaj/prijevoznik/iznos/dodatne usluge, IBAN, osoba za robu, adresa+vrijeme prikupa; u evidenciji 'Poslano: 📝 kratki upitnik'.
 - v487: Postavke → Pošiljatelj mailova → '🧪 Testno slanje' (in-time.hr / Gmail, kratka poruka ili pismo namjere) bez mijenjanja postavke; .gs adminMailTestPosiljatelj.
 - v488: Ponude i Otvorene ponude (Poslano) — filter '⏳ Vrijeme': ističe u 7/30 d, istekle (sve / zadnjih 7 / 30 / >30 d), poslane u zadnjih 7 / 30 / >30 d; s brojem uz svaku opciju i slaganjem po vremenu.
+- v489: '☑ Označi sve prikazane / ☐ Odznači sve' uz filter ⏳ Vrijeme u Ponudama i Otvorenim ponudama (označava samo filtrirane).

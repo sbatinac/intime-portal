@@ -3953,7 +3953,7 @@
     if (ZAPISI_U_TIJEKU_ === 0 && OSVJEZI_NAKON_ZAPISA_) { OSVJEZI_NAKON_ZAPISA_ = false; try { loadEntries(); } catch (eZg) { /* nije kritično */ } }
   }
   // ===== v403: TV PRIKAZ (InTime_Admin.html?tv=1) — samo pločice „Danas čeka tebe”, velike, sat, Battleships bodovi, osvježavanje svake 2 min =====
-  var PANTHER_VERZIJA_ = 'v488';
+  var PANTHER_VERZIJA_ = 'v489';
   (function(){ try{ var e=document.getElementById('prijava-ver'); if(e) e.textContent='ver. '+PANTHER_VERZIJA_.replace(/^v/,''); var z=document.querySelector('#pz-ver b'); if(z) z.textContent=PANTHER_VERZIJA_.replace(/^v/,''); }catch(_){} })();   // v471: verzija na slici prijave   // v433: broj verzije — Claude ga podiže pri svakoj isporuci (prikazuje se na TV-u i u adminu)
   try { document.addEventListener('DOMContentLoaded', function() { var v = document.getElementById('panther-ver'); if (v) { v.textContent = '🐾 PANTHER ' + PANTHER_VERZIJA_; } }); var v0_ = document.getElementById('panther-ver'); if (v0_) { v0_.textContent = '🐾 PANTHER ' + PANTHER_VERZIJA_; } } catch (eVer) {}
   var TV_MOD_ = /[?&]tv=1(&|$)/.test(location.search);
@@ -5045,6 +5045,7 @@
       (vf !== undefined ? '<label style="display:flex;align-items:center;gap:8px;font-weight:700;font-size:13px;color:#3c4d4a;">⏳ Vrijeme: <select class="vrf-izbor' + (vf !== 'sve' ? ' akt' : '') + '" style="padding:6px 8px;border:1px solid #c9d6d3;border-radius:8px;font:inherit;font-weight:600;">' +
         VRF_OPCIJE_.map(function(o) { return '<option value="' + o[0] + '"' + (o[0] === vf ? ' selected' : '') + '>' + o[1] + (br ? ' (' + br[o[0]] + ')' : '') + '</option>'; }).join('') + '</select></label>' +
         (vf !== 'sve' ? '<button type="button" class="vrf-x" style="border:0;background:#fde2e1;color:#a93226;border-radius:8px;padding:5px 10px;font-weight:800;cursor:pointer;">✕ makni filter</button>' : '') : '') +
+      (vf !== undefined ? '<span class="vrf-oznaci oznaci-sve-traka" style="margin:0;"><button type="button" data-oz="1">☑ Označi sve prikazane</button><button type="button" data-oz="0">☐ Odznači sve</button></span>' : '') +
       '</div>';
   }
   var searchFilterState = {
@@ -8336,6 +8337,7 @@
     if (vrfSel_) {
       vrfSel_.addEventListener('change', function() { VRF_[activeTab] = this.value; renderEntries(); });
       var vrfX_ = sortRed_.querySelector('.vrf-x'); if (vrfX_) { vrfX_.addEventListener('click', function() { VRF_[activeTab] = 'sve'; renderEntries(); }); }
+      Array.prototype.forEach.call(sortRed_.querySelectorAll('.vrf-oznaci [data-oz]'), function(bz) { bz.addEventListener('click', function() { oznaciSveKartice_(bz.getAttribute('data-oz') === '1'); }); });
     }
     container.appendChild(sortRed_);
     var vrfLista_ = sortirajKartice_(list, activeTab);
@@ -20162,6 +20164,7 @@
         srO_.querySelector('.sort-izbor').addEventListener('change', function() { sortPostavi_('Otvorene', this.value); iscrtajKartice(); });
         var vsO_ = srO_.querySelector('.vrf-izbor'); if (vsO_) { vsO_.addEventListener('change', function() { VRF_.Otvorene = this.value; iscrtajKartice(); }); }
         var vxO_ = srO_.querySelector('.vrf-x'); if (vxO_) { vxO_.addEventListener('click', function() { VRF_.Otvorene = 'sve'; iscrtajKartice(); }); }
+        Array.prototype.forEach.call(srO_.querySelectorAll('.vrf-oznaci [data-oz]'), function(bz) { bz.addEventListener('click', function() { oznaciSveKartice_(bz.getAttribute('data-oz') === '1', '#ov-karte .entry-select-cb'); }); });
       }
       otv = vrfFiltriraj_(otv, 'Otvorene');
       box.innerHTML = '';
@@ -32017,8 +32020,8 @@
   }
 
   // v462: ☑ Označi sve / ☐ Odznači sve — sve kartice s kućicom koje se trenutno vide u popisu
-  function oznaciSveKartice_(da) {
-    Array.prototype.forEach.call(document.querySelectorAll('#entries-list .entry-select-cb'), function(cb) {
+  function oznaciSveKartice_(da, sel) {
+    Array.prototype.forEach.call(document.querySelectorAll(sel || '#entries-list .entry-select-cb'), function(cb) {
       if (cb.offsetParent === null || cb.checked === da) { return; }
       cb.checked = da; cb.dispatchEvent(new Event('change', { bubbles: true }));
     });
