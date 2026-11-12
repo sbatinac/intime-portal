@@ -1882,6 +1882,11 @@
   .af-dok-cilj-stavka:has(.af-gn-popravak),.af-dok-cilj-stavka:has(.af-gn-nova){flex-wrap:wrap;}
   .af-dok-cilj-stavka:has(.af-gn-popravak) .af-dok-naziv,.af-dok-cilj-stavka:has(.af-gn-nova) .af-dok-naziv{flex:1 1 0;min-width:60px;}
   .af-gotovo-stavka.neiskoristen{border-left:4px solid #e08a00;background:#fffaf0;}
+  .af-gotovo-stavka.rasporeden{border:1.5px solid #2e9e5b !important;border-left:6px solid #1e8449 !important;background:#e9f8ef !important;}
+  .af-gotovo-stavka.rasporeden .af-dok-naziv{color:#14532d;font-weight:700;}
+  .af-gotovo-stavka.rasporeden.odabrano{background:#d3f1de !important;}
+  .af-gotovo-stavka.neisk-poslano{border:1.5px solid #e04b3c !important;border-left:6px solid #c0392b !important;background:#fdecea !important;}
+  .af-gotovo-stavka.neisk-poslano .af-gn-neisk{color:#a93226;}
   .af-gn-neisk{flex:1 1 100%;font-size:11px;font-weight:700;color:#a35f00;}
   .af-gotovo-upozorenje{margin-top:8px;padding:6px 10px;border:1px solid #e08a00;border-radius:8px;background:#fff4e0;color:#8a4f00;font-size:12px;font-weight:700;}
   .af-gotovo-upozorenje[hidden]{display:none;}
@@ -3957,7 +3962,7 @@
     if (ZAPISI_U_TIJEKU_ === 0 && OSVJEZI_NAKON_ZAPISA_) { OSVJEZI_NAKON_ZAPISA_ = false; try { loadEntries(); } catch (eZg) { /* nije kritično */ } }
   }
   // ===== v403: TV PRIKAZ (InTime_Admin.html?tv=1) — samo pločice „Danas čeka tebe”, velike, sat, Battleships bodovi, osvježavanje svake 2 min =====
-  var PANTHER_VERZIJA_ = 'v493';
+  var PANTHER_VERZIJA_ = 'v494';
   (function(){ try{ var e=document.getElementById('prijava-ver'); if(e) e.textContent='ver. '+PANTHER_VERZIJA_.replace(/^v/,''); var z=document.querySelector('#pz-ver b'); if(z) z.textContent=PANTHER_VERZIJA_.replace(/^v/,''); }catch(_){} })();   // v471: verzija na slici prijave   // v433: broj verzije — Claude ga podiže pri svakoj isporuci (prikazuje se na TV-u i u adminu)
   try { document.addEventListener('DOMContentLoaded', function() { var v = document.getElementById('panther-ver'); if (v) { v.textContent = '🐾 PANTHER ' + PANTHER_VERZIJA_; } }); var v0_ = document.getElementById('panther-ver'); if (v0_) { v0_.textContent = '🐾 PANTHER ' + PANTHER_VERZIJA_; } } catch (eVer) {}
   var TV_MOD_ = /[?&]tv=1(&|$)/.test(location.search);
@@ -27333,15 +27338,19 @@
         var redovi_ = Array.prototype.slice.call(gotovoIzvorLista.querySelectorAll('.af-gotovo-stavka'));
         var brojIskoristenih_ = redovi_.filter(function(r) { return iskoristeni_[r.getAttribute('data-id')]; }).length;
         var neisk_ = [];
+        // v494: raspoređen = cijeli redak zelen; neraspoređen = narančast (dok se slaže), CRVEN kad je ponuda poslana
+        var poslana_ = false; try { poslana_ = (typeof izracunajStatusPonude_ === 'function') && izracunajStatusPonude_() !== 'nije_poslano'; } catch (ePs) {}
         redovi_.forEach(function(r) {
           var neiskoristen = !iskoristeni_[r.getAttribute('data-id')];
           // označi tek kad je barem jedan dokument iz ovog direktorija već raspoređen (inače još ništa nije odabrano)
-          var oznaci = neiskoristen && brojIskoristenih_ > 0;
-          r.classList.toggle('neiskoristen', oznaci);
+          var oznaci = neiskoristen && (brojIskoristenih_ > 0 || poslana_);
+          r.classList.toggle('rasporeden', !neiskoristen);
+          r.classList.toggle('neiskoristen', oznaci && !poslana_);
+          r.classList.toggle('neisk-poslano', oznaci && poslana_);
           var staro = r.querySelector('.af-gn-neisk'); if (staro) { staro.parentNode.removeChild(staro); }
           if (oznaci) {
             neisk_.push(r.getAttribute('data-name'));
-            var t = document.createElement('div'); t.className = 'af-gn-neisk'; t.textContent = '⚠ nije raspoređen — neće se poslati ni označiti';
+            var t = document.createElement('div'); t.className = 'af-gn-neisk'; t.textContent = poslana_ ? '✖ nije raspoređen — NIJE poslan klijentu ni spremljen interno' : '⚠ nije raspoređen — neće se poslati ni označiti';
             r.insertBefore(t, r.querySelector('.af-gotovo-akcije'));
           }
         });
