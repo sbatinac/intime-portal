@@ -3962,7 +3962,7 @@
     if (ZAPISI_U_TIJEKU_ === 0 && OSVJEZI_NAKON_ZAPISA_) { OSVJEZI_NAKON_ZAPISA_ = false; try { loadEntries(); } catch (eZg) { /* nije kritično */ } }
   }
   // ===== v403: TV PRIKAZ (InTime_Admin.html?tv=1) — samo pločice „Danas čeka tebe”, velike, sat, Battleships bodovi, osvježavanje svake 2 min =====
-  var PANTHER_VERZIJA_ = 'v494';
+  var PANTHER_VERZIJA_ = 'v495';
   (function(){ try{ var e=document.getElementById('prijava-ver'); if(e) e.textContent='ver. '+PANTHER_VERZIJA_.replace(/^v/,''); var z=document.querySelector('#pz-ver b'); if(z) z.textContent=PANTHER_VERZIJA_.replace(/^v/,''); }catch(_){} })();   // v471: verzija na slici prijave   // v433: broj verzije — Claude ga podiže pri svakoj isporuci (prikazuje se na TV-u i u adminu)
   try { document.addEventListener('DOMContentLoaded', function() { var v = document.getElementById('panther-ver'); if (v) { v.textContent = '🐾 PANTHER ' + PANTHER_VERZIJA_; } }); var v0_ = document.getElementById('panther-ver'); if (v0_) { v0_.textContent = '🐾 PANTHER ' + PANTHER_VERZIJA_; } } catch (eVer) {}
   var TV_MOD_ = /[?&]tv=1(&|$)/.test(location.search);
@@ -27202,13 +27202,15 @@
       // velika/mala slova, razmake i znakove). Ako je u nazivu stari klijent (dokument iz tuđe ponude) → ⚠ i prijedlog s ispravnim klijentom.
       var gnKlijentNorm_ = function() { return gnBezOblika_(fieldVal(entry, 'Naziv tvrtke')); };
       // VERZIJA ponude (11.10.2026., Sašin zahtjev): kad se generira nova ponuda (P2, P3…), dokumenti nazvani prema prijašnjoj verziji (…-P1)
-      // moraju odmah postati crveni ⚠ da se jednim klikom prebace na novu verziju. Naziv bez oznake -P<n> iza šifre se ne smatra pogrešnim.
+      // moraju odmah postati crveni ⚠ da se jednim klikom prebace na novu verziju. Naziv bez oznake -P<n> iza šifre u redu je samo za P1 (v495: od P2 traži se -P<n>).
       var gnVerzijaTrenutna_ = function() { return parseInt(fieldVal(entry, 'Redni broj slanja ponude (admin)'), 10) || 1; };
       var gnVerzijaOk_ = function(naziv) {
         var sif = gnSifra_(); if (!sif) { return true; }
         var re = new RegExp(sif.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\s*-\\s*P(\\d+)', 'i');
         var m = re.exec(String(naziv || ''));
-        return !m || parseInt(m[1], 10) === gnVerzijaTrenutna_();
+        // v495: od P2 nadalje naziv BEZ oznake -P<n> više nije u redu — nudi se preimenovanje na -P<trenutna> (Ispravi / Ispravi sve)
+        if (!m) { return gnVerzijaTrenutna_() <= 1; }
+        return parseInt(m[1], 10) === gnVerzijaTrenutna_();
       };
       var gnStanje_ = function(d) {
         var sif = gnNorm_(gnSifra_());
@@ -27230,6 +27232,7 @@
           var ost = r.replace(reSif, '').replace(/_-_|_-|-_/g, ' - ');
           var dij = ost.split(/\s+-\s+/).map(function(x) { return x.trim(); }).filter(function(x) { return x; });
           if (dij.length >= 3) { dij = dij.slice(2); }
+          else if (dij.length === 2 && gnBezOblika_(dij[0]) === gnKlijentNorm_()) { dij = dij.slice(1); }   // v495: "<šifra> - <klijent> - <dokument>" (bez grada)
           var rez = dij.join(' - ').trim();
           if (rez) { return rez; }
         }

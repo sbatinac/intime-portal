@@ -151,3 +151,4 @@
 - v492: gumb '📄 PDF označenih' stalno vidljiv uz '☑ Označi sve prikazane / ☐ Odznači sve' (Ponude, Otvorene ponude).
 - v493: Odgovori klijentima — novi odgovor 'FedEx račun — upute za korištenje (s pristupnim podacima)' (cijeli Outlook mail, bez okvira); oznake {{UNOS:…}} → polja za upis pri slanju (korisničko ime, lozinka); lozinka se ne sprema u evidenciju ni nacrt.
 - v494: Gotove ponude (preglednik dokumenata) — raspoređen dokument = cijeli redak zelen; neraspoređen = narančast dok se slaže, CRVEN kad je ponuda poslana ('NIJE poslan klijentu ni spremljen interno').
+- v495: Nova verzija ponude (P2, P3…) — gotovi dokumenti BEZ oznake -P<n> u nazivu sad postaju crveni ⚠ i nude 'Ispravi' / 'Ispravi sve' (<šifra>-P<n> - klijent - GRAD - dokument); za P1 naziv bez -P ostaje u redu. Prijedlog naziva ne ponavlja klijenta kad naziv nema grad.
