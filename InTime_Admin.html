@@ -661,6 +661,10 @@
   .entry-card.rok-24{border:2px solid #d32f2f;box-shadow:0 0 0 3px rgba(211,47,47,.18);}
   .entry-card.rok-24 > .entry-card-head{background:linear-gradient(90deg,#ffc9c9 0%,#ffeaea 45%,#ffffff 100%);box-shadow:inset 8px 0 0 #d32f2f;}
   .entry-card.rok-24 > .entry-card-head:hover{background:linear-gradient(90deg,#ffb0b0 0%,#ffdcdc 45%,#fff6f6 100%);}
+  .entry-card.rok-ist{border:2px solid #111;box-shadow:0 0 0 3px rgba(0,0,0,.18);}
+  .entry-card.rok-ist > .entry-card-head{background:linear-gradient(90deg,#cfcfcf 0%,#ececec 45%,#ffffff 100%);box-shadow:inset 8px 0 0 #111;}
+  .entry-card.rok-ist > .entry-card-head:hover{background:linear-gradient(90deg,#bdbdbd 0%,#e2e2e2 45%,#f7f7f7 100%);}
+  .rok-cip.rist{background:#111;color:#fff;}
   .entry-card.rok-ok{border:2px solid #1565c0;box-shadow:0 0 0 3px rgba(21,101,192,.15);}
   .entry-card.rok-ok > .entry-card-head{background:linear-gradient(90deg,#d3e5fb 0%,#eef5fe 45%,#ffffff 100%);box-shadow:inset 8px 0 0 #1565c0;}
   .entry-card.rok-ok > .entry-card-head:hover{background:linear-gradient(90deg,#b9d4f7 0%,#e1edfc 45%,#f8fbff 100%);}
@@ -866,6 +870,7 @@
   .rok-cip.prh{background:#2e9e5b;color:#fff;}
   .rok-cip.prh.prh-adm{background:#d62b1f !important;color:#fff !important;border-color:#a8180f !important;}   /* v384: prihvat unio Saša = crveno */
   .rok-legenda .rl.b i{background:#1565c0;}
+  .rok-legenda .rl.k i{background:#111;}
   .rok-cip{font-variant-numeric:tabular-nums;}
   .pon-evid{border:1px solid #c9dcf3;background:#f4f9ff;border-radius:10px;padding:6px 12px 8px;margin:0 0 10px;font-size:12.5px;color:#22344a;}
   .pon-evid summary{cursor:pointer;font-weight:700;color:#1b4a8a;padding:3px 0;}
@@ -3963,7 +3968,7 @@
     if (ZAPISI_U_TIJEKU_ === 0 && OSVJEZI_NAKON_ZAPISA_) { OSVJEZI_NAKON_ZAPISA_ = false; try { loadEntries(); } catch (eZg) { /* nije kritično */ } }
   }
   // ===== v403: TV PRIKAZ (InTime_Admin.html?tv=1) — samo pločice „Danas čeka tebe”, velike, sat, Battleships bodovi, osvježavanje svake 2 min =====
-  var PANTHER_VERZIJA_ = 'v497';
+  var PANTHER_VERZIJA_ = 'v498';
   (function(){ try{ var e=document.getElementById('prijava-ver'); if(e) e.textContent='ver. '+PANTHER_VERZIJA_.replace(/^v/,''); var z=document.querySelector('#pz-ver b'); if(z) z.textContent=PANTHER_VERZIJA_.replace(/^v/,''); }catch(_){} })();   // v471: verzija na slici prijave   // v433: broj verzije — Claude ga podiže pri svakoj isporuci (prikazuje se na TV-u i u adminu)
   try { document.addEventListener('DOMContentLoaded', function() { var v = document.getElementById('panther-ver'); if (v) { v.textContent = '🐾 PANTHER ' + PANTHER_VERZIJA_; } }); var v0_ = document.getElementById('panther-ver'); if (v0_) { v0_.textContent = '🐾 PANTHER ' + PANTHER_VERZIJA_; } } catch (eVer) {}
   var TV_MOD_ = /[?&]tv=1(&|$)/.test(location.search);
@@ -22680,10 +22685,10 @@
   function rokObojiKarticu_(card) {
     var ms = +card.getAttribute('data-rok'); if (!ms) { return; }
     var ost = ms - Date.now(), cip = card.querySelector('.rok-cip[data-istek]');
-    var kl = ost <= 0 ? '' : (ost <= 24 * 3600000 ? 'rok-24' : (ost <= 48 * 3600000 ? 'rok-48' : 'rok-ok'));
-    ['rok-ok', 'rok-48', 'rok-24'].forEach(function(k) { card.classList.toggle(k, k === kl); });
+    var kl = ost <= 0 ? 'rok-ist' : (ost <= 24 * 3600000 ? 'rok-24' : (ost <= 48 * 3600000 ? 'rok-48' : 'rok-ok'));
+    ['rok-ok', 'rok-48', 'rok-24', 'rok-ist'].forEach(function(k) { card.classList.toggle(k, k === kl); });
     if (!cip) { return; }
-    if (ost <= 0) { cip.className = 'rok-cip r24'; cip.textContent = '⌛ rok je istekao'; return; }
+    if (ost <= 0) { cip.className = 'rok-cip rist'; cip.textContent = '⌛ ponuda istekla'; return; }
     var r = Math.floor(ost / 1000), d = Math.floor(r / 86400), h = Math.floor(r % 86400 / 3600), mi = Math.floor(r % 3600 / 60), se = r % 60;
     cip.className = 'rok-cip ' + (kl === 'rok-24' ? 'r24' : (kl === 'rok-48' ? 'r48' : 'rok'));
     cip.textContent = (kl === 'rok-24' ? '🔥' : (kl === 'rok-48' ? '⏰' : '⏳')) + ' ističe za ' + (d ? d + ' d ' : '') + rokPad_(h) + ' h ' + rokPad_(mi) + ' min ' + rokPad_(se) + ' s';
@@ -22694,7 +22699,7 @@
       try { rokLegendaZatvorena_ = sessionStorage.getItem('intime_rok_legenda_x') === '1'; } catch (e) {}
       rokLegendaEl_ = document.createElement('div'); rokLegendaEl_.className = 'rok-legenda'; rokLegendaEl_.hidden = true;
       rokLegendaEl_.innerHTML = '<button type="button" class="rl-x" title="Sakrij legendu">✕</button><b>Rok ponude</b>' +
-        '<div class="rl b"><i></i>više od 48 h</div><div class="rl y"><i></i>ističe u 48 h</div><div class="rl r"><i></i>ističe u 24 h</div><div class="rl z"><i></i>prihvaćena</div>' +
+        '<div class="rl b"><i></i>više od 48 h</div><div class="rl y"><i></i>ističe u 48 h</div><div class="rl r"><i></i>ističe u 24 h</div><div class="rl k"><i></i>istekla</div><div class="rl z"><i></i>prihvaćena</div>' +
         '<div style="margin-top:6px;font-weight:500;color:#6b7472;font-size:11px;">Odbrojava se od slanja ponude do isteka roka.</div>';
       rokLegendaEl_.querySelector('.rl-x').addEventListener('click', function() { rokLegendaZatvorena_ = true; rokLegendaEl_.hidden = true; try { sessionStorage.setItem('intime_rok_legenda_x', '1'); } catch (e) {} });
       document.body.appendChild(rokLegendaEl_);
@@ -23234,9 +23239,10 @@
     // v351: svaka poslana ponuda koja čeka odgovor (i Otvorene ponude) — boja po roku + odbrojavanje uživo od slanja do isteka:
     // zeleno > 48 h, žuto ≤ 48 h, crveno ≤ 24 h. Otkucava rokTikni_ (svake sekunde, mijenja i boju kad prijeđe prag).
     try {
-      if (ponudaStatusSazetak_(entry) === 'na_cekanju' && !(typeof jeArhiva === 'function' && jeArhiva(entry))) {
+      var stRok_ = ponudaStatusSazetak_(entry);   // v498: i istekla (crna)
+      if ((stRok_ === 'na_cekanju' || stRok_ === 'istekla') && !(typeof jeArhiva === 'function' && jeArhiva(entry))) {
         var rokIst_ = parsirajHrvatskiDatumSazetak_(fieldVal(entry, 'Datum isteka ponude (admin)'));
-        if (rokIst_ && rokIst_.getTime() > Date.now()) {
+        if (rokIst_) {
           card.setAttribute('data-rok', String(rokIst_.getTime()));
           var tt_ = head.querySelector('.entry-card-title');
           if (tt_) { tt_.insertAdjacentHTML('beforeend', '<span class="rok-cip" data-istek="' + rokIst_.getTime() + '" title="Rok važenja ponude: ' + esc(fieldVal(entry, 'Datum isteka ponude (admin)')) + '"></span>'); }
