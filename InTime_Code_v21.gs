@@ -11036,6 +11036,7 @@ function adminGetCounters(token) {
 // upiti nemaju zaseban ID stupac.
 function adminListEntries(token) {
   if (!isValidAdminToken_(token)) { return { status: 'error', message: 'Sesija je istekla — prijavite se ponovno.' }; }
+  try { osigurajTrigerIsteklihPonuda_(); } catch (eTrIst_) { /* v496: okidač za isteke/podsjetnike — ne smije srušiti popis */ }
   var sheet = getOrCreateUpitiSheet();
   var lastRow = sheet.getLastRow();
   // labelToKey: naziv stupca → kratki ključ polja (iz UPIT_FIELDS) — šalje se
@@ -18497,6 +18498,7 @@ function gorivoJavniPodaci() {
 // ista obavijest ne pošalje ponovno svaki sat). Sigurno za ponovno
 // pokretanje — retci koji su već obrađeni se jednostavno preskaču. ----
 function provjeriIIzvijestiIsteklePonude_() {
+  var odMs_ = autoMailoviOdKljuc_();
   try { revAktivacijaObrada_(); } catch (eRevAkt) { Logger.log('Aktivacija revizija: ' + eRevAkt); } // revizije uvjeta čiji je datum stigao (samo poslane klijentu)
   try { ponudePodsjetniciObrada_(); } catch (ePods) { Logger.log('Podsjetnici ponuda: ' + ePods); } // podsjetnici klijentima za ponude koje čekaju odgovor
   try { upitnikPodsjetniciObrada_(); } catch (ePodsUp) { Logger.log('Podsjetnici na upitnik: ' + ePodsUp); } // podsjetnici na upitnik nakon prihvata otvorene ponude
@@ -18519,6 +18521,8 @@ function provjeriIIzvijestiIsteklePonude_() {
     try {
       if (row[istekPoslanCol]) { continue; } // već obavijestili za ovu verziju
       if (izracunajStatusPonude_(header, row) !== 'istekla') { continue; }
+      var istekV_ = row[header.indexOf('Datum isteka ponude (admin)')];
+      if (istekV_ instanceof Date && istekV_.getTime() < odMs_) { continue; }   // v496: istekla prije uključenja — bez maila
       var mailAdreseSirovo = mailAdreseCol !== -1 ? String(row[mailAdreseCol] || '').trim() : '';
       var primatelji = mailAdreseSirovo
         ? mailAdreseSirovo.split(',').map(function(a) { return a.trim(); }).filter(function(a) { return EMAIL_REGEX_.test(a); })
@@ -18557,6 +18561,23 @@ function provjeriIIzvijestiIsteklePonude_() {
 // duplikati. Sat (ne dan) je odabran jer rok ponude može isteći u bilo koje
 // doba dana (uklj. prilagođeni satni rok) — klijent tako čeka najviše sat
 // vremena na obavijest, ne do 24h. ----
+// v496 (Saša, 13.11.2026.): satni okidač nije bio postavljen pa obavijesti o isteku i automatski podsjetnici
+// nikad nisu išli. Okidač se sad postavlja SAM (iz adminListEntries, provjera najviše svakih 6 h).
+// Zaostale stavke (rok istekao / podsjetnik dospio PRIJE prvog rada okidača) NE šalju se — Sašin odabir
+// "Nijednom zaostalom": samo novi isteci i podsjetnici od tog trenutka.
+function autoMailoviOdKljuc_() {
+  var pr = PropertiesService.getScriptProperties();
+  var ms = parseInt(pr.getProperty('AUTO_MAILOVI_OD_MS') || '', 10);
+  if (!ms) { ms = Date.now(); pr.setProperty('AUTO_MAILOVI_OD_MS', String(ms)); }
+  return ms;
+}
+function osigurajTrigerIsteklihPonuda_() {
+  var c = CacheService.getScriptCache();
+  if (c.get('TRIGER_ISTEK_OK')) { return; }
+  var ima = ScriptApp.getProjectTriggers().some(function(t) { return t.getHandlerFunction() === 'provjeriIIzvijestiIsteklePonude_'; });
+  if (!ima) { autoMailoviOdKljuc_(); postaviTrigerZaProvjeruIsteklihPonuda(); }
+  c.put('TRIGER_ISTEK_OK', '1', 21600);
+}
 function postaviTrigerZaProvjeruIsteklihPonuda() {
   var postojeci = ScriptApp.getProjectTriggers();
   for (var i = 0; i < postojeci.length; i++) {
@@ -18754,6 +18775,7 @@ function ponudePodsjetniciObrada_() {
     var ocek = izracunajOcekivanoZaglavljeUpiti_();
     var lastCol = Math.min(sheet.getLastColumn(), ocek.length);
     var header = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
+    var odKljucP_ = ponPodsKljuc_(ponPodsDan_(new Date(autoMailoviOdKljuc_())));
     var planCol = header.indexOf(ADMIN_ONLY_FIELDS.pods_plan), poslCol = header.indexOf(ADMIN_ONLY_FIELDS.pods_poslano);
     if (planCol === -1 || poslCol === -1) { return; }
     var prebCol = header.indexOf(ADMIN_ONLY_FIELDS.otv_prebaceno_datum), arhCol = header.indexOf(ADMIN_ONLY_FIELDS.datum_prebacivanja_arhiva);
@@ -18780,6 +18802,7 @@ function ponudePodsjetniciObrada_() {
         // Prvo se upiše da je poslano, tek onda šalje — ako upis zakaže, ne šalje se (bolje preskočiti nego slati svaki sat).
         sheet.getRange(i + 2, poslCol + 1).setValue(sheetSig_(JSON.stringify(novoStanje)));
         if (!primatelji.length) { continue; }
+        if (!dospjeli.some(function(k) { return k >= odKljucP_; })) { continue; }   // v496: samo zaostali — zabilježeno, bez maila
         var mail = ponPodsRender_(r, sada);
         try {
           posaljiMail_(primatelji.join(','), mail.predmet, skiniHtmlTagoveZaFallback_(mail.html), { htmlBody: mail.html });
@@ -18962,6 +18985,7 @@ function upitnikPodsjetniciObrada_() {
     if (tipC === -1 || planC === -1 || poslC === -1 || prihC === -1) { return; }
     var data = sheet.getRange(2, 1, lastRow - 1, lastCol).getValues();
     var danasKljuc = ponPodsKljuc_(danas), poslano = 0;
+    var odKljucU_ = ponPodsKljuc_(ponPodsDan_(new Date(autoMailoviOdKljuc_())));
     for (var i = 0; i < data.length; i++) {
       var row = data[i];
       try {
@@ -18983,6 +19007,7 @@ function upitnikPodsjetniciObrada_() {
         // prvo upis da je poslano (ako upis zakaže, ne šalje se), pa slanje; kod greške slanja upis se vraća
         sheet.getRange(i + 2, poslC + 1).setValue(sheetSig_(JSON.stringify(novo)));
         if (!EMAIL_REGEX_.test(primatelj)) { continue; }
+        if (!dospjeli.some(function(k) { return k >= odKljucU_; })) { continue; }   // v496: samo zaostali — bez maila
         var mail = otvRenderPonuda_(r, OTV_BANNER_PODSJETNIK_, 'podsjetnik');
         try {
           posaljiMail_(primatelj, mail.predmet, skiniHtmlTagoveZaFallback_(mail.html), { htmlBody: mail.html });
