@@ -11675,7 +11675,8 @@ function adminOdustaniOdKlijenta(token, rowIndex) {
   // pronaći model suradnje" (Sašine riječi). NIJE dopušten kad je
   // prihvaćena.
   var stanje = izracunajStatusPonude_(header, row);
-  if (stanje === 'na_cekanju' || stanje === 'istekla' || stanje === 'potvrdjena') {
+  // v496 (Saša, 13.11.2026.): istekla ponuda se OTKLJUČAVA — Abandon dopušten i kad je istekla.
+  if (stanje === 'na_cekanju' || stanje === 'potvrdjena') {
     return { status: 'error', message: 'Trenutno se čeka klijentov odgovor (ili je ponuda prihvaćena) — Abandon je dostupan tek ako klijent odbije ponudu, mi je poništimo, ili prije nego je ponuda uopće poslana.' };
   }
 

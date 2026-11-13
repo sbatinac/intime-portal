@@ -1426,6 +1426,7 @@
   .af-slanje-btn.uspjeh:hover{background:var(--green);color:#fff;}
   .af-slanje-btn.uspjeh:disabled:hover{background:#fff;color:var(--green);}
   .af-slanje-okvir.zamrznuto{opacity:.5;pointer-events:none;}
+  .af-slanje-istekla-traka{background:#fdecea;color:#a93226;border-radius:6px;padding:7px 10px;font-size:11.5px;font-weight:700;margin-bottom:9px;}
   .af-slanje-zamrznuto-traka{background:#fde3c2;color:#8a5a00;border-radius:6px;padding:7px 10px;font-size:11.5px;font-weight:700;margin-bottom:9px;}
   .af-slanje-posalji-btn{display:block;width:100%;}
   .af-slanje-status{font-size:11px;color:var(--grey);margin-top:8px;min-height:14px;}
@@ -3962,7 +3963,7 @@
     if (ZAPISI_U_TIJEKU_ === 0 && OSVJEZI_NAKON_ZAPISA_) { OSVJEZI_NAKON_ZAPISA_ = false; try { loadEntries(); } catch (eZg) { /* nije kritično */ } }
   }
   // ===== v403: TV PRIKAZ (InTime_Admin.html?tv=1) — samo pločice „Danas čeka tebe”, velike, sat, Battleships bodovi, osvježavanje svake 2 min =====
-  var PANTHER_VERZIJA_ = 'v495';
+  var PANTHER_VERZIJA_ = 'v496';
   (function(){ try{ var e=document.getElementById('prijava-ver'); if(e) e.textContent='ver. '+PANTHER_VERZIJA_.replace(/^v/,''); var z=document.querySelector('#pz-ver b'); if(z) z.textContent=PANTHER_VERZIJA_.replace(/^v/,''); }catch(_){} })();   // v471: verzija na slici prijave   // v433: broj verzije — Claude ga podiže pri svakoj isporuci (prikazuje se na TV-u i u adminu)
   try { document.addEventListener('DOMContentLoaded', function() { var v = document.getElementById('panther-ver'); if (v) { v.textContent = '🐾 PANTHER ' + PANTHER_VERZIJA_; } }); var v0_ = document.getElementById('panther-ver'); if (v0_) { v0_.textContent = '🐾 PANTHER ' + PANTHER_VERZIJA_; } } catch (eVer) {}
   var TV_MOD_ = /[?&]tv=1(&|$)/.test(location.search);
@@ -25070,6 +25071,7 @@
             // poništena (ili prije prvog slanja) — vidi
             // azurirajOsiguracSlanja_()/renderRokBlok_() niže za uvjet i
             // .af-slanje-okvir.zamrznuto CSS za izgled.
+            '<div class="af-slanje-istekla-traka" hidden>⏰ Ponuda je istekla — otključano: možeš je ponovno poslati (↻ iznad), produžiti rok, napraviti P2 ili je arhivirati (Abandon). Klijent je automatski dobio obavijest o isteku.</div>' +
             '<div class="af-slanje-zamrznuto-traka" hidden>🔒 Zamrznuto dok se čeka klijentov odgovor — ponovno se otključava tek ako ponuda bude odbijena ili je poništimo. Za ponovno slanje iste ponude koristi tipku „↻ Ponovno pošalji istu ponudu” iznad.</div>' +
             '<div class="af-slanje-desc">Šalje se TOČNO tekst iz pregleda predloška iznad (uključujući trenutno odabrani predložak) — poveznice, a kao fizički prilog SAMO dokumenti uz koje je uključen prekidač „📧 Priloži mailu“ (ako ga ne uključiš nigdje, mail ide bez priloga). Direktorij iza poveznice {{LINK_DOKUMENTI}} sadrži: Ponudu za suradnju + sve dokumente dodane u "Ostali dokumenti" (blok "Dokumenti za ponudu" gore), pod nazivima nakon preimenovanja. Analitički cjenik i Cjenik Hrvatska ostaju interni, klijent ih NE vidi.</div>' +
             '<div class="af-slanje-test-red">' +
@@ -28874,11 +28876,13 @@
         // ispravi — sve unutar istog, sinkronog gradenja kartice, prije nego
         // je korisnik uopće vidi (kartica je do tad display:none).
         var trenutniStatus_ = (typeof izracunajStatusPonude_ === 'function') ? izracunajStatusPonude_() : null;
-        var cekaOdgovor = (trenutniStatus_ === 'na_cekanju' || trenutniStatus_ === 'istekla');
+        var cekaOdgovor = (trenutniStatus_ === 'na_cekanju');   // v496: istekla se više NE zamrzava
         if (slanjeOkvirEl) { slanjeOkvirEl.classList.toggle('zamrznuto', cekaOdgovor); }
         if (slanjeZamrznutoTraka) { slanjeZamrznutoTraka.hidden = !cekaOdgovor; }
+        var slanjeIsteklaTraka_ = wrap.querySelector('.af-slanje-istekla-traka');
+        if (slanjeIsteklaTraka_) { slanjeIsteklaTraka_.hidden = (trenutniStatus_ !== 'istekla'); }
         // v359: tipka „Ponovno pošalji” odmah ovdje (prije ostalih provjera — ako neka niže pukne, tipka ipak mora biti vidljiva)
-        if (slanjePonoviBtn) { slanjePonoviBtn.hidden = (trenutniStatus_ !== 'na_cekanju' && !(trenutniStatus_ === null && ponudaStatusSazetak_(entry) === 'na_cekanju')); }
+        if (slanjePonoviBtn) { slanjePonoviBtn.hidden = (trenutniStatus_ !== 'na_cekanju' && trenutniStatus_ !== 'istekla' && !(trenutniStatus_ === null && (ponudaStatusSazetak_(entry) === 'na_cekanju' || ponudaStatusSazetak_(entry) === 'istekla'))); }
 
         var poslovnicaOk = !!(poslovnicaToggle && poslovnicaToggle.disabled);
         var sifraOk = !!(sifraInput && sifraInput.readOnly && sifraInput.value.trim());
@@ -31372,7 +31376,7 @@
         // ili smo je MI poništili (uklj. poništenu VEĆ prihvaćenu) — "to je
         // rješenje ako ne možemo pronaći model suradnje" (Sašine riječi).
         // NIJE dostupan kad je prihvaćena, niti kad je klijent već u Arhivi.
-        rokAbandonBtn.hidden = jeArhiva(entry) || (status === 'na_cekanju' || status === 'istekla' || status === 'potvrdjena');
+        rokAbandonBtn.hidden = jeArhiva(entry) || (status === 'na_cekanju' || status === 'potvrdjena');   // v496: istekla → Abandon dostupan
 
         // ---- "Datum N" okviri — Sašin izričit zahtjev (dvadeset i sedmi
         // krug, skica odobrena): jedna stavka po SVAKOM slanju ponude ovom
