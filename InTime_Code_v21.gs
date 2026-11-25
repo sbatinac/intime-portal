@@ -3324,7 +3324,7 @@ var MAIL_PREDLOSCI_SHEET_NAME = 'InTime_MailPredlosci';
 // dodam novi popravak/dodaj...AkoNedostaje_ u lanac niže, MORAM promijeniti
 // ovaj string (npr. dodati datum) da se on stvarno izvrši barem jednom —
 // inače će tiho biti preskočen za sve postojeće instalacije.
-var MAIL_PREDLOSCI_POPRAVCI_VERZIJA_ = 'v36-20.10.2026-poslovnica-vrijeme-prikupa';
+var MAIL_PREDLOSCI_POPRAVCI_VERZIJA_ = 'v37-25.11.2026-akcija-otvorena';
 
 // Zadani tekst predloška za ponudu — sjeme koje se upisuje SAMO ako Sheet
 // još nema nijedan predložak (prvo ikad pokretanje). Sadržaj je Sašin
@@ -4755,6 +4755,7 @@ function getOrCreateMailPredlosciSheet() {
     postaviTekstKorigiraneOtvoreneUPredlosku_(sheet);
     dodajJednokratnePredloskeAkoNedostaju_(sheet);
     postaviPotpisGifUPredloske_(sheet);
+    dodajAkcijskiOtvoreniPredlozak_(sheet);   // v499
     popravciProps_.setProperty('MAIL_PREDLOSCI_POPRAVCI_VERZIJA', MAIL_PREDLOSCI_POPRAVCI_VERZIJA_);
   }
   return sheet;
@@ -24404,6 +24405,51 @@ function otvPrebaciTipAkoOtvorena_(sheet, header, rowIndex, kamo) {
   if (dIx !== -1) { sheet.getRange(rowIndex, dIx + 1).setValue(sada); }
   if (kIx !== -1) { sheet.getRange(rowIndex, kIx + 1).setValue(sheetSig_(kamo)); }
   return true;
+}
+
+// v499 (Saša, 25.11.2026.): AKCIJSKI predložak otvorene ponude — kopija ŽIVOG predloška "Otvorena ponuda – Standardna (HTML)"
+// (sa svim Sašinim izmjenama) + okvir s akcijskim cijenama (2/5/10/15 kg, Zona 1 i 2, gorivo 22 %, 2× SMS; otkupnina opcionalno)
+// i "👇 Kliknite dolje…" iznad gumba dokumenata. Bira se u kartici kao i ostali predlošci (kategorija 'ponuda'). Dodaje se jednom (po nazivu).
+var OTV_PREDLOZAK_NAZIV_AKCIJA_ = 'Otvorena ponuda – AKCIJA do 15.12. (HTML)';
+var OTV_PREDMET_AKCIJA_ = 'IN TIME | AKCIJA do 15.12. – otvorena ponuda br. {{BROJ_PONUDE}} – {{IME_FIRME}}';
+var OTV_AKCIJA_OKVIR_HTML_ = "<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"width:100%;border-collapse:separate;border:2px solid #016579;border-radius:12px;overflow:hidden;margin:6px 0 18px;\"><tr><td style=\"background-color:#016579;padding:14px 16px;font-family:Arial,Helvetica,sans-serif;color:#ffffff;\"><div style=\"font-size:12px;letter-spacing:2px;\">AKCIJA DO 15.12.2026.</div><div style=\"font-size:22px;font-weight:bold;line-height:1.25;\">Paket već od 2,68&nbsp;€</div><div style=\"font-size:13px;\">Zona 1 i Zona 2 · cijena po pošiljci, gorivo i SMS obavijesti uključeni</div></td></tr><tr><td style=\"padding:0;\"><table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"width:100%;border-collapse:collapse;\"><tr><td style=\"padding:9px 4px;background-color:#e6f3f5;text-align:center;font-family:Arial,Helvetica,sans-serif;font-size:11.5px;font-weight:bold;color:#016579;line-height:1.3;\">TEŽINA</td><td style=\"padding:9px 4px;background-color:#e6f3f5;text-align:center;font-family:Arial,Helvetica,sans-serif;font-size:11.5px;font-weight:bold;color:#016579;line-height:1.3;\">PRIJEVOZ</td><td style=\"padding:9px 4px;background-color:#e6f3f5;text-align:center;font-family:Arial,Helvetica,sans-serif;font-size:11.5px;font-weight:bold;color:#016579;line-height:1.3;\">GORIVO<br>22&nbsp;%</td><td style=\"padding:9px 4px;background-color:#e6f3f5;text-align:center;font-family:Arial,Helvetica,sans-serif;font-size:11.5px;font-weight:bold;color:#016579;line-height:1.3;\">2× SMS<br>obavijest</td><td style=\"padding:9px 4px;background-color:#e6f3f5;text-align:center;font-family:Arial,Helvetica,sans-serif;font-size:11.5px;font-weight:bold;color:#016579;line-height:1.3;background-color:#d3ecef;\">UKUPNO<br>po pošiljci</td></tr><tr><td style=\"padding:10px 4px;border-bottom:1px solid #e3eef0;text-align:center;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#333333;background-color:#ffffff;font-weight:bold;color:#1b2430;font-size:14.5px;\">do 2&nbsp;kg</td><td style=\"padding:10px 4px;border-bottom:1px solid #e3eef0;text-align:center;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#333333;background-color:#ffffff;\">2,10&nbsp;€</td><td style=\"padding:10px 4px;border-bottom:1px solid #e3eef0;text-align:center;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#333333;background-color:#ffffff;\">0,46&nbsp;€</td><td style=\"padding:10px 4px;border-bottom:1px solid #e3eef0;text-align:center;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#333333;background-color:#ffffff;\">0,12&nbsp;€</td><td style=\"padding:10px 4px;border-bottom:1px solid #e3eef0;text-align:center;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#333333;background-color:#016579;color:#ffffff;font-weight:bold;font-size:17px;\">2,68&nbsp;€</td></tr><tr><td style=\"padding:10px 4px;border-bottom:1px solid #e3eef0;text-align:center;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#333333;background-color:#f6fafb;font-weight:bold;color:#1b2430;font-size:14.5px;\">do 5&nbsp;kg</td><td style=\"padding:10px 4px;border-bottom:1px solid #e3eef0;text-align:center;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#333333;background-color:#f6fafb;\">2,40&nbsp;€</td><td style=\"padding:10px 4px;border-bottom:1px solid #e3eef0;text-align:center;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#333333;background-color:#f6fafb;\">0,53&nbsp;€</td><td style=\"padding:10px 4px;border-bottom:1px solid #e3eef0;text-align:center;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#333333;background-color:#f6fafb;\">0,12&nbsp;€</td><td style=\"padding:10px 4px;border-bottom:1px solid #e3eef0;text-align:center;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#333333;background-color:#016579;color:#ffffff;font-weight:bold;font-size:17px;\">3,05&nbsp;€</td></tr><tr><td style=\"padding:10px 4px;border-bottom:1px solid #e3eef0;text-align:center;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#333333;background-color:#ffffff;font-weight:bold;color:#1b2430;font-size:14.5px;\">do 10&nbsp;kg</td><td style=\"padding:10px 4px;border-bottom:1px solid #e3eef0;text-align:center;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#333333;background-color:#ffffff;\">3,00&nbsp;€</td><td style=\"padding:10px 4px;border-bottom:1px solid #e3eef0;text-align:center;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#333333;background-color:#ffffff;\">0,66&nbsp;€</td><td style=\"padding:10px 4px;border-bottom:1px solid #e3eef0;text-align:center;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#333333;background-color:#ffffff;\">0,12&nbsp;€</td><td style=\"padding:10px 4px;border-bottom:1px solid #e3eef0;text-align:center;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#333333;background-color:#016579;color:#ffffff;font-weight:bold;font-size:17px;\">3,78&nbsp;€</td></tr><tr><td style=\"padding:10px 4px;border-bottom:1px solid #e3eef0;text-align:center;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#333333;background-color:#f6fafb;font-weight:bold;color:#1b2430;font-size:14.5px;\">do 15&nbsp;kg</td><td style=\"padding:10px 4px;border-bottom:1px solid #e3eef0;text-align:center;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#333333;background-color:#f6fafb;\">3,60&nbsp;€</td><td style=\"padding:10px 4px;border-bottom:1px solid #e3eef0;text-align:center;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#333333;background-color:#f6fafb;\">0,79&nbsp;€</td><td style=\"padding:10px 4px;border-bottom:1px solid #e3eef0;text-align:center;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#333333;background-color:#f6fafb;\">0,12&nbsp;€</td><td style=\"padding:10px 4px;border-bottom:1px solid #e3eef0;text-align:center;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#333333;background-color:#016579;color:#ffffff;font-weight:bold;font-size:17px;\">4,51&nbsp;€</td></tr></table></td></tr><tr><td style=\"padding:11px 16px;font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:1.55;color:#333333;border-top:1px solid #e3eef0;\"><strong style=\"color:#016579;\">+ Otkupnina (pouzeće) – opcionalno:</strong> 1,00&nbsp;€ po pošiljci, obračunava se samo ako šaljete pošiljke s plaćanjem pouzećem.</td></tr><tr><td style=\"background-color:#fff4e5;padding:12px 16px;font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:1.6;color:#6b3d00;\"><strong>⏳ Uvjeti akcije:</strong> akcijske cijene vrijede za ugovore sklopljene do 15.12.2026., na razdoblje od najmanje 6 mjeseci, uz minimalno 250 pošiljaka mjesečno. Ako šaljete pretežno manje pošiljke, uvjete prilagođavamo već od približno 150 pošiljaka mjesečno.<br><span style=\"color:#8a6a3d;font-size:12px;\">Cijene su izražene u eurima, bez PDV-a.</span></td></tr></table>";
+var OTV_AKCIJA_CTA_HTML_ = '<p style="font-size:18px;line-height:1.4;margin:6px 0 4px;text-align:center;font-weight:bold;color:#016579;font-family:Arial,Helvetica,sans-serif;">👇 Kliknite dolje i pogledajte akcijsku ponudu</p>\n';
+function otvAkcijaUmetni_(html) {
+  html = String(html || '');
+  var okvir = OTV_AKCIJA_OKVIR_HTML_ + '\n';
+  // odmah iza odlomka koji prvi spominje broj ponude ("Za Vaš poslovni subjekt … broj {{BROJ_PONUDE}} …") — da se vidi na početku maila
+  var iB = html.indexOf('{{BROJ_PONUDE}}');
+  var kP = iB !== -1 ? html.indexOf('</p>', iB) : -1;
+  var m = /<div[^>]*>\s*Broj ponude:/.exec(html);
+  if (kP !== -1 && (!m || kP < m.index)) { kP += 4; html = html.slice(0, kP) + '\n' + okvir + html.slice(kP); }
+  else if (m) { html = html.slice(0, m.index) + okvir + html.slice(m.index); }
+  else {
+    var iP = html.indexOf('Pozivamo Vas');
+    var pP = iP !== -1 ? html.lastIndexOf('<p', iP) : -1;
+    if (pP === -1) { return null; }
+    html = html.slice(0, pP) + okvir + html.slice(pP);
+  }
+  var g = /<table[^>]*>\s*<tr>\s*<td[^>]*>\s*<a href="\{\{LINK_DOKUMENTI\}\}"/.exec(html);
+  if (g) { html = html.slice(0, g.index) + OTV_AKCIJA_CTA_HTML_ + html.slice(g.index); }
+  return html;
+}
+function dodajAkcijskiOtvoreniPredlozak_(sheet) {
+  var lastRow = sheet.getLastRow();
+  if (lastRow < 2) { return; }
+  var lastCol = Math.max(sheet.getLastColumn(), 7);
+  var podaci = sheet.getRange(2, 1, lastRow - 1, lastCol).getValues();
+  var izvor = null;
+  for (var i = 0; i < podaci.length; i++) {
+    var n = String(podaci[i][0] || '').trim();
+    if (n === OTV_PREDLOZAK_NAZIV_AKCIJA_) { return; }
+    if (n === OTV_PREDLOZAK_NAZIV_STANDARDNA_ && String(podaci[i][2] || '').trim()) { izvor = podaci[i].slice(); }
+  }
+  var html = otvAkcijaUmetni_(izvor ? izvor[2] : String(OTV_PREDLOZAK_PONUDA_).split('{{BANNER_URL}}').join(OTV_BANNER_PRVA_).split('{{NAZIV_FIRME}}').join('{{IME_FIRME}}'));
+  if (!html) { return; }
+  var red = izvor || ['', '', '', '', new Date(), 'DA', 'ponuda'];
+  while (red.length < lastCol) { red.push(''); }
+  red[0] = OTV_PREDLOZAK_NAZIV_AKCIJA_; red[1] = OTV_PREDMET_AKCIJA_; red[2] = html; red[4] = new Date();
+  sheet.appendRow(sheetSigRed_(red));
 }
 
 // v182: predlošci otvorene ponude u biblioteci predložaka (kategorija 'ponuda'), pa se u standardnoj kartici biraju kao i ostali.
