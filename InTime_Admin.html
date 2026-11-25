@@ -3968,7 +3968,7 @@
     if (ZAPISI_U_TIJEKU_ === 0 && OSVJEZI_NAKON_ZAPISA_) { OSVJEZI_NAKON_ZAPISA_ = false; try { loadEntries(); } catch (eZg) { /* nije kritično */ } }
   }
   // ===== v403: TV PRIKAZ (InTime_Admin.html?tv=1) — samo pločice „Danas čeka tebe”, velike, sat, Battleships bodovi, osvježavanje svake 2 min =====
-  var PANTHER_VERZIJA_ = 'v499';
+  var PANTHER_VERZIJA_ = 'v500';
   (function(){ try{ var e=document.getElementById('prijava-ver'); if(e) e.textContent='ver. '+PANTHER_VERZIJA_.replace(/^v/,''); var z=document.querySelector('#pz-ver b'); if(z) z.textContent=PANTHER_VERZIJA_.replace(/^v/,''); }catch(_){} })();   // v471: verzija na slici prijave   // v433: broj verzije — Claude ga podiže pri svakoj isporuci (prikazuje se na TV-u i u adminu)
   try { document.addEventListener('DOMContentLoaded', function() { var v = document.getElementById('panther-ver'); if (v) { v.textContent = '🐾 PANTHER ' + PANTHER_VERZIJA_; } }); var v0_ = document.getElementById('panther-ver'); if (v0_) { v0_.textContent = '🐾 PANTHER ' + PANTHER_VERZIJA_; } } catch (eVer) {}
   var TV_MOD_ = /[?&]tv=1(&|$)/.test(location.search);
@@ -5931,7 +5931,7 @@
            '<img src="https://static-maps.yandex.ru/1.x/?lang=en_US&ll=' + encodeURIComponent(kartaPrikupaLon) + ',' + encodeURIComponent(kartaPrikupaLat) + '&z=16&l=map&size=600,300&pt=' + encodeURIComponent(kartaPrikupaLon) + ',' + encodeURIComponent(kartaPrikupaLat) + ',pm2rdl" width="600" height="300" alt="Karta lokacije prikupa" style="display:block;width:100%;max-width:600px;height:auto;border-radius:8px;border:2px solid #0f8b7e;" />' +
          '</td></tr></table>' +
          '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 16px;border-collapse:collapse;"><tr><td align="center" bgcolor="#ffffff" style="border-radius:8px;border:2px solid #0f8b7e;background-color:#ffffff;"><a href="https://www.openstreetmap.org/?mlat=' + encodeURIComponent(kartaPrikupaLat) + '&mlon=' + encodeURIComponent(kartaPrikupaLon) + '#map=17/' + encodeURIComponent(kartaPrikupaLat) + '/' + encodeURIComponent(kartaPrikupaLon) + '" target="_blank" rel="noopener" style="display:block;width:100%;box-sizing:border-box;padding:10px 18px;font-family:Arial,Helvetica,sans-serif;font-size:13px;font-weight:bold;color:#0f8b7e;text-decoration:none;text-align:center;">Otvori veću, interaktivnu kartu</a></td></tr></table>')
-      : '<p style="font-size:11.5px;color:#888888;margin:0 0 16px;">[Karta lokacije prikupa još nije generirana — klikni "Prikaži kartu prikupa" na kartici klijenta (blok "Podaci o prikupu pošiljaka") prije slanja ovog maila.]</p>';
+      : '';   // v500: bez karte mail ide bez slike (karta više nije uvjet slanja)
     var zadnjiRokUnosaAdmin_ = fieldVal(entry, 'Zadnje vrijeme unosa naloga (admin)');
     var zadnjiRokUnosaIzracunat_ = pomakniVrijeme_(fieldVal(entry, 'Vrijeme prikupa pošiljaka (dolazak vozila)'), -30);
     var zadnjiRokUnosa = zadnjiRokUnosaAdmin_ || zadnjiRokUnosaIzracunat_ || '[zadnji rok za unos naloga]';
@@ -24630,10 +24630,10 @@
     // panel ispod ionako nasljeđuje ovaj uvjet TRANZITIVNO (otključava se tek
     // kad JE zeleni poslan), pa mu ne treba zasebna provjera.
     var poslGuardKartaPotvrdjena_ = !!(fieldVal(entry, 'Karta prikupa - lat (admin)') && fieldVal(entry, 'Karta prikupa - lon (admin)'));
-    var poslGuardSveOtkljucano_ = poslGuardKlijentPristupPoslan_ && poslGuardKartaPotvrdjena_;
+    // v500 (Saša, 25.11.2026.): karta prikupa više NIJE uvjet za slanje obavijesti poslovnicama — bez karte mail ide bez slike.
+    var poslGuardSveOtkljucano_ = poslGuardKlijentPristupPoslan_;
     var poslGuardStavke_ = [
-      { ok: poslGuardKlijentPristupPoslan_, naziv: 'Mail s pristupnim podacima poslan klijentu' },
-      { ok: poslGuardKartaPotvrdjena_, naziv: 'Karta prikupa generirana (blok "Podaci o prikupu pošiljaka")' }
+      { ok: poslGuardKlijentPristupPoslan_, naziv: 'Mail s pristupnim podacima poslan klijentu' }
     ];
     var poslGuardListaHtml_ = poslGuardStavke_.map(function(s) {
       return '<span class="af-posl-guard-stavka' + (s.ok ? ' ok' : '') + '">' + (s.ok ? '✓' : '✕') + ' ' + esc(s.naziv) + '</span>';
@@ -26252,7 +26252,7 @@
       // Drugi uvjet (2.10.2026.) — vidi napomenu uz poslGuardKartaPotvrdjena_
       // prije wrap.innerHTML. Pozvano i iz karta-prikupa uspjeh handlera niže.
       var kartaOk = !!(fieldVal(entry, 'Karta prikupa - lat (admin)') && fieldVal(entry, 'Karta prikupa - lon (admin)'));
-      if (!poslano || !kartaOk) { return; }
+      if (!poslano) { return; }   // v500: karta više nije uvjet
       blok.classList.remove('locked');
       var lockIcon = blok.querySelector('.af-posl-guard-lock');
       if (lockIcon) { lockIcon.outerHTML = '<span class="chevron">▾</span>'; }
