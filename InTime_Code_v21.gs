@@ -8335,6 +8335,8 @@ function doPost(e) {
       result = adminGenerirajNovuPonudu(data.token, data.rowIndex, data.brojDana, data.ukupnoSati);
     } else if (data.action === 'adminPonistiPonudu') {
       result = adminPonistiPonudu(data.token, data.rowIndex);
+    } else if (data.action === 'adminVratiIzArhive') {
+      result = adminVratiIzArhive(data.token, data.rowIndex, data.kamo);   // v501
     } else if (data.action === 'adminOdustaniOdKlijenta') {
       result = adminOdustaniOdKlijenta(data.token, data.rowIndex);
     } else if (data.action === 'adminPrebaciUArhivu') {
@@ -9159,7 +9161,11 @@ function doPost(e) {
     } else if (data.tip === 'interes' && data.otvorena_token) {
       result = otvPonudaSpremiUpitnik(data);
     } else if (data.tip === 'interes') {
-      result = saveUpit(data);
+      // v501 (Saša, 28.11.2026.): firma iz ARHIVE se ponovno javila (npr. na pismo namjere) — NE stvaraj duplikat,
+      // upitnik se upisuje u njezin arhivirani redak koji se vraća u Zainteresirane. Ručni unos (brzi_token) ide kao dosad.
+      var arhRed_ = null;
+      if (!data.brzi_token) { try { arhRed_ = arhivaRedPoOib_(oibNorm_(data.oib)); } catch (eArh_) { arhRed_ = null; } }
+      result = arhRed_ ? arhivaOziviUpitnikom_(data, arhRed_) : saveUpit(data);
     } else if (data.tip === 'raskid') {
       result = saveRaskid(data);
     } else if (data.tip === 'anketa') {
@@ -9828,7 +9834,8 @@ var ADMIN_ONLY_FIELDS = {
   prihvat_admin: 'Prihvat unio admin u ime klijenta (admin)',   // v383: Saša prihvatio ponudu u ime klijenta (bez obavijesti klijentu)   // v381: datum kad je Saša klijentu dopustio/poslao kratki upitnik (samo osnovni podaci)
   intrix_odobren: 'INTRIX odobren (admin)',
   napomena_kartica: 'Napomena na kartici (admin)',
-  privici_mail_json: 'Privici uz mail pristupa (admin, JSON)',   // v485: datoteke koje idu kao PRIVITAK u mailu s pristupnim podacima (Drive: <klijent>/PRIVICI MAIL)
+  privici_mail_json: 'Privici uz mail pristupa (admin, JSON)',
+  iz_arhive: 'Vraćen iz arhive (admin)',   // v501: zapis kad se firma iz Arhive ponovno javi (upitnik s istim OIB-om) ili je ručno vraćena   // v485: datoteke koje idu kao PRIVITAK u mailu s pristupnim podacima (Drive: <klijent>/PRIVICI MAIL)
   poslovnice_json: 'Ostale poslovnice klijenta (admin, JSON)',   // v466: tablica ostalih poslovnica + popis datoteka (Drive: <klijent>/POSLOVNICE)   // v458: obojena napomena vidljiva na zaglavlju kartice ponude ([[r]]…[[/]] oznake boja)   // v412: datum kad je ponuda ručno izbačena iz INTRIX-a (odobreno); TM broj INTRIX više ne gasi sam
   intrix: 'INTRIX (admin)'   // v374: prihvaćena ponuda je u INTRIX-u (prekidač na kartici); poništava se kad ponuda dobije TM broj
   // (30.9.2026., ISPRAVAK ISTI DAN: polje "dokumenti_klijent_pristup" koje je
@@ -16295,6 +16302,7 @@ function izracunajOcekivanoZaglavljeUpiti_() {
   header.push('INTRIX odobren (admin)');   // v412
   header.push('Napomena na kartici (admin)');   // v458
   header.push('Ostale poslovnice klijenta (admin, JSON)');   // v466
+  header.push('Vraćen iz arhive (admin)');   // v501 — na sam kraj (self-healing doda stupac)
   // (30.9.2026., ISPRAVAK ISTI DAN: stupac "Dokumenti uz pristupne podatke
   // (admin, JSON)" koji je ovdje kratko bio dodan uklonjen je zajedno s
   // ADMIN_ONLY_FIELDS.dokumenti_klijent_pristup gore — vidi napomenu ondje.
@@ -25091,6 +25099,71 @@ function adminStariKlijentSpremi(token, p) {
     } catch (eDrv) { driveNapomena = 'Drive mapa nije stvorena (' + eDrv + ') — stvorit će se pri prvom radu s dokumentima.'; }
     return { status: 'ok', rowIndex: rowIndex, novi: novi, driveNapomena: driveNapomena };
   } finally { lock.releaseLock(); }
+}
+
+// ---- v501 (Saša, 28.11.2026.): OŽIVLJAVANJE KLIJENTA IZ ARHIVE ----
+// Kad firma koja je u Arhivi (isti OIB, nije klijent) ponovno popuni upitnik (npr. nakon pisma namjere), upitnik se upisuje u
+// NJEZIN arhivirani redak (bez duplikata): redak izlazi iz Arhive i vraća se u Zainteresirane, uz zapis "♻ vraćen iz arhive".
+function arhivaRedPoOib_(oib) {
+  if (!oib || oib.length !== 11) { return 0; }
+  var sheet = getOrCreateUpitiSheet(), lastRow = sheet.getLastRow();
+  if (lastRow < 2) { return 0; }
+  var ocek = izracunajOcekivanoZaglavljeUpiti_();
+  var lastCol = Math.min(sheet.getLastColumn(), ocek.length);
+  var header = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
+  var iO = header.indexOf('OIB'), iAr = header.indexOf(ADMIN_ONLY_FIELDS.datum_prebacivanja_arhiva), iKl = header.indexOf('Datum otvaranja klijenta u sustavu (admin)');
+  if (iO === -1 || iAr === -1) { return 0; }
+  var redovi = stupciUpita_(sheet, lastRow, [0, 1, iO, iAr, iKl]);
+  var nadjen = 0, najnoviji = 0;
+  for (var i = 0; i < redovi.length; i++) {
+    var r = redovi[i];
+    if (String(r[1] || '') !== 'Interes' || !r[iAr] || (iKl !== -1 && r[iKl])) { continue; }
+    if (oibNorm_(r[iO]) !== oib) { continue; }
+    var t = (r[iAr] instanceof Date) ? r[iAr].getTime() : 1;
+    if (t >= najnoviji) { najnoviji = t; nadjen = i + 2; }
+  }
+  return nadjen;
+}
+function arhivaVratiRed_(rowIndex, opis, uPonude) {
+  var r = otvCitajRed_(rowIndex);
+  if (!r) { return ''; }
+  var tz = Session.getScriptTimeZone();
+  var bio = r.get(ADMIN_ONLY_FIELDS.datum_prebacivanja_arhiva);
+  var bioTxt = bio instanceof Date ? Utilities.formatDate(bio, tz, 'dd.MM.yyyy.') : String(bio || '');
+  var zapis = Utilities.formatDate(new Date(), tz, 'dd.MM.yyyy. HH:mm') + ' — ' + opis + (bioTxt ? ' (u arhivi od ' + bioTxt + ')' : '');
+  var staro = String(r.get(ADMIN_ONLY_FIELDS.iz_arhive) || '');
+  if (r.header.indexOf(ADMIN_ONLY_FIELDS.iz_arhive) !== -1) { r.set(ADMIN_ONLY_FIELDS.iz_arhive, staro ? (zapis + ' | ' + staro) : zapis); }
+  r.set(ADMIN_ONLY_FIELDS.datum_prebacivanja_arhiva, '');
+  if (!uPonude && r.header.indexOf('Datum prebacivanja u ponude (admin)') !== -1) { r.set('Datum prebacivanja u ponude (admin)', ''); }
+  return zapis;
+}
+function arhivaOziviUpitnikom_(data, rowIndex) {
+  var res = saveUpit(data, rowIndex, '[♻ IZ ARHIVE] ');
+  if (res && res.status === 'ok') {
+    try {
+      var lock = LockService.getScriptLock(); lock.tryLock(10000);
+      try {
+        arhivaVratiRed_(rowIndex, 'ponovno se javio (popunio upitnik)', false);
+        getOrCreateUpitiSheet().getRange(rowIndex, 1).setValue(new Date());   // u Zainteresiranima kao nov upit (vrh popisa)
+      } finally { try { lock.releaseLock(); } catch (eL) {} }
+    } catch (eV) { /* upitnik je spremljen; vraćanje se može napraviti ručno (♻ Vrati iz arhive) */ }
+  }
+  return res;
+}
+function adminVratiIzArhive(token, rowIndex, kamo) {
+  if (!isValidAdminToken_(token)) { return { status: 'error', message: 'Sesija je istekla — prijavite se ponovno.' }; }
+  rowIndex = parseInt(rowIndex, 10);
+  if (!rowIndex || rowIndex < 2) { return { status: 'error', message: 'Neispravan redak.' }; }
+  var lock = LockService.getScriptLock();
+  if (!lock.tryLock(15000)) { return { status: 'error', message: 'Sustav je zauzet, pokušaj ponovno.' }; }
+  try {
+    var r = otvCitajRed_(rowIndex);
+    if (!r || !r.get(ADMIN_ONLY_FIELDS.datum_prebacivanja_arhiva)) { return { status: 'error', message: 'Zapis nije u arhivi.' }; }
+    var uPonude = (kamo === 'ponude') && !!r.get('Datum prebacivanja u ponude (admin)');
+    var zapis = arhivaVratiRed_(rowIndex, 'ručno vraćen iz arhive' + (uPonude ? ' u Ponude' : ' u Zainteresirane'), uPonude);
+    return { status: 'ok', zapis: zapis, kamo: uPonude ? 'ponude' : 'interes' };
+  } catch (e) { return { status: 'error', message: 'Vraćanje nije uspjelo: ' + e.message }; }
+  finally { try { lock.releaseLock(); } catch (eL) {} }
 }
 
 function stariRedPoTokenu_(tok) {

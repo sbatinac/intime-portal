@@ -3264,6 +3264,8 @@
         <button type="button" class="btn btn-small" id="bulk-pods-btn" style="background:#8b5cf6;border-color:#8b5cf6;color:#fff;" onclick="bulkPodsjetnik_()" hidden>🔔 Pošalji podsjetnik</button>
         <button type="button" class="btn btn-small" id="bulk-kratki-btn" style="background:#0b7a4b;border-color:#0b7a4b;color:#fff;" onclick="bulkKratki_()" hidden>📝 Kratki upitnik nakon prihvata</button>
         <button type="button" class="btn btn-small" id="bulk-pdf-btn" style="background:#4d148c;border-color:#4d148c;color:#fff;" onclick="bulkPdfPopis_()" hidden>📄 PDF popis (firma, OIB, broj ponude)</button>
+        <button type="button" class="btn btn-small" id="bulk-arh-pismo-btn" style="background:#4d148c;border-color:#4d148c;color:#fff;" onclick="bulkArhivaPismo_()" hidden>✉ Pošalji pismo namjere</button>
+        <button type="button" class="btn btn-small" id="bulk-arh-vrati-btn" style="background:#0b7a4b;border-color:#0b7a4b;color:#fff;" onclick="bulkArhivaVrati_()" hidden>♻ Vrati iz arhive</button>
         <button type="button" class="btn btn-small" id="bulk-arhiva-btn" style="background:#6b4f2a;border-color:#6b4f2a;color:#fff;" onclick="bulkUArhivu_()" hidden>🗄 Prebaci u arhivu</button>
         <button type="button" class="btn btn-danger btn-small" onclick="startBulkDelete()">Obriši odabrano</button>
       </div>
@@ -3968,7 +3970,7 @@
     if (ZAPISI_U_TIJEKU_ === 0 && OSVJEZI_NAKON_ZAPISA_) { OSVJEZI_NAKON_ZAPISA_ = false; try { loadEntries(); } catch (eZg) { /* nije kritično */ } }
   }
   // ===== v403: TV PRIKAZ (InTime_Admin.html?tv=1) — samo pločice „Danas čeka tebe”, velike, sat, Battleships bodovi, osvježavanje svake 2 min =====
-  var PANTHER_VERZIJA_ = 'v500';
+  var PANTHER_VERZIJA_ = 'v501';
   (function(){ try{ var e=document.getElementById('prijava-ver'); if(e) e.textContent='ver. '+PANTHER_VERZIJA_.replace(/^v/,''); var z=document.querySelector('#pz-ver b'); if(z) z.textContent=PANTHER_VERZIJA_.replace(/^v/,''); }catch(_){} })();   // v471: verzija na slici prijave   // v433: broj verzije — Claude ga podiže pri svakoj isporuci (prikazuje se na TV-u i u adminu)
   try { document.addEventListener('DOMContentLoaded', function() { var v = document.getElementById('panther-ver'); if (v) { v.textContent = '🐾 PANTHER ' + PANTHER_VERZIJA_; } }); var v0_ = document.getElementById('panther-ver'); if (v0_) { v0_.textContent = '🐾 PANTHER ' + PANTHER_VERZIJA_; } } catch (eVer) {}
   var TV_MOD_ = /[?&]tv=1(&|$)/.test(location.search);
@@ -6922,6 +6924,12 @@
     PONISTENA: { tekst: 'PONIŠTENA', boja: '#8e44ad' },
     NIJE_DOVRSENA: { tekst: 'NIJE DOVRŠENO!', boja: '#b8860b' }
   };
+  // v501: oznaka da je firma vraćena iz Arhive (ponovno se javila ili ručno vraćena)
+  function izArhiveCipHtml_(entry) {
+    var z = String(fieldVal(entry, 'Vraćen iz arhive (admin)') || '');
+    if (!z || jeArhiva(entry)) { return ''; }
+    return '<span class="arh-status-cip" style="background:#0b7a4b;color:#fff;" title="' + esc(z) + '">♻ IZ ARHIVE</span>';
+  }
   function arhivaKategorijaBadgeHtml_(entry) {
     if (!jeArhiva(entry)) { return ''; }
     var kategorija = fieldVal(entry, 'Kategorija arhiviranja (admin)');
@@ -23219,7 +23227,7 @@
           // Obojena značka po kategoriji arhiviranja — vidi
           // arhivaKategorijaBadgeHtml_() gore (ABANDON/ODBIJENA/PONIŠTENA/
           // NIJE DOVRŠENO!, Sašin izričit zahtjev 23.9.2026.).
-          arhivaKategorijaBadgeHtml_(entry) + izvorDolaskaCipHtml_(entry) + izvorKontaktaCipHtml_(entry) + revizijaBedzHtml_(entry) + '<span class="rev-ponuda-mjesto">' + revizijaPonudeBedzInner_(entry) + '</span>' +
+          arhivaKategorijaBadgeHtml_(entry) + izArhiveCipHtml_(entry) + izvorDolaskaCipHtml_(entry) + izvorKontaktaCipHtml_(entry) + revizijaBedzHtml_(entry) + '<span class="rev-ponuda-mjesto">' + revizijaPonudeBedzInner_(entry) + '</span>' +
         '</div>' +
         '<div class="entry-card-sub">' +
           subParts.map(function(p){ return '<span>' + p + '</span>'; }).join('') +
@@ -32122,6 +32130,7 @@
     var bpB_ = document.getElementById('bulk-produzi-btn'); if (bpB_) { bpB_.hidden = !naPonudama_; }
     var bpdfB_ = document.getElementById('bulk-pdf-btn'); if (bpdfB_) { bpdfB_.hidden = !(activeTab === 'Ponude' || activeTab === 'Otvorene'); }   // v490
     var baB_ = document.getElementById('bulk-arhiva-btn'); if (baB_) { baB_.hidden = !naPonudama_; }
+    ['bulk-arh-pismo-btn', 'bulk-arh-vrati-btn'].forEach(function(id) { var b = document.getElementById(id); if (b) { b.hidden = (activeTab !== 'Arhiva'); } });   // v501
     var bpsB_ = document.getElementById('bulk-pods-btn'); if (bpsB_) { bpsB_.hidden = !naPonudama_; }
     var bkB_ = document.getElementById('bulk-kratki-btn'); if (bkB_) { bkB_.hidden = !(activeTab === 'Otvorene' || (activeTab === 'Intrix' && naPonudama_)); }
     if (sakrijBtnOpci) { sakrijBtnOpci.hidden = !imaSakrivanje; }
@@ -32301,6 +32310,79 @@
           bulkSazetak_('🗄 Prebacivanje u arhivu gotovo.', rez, preskoceno);
         });
       });
+    });
+  }
+  // v501 (Saša, 28.11.2026.): ARHIVA → pismo namjere označenima (podaci iz upitnika: naziv, OIB, mail, grad, osoba, adresa).
+  // Kad se firma javi (upitnik s istim OIB-om), poslužitelj upitnik upisuje u NJEZIN arhivirani redak i vraća ga u Zainteresirane — bez duplikata.
+  function arhPismoPodaci_(e) {
+    var f = function(l) { return String(fieldVal(e, l) || '').trim(); };
+    var oib = f('OIB').replace(/\D/g, ''); if (oib.length >= 9 && oib.length < 11) { oib = ('00000000000' + oib).slice(-11); }
+    var mail = f('Email kontakt osobe') || f('Glavna e-mail adresa tvrtke') || f('Mail adresa odgovorne osobe') || f('Email osobe koja unosi podatke');
+    return { oib: oib, naziv: f('Naziv tvrtke'), email: mail, grad: f('Mjesto'), posta: f('Poštanski broj'), adresa: f('Adresa sjedišta'), osoba: f('Kontakt osoba') };
+  }
+  function bulkArhivaPismo_() {
+    var sve = bulkOdabraneP_(), lista = [], preskoceno = [];
+    sve.forEach(function(e) {
+      var p = arhPismoPodaci_(e);
+      if (!p.naziv) { preskoceno.push([e, 'nema naziva firme']); return; }
+      if (p.oib.length !== 11) { preskoceno.push([e, 'nema ispravnog OIB-a']); return; }
+      if (!/^[^\s@,;]+@[^\s@,;]+\.[^\s@,;]{2,}$/.test(p.email)) { preskoceno.push([e, 'nema e-mail adrese']); return; }
+      lista.push(e);
+    });
+    if (!lista.length) { bulkSazetak_('Nijednoj označenoj firmi se ne može poslati pismo.', { ok: [], lose: [] }, preskoceno); return; }
+    var o = document.createElement('div');
+    o.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:100000;display:flex;align-items:center;justify-content:center;padding:16px;';
+    o.innerHTML = '<div style="background:#fff;border-radius:14px;max-width:580px;width:100%;box-shadow:0 12px 40px rgba(0,0,0,.3);overflow:hidden;font-size:14px;color:#1f2d3d;">' +
+      '<div style="background:#4d148c;color:#fff;padding:12px 16px;font-weight:800;font-size:16px;">✉ Pismo namjere iz Arhive — ' + lista.length + (lista.length === 1 ? ' firma' : ' firmi') + '</div>' +
+      '<div style="padding:14px 16px;line-height:1.5;">Pismo ide na e-mail iz upitnika. Ako se firma javi (popuni upitnik), <b>vraća se iz Arhive u Zainteresirane u istom retku</b> — bez duplikata.' +
+      '<div style="max-height:180px;overflow:auto;margin-top:8px;border:1px solid #e3e7e6;border-radius:8px;padding:6px 10px;font-size:12.5px;">' + lista.map(function(e) { var p = arhPismoPodaci_(e); return '<div><b>' + esc(p.naziv) + '</b> · ' + esc(p.email) + (p.grad ? ' · ' + esc(p.grad) : '') + '</div>'; }).join('') + '</div>' +
+      (preskoceno.length ? '<div style="margin-top:6px;font-size:12px;color:#a93226;">Preskače se ' + preskoceno.length + ' (nedostaju podaci).</div>' : '') +
+      '<label style="display:block;margin-top:10px;font-weight:700;">Predložak</label><select class="ap-tpl" style="width:100%;box-sizing:border-box;padding:8px 10px;border:1px solid #c9d3d1;border-radius:8px;font:inherit;"><option value="zadano">Zadani predložak</option></select>' +
+      kratkiPismoHtml_('ap-kratki') +
+      '<label style="display:flex;gap:8px;align-items:center;margin-top:8px;font-size:13px;"><input type="checkbox" class="ap-dup"> Pošalji i firmama kojima je pismo već slano (inače se one preskaču)</label>' +
+      '<div class="ap-st" style="margin-top:8px;font-weight:700;"></div>' +
+      '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;"><button type="button" class="ap-ok" style="background:#4d148c;color:#fff;border:0;border-radius:8px;padding:9px 14px;font:inherit;font-weight:800;cursor:pointer;">✉ Pošalji ' + lista.length + '</button>' +
+      '<button type="button" class="ap-x" style="background:#eef1f0;color:#333;border:0;border-radius:8px;padding:9px 14px;font:inherit;font-weight:700;cursor:pointer;">Odustani</button></div></div></div>';
+    document.body.appendChild(o);
+    var st = o.querySelector('.ap-st'), sel = o.querySelector('.ap-tpl'), radi = false;
+    var zatvori = function() { if (!radi && o.parentNode) { o.parentNode.removeChild(o); } };
+    o.querySelector('.ap-x').addEventListener('click', zatvori);
+    o.addEventListener('click', function(ev) { if (ev.target === o) { zatvori(); } });
+    gasCall({ action: 'adminPismaPostavke', token: adminToken }).then(function(res) {
+      if (res && res.status === 'ok' && Array.isArray(res.popis) && res.popis.length) { sel.innerHTML = res.popis.map(function(t) { return '<option value="' + esc(t.id) + '">' + esc(t.naziv) + '</option>'; }).join(''); }
+    }).catch(function() {});
+    o.querySelector('.ap-ok').addEventListener('click', function() {
+      var b = this; b.disabled = true; o.querySelector('.ap-x').disabled = true; radi = true;
+      var dup = !!o.querySelector('.ap-dup:checked'), kratki = !!o.querySelector('.ap-kratki:checked');
+      var ok = 0, vecSlano = [], greske = [], i = 0;
+      (function sljedeci() {
+        if (i >= lista.length) {
+          radi = false; o.querySelector('.ap-x').disabled = false; o.querySelector('.ap-x').textContent = 'Zatvori';
+          st.style.color = greske.length ? '#a93226' : '#1e8449';
+          st.innerHTML = '✓ Poslano: ' + ok + (vecSlano.length ? '<br>↷ Već slano ranije (preskočeno): ' + vecSlano.length + '<div style="font-weight:600;font-size:12.5px;">' + vecSlano.map(esc).join(', ') + '</div>' : '') +
+            (greske.length ? '<br>✗ Nije poslano: ' + greske.length + '<div style="font-weight:600;font-size:12.5px;">' + greske.map(esc).join('<br>') + '</div>' : '');
+          return;
+        }
+        var e = lista[i++], p = arhPismoPodaci_(e); st.style.color = '#1f2d3d'; st.textContent = 'Šaljem ' + i + ' / ' + lista.length + ' — ' + p.naziv + '…';
+        gasCall({ action: 'adminPismoPosalji', token: adminToken, oib: p.oib, naziv: p.naziv, email: p.email, grad: p.grad, posta: p.posta, adresa: p.adresa, osoba: p.osoba, mobitel: '', izvorKontakta: 'Arhiva', potvrdiDuplikat: dup, predlozakId: sel.value, kratkiUpitnik: kratki }).then(function(res) {
+          if (handleAuthError(res)) { greske.push(p.naziv + ': sesija istekla'); i = lista.length; sljedeci(); return; }
+          if (res && res.status === 'ok') { ok++; } else if (res && res.status === 'duplikat') { vecSlano.push(p.naziv); } else { greske.push(p.naziv + ': ' + ((res && res.message) || 'nije uspjelo')); }
+          sljedeci();
+        }).catch(function() { greske.push(p.naziv + ': veza s poslužiteljem'); sljedeci(); });
+      })();
+    });
+  }
+  function bulkArhivaVrati_() {
+    var lista = bulkOdabraneP_().filter(function(e) { return jeArhiva(e); });
+    if (!lista.length) { return; }
+    var uPon = lista.filter(function(e) { return jePonuda(e); }).length;
+    var kamo = 'interes';
+    if (uPon) { kamo = confirm(uPon + ' od ' + lista.length + ' označenih bilo je u Ponudama.\n\nOK = vrati ih u PONUDE (ostali idu u Zainteresirane)\nOdustani = sve vrati u ZAINTERESIRANE') ? 'ponude' : 'interes'; }
+    else if (!confirm('Vratiti ' + lista.length + (lista.length === 1 ? ' firmu' : ' firmi') + ' iz Arhive u Zainteresirane?')) { return; }
+    bulkRedom_(lista, function(e) { return gasCall({ action: 'adminVratiIzArhive', token: adminToken, rowIndex: e.rowIndex, kamo: kamo }); }, document.getElementById('bulk-arh-vrati-btn'), 'Vraćam').then(function(rez) {
+      rez.ok.forEach(function(x) { x[0].fields['Datum prebacivanja u arhivu (admin)'] = ''; if (x[1].kamo !== 'ponude') { x[0].fields['Datum prebacivanja u ponude (admin)'] = ''; } x[0].fields['Vraćen iz arhive (admin)'] = x[1].zapis || '♻'; });
+      clearSelection(); try { loadAll(); } catch (eL) {}
+      bulkSazetak_('♻ Vraćanje iz arhive gotovo.', rez, []);
     });
   }
   // v468: skupno — pošalji podsjetnik odmah svim označenim (čeka odgovor → podsjetnik na ponudu; otvorena prihvaćena bez upitnika → podsjetnik na upitnik)
