@@ -20685,8 +20685,61 @@ function pismaKvota_() {
   try { return MailApp.getRemainingDailyQuota(); } catch (e) { return null; }
 }
 
+// ---- v502 (Saša, 28.11.2026.): predložak pisma namjere "AKCIJA – Samo ovog Božića" ----
+// Gradi se iz ZADANOG predloška (PISMA_TIJELO_DEFAULT_): naslovna slika → oglas (kombi + sob + cijene), uvodni tekst → akcijski
+// tekst + kompaktne cijene + uvjeti + "👇 Kliknite dolje…", gumb upitnika → "ZATRAŽITE AKCIJSKU PONUDU". Dodaje se JEDNOM
+// u dodatne predloške (Pisma namjere → predložak), poslije ga Saša uređuje kao i ostale.
+var PISMA_AKCIJA_BOZIC_NAZIV_ = 'AKCIJA – Samo ovog Božića';
+var PISMA_AKCIJA_BOZIC_SLIKA_ = 'https://sbatinac.github.io/intime-portal/InTime_PismoNamjere_Bozic_akcija.jpg';
+var PISMA_AKCIJA_BOZIC_KLJUC_ = 'PISMA_SEED_AKCIJA_BOZIC_V1';
+function pismaAkcijaBozicTijelo_() {
+  var t = String(PISMA_TIJELO_DEFAULT_);
+  var iImg = t.indexOf('<img src="https://i.imgur.com/1jWHsMW.png"');
+  if (iImg === -1) { return null; }
+  t = t.replace('<img src="https://i.imgur.com/1jWHsMW.png" alt="In Time d.o.o. — Licensee of FedEx"', '<img src="' + PISMA_AKCIJA_BOZIC_SLIKA_ + '" alt="Samo ovog Božića – In Time dostava već od 2,68 €"');
+  var a = t.indexOf('<p style="margin:0 0 14px;">Poštovani {{IME_OSOBE}},</p>');
+  var b = a === -1 ? -1 : t.indexOf('</td></tr>', a);
+  if (a === -1 || b === -1) { return null; }
+  var TD = 'padding:8px 4px;text-align:center;font-family:Arial,Helvetica,sans-serif;border:1px solid #cfe5e8;';
+  var cj = [['2', '2,68'], ['5', '3,05'], ['10', '3,78'], ['15', '4,51']].map(function(x, i) {
+    return '<td style="' + TD + (i === 0 ? 'background-color:#016579;color:#ffffff;' : 'background-color:#f2f9fa;color:#016579;') + '"><div style="font-size:12px;">do ' + x[0] + '&nbsp;kg</div><div style="font-size:18px;font-weight:bold;">' + x[1] + '&nbsp;€</div></td>';
+  }).join('');
+  var blok =
+    '<p style="margin:0 0 14px;">Poštovani {{IME_OSOBE}},</p>' +
+    '<p style="margin:0 0 14px;"><strong>samo ovog Božića</strong> tvrtki <strong>{{IME_FIRME}}</strong> nudimo akcijske cijene dostave po Hrvatskoj – brzo, pouzdano i uz globalnu FedEx mrežu iza svake pošiljke.</p>' +
+    '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;border-collapse:collapse;margin:4px 0 6px;"><tr>' + cj + '</tr></table>' +
+    '<p style="margin:0 0 12px;font-size:12.5px;line-height:1.5;color:#555555;">Zona 1 i 2 · cijena po pošiljci · gorivo 22&nbsp;% i 2 SMS obavijesti uključeni · otkupnina (pouzeće) +1,00&nbsp;€ samo ako je koristite · cijene bez PDV-a</p>' +
+    '<p style="margin:0 0 14px;padding:10px 14px;background-color:#fff4e5;border-radius:8px;font-size:13px;line-height:1.55;color:#6b3d00;"><strong>⏳ Uvjeti akcije:</strong> ugovor sklopljen do 15.12.2026., na najmanje 6 mjeseci, uz minimalno 250 pošiljaka mjesečno. Ako šaljete pretežno manje pošiljke, uvjete prilagođavamo već od približno 150 pošiljaka mjesečno.</p>' +
+    '<p style="margin:0 0 10px;">Ako Vas ponuda zanima, ispunite kratki upitnik – na temelju Vaših stvarnih potreba pripremit ćemo konkretnu ponudu i javiti Vam se u najkraćem roku.</p>' +
+    '<p style="margin:0 0 4px;text-align:center;font-size:18px;font-weight:bold;color:#016579;">👇 Kliknite dolje i zatražite ponudu</p>';
+  t = t.slice(0, a) + blok + t.slice(b);
+  t = t.split('POKRENI UPITNIK ZA POČETAK SURADNJE').join('ZATRAŽITE AKCIJSKU PONUDU');
+  return t;
+}
+function pismaAkcijaBozicSeed_() {
+  var props = PropertiesService.getScriptProperties();
+  if (props.getProperty(PISMA_AKCIJA_BOZIC_KLJUC_)) { return; }
+  try {
+    var ind = pismaTplIndeks_();
+    var postoji = ind.some(function(t) { return String(t.naziv || '').toLowerCase() === PISMA_AKCIJA_BOZIC_NAZIV_.toLowerCase(); });
+    var tj = pismaAkcijaBozicTijelo_();
+    if (!postoji && tj && ind.length < 30) {
+      var z = pismaPostavke_('zadano');
+      var sadrzaj = JSON.stringify({ predmet: 'IN TIME – samo ovog Božića: dostava već od 2,68 € – [NAZIV TVRTKE]', tijelo: tj, linkGlavna: z.linkGlavna, linkRebrandly: z.linkRebrandly });
+      if (sadrzaj.length <= PISMA_TPL_MAX_) {
+        var id = 'pakcboz1';
+        ind.push({ id: id, naziv: PISMA_AKCIJA_BOZIC_NAZIV_ });
+        props.setProperty('PISMA_TPL_' + id, sadrzaj);
+        props.setProperty(PISMA_TPL_INDEX_KEY_, JSON.stringify(ind));
+      }
+    }
+  } catch (e) { /* ne smije blokirati postavke pisama */ }
+  props.setProperty(PISMA_AKCIJA_BOZIC_KLJUC_, '1');
+}
+
 function adminPismaPostavke(token, predlozakId) {
   if (!isValidAdminToken_(token)) { return pismaAuthGreska_(); }
+  pismaAkcijaBozicSeed_();   // v502
   var p = pismaPostavke_(predlozakId);
   return { status: 'ok', postavke: p, zadano: { predmet: PISMA_PREDMET_DEFAULT_, tijelo: PISMA_TIJELO_DEFAULT_ }, popis: pismaTplPopis_(), predmeti: pismaPredmetiPopis_(), kvota: pismaKvota_() };
 }
